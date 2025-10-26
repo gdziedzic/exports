@@ -1,0 +1,1 @@
+dotbot -v -d C:\projects\dotnotfiles -c install.conf.yaml

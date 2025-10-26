@@ -1,0 +1,52 @@
+- defaults:
+    link:
+      relink: true
+
+- clean: ['~']
+
+- link:
+    ~/.dotfiles: ''
+    ~/.tmux.conf: tmux.conf
+    ~/.vimrc: vimrc
+    C:\Users\g\AppData\Roaming\FileJuggler2\Config.xml:
+      create: true
+      path: tools/FileJuggler2/Config.xml
+    C:/Users/g/AppData/Roaming/Notepad++:
+      create: true
+      path: tools/Notepad++/
+    C:\Users\g\AppData\Roaming\Wox\Settings: tools/Wox/Settings
+    C:\Users\g\.gitconfig: git/.gitconfig
+    C:\Users\g\AppData\Roaming\Code\User\settings.json :
+      create: true
+      path: tools/visual_studio_code/settings.json
+    C:\Users\g\AppData\Roaming\Code\User\keybindings.json :
+      create: true
+      path: tools/visual_studio_code/keybindings.json
+    C:\Users\g\AppData\Roaming\Code\User\snippets :
+      create: true
+      path: tools/visual_studio_code/snippets
+    C:\Users\g\Documents\Powershell\OneTimeConfig.ps1:
+      create: true
+      path: powershell/OneTimeConfig.ps1
+    C:\Users\g\Documents\Powershell\Microsoft.PowerShell_profile.ps1: powershell/Microsoft.PowerShell_profile.ps1
+    C:\Users\g\Documents\Powershell\config.ps1: powershell/config.ps1
+    C:\Users\g\Documents\Powershell\powershell.config.json: powershell/powershell.config.json
+    C:\Users\g\AppData\Local\organize\config.yaml:
+      create: true
+      path: tools/organize/config.yaml
+    C:\Users\g\drive\AHK_scripts\config.ini:
+      create: true
+      path: tools/ahk_scripts/config.ini
+    C:\Users\g\AppData\Roaming\pet\snippet.toml:
+      create: true
+      path: tools/pet/snippet.toml
+    # tools/xg-cli/Taskfile.yml:
+      # create: true
+      # path: C:/Users/g/Taskfile.yml
+
+- create:
+    - ~/downloads2
+    - ~/.vim/undo-history
+
+- shell:
+  - [git submodule update --init --recursive, Installing submodules]
