@@ -34,7 +34,10 @@ function cd ([parameter(ValueFromRemainingArguments = $true)][string]$Passthroug
 
 # TaskFileExtensions run hello
 
-
+Set-Alias -Name tfe -Value "TaskFileExtensions"
 
 $env:PAI_DIR="C:/xg/dev/xg-ai/PAI_DIRECTORY"
 $env:PAI_HOME="$HOME"
+
+function cpwd_function { $pwd.Path | clip }
+Set-Alias -Name cpwd -Value cpwd_function
