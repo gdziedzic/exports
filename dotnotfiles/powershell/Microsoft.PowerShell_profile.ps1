@@ -41,3 +41,14 @@ $env:PAI_HOME="$HOME"
 
 function cpwd_function { $pwd.Path | clip }
 Set-Alias -Name cpwd -Value cpwd_function
+
+# Navigation shortcuts
+function cd_home { Set-Location "C:\Users\g" }
+function cd_x    { Set-Location "C:\xg" }
+function cd_v    { Set-Location "C:\xg\dev" }
+function cd_p    { Set-Location "$HOME\projects" }
+
+Set-Alias home -Value cd_home
+Set-Alias x -Value cd_x
+Set-Alias v -Value cd_v
+Set-Alias p -Value cd_p
