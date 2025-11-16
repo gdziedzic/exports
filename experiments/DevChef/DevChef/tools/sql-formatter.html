@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQL Formatter - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "sql-formatter",
+  "name": "SQL Formatter",
+  "category": "Database",
+  "description": "Format and beautify SQL queries with syntax highlighting",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">SQL Formatter & Beautifier</h2>
+      <p class="tool-description">Format, beautify, and analyze SQL queries for SQL Server, MySQL, PostgreSQL</p>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="input">SQL Query</label>
+      <textarea id="input" placeholder="Paste your SQL query here..."></textarea>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Formatting Options</label>
+      <div class="format-options">
+        <label>
+          <span>Indentation:</span>
+          <select id="indent-size">
+            <option value="2">2 spaces</option>
+            <option value="4" selected>4 spaces</option>
+            <option value="tab">Tab</option>
+          </select>
+        </label>
+        <label>
+          <span>Keyword Case:</span>
+          <select id="keyword-case">
+            <option value="upper" selected>UPPERCASE</option>
+            <option value="lower">lowercase</option>
+            <option value="preserve">Preserve</option>
+          </select>
+        </label>
+        <label>
+          <input type="checkbox" id="new-line-before-keyword" checked>
+          <span>New line before keywords</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <button id="format-btn">Format SQL</button>
+      <button id="minify-btn" class="secondary">Minify</button>
+      <button id="copy-btn" class="secondary">Copy Result</button>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="output">Formatted SQL</label>
+      <textarea id="output" readonly></textarea>
+      <div id="stats" class="stats"></div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Quick SQL Templates</label>
+      <div class="templates-grid">
+        <button class="template-btn" data-template="select">SELECT</button>
+        <button class="template-btn" data-template="insert">INSERT</button>
+        <button class="template-btn" data-template="update">UPDATE</button>
+        <button class="template-btn" data-template="delete">DELETE</button>
+        <button class="template-btn" data-template="create-table">CREATE TABLE</button>
+        <button class="template-btn" data-template="stored-proc">STORED PROC</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .format-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .format-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .format-options select {
+    width: auto;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .format-options input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+  }
+
+  .templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  .template-btn {
+    padding: 10px 16px;
+    margin: 0;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+
+  .template-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  .stats {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-label {
+    color: var(--text-secondary);
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+
+  .stat-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+
+  #input,
+  #output {
+    min-height: 300px;
+    font-family: var(--font-mono);
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  textarea, select {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    resize: vertical;
+    transition: all 0.2s;
+  }
+
+  textarea {
+    min-height: 150px;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    margin-right: 8px;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+  }
+
+  button.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  button.secondary:hover {
+    background: var(--border-color);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  keywords: [
+    'SELECT', 'FROM', 'WHERE', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE',
+    'CREATE', 'TABLE', 'ALTER', 'DROP', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'OUTER',
+    'ON', 'AS', 'AND', 'OR', 'NOT', 'IN', 'BETWEEN', 'LIKE', 'IS', 'NULL',
+    'ORDER', 'BY', 'GROUP', 'HAVING', 'LIMIT', 'OFFSET', 'UNION', 'ALL',
+    'DISTINCT', 'COUNT', 'SUM', 'AVG', 'MAX', 'MIN', 'CASE', 'WHEN', 'THEN',
+    'ELSE', 'END', 'IF', 'EXISTS', 'PROCEDURE', 'FUNCTION', 'BEGIN', 'DECLARE',
+    'EXEC', 'EXECUTE', 'RETURN', 'WITH', 'GO', 'USE', 'DATABASE'
+  ],
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const inputEl = container.querySelector("#input");
+    const formatBtn = container.querySelector("#format-btn");
+    const minifyBtn = container.querySelector("#minify-btn");
+    const copyBtn = container.querySelector("#copy-btn");
+
+    inputEl?.addEventListener("input", (e) => {
+      context.setInput(e.target.value);
+    });
+
+    formatBtn?.addEventListener("click", () => this.formatSQL());
+    minifyBtn?.addEventListener("click", () => this.minifySQL());
+    copyBtn?.addEventListener("click", () => this.copyOutput());
+
+    // Template buttons
+    const templateBtns = container.querySelectorAll(".template-btn");
+    templateBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const template = this.getTemplate(btn.dataset.template);
+        if (inputEl) inputEl.value = template;
+        context.setInput(template);
+      });
+    });
+  },
+
+  formatSQL() {
+    const sql = this.context.getInput();
+    if (!sql.trim()) return;
+
+    const indentSize = this.container.querySelector("#indent-size")?.value || "4";
+    const keywordCase = this.container.querySelector("#keyword-case")?.value || "upper";
+    const newLineBeforeKeyword = this.container.querySelector("#new-line-before-keyword")?.checked || false;
+
+    const indent = indentSize === "tab" ? "\t" : " ".repeat(parseInt(indentSize));
+
+    let formatted = sql.trim();
+
+    // Apply keyword case
+    if (keywordCase !== 'preserve') {
+      this.keywords.forEach(keyword => {
+        const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+        formatted = formatted.replace(regex, match => {
+          return keywordCase === 'upper' ? match.toUpperCase() : match.toLowerCase();
+        });
+      });
+    }
+
+    // Add new lines before major keywords
+    if (newLineBeforeKeyword) {
+      const majorKeywords = ['SELECT', 'FROM', 'WHERE', 'JOIN', 'INNER JOIN', 'LEFT JOIN',
+                             'RIGHT JOIN', 'ORDER BY', 'GROUP BY', 'HAVING', 'UNION'];
+      majorKeywords.forEach(keyword => {
+        const regex = new RegExp(`\\s+(${keyword})\\s+`, 'gi');
+        formatted = formatted.replace(regex, `\n${keyword} `);
+      });
+    }
+
+    // Basic indentation
+    let level = 0;
+    const lines = formatted.split('\n');
+    formatted = lines.map(line => {
+      line = line.trim();
+      if (!line) return '';
+
+      // Decrease indent for closing keywords
+      if (/^(END|ELSE)/i.test(line)) {
+        level = Math.max(0, level - 1);
+      }
+
+      const indented = indent.repeat(level) + line;
+
+      // Increase indent for opening keywords
+      if (/^(BEGIN|IF|CASE|WHEN)/i.test(line)) {
+        level++;
+      }
+
+      return indented;
+    }).join('\n');
+
+    this.context.setOutput(formatted);
+    this.updateStats(sql, formatted);
+  },
+
+  minifySQL() {
+    const sql = this.context.getInput();
+    if (!sql.trim()) return;
+
+    // Remove extra whitespace and newlines
+    const minified = sql
+      .replace(/\s+/g, ' ')
+      .replace(/\s*,\s*/g, ',')
+      .replace(/\s*\(\s*/g, '(')
+      .replace(/\s*\)\s*/g, ')')
+      .replace(/\s*=\s*/g, '=')
+      .trim();
+
+    this.context.setOutput(minified);
+    this.updateStats(sql, minified);
+  },
+
+  updateStats(original, formatted) {
+    const statsEl = this.container.querySelector("#stats");
+    if (!statsEl) return;
+
+    const originalLines = original.split('\n').length;
+    const formattedLines = formatted.split('\n').length;
+    const originalChars = original.length;
+    const formattedChars = formatted.length;
+
+    // Count keywords
+    let keywordCount = 0;
+    this.keywords.forEach(keyword => {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+      const matches = original.match(regex);
+      if (matches) keywordCount += matches.length;
+    });
+
+    statsEl.innerHTML = `
+      <div class="stat-item">
+        <span class="stat-label">Lines</span>
+        <span class="stat-value">${originalLines} → ${formattedLines}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Characters</span>
+        <span class="stat-value">${originalChars} → ${formattedChars}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Keywords</span>
+        <span class="stat-value">${keywordCount}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Change</span>
+        <span class="stat-value">${formattedChars > originalChars ? '+' : ''}${formattedChars - originalChars}</span>
+      </div>
+    `;
+  },
+
+  getTemplate(type) {
+    const templates = {
+      'select': `SELECT
+    column1,
+    column2,
+    column3
+FROM
+    TableName
+WHERE
+    condition = 'value'
+ORDER BY
+    column1 DESC;`,
+
+      'insert': `INSERT INTO TableName (
+    column1,
+    column2,
+    column3
+)
+VALUES (
+    'value1',
+    'value2',
+    'value3'
+);`,
+
+      'update': `UPDATE TableName
+SET
+    column1 = 'value1',
+    column2 = 'value2'
+WHERE
+    id = 1;`,
+
+      'delete': `DELETE FROM TableName
+WHERE
+    condition = 'value';`,
+
+      'create-table': `CREATE TABLE TableName (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    Name NVARCHAR(100) NOT NULL,
+    Email NVARCHAR(255) UNIQUE,
+    CreatedDate DATETIME DEFAULT GETDATE(),
+    IsActive BIT DEFAULT 1
+);`,
+
+      'stored-proc': `CREATE PROCEDURE sp_ProcedureName
+    @Parameter1 INT,
+    @Parameter2 NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        column1,
+        column2
+    FROM
+        TableName
+    WHERE
+        column1 = @Parameter1
+        AND column2 = @Parameter2;
+END;
+GO`
+    };
+
+    return templates[type] || '';
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (output) {
+      navigator.clipboard.writeText(output).then(() => {
+        const copyBtn = this.container.querySelector("#copy-btn");
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = "✓ Copied!";
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      });
+    }
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) {
+          this.output = val;
+          const outputEl = document.querySelector("#output");
+          if (outputEl) outputEl.value = val;
+        },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

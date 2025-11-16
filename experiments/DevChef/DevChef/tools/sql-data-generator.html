@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQL Data Generator - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "sql-data-generator",
+  "name": "SQL Data Gen",
+  "category": "Database",
+  "description": "Generate INSERT statements with realistic test data",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">SQL Data Generator</h2>
+      <p class="tool-description">Generate INSERT statements with realistic test data for SQL Server</p>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Table Information</label>
+      <div class="table-info-grid">
+        <div class="info-item">
+          <label for="schema-name">Schema</label>
+          <input type="text" id="schema-name" value="dbo" placeholder="dbo">
+        </div>
+        <div class="info-item">
+          <label for="table-name">Table Name</label>
+          <input type="text" id="table-name" placeholder="Users">
+        </div>
+        <div class="info-item">
+          <label for="row-count">Rows to Generate</label>
+          <input type="number" id="row-count" value="10" min="1" max="1000">
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Load from CREATE TABLE</label>
+      <textarea id="create-table-input" placeholder="Paste CREATE TABLE statement here to auto-populate columns..."></textarea>
+      <button id="parse-table-btn" class="secondary">Parse Table Definition</button>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Column Mapping</label>
+      <div id="columns-list" class="columns-list"></div>
+      <button id="add-column-btn" class="secondary">+ Add Column</button>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Options</label>
+      <div class="options-grid">
+        <label>
+          <input type="checkbox" id="use-set-identity" checked>
+          <span>SET IDENTITY_INSERT</span>
+        </label>
+        <label>
+          <input type="checkbox" id="use-transaction" checked>
+          <span>Wrap in transaction</span>
+        </label>
+        <label>
+          <input type="checkbox" id="add-go-statements">
+          <span>Add GO statements</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <button id="generate-btn">Generate INSERT Statements</button>
+      <button id="copy-btn" class="secondary">Copy SQL</button>
+      <button id="reset-btn" class="secondary">Reset</button>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="output">Generated SQL</label>
+      <textarea id="output" readonly></textarea>
+      <div id="stats" class="stats-display"></div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .table-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 16px;
+  }
+
+  .info-item label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  .columns-list {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .column-row {
+    display: grid;
+    grid-template-columns: 2fr 2fr auto;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    align-items: end;
+  }
+
+  .column-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .column-field label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .column-field input,
+  .column-field select {
+    width: 100%;
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .remove-column-btn {
+    padding: 8px 12px;
+    margin: 0;
+    margin-top: 16px;
+    background: var(--error);
+    color: white;
+    font-size: 12px;
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .options-grid label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .options-grid input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+  }
+
+  #create-table-input {
+    min-height: 150px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  #output {
+    min-height: 400px;
+    font-family: var(--font-mono);
+  }
+
+  .stats-display {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 768px) {
+    .column-row {
+      grid-template-columns: 1fr;
+    }
+
+    .table-info-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  textarea {
+    min-height: 150px;
+    resize: vertical;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    margin-right: 8px;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+  }
+
+  button.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  button.secondary:hover {
+    background: var(--border-color);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+  columns: [],
+
+  dataGenerators: {
+    'FirstName': ['John', 'Jane', 'Michael', 'Sarah', 'David', 'Emily', 'Robert', 'Lisa', 'James', 'Mary'],
+    'LastName': ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'],
+    'Email': () => {
+      const names = ['john', 'jane', 'user', 'test', 'admin'];
+      const domains = ['example.com', 'test.com', 'mail.com', 'email.com'];
+      return `${names[Math.floor(Math.random() * names.length)]}${Math.floor(Math.random() * 1000)}@${domains[Math.floor(Math.random() * domains.length)]}`;
+    },
+    'Phone': () => `${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`,
+    'Address': ['123 Main St', '456 Oak Ave', '789 Pine Rd', '321 Elm St', '654 Maple Dr'],
+    'City': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego'],
+    'State': ['CA', 'TX', 'FL', 'NY', 'PA', 'IL', 'OH', 'GA'],
+    'ZipCode': () => String(Math.floor(Math.random() * 90000) + 10000),
+    'Integer': () => Math.floor(Math.random() * 1000),
+    'Decimal': () => (Math.random() * 1000).toFixed(2),
+    'Boolean': () => Math.random() > 0.5 ? '1' : '0',
+    'GUID': () => 'NEWID()',
+    'DateTime': () => 'GETUTCDATE()',
+    'CustomValue': ''
+  },
+
+  generatorTypes: [
+    'FirstName', 'LastName', 'Email', 'Phone', 'Address', 'City', 'State', 'ZipCode',
+    'Integer', 'Decimal', 'Boolean', 'GUID', 'DateTime', 'CustomValue'
+  ],
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const generateBtn = container.querySelector("#generate-btn");
+    const copyBtn = container.querySelector("#copy-btn");
+    const resetBtn = container.querySelector("#reset-btn");
+    const addColumnBtn = container.querySelector("#add-column-btn");
+    const parseTableBtn = container.querySelector("#parse-table-btn");
+
+    generateBtn?.addEventListener("click", () => this.generateData());
+    copyBtn?.addEventListener("click", () => this.copyOutput());
+    resetBtn?.addEventListener("click", () => this.reset());
+    addColumnBtn?.addEventListener("click", () => this.addColumn());
+    parseTableBtn?.addEventListener("click", () => this.parseCreateTable());
+
+    // Add initial columns
+    this.addColumn('FirstName', 'FirstName');
+    this.addColumn('LastName', 'LastName');
+    this.addColumn('Email', 'Email');
+  },
+
+  parseCreateTable() {
+    const createTableInput = this.container.querySelector("#create-table-input");
+    const sql = createTableInput?.value || '';
+
+    if (!sql.trim()) {
+      alert('Please paste a CREATE TABLE statement');
+      return;
+    }
+
+    try {
+      // Extract table name
+      const tableMatch = sql.match(/CREATE\s+TABLE\s+(?:\[?(\w+)\]?\.)?\[?(\w+)\]?/i);
+      if (tableMatch) {
+        const schema = tableMatch[1] || 'dbo';
+        const tableName = tableMatch[2];
+
+        this.container.querySelector("#schema-name").value = schema;
+        this.container.querySelector("#table-name").value = tableName;
+      }
+
+      // Parse columns - match column definitions
+      const columnRegex = /\[?(\w+)\]?\s+((?:N?VARCHAR|CHAR|N?TEXT|INT|BIGINT|SMALLINT|TINYINT|DECIMAL|NUMERIC|FLOAT|REAL|MONEY|SMALLMONEY|BIT|DATETIME|DATETIME2|DATE|TIME|UNIQUEIDENTIFIER|XML|VARBINARY|BINARY|IMAGE)(?:\s*\([^)]+\))?)/gi;
+
+      const columns = [];
+      let match;
+      while ((match = columnRegex.exec(sql)) !== null) {
+        const columnName = match[1];
+        const dataType = match[2];
+
+        // Skip common constraint keywords
+        if (['CONSTRAINT', 'PRIMARY', 'FOREIGN', 'KEY', 'REFERENCES', 'CHECK', 'DEFAULT', 'INDEX'].includes(columnName.toUpperCase())) {
+          continue;
+        }
+
+        // Determine appropriate generator based on column name and type
+        let generator = this.suggestGenerator(columnName, dataType);
+        columns.push({ name: columnName, generator });
+      }
+
+      if (columns.length === 0) {
+        alert('No columns found in CREATE TABLE statement. Please check the format.');
+        return;
+      }
+
+      // Clear existing columns and load parsed ones
+      this.columns = [];
+      columns.forEach(col => {
+        this.addColumn(col.name, col.generator);
+      });
+
+      alert(`Successfully parsed ${columns.length} columns from CREATE TABLE statement!`);
+
+    } catch (error) {
+      alert(`Error parsing CREATE TABLE: ${error.message}`);
+      console.error(error);
+    }
+  },
+
+  suggestGenerator(columnName, dataType) {
+    const name = columnName.toLowerCase();
+    const type = dataType.toUpperCase();
+
+    // Name-based suggestions
+    if (name.includes('first') && name.includes('name')) return 'FirstName';
+    if (name.includes('last') && name.includes('name')) return 'LastName';
+    if (name.includes('email')) return 'Email';
+    if (name.includes('phone')) return 'Phone';
+    if (name.includes('address')) return 'Address';
+    if (name.includes('city')) return 'City';
+    if (name.includes('state')) return 'State';
+    if (name.includes('zip')) return 'ZipCode';
+    if (name.includes('guid') || name.includes('uid')) return 'GUID';
+    if (name.includes('date') || name.includes('time')) return 'DateTime';
+    if (name.includes('active') || name.includes('deleted') || name.includes('enabled')) return 'Boolean';
+
+    // Type-based suggestions
+    if (type.includes('BIT')) return 'Boolean';
+    if (type.includes('UNIQUEIDENTIFIER')) return 'GUID';
+    if (type.includes('DATETIME') || type.includes('DATE') || type.includes('TIME')) return 'DateTime';
+    if (type.includes('DECIMAL') || type.includes('MONEY') || type.includes('FLOAT')) return 'Decimal';
+    if (type.includes('INT')) return 'Integer';
+    if (type.includes('VARCHAR') || type.includes('CHAR') || type.includes('TEXT')) {
+      // For string types, default to CustomValue for user to specify
+      return 'FirstName';
+    }
+
+    return 'Integer';
+  },
+
+  addColumn(name = '', generator = 'Integer') {
+    const column = { name, generator };
+    this.columns.push(column);
+    this.renderColumns();
+  },
+
+  renderColumns() {
+    const columnsList = this.container.querySelector("#columns-list");
+    if (!columnsList) return;
+
+    columnsList.innerHTML = this.columns.map((col, index) => `
+      <div class="column-row">
+        <div class="column-field">
+          <label>Column Name</label>
+          <input type="text" class="column-name" data-index="${index}" value="${col.name}" placeholder="ColumnName">
+        </div>
+        <div class="column-field">
+          <label>Data Generator</label>
+          <select class="column-generator" data-index="${index}">
+            ${this.generatorTypes.map(gt => `<option value="${gt}" ${gt === col.generator ? 'selected' : ''}>${gt}</option>`).join('')}
+          </select>
+        </div>
+        <button class="remove-column-btn" data-index="${index}">Remove</button>
+      </div>
+    `).join('');
+
+    // Attach event listeners
+    columnsList.querySelectorAll('.column-name').forEach(input => {
+      input.addEventListener('input', (e) => {
+        this.columns[e.target.dataset.index].name = e.target.value;
+      });
+    });
+
+    columnsList.querySelectorAll('.column-generator').forEach(select => {
+      select.addEventListener('change', (e) => {
+        this.columns[e.target.dataset.index].generator = e.target.value;
+      });
+    });
+
+    columnsList.querySelectorAll('.remove-column-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.removeColumn(parseInt(e.target.dataset.index));
+      });
+    });
+  },
+
+  removeColumn(index) {
+    this.columns.splice(index, 1);
+    this.renderColumns();
+  },
+
+  generateValue(generator) {
+    const gen = this.dataGenerators[generator];
+
+    if (typeof gen === 'function') {
+      return gen();
+    } else if (Array.isArray(gen)) {
+      return gen[Math.floor(Math.random() * gen.length)];
+    } else {
+      return gen || 'NULL';
+    }
+  },
+
+  generateData() {
+    const schemaName = this.container.querySelector("#schema-name")?.value || 'dbo';
+    const tableName = this.container.querySelector("#table-name")?.value || 'TableName';
+    const rowCount = parseInt(this.container.querySelector("#row-count")?.value) || 10;
+    const useSetIdentity = this.container.querySelector("#use-set-identity")?.checked || false;
+    const useTransaction = this.container.querySelector("#use-transaction")?.checked || false;
+    const addGoStatements = this.container.querySelector("#add-go-statements")?.checked || false;
+
+    let sql = '';
+
+    // Begin transaction
+    if (useTransaction) {
+      sql += `BEGIN TRANSACTION;\n\n`;
+    }
+
+    // SET IDENTITY_INSERT
+    if (useSetIdentity) {
+      sql += `SET IDENTITY_INSERT [${schemaName}].[${tableName}] ON;\n\n`;
+    }
+
+    // Generate column list
+    const columnNames = this.columns.map(col => `[${col.name}]`).join(', ');
+
+    // Generate INSERT statements
+    for (let i = 0; i < rowCount; i++) {
+      const values = this.columns.map(col => {
+        const value = this.generateValue(col.generator);
+
+        // Special handling for functions
+        if (value === 'NEWID()' || value === 'GETUTCDATE()') {
+          return value;
+        }
+
+        // Quote strings
+        if (typeof value === 'string' && value !== 'NULL') {
+          return `N'${value.replace(/'/g, "''")}'`;
+        }
+
+        return value;
+      }).join(', ');
+
+      sql += `INSERT INTO [${schemaName}].[${tableName}] (${columnNames})\n`;
+      sql += `VALUES (${values});\n`;
+
+      if (addGoStatements && (i + 1) % 100 === 0) {
+        sql += `GO\n`;
+      }
+    }
+
+    // SET IDENTITY_INSERT OFF
+    if (useSetIdentity) {
+      sql += `\nSET IDENTITY_INSERT [${schemaName}].[${tableName}] OFF;\n`;
+    }
+
+    // Commit transaction
+    if (useTransaction) {
+      sql += `\nCOMMIT TRANSACTION;\n`;
+    }
+
+    this.context.setOutput(sql);
+    this.updateStats(rowCount, sql.length);
+  },
+
+  updateStats(rows, chars) {
+    const statsEl = this.container.querySelector("#stats");
+    if (statsEl) {
+      statsEl.textContent = `Generated ${rows} INSERT statements (${chars} characters)`;
+    }
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (output) {
+      navigator.clipboard.writeText(output).then(() => {
+        const copyBtn = this.container.querySelector("#copy-btn");
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = "✓ Copied!";
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      });
+    }
+  },
+
+  reset() {
+    this.columns = [];
+    this.container.querySelector("#schema-name").value = 'dbo';
+    this.container.querySelector("#table-name").value = '';
+    this.container.querySelector("#row-count").value = '10';
+    this.context.setOutput('');
+    this.addColumn('FirstName', 'FirstName');
+    this.addColumn('LastName', 'LastName');
+    this.addColumn('Email', 'Email');
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) {
+          this.output = val;
+          const outputEl = document.querySelector("#output");
+          if (outputEl) outputEl.value = val;
+        },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

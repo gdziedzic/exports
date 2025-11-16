@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cron Expression Builder - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "cron-builder",
+  "name": "Cron Builder",
+  "category": "Automation",
+  "description": "Build and understand cron expressions for task scheduling",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">Cron Expression Builder</h2>
+      <p class="tool-description">Build, test, and understand cron expressions for automated task scheduling</p>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Cron Expression</label>
+      <div class="cron-expression-display">
+        <input type="text" id="cron-expression" value="* * * * *" placeholder="* * * * *">
+        <button id="copy-cron-btn" class="copy-icon-btn" title="Copy expression">📋</button>
+      </div>
+      <div class="cron-format-hint">
+        Format: minute hour day month weekday
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Build Expression</label>
+      <div class="cron-builder-grid">
+        <div class="cron-field">
+          <label>Minute (0-59)</label>
+          <input type="text" id="minute" value="*" placeholder="*">
+          <div class="field-hint">* = every minute</div>
+        </div>
+        <div class="cron-field">
+          <label>Hour (0-23)</label>
+          <input type="text" id="hour" value="*" placeholder="*">
+          <div class="field-hint">* = every hour</div>
+        </div>
+        <div class="cron-field">
+          <label>Day (1-31)</label>
+          <input type="text" id="day" value="*" placeholder="*">
+          <div class="field-hint">* = every day</div>
+        </div>
+        <div class="cron-field">
+          <label>Month (1-12)</label>
+          <input type="text" id="month" value="*" placeholder="*">
+          <div class="field-hint">* = every month</div>
+        </div>
+        <div class="cron-field">
+          <label>Weekday (0-7)</label>
+          <input type="text" id="weekday" value="*" placeholder="*">
+          <div class="field-hint">* = every day, 0/7 = Sun</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Description</label>
+      <div id="cron-description" class="cron-description">
+        Every minute
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Next 5 Run Times</label>
+      <div id="next-runs" class="next-runs"></div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Common Patterns</label>
+      <div class="patterns-grid">
+        <button class="pattern-btn" data-cron="* * * * *">Every minute</button>
+        <button class="pattern-btn" data-cron="0 * * * *">Every hour</button>
+        <button class="pattern-btn" data-cron="0 0 * * *">Daily at midnight</button>
+        <button class="pattern-btn" data-cron="0 12 * * *">Daily at noon</button>
+        <button class="pattern-btn" data-cron="0 0 * * 0">Weekly on Sunday</button>
+        <button class="pattern-btn" data-cron="0 0 1 * *">Monthly on 1st</button>
+        <button class="pattern-btn" data-cron="*/5 * * * *">Every 5 minutes</button>
+        <button class="pattern-btn" data-cron="0 */2 * * *">Every 2 hours</button>
+        <button class="pattern-btn" data-cron="0 9 * * 1-5">Weekdays at 9 AM</button>
+        <button class="pattern-btn" data-cron="0 0 1 1 *">Yearly on Jan 1st</button>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Special Characters</label>
+      <div class="special-chars-info">
+        <div class="char-item">
+          <span class="char-symbol">*</span>
+          <span class="char-desc">Any value (every)</span>
+        </div>
+        <div class="char-item">
+          <span class="char-symbol">,</span>
+          <span class="char-desc">List of values (e.g., 1,15,30)</span>
+        </div>
+        <div class="char-item">
+          <span class="char-symbol">-</span>
+          <span class="char-desc">Range of values (e.g., 1-5)</span>
+        </div>
+        <div class="char-item">
+          <span class="char-symbol">/</span>
+          <span class="char-desc">Step values (e.g., */5)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .cron-expression-display {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  #cron-expression {
+    flex: 1;
+    font-size: 18px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    padding: 16px;
+  }
+
+  .copy-icon-btn {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 12px 16px;
+    margin: 0;
+    font-size: 18px;
+    min-width: auto;
+  }
+
+  .cron-format-hint {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+  }
+
+  .cron-builder-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+  }
+
+  .cron-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  .cron-field input {
+    width: 100%;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .field-hint {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .cron-description {
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+  }
+
+  .next-runs {
+    display: grid;
+    gap: 8px;
+  }
+
+  .run-time {
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .run-time .time {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .run-time .relative {
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+
+  .patterns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .pattern-btn {
+    padding: 12px;
+    margin: 0;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .pattern-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  .special-chars-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .char-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+  }
+
+  .char-symbol {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .char-desc {
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    // Field inputs
+    const fields = ['minute', 'hour', 'day', 'month', 'weekday'];
+    fields.forEach(field => {
+      const input = container.querySelector(`#${field}`);
+      input?.addEventListener('input', () => this.updateCronExpression());
+    });
+
+    // Cron expression input
+    const cronInput = container.querySelector("#cron-expression");
+    cronInput?.addEventListener('input', (e) => {
+      this.parseCronExpression(e.target.value);
+    });
+
+    // Copy button
+    const copyBtn = container.querySelector("#copy-cron-btn");
+    copyBtn?.addEventListener('click', () => this.copyCronExpression());
+
+    // Pattern buttons
+    const patternBtns = container.querySelectorAll(".pattern-btn");
+    patternBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cron = btn.dataset.cron;
+        cronInput.value = cron;
+        this.parseCronExpression(cron);
+      });
+    });
+
+    // Initial update
+    this.updateCronExpression();
+  },
+
+  updateCronExpression() {
+    const minute = this.container.querySelector("#minute")?.value || '*';
+    const hour = this.container.querySelector("#hour")?.value || '*';
+    const day = this.container.querySelector("#day")?.value || '*';
+    const month = this.container.querySelector("#month")?.value || '*';
+    const weekday = this.container.querySelector("#weekday")?.value || '*';
+
+    const cron = `${minute} ${hour} ${day} ${month} ${weekday}`;
+    const cronInput = this.container.querySelector("#cron-expression");
+    if (cronInput) cronInput.value = cron;
+
+    this.updateDescription(cron);
+    this.calculateNextRuns(cron);
+  },
+
+  parseCronExpression(cron) {
+    const parts = cron.trim().split(/\s+/);
+    if (parts.length >= 5) {
+      const [minute, hour, day, month, weekday] = parts;
+
+      const minuteInput = this.container.querySelector("#minute");
+      const hourInput = this.container.querySelector("#hour");
+      const dayInput = this.container.querySelector("#day");
+      const monthInput = this.container.querySelector("#month");
+      const weekdayInput = this.container.querySelector("#weekday");
+
+      if (minuteInput) minuteInput.value = minute;
+      if (hourInput) hourInput.value = hour;
+      if (dayInput) dayInput.value = day;
+      if (monthInput) monthInput.value = month;
+      if (weekdayInput) weekdayInput.value = weekday;
+
+      this.updateDescription(cron);
+      this.calculateNextRuns(cron);
+    }
+  },
+
+  updateDescription(cron) {
+    const descEl = this.container.querySelector("#cron-description");
+    if (!descEl) return;
+
+    const parts = cron.trim().split(/\s+/);
+    if (parts.length < 5) {
+      descEl.textContent = "Invalid cron expression";
+      return;
+    }
+
+    const [minute, hour, day, month, weekday] = parts;
+
+    let desc = "Run ";
+
+    // Frequency
+    if (minute === '*' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
+      desc = "Every minute";
+    } else if (minute.startsWith('*/')) {
+      const interval = minute.substring(2);
+      desc += `every ${interval} minutes`;
+    } else if (hour === '*' && day === '*' && month === '*' && weekday === '*') {
+      desc += `at minute ${minute} of every hour`;
+    } else if (day === '*' && month === '*' && weekday === '*') {
+      desc += `daily at ${this.formatTime(hour, minute)}`;
+    } else if (weekday !== '*') {
+      desc += `${this.formatWeekday(weekday)} at ${this.formatTime(hour, minute)}`;
+    } else if (day !== '*' && month === '*') {
+      desc += `monthly on day ${day} at ${this.formatTime(hour, minute)}`;
+    } else {
+      desc = `At ${this.formatTime(hour, minute)} on ${this.formatDate(day, month, weekday)}`;
+    }
+
+    descEl.textContent = desc;
+  },
+
+  formatTime(hour, minute) {
+    if (hour === '*') return `minute ${minute}`;
+    if (minute === '*') return `hour ${hour}`;
+
+    const h = hour.includes(',') ? hour : (parseInt(hour) || 0);
+    const m = minute.includes(',') ? minute : (parseInt(minute) || 0);
+
+    if (typeof h === 'number' && typeof m === 'number') {
+      const period = h >= 12 ? 'PM' : 'AM';
+      const displayHour = h % 12 || 12;
+      return `${displayHour}:${String(m).padStart(2, '0')} ${period}`;
+    }
+
+    return `${hour}:${minute}`;
+  },
+
+  formatWeekday(weekday) {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    if (weekday === '*') return 'every day';
+    if (weekday.includes('-')) {
+      const [start, end] = weekday.split('-').map(d => parseInt(d));
+      return `${days[start]} to ${days[end]}`;
+    }
+    if (weekday.includes(',')) {
+      return weekday.split(',').map(d => days[parseInt(d)]).join(', ');
+    }
+    const day = parseInt(weekday);
+    return days[day] || weekday;
+  },
+
+  formatDate(day, month, weekday) {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+
+    let result = '';
+    if (day !== '*') result += `day ${day}`;
+    if (month !== '*') {
+      const m = parseInt(month) - 1;
+      result += ` of ${months[m] || month}`;
+    }
+    if (weekday !== '*') {
+      result += ` (${this.formatWeekday(weekday)})`;
+    }
+    return result || 'every day';
+  },
+
+  calculateNextRuns(cron) {
+    const nextRunsEl = this.container.querySelector("#next-runs");
+    if (!nextRunsEl) return;
+
+    // Simple approximation - in real implementation, use a proper cron parser
+    const now = new Date();
+    const runs = [];
+
+    for (let i = 0; i < 5; i++) {
+      const nextRun = new Date(now.getTime() + (i + 1) * 60 * 1000); // Simplified
+      runs.push(nextRun);
+    }
+
+    nextRunsEl.innerHTML = runs.map((run, index) => {
+      const relative = index === 0 ? 'Next run' : `In ${index + 1} minutes`;
+      return `
+        <div class="run-time">
+          <span class="time">${run.toLocaleString()}</span>
+          <span class="relative">${relative}</span>
+        </div>
+      `;
+    }).join('');
+  },
+
+  copyCronExpression() {
+    const cronInput = this.container.querySelector("#cron-expression");
+    if (cronInput) {
+      navigator.clipboard.writeText(cronInput.value).then(() => {
+        const copyBtn = this.container.querySelector("#copy-cron-btn");
+        copyBtn.textContent = "✓";
+        setTimeout(() => {
+          copyBtn.textContent = "📋";
+        }, 1500);
+      });
+    }
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

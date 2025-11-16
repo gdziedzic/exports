@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regex Tester - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "regex-tester",
+  "name": "Regex Tester",
+  "category": "Text",
+  "description": "Test and debug regular expressions",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">Regex Tester</h2>
+      <p class="tool-description">Test and debug regular expressions with live matching</p>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="pattern">Regular Expression</label>
+      <div class="regex-input-group">
+        <span class="regex-delimiter">/</span>
+        <input type="text" id="pattern" placeholder="your regex pattern">
+        <span class="regex-delimiter">/</span>
+        <input type="text" id="flags" placeholder="flags" style="width: 80px;">
+      </div>
+      <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+        Common flags: g (global), i (case-insensitive), m (multiline), s (dotAll)
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="test-string">Test String</label>
+      <textarea id="test-string" placeholder="Enter text to test against the regex..."></textarea>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Results</label>
+      <div id="results" class="results-panel"></div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="matches">Matches</label>
+      <div id="matches" class="matches-panel"></div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .regex-input-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-secondary);
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+  }
+
+  .regex-input-group:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+
+  .regex-delimiter {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--text-secondary);
+  }
+
+  .regex-input-group input {
+    border: none;
+    background: transparent;
+    padding: 4px;
+  }
+
+  .regex-input-group input:focus {
+    box-shadow: none;
+  }
+
+  .regex-input-group input#pattern {
+    flex: 1;
+  }
+
+  .results-panel {
+    background: var(--bg-secondary);
+    padding: 16px;
+    border-radius: 6px;
+    min-height: 60px;
+  }
+
+  .result-success {
+    color: var(--success);
+    font-weight: 600;
+  }
+
+  .result-error {
+    color: var(--error);
+    font-weight: 600;
+  }
+
+  .result-info {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .matches-panel {
+    background: var(--bg-secondary);
+    padding: 16px;
+    border-radius: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .match-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    background: white;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    border-left: 3px solid var(--accent);
+  }
+
+  .match-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .match-index {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+
+  .match-text {
+    color: var(--text-primary);
+    word-break: break-all;
+  }
+
+  .no-matches {
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --success: #27ae60;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 150px;
+  }
+
+  textarea:focus, input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const patternInput = container.querySelector("#pattern");
+    const flagsInput = container.querySelector("#flags");
+    const testStringInput = container.querySelector("#test-string");
+
+    const update = () => {
+      this.testRegex();
+    };
+
+    if (patternInput) {
+      patternInput.addEventListener("input", update);
+    }
+
+    if (flagsInput) {
+      flagsInput.addEventListener("input", update);
+    }
+
+    if (testStringInput) {
+      testStringInput.addEventListener("input", update);
+    }
+  },
+
+  onInput(input, context) {
+    // This tool doesn't use the main input/output paradigm
+    return { output: "" };
+  },
+
+  testRegex() {
+    const pattern = this.container.querySelector("#pattern")?.value || "";
+    const flags = this.container.querySelector("#flags")?.value || "";
+    const testString = this.container.querySelector("#test-string")?.value || "";
+    const resultsPanel = this.container.querySelector("#results");
+    const matchesPanel = this.container.querySelector("#matches");
+
+    if (!pattern) {
+      resultsPanel.innerHTML = '<div class="result-info">Enter a regular expression pattern</div>';
+      matchesPanel.innerHTML = '';
+      return;
+    }
+
+    try {
+      const regex = new RegExp(pattern, flags);
+      const matches = [];
+
+      if (flags.includes('g')) {
+        // Global flag: find all matches
+        let match;
+        while ((match = regex.exec(testString)) !== null) {
+          matches.push({
+            text: match[0],
+            index: match.index,
+            groups: match.slice(1)
+          });
+        }
+      } else {
+        // No global flag: find first match
+        const match = regex.exec(testString);
+        if (match) {
+          matches.push({
+            text: match[0],
+            index: match.index,
+            groups: match.slice(1)
+          });
+        }
+      }
+
+      // Display results
+      if (matches.length > 0) {
+        resultsPanel.innerHTML = `
+          <div class="result-success">✓ ${matches.length} match${matches.length > 1 ? 'es' : ''} found</div>
+          <div class="result-info">Pattern: /${pattern}/${flags}</div>
+        `;
+
+        matchesPanel.innerHTML = matches.map((m, i) => `
+          <div class="match-item">
+            <div class="match-index">Match ${i + 1} at position ${m.index}</div>
+            <div class="match-text">${this.escapeHtml(m.text)}</div>
+            ${m.groups.length > 0 ? `<div class="match-index">Groups: ${m.groups.map(g => this.escapeHtml(g || '')).join(', ')}</div>` : ''}
+          </div>
+        `).join('');
+      } else {
+        resultsPanel.innerHTML = `
+          <div class="result-error">✗ No matches found</div>
+          <div class="result-info">Pattern: /${pattern}/${flags}</div>
+        `;
+        matchesPanel.innerHTML = '<div class="no-matches">No matches to display</div>';
+      }
+    } catch (error) {
+      resultsPanel.innerHTML = `
+        <div class="result-error">✗ Invalid regex</div>
+        <div class="result-info">${this.escapeHtml(error.message)}</div>
+      `;
+      matchesPanel.innerHTML = '';
+    }
+  },
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) {
+          this.input = val;
+          if (this.onInputChanged) this.onInputChanged(val);
+        },
+        setOutput(val) {
+          this.output = val;
+        },
+        getInput() { return this.input; },
+        getOutput() { return this.output; },
+        onInputChanged: null
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+        standaloneContext.onInputChanged = (input) => {
+          const result = DevChefTool.onInput(input, standaloneContext);
+          if (result && result.output !== undefined) {
+            standaloneContext.setOutput(result.output);
+          }
+        };
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

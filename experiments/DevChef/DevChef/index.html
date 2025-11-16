@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevChef - Offline Developer Tools</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <header>
+        <div class="header-content">
+          <div>
+            <h1>DevChef</h1>
+            <div class="subtitle">Offline Developer Tools</div>
+          </div>
+          <button id="theme-toggle" title="Toggle theme">
+            <span class="theme-icon">☀️</span>
+          </button>
+        </div>
+      </header>
+      <div id="tool-list">
+        <!-- Tools will be rendered here dynamically -->
+      </div>
+    </div>
+    <!-- Main Area -->
+    <div id="main">
+      <div id="workspace">
+        <!-- Tool UI will be rendered here -->
+        <div class="welcome-screen">
+          <h2>Loading...</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Palette (created dynamically) -->
+
+  <!-- App Scripts -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>

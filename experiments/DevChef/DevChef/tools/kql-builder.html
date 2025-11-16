@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KQL Builder - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "kql-builder",
+  "name": "KQL Builder",
+  "category": "Azure",
+  "description": "Kusto Query Language builder for Azure Monitor, Log Analytics, and Application Insights with common snippets",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">KQL Builder</h2>
+      <p class="tool-description">Build Kusto queries for Azure Monitor, Log Analytics, Application Insights, and Azure Data Explorer</p>
+    </div>
+
+    <div class="builder-layout">
+      <div class="snippets-panel">
+        <div class="panel-header">
+          <h3>📚 Query Snippets</h3>
+        </div>
+
+        <div class="snippet-categories">
+          <div class="category">
+            <h4>⏰ Date & Time Queries</h4>
+            <button class="snippet-btn" data-snippet="relative-time">Relative Time (ago)</button>
+            <button class="snippet-btn" data-snippet="absolute-range">Absolute Date Range</button>
+            <button class="snippet-btn" data-snippet="today-only">Today Only</button>
+            <button class="snippet-btn" data-snippet="this-week">This Week</button>
+            <button class="snippet-btn" data-snippet="last-n-days">Last N Days</button>
+            <button class="snippet-btn" data-snippet="hourly-breakdown">Hourly Breakdown</button>
+          </div>
+
+          <div class="category">
+            <h4>🔍 Common Queries</h4>
+            <button class="snippet-btn" data-snippet="basic-filter">Basic Filter</button>
+            <button class="snippet-btn" data-snippet="time-range">Time Range</button>
+            <button class="snippet-btn" data-snippet="top-records">Top N Records</button>
+            <button class="snippet-btn" data-snippet="distinct-values">Distinct Values</button>
+          </div>
+
+          <div class="category">
+            <h4>📊 Aggregations</h4>
+            <button class="snippet-btn" data-snippet="count-by">Count By Field</button>
+            <button class="snippet-btn" data-snippet="summarize">Summarize Stats</button>
+            <button class="snippet-btn" data-snippet="percentile">Percentile Analysis</button>
+            <button class="snippet-btn" data-snippet="timechart">Time Chart</button>
+          </div>
+
+          <div class="category">
+            <h4>⚠️ Monitoring & Alerts</h4>
+            <button class="snippet-btn" data-snippet="errors">Error Tracking</button>
+            <button class="snippet-btn" data-snippet="performance">Performance Issues</button>
+            <button class="snippet-btn" data-snippet="availability">Availability Check</button>
+            <button class="snippet-btn" data-snippet="anomalies">Detect Anomalies</button>
+          </div>
+
+          <div class="category">
+            <h4>🔒 Security</h4>
+            <button class="snippet-btn" data-snippet="failed-logins">Failed Logins</button>
+            <button class="snippet-btn" data-snippet="suspicious-activity">Suspicious Activity</button>
+            <button class="snippet-btn" data-snippet="audit-trail">Audit Trail</button>
+            <button class="snippet-btn" data-snippet="threat-detection">Threat Detection</button>
+          </div>
+
+          <div class="category">
+            <h4>💻 Application Insights</h4>
+            <button class="snippet-btn" data-snippet="request-stats">Request Statistics</button>
+            <button class="snippet-btn" data-snippet="dependency-tracking">Dependency Tracking</button>
+            <button class="snippet-btn" data-snippet="exception-analysis">Exception Analysis</button>
+            <button class="snippet-btn" data-snippet="user-analytics">User Analytics</button>
+          </div>
+
+          <div class="category">
+            <h4>🖥️ Infrastructure</h4>
+            <button class="snippet-btn" data-snippet="vm-performance">VM Performance</button>
+            <button class="snippet-btn" data-snippet="disk-usage">Disk Usage</button>
+            <button class="snippet-btn" data-snippet="network-traffic">Network Traffic</button>
+            <button class="snippet-btn" data-snippet="resource-health">Resource Health</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="query-panel">
+        <div class="panel-header">
+          <h3>⚡ Query Editor</h3>
+          <div class="editor-controls">
+            <select id="table-select" class="control-select">
+              <option value="AppRequests">AppRequests</option>
+              <option value="AppDependencies">AppDependencies</option>
+              <option value="AppExceptions">AppExceptions</option>
+              <option value="AppTraces">AppTraces</option>
+              <option value="AppMetrics">AppMetrics</option>
+              <option value="Heartbeat">Heartbeat</option>
+              <option value="Perf">Perf</option>
+              <option value="SecurityEvent">SecurityEvent</option>
+              <option value="Syslog">Syslog</option>
+              <option value="AzureActivity">AzureActivity</option>
+              <option value="ContainerLog">ContainerLog</option>
+              <option value="CustomLogs">CustomLogs</option>
+            </select>
+            <select id="timerange-select" class="control-select">
+              <option value="15m">Last 15 minutes</option>
+              <option value="1h">Last 1 hour</option>
+              <option value="4h">Last 4 hours</option>
+              <option value="24h">Last 24 hours</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="custom">Custom range</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="timestamp-helpers">
+          <h4>⏰ Timestamp Helpers</h4>
+          <div class="timestamp-controls">
+            <div class="date-inputs">
+              <div class="input-group">
+                <label>Start Date:</label>
+                <input type="datetime-local" id="start-datetime" />
+              </div>
+              <div class="input-group">
+                <label>End Date:</label>
+                <input type="datetime-local" id="end-datetime" />
+              </div>
+              <button id="insert-range-btn" class="action-btn secondary small">Insert Range</button>
+            </div>
+            <div class="timestamp-chips">
+              <button class="time-chip" data-time="ago(15m)">ago(15m)</button>
+              <button class="time-chip" data-time="ago(1h)">ago(1h)</button>
+              <button class="time-chip" data-time="ago(24h)">ago(24h)</button>
+              <button class="time-chip" data-time="ago(7d)">ago(7d)</button>
+              <button class="time-chip" data-time="now()">now()</button>
+              <button class="time-chip" data-time="startofday(now())">startofday()</button>
+              <button class="time-chip" data-time="endofday(now())">endofday()</button>
+              <button class="time-chip" data-time="startofweek(now())">startofweek()</button>
+              <button class="time-chip" data-time="bin(TimeGenerated, 1h)">bin(..., 1h)</button>
+              <button class="time-chip" data-time="bin(TimeGenerated, 1d)">bin(..., 1d)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <button class="action-chip" data-action="where">+ Where</button>
+          <button class="action-chip" data-action="summarize">+ Summarize</button>
+          <button class="action-chip" data-action="project">+ Project</button>
+          <button class="action-chip" data-action="join">+ Join</button>
+          <button class="action-chip" data-action="extend">+ Extend</button>
+          <button class="action-chip" data-action="render">+ Render</button>
+        </div>
+
+        <textarea id="query-editor" placeholder="// Start writing your KQL query here&#10;// or select a snippet from the left panel"></textarea>
+
+        <div class="query-actions">
+          <button id="format-btn" class="action-btn secondary">🎨 Format</button>
+          <button id="validate-btn" class="action-btn secondary">✓ Validate</button>
+          <button id="copy-query-btn" class="action-btn">📋 Copy Query</button>
+          <button id="export-btn" class="action-btn">💾 Export</button>
+        </div>
+
+        <div class="query-info">
+          <div class="info-item">
+            <span class="label">Lines:</span>
+            <span id="line-count">0</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Characters:</span>
+            <span id="char-count">0</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Operators:</span>
+            <span id="operator-count">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="reference-panel">
+        <div class="panel-header">
+          <h3>📖 Quick Reference</h3>
+        </div>
+
+        <div class="reference-content">
+          <div class="ref-section">
+            <h5>Common Operators</h5>
+            <div class="ref-grid">
+              <div class="ref-item">
+                <code>where</code>
+                <span>Filter rows</span>
+              </div>
+              <div class="ref-item">
+                <code>summarize</code>
+                <span>Aggregate data</span>
+              </div>
+              <div class="ref-item">
+                <code>project</code>
+                <span>Select columns</span>
+              </div>
+              <div class="ref-item">
+                <code>extend</code>
+                <span>Add columns</span>
+              </div>
+              <div class="ref-item">
+                <code>join</code>
+                <span>Combine tables</span>
+              </div>
+              <div class="ref-item">
+                <code>render</code>
+                <span>Visualize</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ref-section">
+            <h5>Aggregation Functions</h5>
+            <div class="ref-grid">
+              <div class="ref-item">
+                <code>count()</code>
+                <span>Count records</span>
+              </div>
+              <div class="ref-item">
+                <code>sum()</code>
+                <span>Sum values</span>
+              </div>
+              <div class="ref-item">
+                <code>avg()</code>
+                <span>Average</span>
+              </div>
+              <div class="ref-item">
+                <code>percentile()</code>
+                <span>Percentile</span>
+              </div>
+              <div class="ref-item">
+                <code>dcount()</code>
+                <span>Distinct count</span>
+              </div>
+              <div class="ref-item">
+                <code>make_set()</code>
+                <span>Create array</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ref-section">
+            <h5>Time Functions</h5>
+            <div class="ref-grid">
+              <div class="ref-item">
+                <code>ago()</code>
+                <span>Time offset</span>
+              </div>
+              <div class="ref-item">
+                <code>bin()</code>
+                <span>Round time</span>
+              </div>
+              <div class="ref-item">
+                <code>now()</code>
+                <span>Current time</span>
+              </div>
+              <div class="ref-item">
+                <code>datetime()</code>
+                <span>Parse datetime</span>
+              </div>
+              <div class="ref-item">
+                <code>between()</code>
+                <span>Range check</span>
+              </div>
+              <div class="ref-item">
+                <code>startofday()</code>
+                <span>Day start</span>
+              </div>
+              <div class="ref-item">
+                <code>endofday()</code>
+                <span>Day end</span>
+              </div>
+              <div class="ref-item">
+                <code>startofweek()</code>
+                <span>Week start</span>
+              </div>
+              <div class="ref-item">
+                <code>endofweek()</code>
+                <span>Week end</span>
+              </div>
+              <div class="ref-item">
+                <code>startofmonth()</code>
+                <span>Month start</span>
+              </div>
+              <div class="ref-item">
+                <code>endofmonth()</code>
+                <span>Month end</span>
+              </div>
+              <div class="ref-item">
+                <code>startofyear()</code>
+                <span>Year start</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ref-section">
+            <h5>String Functions</h5>
+            <div class="ref-grid">
+              <div class="ref-item">
+                <code>contains</code>
+                <span>Contains text</span>
+              </div>
+              <div class="ref-item">
+                <code>startswith</code>
+                <span>Starts with</span>
+              </div>
+              <div class="ref-item">
+                <code>extract()</code>
+                <span>Regex extract</span>
+              </div>
+              <div class="ref-item">
+                <code>parse</code>
+                <span>Parse pattern</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .builder-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .snippets-panel,
+  .query-panel,
+  .reference-panel {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 16px;
+    max-height: 800px;
+    overflow-y: auto;
+  }
+
+  .panel-header {
+    margin-bottom: 16px;
+  }
+
+  .panel-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .editor-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .control-select {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .snippet-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .category h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .snippet-btn {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .snippet-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+    transform: translateX(4px);
+  }
+
+  .timestamp-helpers {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .timestamp-helpers h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+
+  .timestamp-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .date-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    align-items: end;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .input-group label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .input-group input[type="datetime-local"] {
+    padding: 8px 10px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--font-mono);
+  }
+
+  .timestamp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .time-chip {
+    padding: 6px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--accent);
+    border-radius: 16px;
+    color: var(--accent);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .time-chip:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 120, 212, 0.3);
+  }
+
+  .action-btn.small {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+
+  .quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .action-chip {
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .action-chip:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  #query-editor {
+    width: 100%;
+    min-height: 400px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    color: var(--text-primary);
+    resize: vertical;
+    margin-bottom: 12px;
+  }
+
+  #query-editor:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .query-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .action-btn {
+    padding: 10px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .action-btn:hover {
+    opacity: 0.9;
+  }
+
+  .action-btn.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .query-info {
+    display: flex;
+    gap: 16px;
+    padding: 12px;
+    background: var(--bg-primary);
+    border-radius: 6px;
+  }
+
+  .info-item {
+    display: flex;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .info-item .label {
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .info-item span:last-child {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .reference-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .ref-section h5 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .ref-grid {
+    display: grid;
+    gap: 8px;
+  }
+
+  .ref-item {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 8px;
+    padding: 8px;
+    background: var(--bg-primary);
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  .ref-item code {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .ref-item span {
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 1400px) {
+    .builder-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .snippets-panel,
+    .reference-panel {
+      max-height: 400px;
+    }
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #0078d4;
+    --accent-hover: #106ebe;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 36px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #0078d4 0%, #00bcf2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  button {
+    font-family: var(--font-sans);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  snippets: {
+    'relative-time': {
+      query: `{{TABLE}}
+| where TimeGenerated > ago(1h)
+| take 100`,
+      description: 'Query using relative time with ago()'
+    },
+    'absolute-range': {
+      query: `{{TABLE}}
+| where TimeGenerated between(datetime(2024-01-01 00:00:00) .. datetime(2024-01-31 23:59:59))
+| take 100`,
+      description: 'Query specific date range'
+    },
+    'today-only': {
+      query: `{{TABLE}}
+| where TimeGenerated between(startofday(now()) .. endofday(now()))
+| summarize count() by bin(TimeGenerated, 1h)`,
+      description: 'Query today\'s data only'
+    },
+    'this-week': {
+      query: `{{TABLE}}
+| where TimeGenerated between(startofweek(now()) .. now())
+| summarize count() by bin(TimeGenerated, 1d)`,
+      description: 'Query current week data'
+    },
+    'last-n-days': {
+      query: `{{TABLE}}
+| where TimeGenerated > ago(7d)
+| summarize count() by bin(TimeGenerated, 1d)
+| render timechart`,
+      description: 'Query last N days with daily aggregation'
+    },
+    'hourly-breakdown': {
+      query: `{{TABLE}}
+| where TimeGenerated > ago(24h)
+| extend Hour = bin(TimeGenerated, 1h)
+| summarize
+    Count=count(),
+    UniqueUsers=dcount(UserId)
+  by Hour
+| order by Hour asc
+| render timechart`,
+      description: 'Hourly breakdown with metrics'
+    },
+    'basic-filter': {
+      query: `{{TABLE}}
+| where TimeGenerated > ago(1h)
+| where ResponseCode >= 400
+| take 100`,
+      description: 'Filter records by time and condition'
+    },
+    'time-range': {
+      query: `{{TABLE}}
+| where TimeGenerated between(datetime(2024-01-01) .. datetime(2024-01-31))
+| summarize count() by bin(TimeGenerated, 1h)`,
+      description: 'Query specific time range'
+    },
+    'top-records': {
+      query: `{{TABLE}}
+| top 100 by TimeGenerated desc`,
+      description: 'Get top N most recent records'
+    },
+    'distinct-values': {
+      query: `{{TABLE}}
+| distinct OperationName, ResultCode
+| order by OperationName asc`,
+      description: 'Find unique combinations'
+    },
+    'count-by': {
+      query: `{{TABLE}}
+| where TimeGenerated > ago(24h)
+| summarize Count=count() by ResultCode
+| order by Count desc`,
+      description: 'Count occurrences by field'
+    },
+    'summarize': {
+      query: `{{TABLE}}
+| where TimeGenerated > ago(1h)
+| summarize
+    TotalCount=count(),
+    AvgDuration=avg(DurationMs),
+    P50=percentile(DurationMs, 50),
+    P95=percentile(DurationMs, 95)
+  by bin(TimeGenerated, 5m)`,
+      description: 'Statistical summary over time'
+    },
+    'percentile': {
+      query: `{{TABLE}}
+| where TimeGenerated > ago(24h)
+| summarize
+    P50=percentile(DurationMs, 50),
+    P90=percentile(DurationMs, 90),
+    P95=percentile(DurationMs, 95),
+    P99=percentile(DurationMs, 99)
+  by OperationName`,
+      description: 'Percentile analysis by operation'
+    },
+    'timechart': {
+      query: `{{TABLE}}
+| where TimeGenerated > ago(24h)
+| summarize count() by bin(TimeGenerated, 1h), ResultCode
+| render timechart`,
+      description: 'Time series chart'
+    },
+    'errors': {
+      query: `AppExceptions
+| where TimeGenerated > ago(24h)
+| extend ErrorType = tostring(split(Type, '.')[-1])
+| summarize
+    ErrorCount=count(),
+    AffectedUsers=dcount(UserId),
+    SampleMessage=any(OuterMessage)
+  by ErrorType
+| order by ErrorCount desc`,
+      description: 'Track application errors'
+    },
+    'performance': {
+      query: `AppRequests
+| where TimeGenerated > ago(1h)
+| where DurationMs > 1000
+| project
+    TimeGenerated,
+    Name,
+    DurationMs,
+    ResultCode,
+    OperationId
+| order by DurationMs desc
+| take 50`,
+      description: 'Slow request detection'
+    },
+    'availability': {
+      query: `AppAvailabilityResults
+| where TimeGenerated > ago(24h)
+| summarize
+    TotalTests=count(),
+    SuccessRate=100.0 * countif(Success == true) / count()
+  by bin(TimeGenerated, 1h), Location
+| render timechart`,
+      description: 'Availability monitoring'
+    },
+    'anomalies': {
+      query: `{{TABLE}}
+| where TimeGenerated > ago(7d)
+| make-series Count=count() default=0 on TimeGenerated step 1h
+| extend Anomalies=series_decompose_anomalies(Count, 1.5)
+| render anomalychart with (anomalycolumns=Anomalies)`,
+      description: 'Detect statistical anomalies'
+    },
+    'failed-logins': {
+      query: `SecurityEvent
+| where TimeGenerated > ago(24h)
+| where EventID == 4625 // Failed login
+| summarize
+    FailedAttempts=count(),
+    Accounts=make_set(Account),
+    IPs=make_set(IpAddress)
+  by Computer
+| where FailedAttempts > 5
+| order by FailedAttempts desc`,
+      description: 'Failed login attempts'
+    },
+    'suspicious-activity': {
+      query: `SecurityEvent
+| where TimeGenerated > ago(1h)
+| where EventID in (4728, 4732, 4756) // Privileged group changes
+| project
+    TimeGenerated,
+    Computer,
+    Account,
+    TargetAccount,
+    Activity
+| order by TimeGenerated desc`,
+      description: 'Suspicious security events'
+    },
+    'audit-trail': {
+      query: `AzureActivity
+| where TimeGenerated > ago(24h)
+| where OperationNameValue contains "Write" or OperationNameValue contains "Delete"
+| project
+    TimeGenerated,
+    Caller,
+    OperationNameValue,
+    ResourceGroup,
+    ResourceId,
+    ActivityStatusValue
+| order by TimeGenerated desc`,
+      description: 'Azure activity audit'
+    },
+    'threat-detection': {
+      query: `SecurityAlert
+| where TimeGenerated > ago(24h)
+| summarize
+    AlertCount=count(),
+    Severity=max(AlertSeverity),
+    Entities=make_set(Entities)
+  by AlertName
+| order by Severity desc, AlertCount desc`,
+      description: 'Security threat summary'
+    },
+    'request-stats': {
+      query: `AppRequests
+| where TimeGenerated > ago(1h)
+| summarize
+    RequestCount=count(),
+    AvgDuration=avg(DurationMs),
+    SuccessRate=100.0 * countif(Success == true) / count()
+  by Name
+| order by RequestCount desc`,
+      description: 'Request statistics'
+    },
+    'dependency-tracking': {
+      query: `AppDependencies
+| where TimeGenerated > ago(1h)
+| summarize
+    CallCount=count(),
+    AvgDuration=avg(DurationMs),
+    FailureRate=100.0 * countif(Success == false) / count()
+  by Target, DependencyType
+| order by FailureRate desc`,
+      description: 'External dependency performance'
+    },
+    'exception-analysis': {
+      query: `AppExceptions
+| where TimeGenerated > ago(24h)
+| extend ExceptionType = tostring(split(Type, '.')[-1])
+| summarize
+    Count=count(),
+    FirstSeen=min(TimeGenerated),
+    LastSeen=max(TimeGenerated),
+    SampleStack=any(Details)
+  by ExceptionType, OuterMessage
+| order by Count desc`,
+      description: 'Exception breakdown'
+    },
+    'user-analytics': {
+      query: `AppPageViews
+| where TimeGenerated > ago(24h)
+| summarize
+    PageViews=count(),
+    UniqueUsers=dcount(UserId),
+    AvgDuration=avg(DurationMs)
+  by Name
+| order by PageViews desc`,
+      description: 'User behavior analytics'
+    },
+    'vm-performance': {
+      query: `Perf
+| where TimeGenerated > ago(1h)
+| where ObjectName == "Processor" and CounterName == "% Processor Time"
+| summarize AvgCPU=avg(CounterValue) by bin(TimeGenerated, 5m), Computer
+| render timechart`,
+      description: 'VM CPU performance'
+    },
+    'disk-usage': {
+      query: `Perf
+| where TimeGenerated > ago(1h)
+| where ObjectName == "LogicalDisk" and CounterName == "% Free Space"
+| summarize AvgFreeSpace=avg(CounterValue) by Computer, InstanceName
+| where AvgFreeSpace < 20
+| order by AvgFreeSpace asc`,
+      description: 'Low disk space detection'
+    },
+    'network-traffic': {
+      query: `Perf
+| where TimeGenerated > ago(1h)
+| where ObjectName == "Network Adapter"
+| where CounterName in ("Bytes Sent/sec", "Bytes Received/sec")
+| summarize AvgBytes=avg(CounterValue) by bin(TimeGenerated, 5m), Computer, CounterName
+| render timechart`,
+      description: 'Network traffic analysis'
+    },
+    'resource-health': {
+      query: `AzureActivity
+| where TimeGenerated > ago(24h)
+| where CategoryValue == "ResourceHealth"
+| project
+    TimeGenerated,
+    Resource,
+    Properties.currentHealthStatus,
+    Properties.previousHealthStatus
+| order by TimeGenerated desc`,
+      description: 'Resource health changes'
+    }
+  },
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const queryEditor = container.querySelector('#query-editor');
+    const tableSelect = container.querySelector('#table-select');
+
+    // Snippet buttons
+    container.querySelectorAll('.snippet-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const snippetId = e.target.dataset.snippet;
+        this.loadSnippet(snippetId);
+      });
+    });
+
+    // Quick action chips
+    container.querySelectorAll('.action-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        this.insertOperator(action);
+      });
+    });
+
+    // Timestamp helper chips
+    container.querySelectorAll('.time-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        const timeFunc = e.target.dataset.time;
+        this.insertTimeFunction(timeFunc);
+      });
+    });
+
+    // Insert date range button
+    container.querySelector('#insert-range-btn')?.addEventListener('click', () => {
+      this.insertDateRange();
+    });
+
+    // Query editor events
+    queryEditor?.addEventListener('input', () => this.updateStats());
+
+    // Actions
+    container.querySelector('#format-btn')?.addEventListener('click', () => this.formatQuery());
+    container.querySelector('#validate-btn')?.addEventListener('click', () => this.validateQuery());
+    container.querySelector('#copy-query-btn')?.addEventListener('click', () => this.copyQuery());
+    container.querySelector('#export-btn')?.addEventListener('click', () => this.exportQuery());
+
+    // Load default snippet
+    this.loadSnippet('basic-filter');
+  },
+
+  loadSnippet(snippetId) {
+    const snippet = this.snippets[snippetId];
+    if (!snippet) return;
+
+    const queryEditor = this.container.querySelector('#query-editor');
+    const tableSelect = this.container.querySelector('#table-select');
+
+    let query = snippet.query.replace('{{TABLE}}', tableSelect.value);
+    queryEditor.value = query;
+
+    this.updateStats();
+    this.context.setOutput(query);
+  },
+
+  insertOperator(operator) {
+    const queryEditor = this.container.querySelector('#query-editor');
+    const cursorPos = queryEditor.selectionStart;
+    const textBefore = queryEditor.value.substring(0, cursorPos);
+    const textAfter = queryEditor.value.substring(cursorPos);
+
+    const templates = {
+      where: '\n| where ',
+      summarize: '\n| summarize count() by ',
+      project: '\n| project ',
+      join: '\n| join kind=inner (\n    \n) on ',
+      extend: '\n| extend NewColumn = ',
+      render: '\n| render timechart'
+    };
+
+    const template = templates[operator] || `\n| ${operator} `;
+    queryEditor.value = textBefore + template + textAfter;
+    queryEditor.focus();
+    queryEditor.selectionStart = queryEditor.selectionEnd = cursorPos + template.length;
+
+    this.updateStats();
+  },
+
+  insertTimeFunction(timeFunc) {
+    const queryEditor = this.container.querySelector('#query-editor');
+    const cursorPos = queryEditor.selectionStart;
+    const textBefore = queryEditor.value.substring(0, cursorPos);
+    const textAfter = queryEditor.value.substring(cursorPos);
+
+    queryEditor.value = textBefore + timeFunc + textAfter;
+    queryEditor.focus();
+    queryEditor.selectionStart = queryEditor.selectionEnd = cursorPos + timeFunc.length;
+
+    this.updateStats();
+  },
+
+  insertDateRange() {
+    const queryEditor = this.container.querySelector('#query-editor');
+    const startInput = this.container.querySelector('#start-datetime');
+    const endInput = this.container.querySelector('#end-datetime');
+
+    const startValue = startInput.value;
+    const endValue = endInput.value;
+
+    if (!startValue || !endValue) {
+      alert('Please select both start and end dates');
+      return;
+    }
+
+    // Convert HTML5 datetime-local format to KQL datetime format
+    const startDate = startValue.replace('T', ' ');
+    const endDate = endValue.replace('T', ' ');
+
+    const rangeClause = `| where TimeGenerated between(datetime(${startDate}) .. datetime(${endDate}))`;
+
+    const cursorPos = queryEditor.selectionStart;
+    const textBefore = queryEditor.value.substring(0, cursorPos);
+    const textAfter = queryEditor.value.substring(cursorPos);
+
+    queryEditor.value = textBefore + '\n' + rangeClause + textAfter;
+    queryEditor.focus();
+    queryEditor.selectionStart = queryEditor.selectionEnd = cursorPos + rangeClause.length + 1;
+
+    this.updateStats();
+  },
+
+  formatQuery() {
+    const queryEditor = this.container.querySelector('#query-editor');
+    let query = queryEditor.value;
+
+    // Basic KQL formatting
+    query = query.split('\n').map(line => line.trim()).join('\n');
+    query = query.replace(/\|\s*/g, '\n| ');
+    query = query.replace(/\n\n+/g, '\n');
+
+    queryEditor.value = query.trim();
+    this.updateStats();
+  },
+
+  validateQuery() {
+    const queryEditor = this.container.querySelector('#query-editor');
+    const query = queryEditor.value;
+
+    const issues = [];
+
+    // Basic validation
+    if (!query.trim()) {
+      alert('Query is empty');
+      return;
+    }
+
+    // Check for common operators
+    const hasOperators = /\b(where|summarize|project|extend|join|render)\b/.test(query);
+    if (!hasOperators) {
+      issues.push('No KQL operators found');
+    }
+
+    // Check for balanced parentheses
+    const openCount = (query.match(/\(/g) || []).length;
+    const closeCount = (query.match(/\)/g) || []).length;
+    if (openCount !== closeCount) {
+      issues.push('Unbalanced parentheses');
+    }
+
+    if (issues.length > 0) {
+      alert('Validation warnings:\n- ' + issues.join('\n- '));
+    } else {
+      alert('✓ Query looks good!');
+    }
+  },
+
+  updateStats() {
+    const queryEditor = this.container.querySelector('#query-editor');
+    const query = queryEditor.value;
+
+    const lines = query.split('\n').length;
+    const chars = query.length;
+    const operators = (query.match(/\b(where|summarize|project|extend|join|render|take|top|distinct|order)\b/g) || []).length;
+
+    this.container.querySelector('#line-count').textContent = lines;
+    this.container.querySelector('#char-count').textContent = chars;
+    this.container.querySelector('#operator-count').textContent = operators;
+
+    this.context.setOutput(query);
+  },
+
+  copyQuery() {
+    const query = this.context.getOutput();
+    if (query) {
+      navigator.clipboard.writeText(query).then(() => {
+        const btn = this.container.querySelector('#copy-query-btn');
+        const original = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = original, 2000);
+      });
+    }
+  },
+
+  exportQuery() {
+    const query = this.context.getOutput();
+    const blob = new Blob([query], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'query.kql';
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

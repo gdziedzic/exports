@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL Encoder/Decoder - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "url-encoder",
+  "name": "URL Encoder/Decoder",
+  "category": "Encoding",
+  "description": "Encode and decode URLs and URL components",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">URL Encoder/Decoder</h2>
+      <p class="tool-description">Encode and decode URLs and URL components</p>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Mode</label>
+      <div style="display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+          <input type="radio" name="mode" value="encode" checked>
+          Encode
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+          <input type="radio" name="mode" value="decode">
+          Decode
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+          <input type="radio" name="mode" value="encodeComponent">
+          Encode Component
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+          <input type="radio" name="mode" value="decodeComponent">
+          Decode Component
+        </label>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="input">Input</label>
+      <textarea id="input" placeholder="Enter URL or text..."></textarea>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="output">Output</label>
+      <textarea id="output" readonly></textarea>
+      <div id="status" style="margin-top: 8px; font-size: 12px;"></div>
+    </div>
+
+    <div class="tool-section">
+      <button id="copy-btn">Copy Result</button>
+      <button id="clear-btn" class="secondary">Clear</button>
+    </div>
+  </div>
+</template>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --success: #27ae60;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    resize: vertical;
+    transition: all 0.2s;
+    min-height: 150px;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    margin-right: 8px;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  button.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  button.secondary:hover {
+    background: var(--border-color);
+  }
+
+  #status.success {
+    color: var(--success);
+  }
+
+  #status.error {
+    color: var(--error);
+  }
+
+  input[type="radio"] {
+    cursor: pointer;
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const inputEl = container.querySelector("#input");
+    const modeRadios = container.querySelectorAll('input[name="mode"]');
+    const copyBtn = container.querySelector("#copy-btn");
+    const clearBtn = container.querySelector("#clear-btn");
+
+    if (inputEl) {
+      inputEl.addEventListener("input", (e) => {
+        context.setInput(e.target.value);
+      });
+    }
+
+    modeRadios.forEach(radio => {
+      radio.addEventListener("change", () => {
+        if (context.input) {
+          context.setInput(context.input);
+        }
+      });
+    });
+
+    if (copyBtn) {
+      copyBtn.addEventListener("click", () => {
+        const output = context.getOutput();
+        if (output) {
+          navigator.clipboard.writeText(output).then(() => {
+            this.setStatus("✓ Copied to clipboard", "success");
+          }).catch(() => {
+            this.setStatus("✗ Failed to copy", "error");
+          });
+        }
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener("click", () => {
+        context.setInput("");
+        context.setOutput("");
+        inputEl.value = "";
+        this.setStatus("", "");
+      });
+    }
+  },
+
+  onInput(input, context) {
+    if (!input) {
+      this.setStatus("", "");
+      return { output: "" };
+    }
+
+    const mode = this.container.querySelector('input[name="mode"]:checked')?.value || "encode";
+
+    try {
+      let output;
+      switch (mode) {
+        case "encode":
+          output = encodeURI(input);
+          this.setStatus("✓ URL encoded", "success");
+          break;
+        case "decode":
+          output = decodeURI(input);
+          this.setStatus("✓ URL decoded", "success");
+          break;
+        case "encodeComponent":
+          output = encodeURIComponent(input);
+          this.setStatus("✓ Component encoded", "success");
+          break;
+        case "decodeComponent":
+          output = decodeURIComponent(input);
+          this.setStatus("✓ Component decoded", "success");
+          break;
+      }
+      return { output };
+    } catch (error) {
+      this.setStatus(`✗ Error: ${error.message}`, "error");
+      return { output: "", errors: [error.message] };
+    }
+  },
+
+  setStatus(message, type) {
+    const status = this.container.querySelector("#status");
+    if (status) {
+      status.textContent = message;
+      status.className = type;
+    }
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) {
+          this.input = val;
+          if (this.onInputChanged) this.onInputChanged(val);
+        },
+        setOutput(val) {
+          this.output = val;
+          const outputEl = document.querySelector("#output");
+          if (outputEl) outputEl.value = val;
+        },
+        getInput() { return this.input; },
+        getOutput() { return this.output; },
+        onInputChanged: null
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+        standaloneContext.onInputChanged = (input) => {
+          const result = DevChefTool.onInput(input, standaloneContext);
+          if (result && result.output !== undefined) {
+            standaloneContext.setOutput(result.output);
+          }
+        };
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

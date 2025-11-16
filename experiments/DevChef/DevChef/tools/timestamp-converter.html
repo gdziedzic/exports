@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timestamp Converter - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "timestamp-converter",
+  "name": "Timestamp Converter",
+  "category": "Converters",
+  "description": "Convert between Unix timestamps and human-readable dates",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">Timestamp Converter</h2>
+      <p class="tool-description">Convert between Unix timestamps and human-readable dates</p>
+    </div>
+
+    <div class="tool-section">
+      <button id="now-btn">Use Current Time</button>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="timestamp-input">Unix Timestamp (seconds)</label>
+      <input type="number" id="timestamp-input" placeholder="1234567890">
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="datetime-input">Date & Time</label>
+      <input type="datetime-local" id="datetime-input">
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Formatted Outputs</label>
+      <div class="output-grid">
+        <div class="output-item">
+          <div class="output-label">ISO 8601</div>
+          <input type="text" id="iso" readonly>
+        </div>
+        <div class="output-item">
+          <div class="output-label">UTC String</div>
+          <input type="text" id="utc" readonly>
+        </div>
+        <div class="output-item">
+          <div class="output-label">Local String</div>
+          <input type="text" id="local" readonly>
+        </div>
+        <div class="output-item">
+          <div class="output-label">Milliseconds</div>
+          <input type="text" id="milliseconds" readonly>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --success: #27ae60;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input[type="number"],
+  input[type="datetime-local"],
+  input[type="text"] {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+
+  input[readonly] {
+    background: white;
+    cursor: text;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  .output-grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  .output-item {
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+  }
+
+  .output-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .output-item input {
+    background: white;
+    margin-top: 4px;
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const timestampInput = container.querySelector("#timestamp-input");
+    const datetimeInput = container.querySelector("#datetime-input");
+    const nowBtn = container.querySelector("#now-btn");
+
+    // Handle timestamp input
+    if (timestampInput) {
+      timestampInput.addEventListener("input", (e) => {
+        const timestamp = parseInt(e.target.value);
+        if (!isNaN(timestamp)) {
+          this.updateFromTimestamp(timestamp);
+        }
+      });
+    }
+
+    // Handle datetime input
+    if (datetimeInput) {
+      datetimeInput.addEventListener("input", (e) => {
+        const date = new Date(e.target.value);
+        if (!isNaN(date.getTime())) {
+          this.updateFromDate(date);
+        }
+      });
+    }
+
+    // Handle "Now" button
+    if (nowBtn) {
+      nowBtn.addEventListener("click", () => {
+        const now = new Date();
+        this.updateFromDate(now);
+      });
+    }
+
+    // Initialize with current time
+    this.updateFromDate(new Date());
+  },
+
+  onInput(input, context) {
+    // This tool doesn't use the main input
+    return { output: "" };
+  },
+
+  updateFromTimestamp(timestamp) {
+    const date = new Date(timestamp * 1000);
+
+    // Update datetime input
+    const datetimeInput = this.container.querySelector("#datetime-input");
+    if (datetimeInput) {
+      const localISO = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+      datetimeInput.value = localISO;
+    }
+
+    this.updateOutputs(date);
+  },
+
+  updateFromDate(date) {
+    const timestamp = Math.floor(date.getTime() / 1000);
+
+    // Update timestamp input
+    const timestampInput = this.container.querySelector("#timestamp-input");
+    if (timestampInput) {
+      timestampInput.value = timestamp;
+    }
+
+    // Update datetime input
+    const datetimeInput = this.container.querySelector("#datetime-input");
+    if (datetimeInput) {
+      const localISO = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+      datetimeInput.value = localISO;
+    }
+
+    this.updateOutputs(date);
+  },
+
+  updateOutputs(date) {
+    const iso = this.container.querySelector("#iso");
+    const utc = this.container.querySelector("#utc");
+    const local = this.container.querySelector("#local");
+    const milliseconds = this.container.querySelector("#milliseconds");
+
+    if (iso) iso.value = date.toISOString();
+    if (utc) utc.value = date.toUTCString();
+    if (local) local.value = date.toString();
+    if (milliseconds) milliseconds.value = date.getTime();
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) {
+          this.input = val;
+          if (this.onInputChanged) this.onInputChanged(val);
+        },
+        setOutput(val) {
+          this.output = val;
+        },
+        getInput() { return this.input; },
+        getOutput() { return this.output; },
+        onInputChanged: null
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+        standaloneContext.onInputChanged = (input) => {
+          const result = DevChefTool.onInput(input, standaloneContext);
+          if (result && result.output !== undefined) {
+            standaloneContext.setOutput(result.output);
+          }
+        };
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
