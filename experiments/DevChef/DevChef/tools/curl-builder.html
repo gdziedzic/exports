@@ -146,6 +146,10 @@
               <h4>cURL Options</h4>
             </div>
             <div class="options-grid">
+              <label class="option-label" style="grid-column: 1 / -1; background: var(--bg-secondary); padding: 8px; border-radius: 6px; font-weight: 600;">
+                <input type="checkbox" id="opt-powershell-mode" checked>
+                PowerShell Mode (use backtick ` for line continuation)
+              </label>
               <label class="option-label">
                 <input type="checkbox" id="opt-verbose">
                 Verbose output (-v)
@@ -926,6 +930,10 @@ export const DevChefTool = {
     const bodyType = this.container.querySelector('#body-type').value;
     const bodyData = this.container.querySelector('#body-data').value;
     const authType = this.container.querySelector('#auth-type').value;
+    const isPowerShell = this.container.querySelector('#opt-powershell-mode')?.checked || false;
+
+    // Line continuation character: backtick for PowerShell, backslash for Bash
+    const lineCont = isPowerShell ? ' `\n  ' : ' \\\n  ';
 
     let curl = 'curl';
 
@@ -937,7 +945,7 @@ export const DevChefTool = {
     // Headers
     this.headers.forEach(header => {
       if (header.key && header.value) {
-        curl += ` \\\n  -H "${header.key}: ${header.value}"`;
+        curl += `${lineCont}-H "${header.key}: ${header.value}"`;
       }
     });
 
@@ -946,64 +954,64 @@ export const DevChefTool = {
       const username = this.container.querySelector('#auth-username')?.value || '';
       const password = this.container.querySelector('#auth-password')?.value || '';
       if (username) {
-        curl += ` \\\n  -u "${username}:${password}"`;
+        curl += `${lineCont}-u "${username}:${password}"`;
       }
     } else if (authType === 'bearer') {
       const token = this.container.querySelector('#auth-token')?.value || '';
       if (token) {
-        curl += ` \\\n  -H "Authorization: Bearer ${token}"`;
+        curl += `${lineCont}-H "Authorization: Bearer ${token}"`;
       }
     } else if (authType === 'api-key') {
       const keyName = this.container.querySelector('#auth-key-name')?.value || '';
       const keyValue = this.container.querySelector('#auth-key-value')?.value || '';
       if (keyName && keyValue) {
-        curl += ` \\\n  -H "${keyName}: ${keyValue}"`;
+        curl += `${lineCont}-H "${keyName}: ${keyValue}"`;
       }
     }
 
     // Body
     if (bodyType !== 'none' && bodyData) {
       const escaped = bodyData.replace(/'/g, "'\\''");
-      curl += ` \\\n  -d '${escaped}'`;
+      curl += `${lineCont}-d '${escaped}'`;
     }
 
     // Options
     if (this.container.querySelector('#opt-verbose')?.checked) {
-      curl += ' \\\n  -v';
+      curl += `${lineCont}-v`;
     }
     if (this.container.querySelector('#opt-follow-redirects')?.checked) {
-      curl += ' \\\n  -L';
+      curl += `${lineCont}-L`;
     }
     if (this.container.querySelector('#opt-insecure')?.checked) {
-      curl += ' \\\n  -k';
+      curl += `${lineCont}-k`;
     }
     if (this.container.querySelector('#opt-include-headers')?.checked) {
-      curl += ' \\\n  -i';
+      curl += `${lineCont}-i`;
     }
     if (this.container.querySelector('#opt-compressed')?.checked) {
-      curl += ' \\\n  --compressed';
+      curl += `${lineCont}--compressed`;
     }
     if (this.container.querySelector('#opt-show-error')?.checked) {
-      curl += ' \\\n  -S';
+      curl += `${lineCont}-S`;
     }
 
     const timeout = this.container.querySelector('#opt-timeout')?.value;
     if (timeout) {
-      curl += ` \\\n  --max-time ${timeout}`;
+      curl += `${lineCont}--max-time ${timeout}`;
     }
 
     const maxRedirects = this.container.querySelector('#opt-max-redirects')?.value;
     if (maxRedirects) {
-      curl += ` \\\n  --max-redirs ${maxRedirects}`;
+      curl += `${lineCont}--max-redirs ${maxRedirects}`;
     }
 
     const userAgent = this.container.querySelector('#opt-user-agent')?.value;
     if (userAgent) {
-      curl += ` \\\n  -A "${userAgent}"`;
+      curl += `${lineCont}-A "${userAgent}"`;
     }
 
     // URL (last)
-    curl += ` \\\n  "${url}"`;
+    curl += `${lineCont}"${url}"`;
 
     const output = this.container.querySelector('#curl-output');
     output.textContent = curl;
