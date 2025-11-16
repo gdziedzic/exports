@@ -242,6 +242,7 @@ function renderPaletteResults(query, palette, context) {
   const filtered = tools.filter(t =>
     t.name.toLowerCase().includes(query.toLowerCase()) ||
     t.id.toLowerCase().includes(query.toLowerCase()) ||
+    (t.description && t.description.toLowerCase().includes(query.toLowerCase())) ||
     (t.category && t.category.toLowerCase().includes(query.toLowerCase()))
   );
 
@@ -250,6 +251,7 @@ function renderPaletteResults(query, palette, context) {
     item.className = "palette-item";
     item.innerHTML = `
       <div class="palette-item-name">${manifest.name}</div>
+      ${manifest.description ? `<div class="palette-item-description">${manifest.description}</div>` : ''}
       <div class="palette-item-category">${manifest.category || "Uncategorized"}</div>
     `;
 

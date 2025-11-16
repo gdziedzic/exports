@@ -446,6 +446,13 @@ button.secondary:hover {
   margin-bottom: 4px;
 }
 
+.palette-item-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
 .palette-item-category {
   font-size: 12px;
   color: var(--text-secondary);
