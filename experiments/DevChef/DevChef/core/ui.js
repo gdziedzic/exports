@@ -100,8 +100,9 @@ function updateSidebarActiveState(toolId) {
 /**
  * Render the tool list in the sidebar
  * @param {Object} context - Global context object
+ * @param {string} searchQuery - Optional search query to filter tools
  */
-export function renderToolList(context) {
+export function renderToolList(context, searchQuery = "") {
   const sidebar = document.querySelector("#tool-list");
   if (!sidebar) {
     console.error("Tool list container not found");
@@ -111,8 +112,27 @@ export function renderToolList(context) {
   sidebar.innerHTML = "";
 
   const categories = ToolRegistry.getCategories();
+  const query = searchQuery.toLowerCase().trim();
 
   categories.forEach(category => {
+    // Get tools in this category
+    const tools = ToolRegistry.getByCategory(category);
+
+    // Filter tools if search query exists
+    const filteredTools = query
+      ? tools.filter(manifest =>
+          manifest.name.toLowerCase().includes(query) ||
+          manifest.id.toLowerCase().includes(query) ||
+          (manifest.description && manifest.description.toLowerCase().includes(query)) ||
+          category.toLowerCase().includes(query)
+        )
+      : tools;
+
+    // Skip empty categories
+    if (filteredTools.length === 0) {
+      return;
+    }
+
     // Create category section
     const categorySection = document.createElement("div");
     categorySection.className = "category-section";
@@ -122,10 +142,7 @@ export function renderToolList(context) {
     categoryHeader.textContent = category;
     categorySection.appendChild(categoryHeader);
 
-    // Get tools in this category
-    const tools = ToolRegistry.getByCategory(category);
-
-    tools.forEach(manifest => {
+    filteredTools.forEach(manifest => {
       const toolItem = document.createElement("div");
       toolItem.className = "tool-item";
       toolItem.dataset.toolId = manifest.id;
@@ -140,6 +157,11 @@ export function renderToolList(context) {
 
     sidebar.appendChild(categorySection);
   });
+
+  // Show "no results" message if no tools match
+  if (query && sidebar.children.length === 0) {
+    sidebar.innerHTML = '<div class="no-results">No tools found</div>';
+  }
 }
 
 /**

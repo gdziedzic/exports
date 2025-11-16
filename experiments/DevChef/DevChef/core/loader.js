@@ -5,6 +5,17 @@
 
 import { ToolRegistry } from './registry.js';
 
+// Track loading errors
+const loadingErrors = [];
+
+/**
+ * Get all loading errors
+ * @returns {Array} Array of error objects
+ */
+export function getLoadingErrors() {
+  return loadingErrors;
+}
+
 /**
  * Load a single tool from an HTML file
  * @param {string} path - Path to the tool HTML file
@@ -22,7 +33,9 @@ async function loadTool(path) {
     // Extract manifest
     const manifestScript = doc.querySelector('script[type="devchef-manifest"]');
     if (!manifestScript) {
-      console.error(`No manifest found in ${path}`);
+      const error = `No manifest found in ${path}`;
+      console.error(error);
+      loadingErrors.push({ path, error });
       return;
     }
     const manifest = JSON.parse(manifestScript.textContent);
@@ -30,7 +43,9 @@ async function loadTool(path) {
     // Extract template
     const template = doc.querySelector("template#tool-ui");
     if (!template) {
-      console.error(`No template found in ${path}`);
+      const error = `No template found in ${path}`;
+      console.error(error);
+      loadingErrors.push({ path, error, toolName: manifest.name });
       return;
     }
     const templateHtml = template.innerHTML;
@@ -42,7 +57,9 @@ async function loadTool(path) {
     // Extract and load module
     const scriptTag = doc.querySelector('script[type="module"]');
     if (!scriptTag) {
-      console.error(`No module script found in ${path}`);
+      const error = `No module script found in ${path}`;
+      console.error(error);
+      loadingErrors.push({ path, error, toolName: manifest.name });
       return;
     }
 
@@ -65,6 +82,11 @@ async function loadTool(path) {
     console.log(`✓ Loaded tool: ${manifest.name} (${manifest.id})`);
   } catch (error) {
     console.error(`Failed to load tool from ${path}:`, error);
+    loadingErrors.push({
+      path,
+      error: error.message || String(error),
+      stack: error.stack
+    });
   }
 }
 

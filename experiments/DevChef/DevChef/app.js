@@ -4,7 +4,7 @@
  */
 
 import { context } from './core/state.js';
-import { initializeTools } from './core/loader.js';
+import { initializeTools, getLoadingErrors } from './core/loader.js';
 import { renderToolList, showCommandPalette, openTool } from './core/ui.js';
 import { ToolRegistry } from './core/registry.js';
 import { debugConsole } from './core/console.js';
@@ -21,8 +21,14 @@ async function init() {
   // Load all tools
   const toolCount = await initializeTools();
 
+  // Show loading errors if any
+  showLoadingErrors();
+
   // Render tool list in sidebar
   renderToolList(context);
+
+  // Set up tool search
+  setupToolSearch(context);
 
   // Set up keyboard shortcuts
   setupKeyboardShortcuts();
@@ -45,6 +51,31 @@ async function init() {
   }
 
   console.log("✓ DevChef ready");
+}
+
+/**
+ * Set up tool search functionality
+ * @param {Object} context - Global context object
+ */
+function setupToolSearch(context) {
+  const searchInput = document.querySelector('#tool-search');
+  if (!searchInput) {
+    console.warn('Tool search input not found');
+    return;
+  }
+
+  searchInput.addEventListener('input', (e) => {
+    renderToolList(context, e.target.value);
+  });
+
+  // Focus search on Ctrl+F or Cmd+F
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+  });
 }
 
 /**
@@ -136,6 +167,64 @@ function updateThemeIcon(theme) {
   if (icon) {
     icon.textContent = theme === 'light' ? '🌙' : '☀️';
   }
+}
+
+/**
+ * Show loading errors if any
+ */
+function showLoadingErrors() {
+  const errors = getLoadingErrors();
+  if (errors.length === 0) return;
+
+  // Create error banner in sidebar
+  const sidebar = document.querySelector('#sidebar');
+  const header = sidebar.querySelector('header');
+
+  const errorBanner = document.createElement('div');
+  errorBanner.className = 'loading-errors-banner';
+  errorBanner.innerHTML = `
+    <div class="error-header">
+      <span class="error-icon">⚠️</span>
+      <span class="error-title">${errors.length} tool(s) failed to load</span>
+      <button class="error-toggle" title="Show details">▼</button>
+    </div>
+    <div class="error-details" style="display: none;">
+      ${errors.map(err => `
+        <div class="error-item">
+          <div class="error-path">${err.path}</div>
+          <div class="error-message">${escapeHtml(err.error)}</div>
+        </div>
+      `).join('')}
+      <button class="open-console-btn">Open Debug Console</button>
+    </div>
+  `;
+
+  header.insertAdjacentElement('afterend', errorBanner);
+
+  // Set up toggle
+  const toggleBtn = errorBanner.querySelector('.error-toggle');
+  const details = errorBanner.querySelector('.error-details');
+
+  toggleBtn.addEventListener('click', () => {
+    const isVisible = details.style.display !== 'none';
+    details.style.display = isVisible ? 'none' : 'block';
+    toggleBtn.textContent = isVisible ? '▼' : '▲';
+  });
+
+  // Set up console button
+  const consoleBtn = errorBanner.querySelector('.open-console-btn');
+  consoleBtn.addEventListener('click', () => {
+    debugConsole.show();
+  });
+}
+
+/**
+ * Escape HTML for safe display
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 /**
