@@ -44,8 +44,10 @@
               <button class="op-btn" data-op="add-suffix">Add Suffix</button>
             </div>
             <div class="operation-control">
-              <input type="text" id="wrap-start" placeholder="Start..." style="width: 48%;" />
-              <input type="text" id="wrap-end" placeholder="End..." style="width: 48%;" />
+              <div class="wrap-inputs">
+                <input type="text" id="wrap-start" placeholder="Start (e.g., [)" />
+                <input type="text" id="wrap-end" placeholder="End (e.g., ])" />
+              </div>
               <button class="op-btn" data-op="wrap">Wrap Lines</button>
             </div>
             <button class="op-btn" data-op="remove-empty">Remove Empty Lines</button>
@@ -107,6 +109,30 @@
             <button class="op-btn" data-op="quote-single">Quote ' '</button>
             <button class="op-btn" data-op="quote-double">Quote " "</button>
             <button class="op-btn" data-op="comma-separate">Comma Separate</button>
+          </div>
+
+          <div class="category">
+            <h4>⚡ Custom Transform</h4>
+            <div class="operation-control">
+              <select id="snippet-preset">
+                <option value="">-- Select Snippet --</option>
+                <option value="extract-regex">Extract with Regex</option>
+                <option value="replace-regex">Replace with Regex</option>
+                <option value="extract-between">Extract Between Chars</option>
+                <option value="split-join">Split & Join</option>
+                <option value="remove-chars">Remove Characters</option>
+                <option value="extract-json">Extract JSON Field</option>
+                <option value="reverse-line">Reverse Each Line</option>
+                <option value="keep-alpha">Keep Only Letters</option>
+                <option value="keep-numeric">Keep Only Numbers</option>
+                <option value="capitalize-words">Capitalize Words</option>
+              </select>
+            </div>
+            <div class="operation-control">
+              <textarea id="custom-js" placeholder="// JavaScript code - 'line' variable available&#10;// Return the transformed line&#10;// Example: return line.toUpperCase();" rows="5"></textarea>
+              <button class="op-btn" data-op="custom-transform">▶ Run Custom Transform</button>
+            </div>
+            <div class="custom-error" id="custom-error" style="display: none;"></div>
           </div>
         </div>
       </div>
@@ -211,6 +237,42 @@
     color: var(--text-primary);
     font-size: 12px;
     font-family: var(--font-mono);
+  }
+
+  .operation-control textarea {
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  .wrap-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .wrap-inputs input {
+    margin-bottom: 0;
+  }
+
+  .custom-error {
+    padding: 8px;
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid var(--error);
+    border-radius: 6px;
+    color: var(--error);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    margin-top: 6px;
   }
 
   .op-btn {
@@ -409,9 +471,77 @@ export const DevChefTool = {
     container.querySelector('#copy-output-btn')?.addEventListener('click', () => this.copyOutput());
     container.querySelector('#use-as-input-btn')?.addEventListener('click', () => this.useAsInput());
 
+    // Snippet preset handler
+    container.querySelector('#snippet-preset')?.addEventListener('change', (e) => {
+      this.loadSnippet(e.target.value);
+    });
+
     // Initialize
     this.updateInputStats();
     this.updateOutputStats();
+  },
+
+  getSnippets() {
+    return {
+      'extract-regex': `// Extract text matching a regex pattern
+const match = line.match(/pattern_here/);
+return match ? match[0] : '';`,
+
+      'replace-regex': `// Replace text using regex
+return line.replace(/find_pattern/g, 'replacement');`,
+
+      'extract-between': `// Extract text between two characters
+const start = line.indexOf('[');
+const end = line.indexOf(']');
+if (start >= 0 && end > start) {
+  return line.substring(start + 1, end);
+}
+return line;`,
+
+      'split-join': `// Split by comma, join with pipe
+return line.split(',').join('|');`,
+
+      'remove-chars': `// Remove specific characters
+return line.replace(/[,;.]/g, '');`,
+
+      'extract-json': `// Extract field from JSON line
+try {
+  const obj = JSON.parse(line);
+  return obj.fieldName || '';
+} catch(e) {
+  return line;
+}`,
+
+      'reverse-line': `// Reverse the characters in line
+return line.split('').reverse().join('');`,
+
+      'keep-alpha': `// Keep only letters and spaces
+return line.replace(/[^a-zA-Z ]/g, '');`,
+
+      'keep-numeric': `// Keep only numbers
+return line.replace(/[^0-9]/g, '');`,
+
+      'capitalize-words': `// Capitalize first letter of each word
+return line.split(' ').map(w =>
+  w.charAt(0).toUpperCase() + w.slice(1)
+).join(' ');`
+    };
+  },
+
+  loadSnippet(snippetName) {
+    if (!snippetName) return;
+
+    const snippets = this.getSnippets();
+    const code = snippets[snippetName];
+
+    if (code) {
+      const textarea = this.container.querySelector('#custom-js');
+      textarea.value = code;
+
+      // Clear error
+      const errorDiv = this.container.querySelector('#custom-error');
+      errorDiv.style.display = 'none';
+    }
   },
 
   performOperation(operation) {
@@ -549,6 +679,46 @@ export const DevChefTool = {
 
       case 'comma-separate':
         result = [lines.join(', ')];
+        break;
+
+      case 'custom-transform':
+        const customCode = this.container.querySelector('#custom-js').value.trim();
+        const errorDiv = this.container.querySelector('#custom-error');
+
+        if (!customCode) {
+          errorDiv.textContent = 'Please enter JavaScript code or select a snippet';
+          errorDiv.style.display = 'block';
+          return;
+        }
+
+        try {
+          // Clear previous errors
+          errorDiv.style.display = 'none';
+
+          // Create a function from the custom code
+          // The user's code should return the transformed line
+          const transformFn = new Function('line', 'index', 'lines', customCode);
+
+          // Apply transformation to each line
+          result = lines.map((line, index) => {
+            try {
+              const transformed = transformFn(line, index, lines);
+              // Handle various return types
+              if (transformed === null || transformed === undefined) {
+                return '';
+              }
+              return String(transformed);
+            } catch (lineError) {
+              // If error on specific line, return original line
+              return line;
+            }
+          });
+
+        } catch (error) {
+          errorDiv.textContent = `Error: ${error.message}`;
+          errorDiv.style.display = 'block';
+          return;
+        }
         break;
 
       default:
