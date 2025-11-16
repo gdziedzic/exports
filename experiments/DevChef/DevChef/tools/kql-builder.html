@@ -60,6 +60,16 @@
           </div>
 
           <div class="category">
+            <h4>📝 Errors & Traces</h4>
+            <button class="snippet-btn" data-snippet="trace-errors">Trace Errors & Warnings</button>
+            <button class="snippet-btn" data-snippet="trace-search">Search Trace Messages</button>
+            <button class="snippet-btn" data-snippet="error-timeline">Error Timeline</button>
+            <button class="snippet-btn" data-snippet="error-rate">Error Rate Trending</button>
+            <button class="snippet-btn" data-snippet="trace-correlation">Trace-Exception Correlation</button>
+            <button class="snippet-btn" data-snippet="critical-traces">Critical Issues</button>
+          </div>
+
+          <div class="category">
             <h4>⚠️ Monitoring & Alerts</h4>
             <button class="snippet-btn" data-snippet="errors">Error Tracking</button>
             <button class="snippet-btn" data-snippet="performance">Performance Issues</button>
@@ -817,6 +827,97 @@ export const DevChefTool = {
 | summarize count() by bin(TimeGenerated, 1h), ResultCode
 | render timechart`,
       description: 'Time series chart'
+    },
+    'trace-errors': {
+      query: `AppTraces
+| where TimeGenerated > ago(24h)
+| where SeverityLevel >= 2 // 2=Warning, 3=Error, 4=Critical
+| project
+    TimeGenerated,
+    SeverityLevel,
+    Message,
+    OperationId,
+    Properties
+| order by TimeGenerated desc
+| take 100`,
+      description: 'Find errors and warnings in traces'
+    },
+    'trace-search': {
+      query: `AppTraces
+| where TimeGenerated > ago(24h)
+| where Message contains "error" or Message contains "exception" or Message contains "failed"
+| extend
+    Severity = case(
+        SeverityLevel == 0, "Verbose",
+        SeverityLevel == 1, "Information",
+        SeverityLevel == 2, "Warning",
+        SeverityLevel == 3, "Error",
+        SeverityLevel == 4, "Critical",
+        "Unknown"
+    )
+| project TimeGenerated, Severity, Message, OperationId
+| order by TimeGenerated desc`,
+      description: 'Search for error keywords in traces'
+    },
+    'error-timeline': {
+      query: `AppTraces
+| where TimeGenerated > ago(24h)
+| where SeverityLevel >= 2
+| summarize
+    ErrorCount=countif(SeverityLevel == 3 or SeverityLevel == 4),
+    WarningCount=countif(SeverityLevel == 2),
+    TotalIssues=count()
+  by bin(TimeGenerated, 15m)
+| render timechart`,
+      description: 'Error and warning timeline'
+    },
+    'error-rate': {
+      query: `AppTraces
+| where TimeGenerated > ago(7d)
+| summarize
+    TotalTraces=count(),
+    ErrorTraces=countif(SeverityLevel >= 3),
+    WarningTraces=countif(SeverityLevel == 2)
+  by bin(TimeGenerated, 1h)
+| extend
+    ErrorRate = round(100.0 * ErrorTraces / TotalTraces, 2),
+    WarningRate = round(100.0 * WarningTraces / TotalTraces, 2)
+| project TimeGenerated, ErrorRate, WarningRate, TotalTraces
+| render timechart`,
+      description: 'Track error rate over time'
+    },
+    'trace-correlation': {
+      query: `AppExceptions
+| where TimeGenerated > ago(1h)
+| join kind=inner (
+    AppTraces
+    | where TimeGenerated > ago(1h)
+    | where SeverityLevel >= 2
+) on OperationId
+| project
+    TimeGenerated,
+    ExceptionType=Type,
+    ExceptionMessage=OuterMessage,
+    TraceMessage=Message,
+    OperationId
+| order by TimeGenerated desc
+| take 50`,
+      description: 'Correlate exceptions with trace logs'
+    },
+    'critical-traces': {
+      query: `AppTraces
+| where TimeGenerated > ago(24h)
+| where SeverityLevel == 4 // Critical only
+| extend MessagePreview = substring(Message, 0, 200)
+| summarize
+    Count=count(),
+    FirstOccurrence=min(TimeGenerated),
+    LastOccurrence=max(TimeGenerated),
+    SampleMessage=any(MessagePreview),
+    Operations=make_set(OperationId, 5)
+  by Message
+| order by Count desc`,
+      description: 'Critical severity issues summary'
     },
     'errors': {
       query: `AppExceptions

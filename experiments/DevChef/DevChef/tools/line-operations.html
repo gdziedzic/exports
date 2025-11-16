@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Line Operations - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "line-operations",
+  "name": "Line Operations",
+  "category": "Text",
+  "description": "Powerful line-by-line text operations: prefix, suffix, sort, filter, and more",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">Line Operations</h2>
+      <p class="tool-description">Transform text line-by-line with powerful operations</p>
+    </div>
+
+    <div class="operations-layout">
+      <div class="operations-panel">
+        <div class="panel-header">
+          <h3>🛠️ Operations</h3>
+        </div>
+
+        <div class="operation-categories">
+          <div class="category">
+            <h4>✏️ Add/Remove</h4>
+            <div class="operation-control">
+              <input type="text" id="prefix-input" placeholder="Enter prefix..." />
+              <button class="op-btn" data-op="add-prefix">Add Prefix</button>
+            </div>
+            <div class="operation-control">
+              <input type="text" id="suffix-input" placeholder="Enter suffix..." />
+              <button class="op-btn" data-op="add-suffix">Add Suffix</button>
+            </div>
+            <div class="operation-control">
+              <input type="text" id="wrap-start" placeholder="Start..." style="width: 48%;" />
+              <input type="text" id="wrap-end" placeholder="End..." style="width: 48%;" />
+              <button class="op-btn" data-op="wrap">Wrap Lines</button>
+            </div>
+            <button class="op-btn" data-op="remove-empty">Remove Empty Lines</button>
+            <button class="op-btn" data-op="remove-whitespace-only">Remove Whitespace-Only</button>
+          </div>
+
+          <div class="category">
+            <h4>🔢 Numbering</h4>
+            <div class="operation-control">
+              <select id="number-format">
+                <option value="1. ">1. (Number dot space)</option>
+                <option value="1) ">1) (Number paren space)</option>
+                <option value="[1] ">[1] (Bracket number)</option>
+                <option value="1.\t">1.\t (Number dot tab)</option>
+              </select>
+              <button class="op-btn" data-op="number-lines">Number Lines</button>
+            </div>
+            <button class="op-btn" data-op="remove-line-numbers">Remove Line Numbers</button>
+          </div>
+
+          <div class="category">
+            <h4>📏 Spacing</h4>
+            <div class="operation-control">
+              <input type="number" id="indent-spaces" value="4" min="1" max="20" style="width: 60px;" />
+              <button class="op-btn" data-op="indent">Indent</button>
+              <button class="op-btn" data-op="dedent">Dedent</button>
+            </div>
+            <button class="op-btn" data-op="trim-left">Trim Left</button>
+            <button class="op-btn" data-op="trim-right">Trim Right</button>
+            <button class="op-btn" data-op="trim-both">Trim Both</button>
+          </div>
+
+          <div class="category">
+            <h4>🔄 Sort & Order</h4>
+            <button class="op-btn" data-op="sort-asc">Sort A-Z</button>
+            <button class="op-btn" data-op="sort-desc">Sort Z-A</button>
+            <button class="op-btn" data-op="sort-length-asc">Sort by Length ↑</button>
+            <button class="op-btn" data-op="sort-length-desc">Sort by Length ↓</button>
+            <button class="op-btn" data-op="reverse">Reverse Order</button>
+            <button class="op-btn" data-op="shuffle">Shuffle</button>
+          </div>
+
+          <div class="category">
+            <h4>🎯 Filter & Select</h4>
+            <div class="operation-control">
+              <input type="text" id="filter-pattern" placeholder="Enter pattern..." />
+              <button class="op-btn" data-op="filter-contains">Keep Matching</button>
+              <button class="op-btn" data-op="filter-not-contains">Remove Matching</button>
+            </div>
+            <button class="op-btn" data-op="unique">Remove Duplicates</button>
+            <button class="op-btn" data-op="duplicates-only">Keep Duplicates Only</button>
+          </div>
+
+          <div class="category">
+            <h4>🔀 Transform</h4>
+            <button class="op-btn" data-op="uppercase">UPPERCASE</button>
+            <button class="op-btn" data-op="lowercase">lowercase</button>
+            <button class="op-btn" data-op="title-case">Title Case</button>
+            <button class="op-btn" data-op="quote-single">Quote ' '</button>
+            <button class="op-btn" data-op="quote-double">Quote " "</button>
+            <button class="op-btn" data-op="comma-separate">Comma Separate</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-panel">
+        <div class="panel-header">
+          <h3>📝 Input</h3>
+          <button id="clear-input-btn" class="small-btn">Clear</button>
+        </div>
+        <textarea id="input-text" placeholder="Enter your text here...&#10;Each line will be processed separately."></textarea>
+
+        <div class="stats">
+          <span class="stat-item">Lines: <strong id="input-lines">0</strong></span>
+          <span class="stat-item">Characters: <strong id="input-chars">0</strong></span>
+          <span class="stat-item">Non-empty: <strong id="input-nonempty">0</strong></span>
+        </div>
+      </div>
+
+      <div class="output-panel">
+        <div class="panel-header">
+          <h3>✨ Output</h3>
+          <div class="output-controls">
+            <button id="copy-output-btn" class="small-btn">📋 Copy</button>
+            <button id="use-as-input-btn" class="small-btn">↩️ Use as Input</button>
+          </div>
+        </div>
+        <textarea id="output-text" readonly placeholder="Results will appear here..."></textarea>
+
+        <div class="stats">
+          <span class="stat-item">Lines: <strong id="output-lines">0</strong></span>
+          <span class="stat-item">Characters: <strong id="output-chars">0</strong></span>
+          <span class="stat-item">Non-empty: <strong id="output-nonempty">0</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .operations-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .operations-panel,
+  .editor-panel,
+  .output-panel {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .operations-panel {
+    max-height: 800px;
+    overflow-y: auto;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .panel-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .operation-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .category h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .operation-control {
+    margin-bottom: 8px;
+  }
+
+  .operation-control input,
+  .operation-control select {
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--font-mono);
+  }
+
+  .op-btn {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .op-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+    transform: translateX(4px);
+  }
+
+  .op-btn:active {
+    transform: translateX(4px) scale(0.98);
+  }
+
+  .small-btn {
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .small-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .output-controls {
+    display: flex;
+    gap: 6px;
+  }
+
+  #input-text,
+  #output-text {
+    width: 100%;
+    min-height: 600px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--text-primary);
+    resize: vertical;
+    margin-bottom: 12px;
+  }
+
+  #input-text:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  #output-text {
+    background: var(--bg-primary);
+  }
+
+  .stats {
+    display: flex;
+    gap: 16px;
+    padding: 10px;
+    background: var(--bg-primary);
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .stat-item {
+    color: var(--text-secondary);
+  }
+
+  .stat-item strong {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  @media (max-width: 1400px) {
+    .operations-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .operations-panel {
+      max-height: 400px;
+    }
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #0078d4;
+    --accent-hover: #106ebe;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 36px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  button {
+    font-family: var(--font-sans);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const inputText = container.querySelector('#input-text');
+    const outputText = container.querySelector('#output-text');
+
+    // Operation buttons
+    container.querySelectorAll('.op-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const operation = e.target.dataset.op;
+        this.performOperation(operation);
+      });
+    });
+
+    // Input events
+    inputText?.addEventListener('input', () => this.updateInputStats());
+
+    // Control buttons
+    container.querySelector('#clear-input-btn')?.addEventListener('click', () => {
+      inputText.value = '';
+      this.updateInputStats();
+    });
+
+    container.querySelector('#copy-output-btn')?.addEventListener('click', () => this.copyOutput());
+    container.querySelector('#use-as-input-btn')?.addEventListener('click', () => this.useAsInput());
+
+    // Initialize
+    this.updateInputStats();
+    this.updateOutputStats();
+  },
+
+  performOperation(operation) {
+    const inputText = this.container.querySelector('#input-text').value;
+    const lines = inputText.split('\n');
+    let result = [];
+
+    switch (operation) {
+      case 'add-prefix':
+        const prefix = this.container.querySelector('#prefix-input').value;
+        result = lines.map(line => prefix + line);
+        break;
+
+      case 'add-suffix':
+        const suffix = this.container.querySelector('#suffix-input').value;
+        result = lines.map(line => line + suffix);
+        break;
+
+      case 'wrap':
+        const wrapStart = this.container.querySelector('#wrap-start').value;
+        const wrapEnd = this.container.querySelector('#wrap-end').value;
+        result = lines.map(line => wrapStart + line + wrapEnd);
+        break;
+
+      case 'remove-empty':
+        result = lines.filter(line => line.length > 0);
+        break;
+
+      case 'remove-whitespace-only':
+        result = lines.filter(line => line.trim().length > 0);
+        break;
+
+      case 'number-lines':
+        const format = this.container.querySelector('#number-format').value;
+        result = lines.map((line, i) => format.replace('1', i + 1) + line);
+        break;
+
+      case 'remove-line-numbers':
+        result = lines.map(line => line.replace(/^\s*\[?\d+[\].)]\s*/, ''));
+        break;
+
+      case 'indent':
+        const spaces = parseInt(this.container.querySelector('#indent-spaces').value) || 4;
+        const indent = ' '.repeat(spaces);
+        result = lines.map(line => indent + line);
+        break;
+
+      case 'dedent':
+        const dedentSpaces = parseInt(this.container.querySelector('#indent-spaces').value) || 4;
+        result = lines.map(line => {
+          for (let i = 0; i < dedentSpaces; i++) {
+            if (line[0] === ' ') line = line.substring(1);
+          }
+          return line;
+        });
+        break;
+
+      case 'trim-left':
+        result = lines.map(line => line.trimStart());
+        break;
+
+      case 'trim-right':
+        result = lines.map(line => line.trimEnd());
+        break;
+
+      case 'trim-both':
+        result = lines.map(line => line.trim());
+        break;
+
+      case 'sort-asc':
+        result = [...lines].sort();
+        break;
+
+      case 'sort-desc':
+        result = [...lines].sort().reverse();
+        break;
+
+      case 'sort-length-asc':
+        result = [...lines].sort((a, b) => a.length - b.length);
+        break;
+
+      case 'sort-length-desc':
+        result = [...lines].sort((a, b) => b.length - a.length);
+        break;
+
+      case 'reverse':
+        result = [...lines].reverse();
+        break;
+
+      case 'shuffle':
+        result = [...lines].sort(() => Math.random() - 0.5);
+        break;
+
+      case 'filter-contains':
+        const pattern = this.container.querySelector('#filter-pattern').value;
+        result = lines.filter(line => line.includes(pattern));
+        break;
+
+      case 'filter-not-contains':
+        const notPattern = this.container.querySelector('#filter-pattern').value;
+        result = lines.filter(line => !line.includes(notPattern));
+        break;
+
+      case 'unique':
+        result = [...new Set(lines)];
+        break;
+
+      case 'duplicates-only':
+        const counts = {};
+        lines.forEach(line => counts[line] = (counts[line] || 0) + 1);
+        result = [...new Set(lines.filter(line => counts[line] > 1))];
+        break;
+
+      case 'uppercase':
+        result = lines.map(line => line.toUpperCase());
+        break;
+
+      case 'lowercase':
+        result = lines.map(line => line.toLowerCase());
+        break;
+
+      case 'title-case':
+        result = lines.map(line =>
+          line.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase())
+        );
+        break;
+
+      case 'quote-single':
+        result = lines.map(line => `'${line}'`);
+        break;
+
+      case 'quote-double':
+        result = lines.map(line => `"${line}"`);
+        break;
+
+      case 'comma-separate':
+        result = [lines.join(', ')];
+        break;
+
+      default:
+        result = lines;
+    }
+
+    this.setOutput(result.join('\n'));
+  },
+
+  setOutput(text) {
+    const outputText = this.container.querySelector('#output-text');
+    outputText.value = text;
+    this.updateOutputStats();
+    this.context.setOutput(text);
+  },
+
+  updateInputStats() {
+    const inputText = this.container.querySelector('#input-text').value;
+    const lines = inputText.split('\n');
+    const nonEmpty = lines.filter(line => line.trim().length > 0).length;
+
+    this.container.querySelector('#input-lines').textContent = lines.length;
+    this.container.querySelector('#input-chars').textContent = inputText.length;
+    this.container.querySelector('#input-nonempty').textContent = nonEmpty;
+  },
+
+  updateOutputStats() {
+    const outputText = this.container.querySelector('#output-text').value;
+    const lines = outputText.split('\n');
+    const nonEmpty = lines.filter(line => line.trim().length > 0).length;
+
+    this.container.querySelector('#output-lines').textContent = lines.length;
+    this.container.querySelector('#output-chars').textContent = outputText.length;
+    this.container.querySelector('#output-nonempty').textContent = nonEmpty;
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (output) {
+      navigator.clipboard.writeText(output).then(() => {
+        const btn = this.container.querySelector('#copy-output-btn');
+        const original = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = original, 2000);
+      });
+    }
+  },
+
+  useAsInput() {
+    const outputText = this.container.querySelector('#output-text').value;
+    this.container.querySelector('#input-text').value = outputText;
+    this.updateInputStats();
+  },
+
+  onInput(input, context) {
+    this.container.querySelector('#input-text').value = input;
+    this.updateInputStats();
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
