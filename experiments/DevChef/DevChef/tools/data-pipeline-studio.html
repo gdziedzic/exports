@@ -637,8 +637,52 @@ Diana,28,Houston,70000`,
         { name: 'Eve', department: 'Engineering', salary: 85000 }
       ], null, 2),
       steps: [
-        { type: 'filter', config: { condition: 'salary > 70000' } },
+        { type: 'filter', config: { condition: 'item.salary > 70000' } },
         { type: 'groupby', config: { field: 'department', aggregation: 'count' } }
+      ],
+      outputFormat: 'json'
+    },
+    'pivot-table': {
+      format: 'json',
+      data: JSON.stringify([
+        { product: 'Laptop', region: 'North', quarter: 'Q1', sales: 15000 },
+        { product: 'Laptop', region: 'South', quarter: 'Q1', sales: 12000 },
+        { product: 'Phone', region: 'North', quarter: 'Q1', sales: 8000 },
+        { product: 'Phone', region: 'South', quarter: 'Q1', sales: 9500 },
+        { product: 'Tablet', region: 'North', quarter: 'Q1', sales: 6000 },
+        { product: 'Tablet', region: 'South', quarter: 'Q1', sales: 7200 }
+      ], null, 2),
+      steps: [
+        { type: 'groupby', config: { field: 'product', aggregation: 'count' } },
+        { type: 'sort', config: { field: 'product', order: 'asc' } }
+      ],
+      outputFormat: 'json'
+    },
+    'sql-generator': {
+      format: 'json',
+      data: JSON.stringify([
+        { id: 1, username: 'alice', email: 'alice@example.com', active: true },
+        { id: 2, username: 'bob', email: 'bob@example.com', active: true },
+        { id: 3, username: 'charlie', email: 'charlie@example.com', active: false }
+      ], null, 2),
+      steps: [
+        { type: 'filter', config: { condition: 'item.active === true' } }
+      ],
+      outputFormat: 'sql'
+    },
+    'data-cleaning': {
+      format: 'csv',
+      data: `name,email,age,city
+Alice,alice@example.com,30,New York
+Bob,bob@example.com,25,Los Angeles
+Charlie,charlie@example.com,35,Chicago
+Diana,diana@example.com,28,Houston
+Eve,eve@example.com,32,Miami
+Frank,frank@example.com,45,Seattle`,
+      steps: [
+        { type: 'filter', config: { condition: 'item.age && item.age < 40' } },
+        { type: 'select', config: { fields: 'name,email,city' } },
+        { type: 'sort', config: { field: 'name', order: 'asc' } }
       ],
       outputFormat: 'json'
     }
@@ -917,6 +961,68 @@ Diana,28,Houston,70000`,
           [groupField]: key,
           count: items.length
         }));
+
+      case 'distinct':
+        const distinctField = step.config.field;
+        if (!distinctField) {
+          // Remove duplicate rows entirely
+          return Array.from(new Set(data.map(JSON.stringify))).map(JSON.parse);
+        }
+        // Remove duplicates based on specific field
+        const seen = new Set();
+        return data.filter(item => {
+          const value = item[distinctField];
+          if (seen.has(value)) return false;
+          seen.add(value);
+          return true;
+        });
+
+      case 'map':
+        const fromField = step.config.from;
+        const toField = step.config.to;
+        if (!fromField || !toField) return data;
+        return data.map(item => {
+          const newItem = { ...item };
+          newItem[toField] = newItem[fromField];
+          if (fromField !== toField) {
+            delete newItem[fromField];
+          }
+          return newItem;
+        });
+
+      case 'split':
+        const splitField = step.config.field;
+        const delimiter = step.config.delimiter || ',';
+        if (!splitField) return data;
+        return data.map(item => {
+          const newItem = { ...item };
+          const value = String(item[splitField] || '');
+          const parts = value.split(delimiter);
+          parts.forEach((part, index) => {
+            newItem[`${splitField}_${index + 1}`] = part.trim();
+          });
+          return newItem;
+        });
+
+      case 'merge':
+        const mergeFields = step.config.fields?.split(',').map(f => f.trim()) || [];
+        const separator = step.config.separator || ' ';
+        const newField = step.config.newField || 'merged';
+        if (mergeFields.length === 0) return data;
+        return data.map(item => {
+          const newItem = { ...item };
+          newItem[newField] = mergeFields.map(f => item[f] || '').join(separator);
+          return newItem;
+        });
+
+      case 'custom':
+        try {
+          const transformFn = new Function('item', step.config.expression);
+          return data.map(item => transformFn(item) || item);
+        } catch (error) {
+          console.error('Custom transform error:', error);
+          return data;
+        }
 
       default:
         return data;
