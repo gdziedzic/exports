@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>FIX Parser</title>
+  <link rel="stylesheet" href="fix-parser.css">
 </head>
 <body>
 
@@ -11,9 +12,9 @@
 {
   "id": "fix-parser",
   "name": "FIX Parser",
-  "description": "Parse, edit, and explain FIX protocol messages with field descriptions",
+  "description": "Advanced FIX protocol parser with repeating groups, message builder, and session log analysis",
   "category": "Developer Tools",
-  "keywords": ["fix", "parser", "financial", "protocol", "trading", "message", "decoder"]
+  "keywords": ["fix", "parser", "financial", "protocol", "trading", "message", "decoder", "builder", "session"]
 }
 </script>
 
@@ -26,35 +27,15 @@
         <div class="controls">
           <select id="sample-select" class="sample-select">
             <option value="">Load Sample...</option>
-            <optgroup label="Session Messages">
-              <option value="logon">Logon (A)</option>
-              <option value="logout">Logout (5)</option>
-              <option value="heartbeat">Heartbeat (0)</option>
-              <option value="test-request">Test Request (1)</option>
-              <option value="resend-request">Resend Request (2)</option>
-            </optgroup>
-            <optgroup label="Order Messages">
-              <option value="new-order">New Order - Single (D)</option>
-              <option value="new-order-market">New Order - Market (D)</option>
-              <option value="new-order-stop">New Order - Stop Loss (D)</option>
-              <option value="execution-report">Execution Report - Fill (8)</option>
-              <option value="execution-report-partial">Execution Report - Partial (8)</option>
-              <option value="execution-report-reject">Execution Report - Reject (8)</option>
-              <option value="order-cancel">Order Cancel Request (F)</option>
-              <option value="order-cancel-replace">Order Cancel/Replace (G)</option>
-              <option value="order-cancel-reject">Order Cancel Reject (9)</option>
-              <option value="order-status-request">Order Status Request (H)</option>
-            </optgroup>
-            <optgroup label="Market Data">
-              <option value="market-data-request">Market Data Request (V)</option>
-              <option value="market-data-snapshot">Market Data Snapshot (W)</option>
-              <option value="market-data-incremental">Market Data Incremental (X)</option>
-              <option value="market-data-reject">Market Data Reject (Y)</option>
-            </optgroup>
-            <optgroup label="Error Messages">
-              <option value="reject">Reject (3)</option>
-              <option value="business-reject">Business Message Reject (j)</option>
-            </optgroup>
+            <option value="logon">Logon (A)</option>
+            <option value="new-order">New Order - Single (D)</option>
+            <option value="execution-report">Execution Report (8)</option>
+            <option value="market-data-request">Market Data Request (V)</option>
+            <option value="market-data-snapshot">Market Data Snapshot (W)</option>
+            <option value="order-cancel">Order Cancel Request (F)</option>
+            <option value="order-cancel-replace">Order Cancel/Replace (G)</option>
+            <option value="reject">Reject (3)</option>
+            <option value="session-log">Session Log (Multiple Messages)</option>
           </select>
           <select id="delimiter-select" class="delimiter-select">
             <option value="|">Pipe (|)</option>
@@ -65,16 +46,20 @@
           <button id="clear-btn" class="btn btn-secondary">Clear</button>
         </div>
       </div>
-      <textarea id="fix-input" class="fix-input" placeholder="Paste FIX message here (e.g., 8=FIX.4.2|9=178|35=D|49=SENDER|56=TARGET|...)"></textarea>
+      <textarea id="fix-input" class="fix-input" placeholder="Paste FIX message(s) here (e.g., 8=FIX.4.2|9=178|35=D|49=SENDER|56=TARGET|...)"></textarea>
     </div>
 
     <div class="output-section">
       <div class="tabs">
         <button class="tab-btn active" data-tab="parsed">Parsed View</button>
+        <button class="tab-btn" data-tab="builder">Message Builder</button>
+        <button class="tab-btn" data-tab="session">Session Log</button>
         <button class="tab-btn" data-tab="raw">Raw View</button>
         <button class="tab-btn" data-tab="json">JSON</button>
+        <button class="tab-btn" data-tab="export">Export</button>
       </div>
 
+      <!-- Parsed View Tab -->
       <div class="tab-content active" id="parsed-tab">
         <div class="parsed-header">
           <div class="field-search-container">
@@ -83,20 +68,113 @@
           <div class="header-right">
             <div class="checksum-status" id="checksum-status"></div>
             <button id="recalc-checksum-btn" class="btn btn-secondary btn-sm">Recalculate Checksum</button>
+            <button id="recalc-bodylength-btn" class="btn btn-secondary btn-sm">Recalculate BodyLength</button>
             <div class="message-info" id="message-info"></div>
           </div>
         </div>
         <div class="parsed-output" id="parsed-output"></div>
       </div>
 
+      <!-- Message Builder Tab -->
+      <div class="tab-content" id="builder-tab">
+        <div class="builder-form" id="builder-form">
+          <h3>Build a FIX Message</h3>
+
+          <div class="form-group">
+            <label for="builder-template">Template</label>
+            <select id="builder-template">
+              <option value="">Custom Message</option>
+              <option value="logon">Logon (A)</option>
+              <option value="heartbeat">Heartbeat (0)</option>
+              <option value="test-request">Test Request (1)</option>
+              <option value="new-order">New Order - Single (D)</option>
+              <option value="execution-report">Execution Report (8)</option>
+              <option value="order-cancel">Order Cancel Request (F)</option>
+              <option value="order-cancel-replace">Order Cancel/Replace (G)</option>
+              <option value="market-data-request">Market Data Request (V)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="builder-version">FIX Version (Tag 8)</label>
+            <select id="builder-version">
+              <option value="FIX.4.0">FIX 4.0</option>
+              <option value="FIX.4.1">FIX 4.1</option>
+              <option value="FIX.4.2" selected>FIX 4.2</option>
+              <option value="FIX.4.3">FIX 4.3</option>
+              <option value="FIX.4.4">FIX 4.4</option>
+              <option value="FIXT.1.1">FIXT 1.1</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="builder-msgtype">Message Type (Tag 35)</label>
+            <select id="builder-msgtype">
+              <option value="0">0 - Heartbeat</option>
+              <option value="1">1 - Test Request</option>
+              <option value="2">2 - Resend Request</option>
+              <option value="3">3 - Reject</option>
+              <option value="4">4 - Sequence Reset</option>
+              <option value="5">5 - Logout</option>
+              <option value="8">8 - Execution Report</option>
+              <option value="9">9 - Order Cancel Reject</option>
+              <option value="A">A - Logon</option>
+              <option value="D" selected>D - New Order - Single</option>
+              <option value="F">F - Order Cancel Request</option>
+              <option value="G">G - Order Cancel/Replace Request</option>
+              <option value="V">V - Market Data Request</option>
+              <option value="W">W - Market Data Snapshot</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="builder-sender">SenderCompID (Tag 49)</label>
+            <input type="text" id="builder-sender" value="SENDER" placeholder="Sender Company ID">
+          </div>
+
+          <div class="form-group">
+            <label for="builder-target">TargetCompID (Tag 56)</label>
+            <input type="text" id="builder-target" value="TARGET" placeholder="Target Company ID">
+          </div>
+
+          <div class="form-group">
+            <label for="builder-seqnum">MsgSeqNum (Tag 34)</label>
+            <input type="number" id="builder-seqnum" value="1" min="1">
+          </div>
+
+          <div id="builder-fields-container"></div>
+
+          <div class="form-group">
+            <button id="builder-generate-btn" class="btn btn-success">Generate Message</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Session Log Tab -->
+      <div class="tab-content" id="session-tab">
+        <div class="raw-controls">
+          <button id="parse-session-btn" class="btn btn-primary">Parse Session Log</button>
+          <button id="export-session-btn" class="btn btn-secondary">Export Session</button>
+          <span id="session-stats" style="margin-left: auto; color: var(--text-color-secondary, #6c757d);"></span>
+        </div>
+        <div class="session-log-container" id="session-log-container">
+          <p style="color: var(--text-color-secondary, #6c757d); text-align: center;">
+            Parse multiple FIX messages from a session log. Each message should be on a separate line or separated by clear delimiters.
+          </p>
+        </div>
+      </div>
+
+      <!-- Raw View Tab -->
       <div class="tab-content" id="raw-tab">
         <div class="raw-controls">
           <button id="copy-raw-btn" class="btn btn-secondary">Copy</button>
-          <button id="format-raw-btn" class="btn btn-secondary">Format</button>
+          <button id="format-raw-btn" class="btn btn-secondary">Format with Comments</button>
+          <button id="compact-raw-btn" class="btn btn-secondary">Compact</button>
         </div>
         <textarea id="raw-output" class="raw-output" readonly></textarea>
       </div>
 
+      <!-- JSON Tab -->
       <div class="tab-content" id="json-tab">
         <div class="json-controls">
           <button id="copy-json-btn" class="btn btn-secondary">Copy</button>
@@ -104,1172 +182,34 @@
         </div>
         <pre id="json-output" class="json-output"></pre>
       </div>
+
+      <!-- Export Tab -->
+      <div class="tab-content" id="export-tab">
+        <div class="builder-form">
+          <h3>Export Options</h3>
+          <div class="form-group">
+            <label>Export Format</label>
+            <button id="export-csv-btn" class="btn btn-primary">Export as CSV</button>
+            <small>Export parsed fields as comma-separated values</small>
+          </div>
+          <div class="form-group">
+            <label>Export as XML</label>
+            <button id="export-xml-btn" class="btn btn-primary">Export as XML (FIXML)</button>
+            <small>Export message in FIXML format</small>
+          </div>
+          <div class="form-group">
+            <label>Export as HTML Report</label>
+            <button id="export-html-btn" class="btn btn-primary">Export as HTML Report</button>
+            <small>Generate a formatted HTML report of the message</small>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
-<!-- Styles -->
-<style>
-  .fix-parser-container {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    height: 100%;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-
-  .input-section, .output-section {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .input-section {
-    flex: 0 0 auto;
-  }
-
-  .output-section {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-
-  .section-header h3 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  .controls {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .sample-select, .delimiter-select {
-    padding: 6px 12px;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 4px;
-    background: var(--bg-color, white);
-    color: var(--text-color, #333);
-    font-size: 14px;
-  }
-
-  .sample-select {
-    min-width: 200px;
-  }
-
-  .fix-input {
-    width: 100%;
-    min-height: 120px;
-    padding: 12px;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    resize: vertical;
-    background: var(--bg-color, white);
-    color: var(--text-color, #333);
-  }
-
-  .btn {
-    padding: 6px 16px;
-    border: none;
-    border-radius: 4px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-primary {
-    background: #007bff;
-    color: white;
-  }
-
-  .btn-primary:hover {
-    background: #0056b3;
-  }
-
-  .btn-secondary {
-    background: #6c757d;
-    color: white;
-  }
-
-  .btn-secondary:hover {
-    background: #545b62;
-  }
-
-  .btn-sm {
-    padding: 4px 12px;
-    font-size: 13px;
-  }
-
-  .tabs {
-    display: flex;
-    gap: 4px;
-    border-bottom: 2px solid var(--border-color, #ddd);
-    margin-bottom: 15px;
-  }
-
-  .tab-btn {
-    padding: 10px 20px;
-    border: none;
-    background: transparent;
-    color: var(--text-color, #666);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    transition: all 0.2s;
-  }
-
-  .tab-btn:hover {
-    color: var(--text-color, #333);
-  }
-
-  .tab-btn.active {
-    color: #007bff;
-    border-bottom-color: #007bff;
-  }
-
-  .tab-content {
-    display: none;
-    flex: 1;
-    min-height: 0;
-    overflow: auto;
-  }
-
-  .tab-content.active {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .parsed-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    gap: 15px;
-  }
-
-  .search-box {
-    flex: 0 0 auto;
-  }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-    justify-content: flex-end;
-  }
-
-
-  .checksum-status {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-  }
-
-  .checksum-status.valid {
-    background: #d4edda;
-    color: #155724;
-  }
-
-  .checksum-status.invalid {
-    background: #f8d7da;
-    color: #721c24;
-  }
-
-  .checksum-status.missing {
-    background: #fff3cd;
-    color: #856404;
-  }
-
-  .field-search {
-    width: 100%;
-    max-width: 300px;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 4px;
-    font-size: 14px;
-    background: var(--bg-color, white);
-    color: var(--text-color, #333);
-  }
-
-  .message-info {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-  }
-
-  .info-badge {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-    background: #e9ecef;
-    color: #495057;
-  }
-
-  .info-badge.version {
-    background: #d1ecf1;
-    color: #0c5460;
-  }
-
-  .info-badge.type {
-    background: #d4edda;
-    color: #155724;
-  }
-
-  .parsed-output {
-    flex: 1;
-    overflow: auto;
-  }
-
-  .field-row {
-    display: grid;
-    grid-template-columns: 80px 200px 1fr 60px;
-    gap: 15px;
-    padding: 12px;
-    border-bottom: 1px solid var(--border-color, #eee);
-    align-items: start;
-    transition: background 0.2s;
-  }
-
-  .field-row:hover {
-    background: var(--hover-bg, #f8f9fa);
-  }
-
-  .field-row.header {
-    font-weight: 600;
-    background: var(--header-bg, #f1f3f5);
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
-
-  .field-tag {
-    font-family: 'Courier New', monospace;
-    font-weight: 600;
-    color: #007bff;
-  }
-
-  .field-name {
-    font-weight: 500;
-    color: var(--text-color, #333);
-  }
-
-  .field-value {
-    font-family: 'Courier New', monospace;
-    word-break: break-all;
-  }
-
-  .field-value input {
-    width: 100%;
-    padding: 4px 8px;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 3px;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    background: var(--bg-color, white);
-    color: var(--text-color, #333);
-  }
-
-  .field-value input.invalid {
-    border-color: #dc3545;
-    background: #fff5f5;
-  }
-
-  .field-value input.warning {
-    border-color: #ffc107;
-    background: #fffbf0;
-  }
-
-  .validation-error {
-    grid-column: 3 / 4;
-    padding: 4px 8px;
-    background: #f8d7da;
-    border-left: 3px solid #dc3545;
-    font-size: 12px;
-    color: #721c24;
-    margin-top: 5px;
-    border-radius: 0 4px 4px 0;
-  }
-
-  .validation-warning {
-    grid-column: 3 / 4;
-    padding: 4px 8px;
-    background: #fff3cd;
-    border-left: 3px solid #ffc107;
-    font-size: 12px;
-    color: #856404;
-    margin-top: 5px;
-    border-radius: 0 4px 4px 0;
-  }
-
-  .field-actions {
-    display: flex;
-    gap: 5px;
-    justify-content: flex-end;
-  }
-
-  .icon-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px;
-    color: #6c757d;
-    transition: color 0.2s;
-  }
-
-  .icon-btn:hover {
-    color: #007bff;
-  }
-
-  .field-description {
-    grid-column: 2 / -1;
-    padding: 8px 12px;
-    background: var(--info-bg, #f8f9fa);
-    border-left: 3px solid #007bff;
-    font-size: 13px;
-    color: var(--text-color-secondary, #666);
-    margin-top: 5px;
-    border-radius: 0 4px 4px 0;
-  }
-
-  .raw-controls, .json-controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .raw-output {
-    flex: 1;
-    width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    background: var(--bg-color, white);
-    color: var(--text-color, #333);
-    resize: none;
-  }
-
-  .json-output {
-    flex: 1;
-    overflow: auto;
-    padding: 15px;
-    background: var(--code-bg, #f5f5f5);
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 4px;
-    margin: 0;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    color: var(--text-color, #333);
-  }
-
-  .error-message {
-    padding: 12px;
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
-    color: #721c24;
-    margin: 10px 0;
-  }
-
-  .warning-message {
-    padding: 12px;
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    border-radius: 4px;
-    color: #856404;
-    margin: 10px 0;
-  }
-
-  @media (max-width: 768px) {
-    .field-row {
-      grid-template-columns: 60px 150px 1fr 50px;
-      gap: 10px;
-      font-size: 13px;
-    }
-  }
-</style>
-
 <!-- Module -->
-<script type="module">
-  // FIX Data Dictionary
-  const FIX_FIELDS = {
-    // Header fields
-    8: { name: 'BeginString', description: 'FIX protocol version (e.g., FIX.4.2, FIX.4.4)' },
-    9: { name: 'BodyLength', description: 'Message length in bytes' },
-    35: { name: 'MsgType', description: 'Message type (e.g., D=New Order, 8=Execution Report)' },
-    49: { name: 'SenderCompID', description: 'Sender company ID' },
-    56: { name: 'TargetCompID', description: 'Target company ID' },
-    34: { name: 'MsgSeqNum', description: 'Message sequence number' },
-    52: { name: 'SendingTime', description: 'Time of message transmission' },
-    10: { name: 'CheckSum', description: 'Three-byte checksum' },
-
-    // Common fields
-    7: { name: 'BeginSeqNo', description: 'Beginning sequence number for resend request' },
-    11: { name: 'ClOrdID', description: 'Client Order ID (unique per order)' },
-    14: { name: 'CumQty', description: 'Total quantity filled' },
-    15: { name: 'Currency', description: 'Currency code (ISO 4217)' },
-    16: { name: 'EndSeqNo', description: 'Ending sequence number for resend request' },
-    17: { name: 'ExecID', description: 'Execution ID (unique per execution)' },
-    20: { name: 'ExecTransType', description: 'Execution transaction type' },
-    21: { name: 'HandlInst', description: 'Handling instructions for order' },
-    22: { name: 'SecurityIDSource', description: 'Security identifier source' },
-    30: { name: 'LastMkt', description: 'Market of execution' },
-    31: { name: 'LastPx', description: 'Price of last fill' },
-    32: { name: 'LastQty', description: 'Quantity of last fill' },
-    37: { name: 'OrderID', description: 'Unique order ID assigned by broker' },
-    38: { name: 'OrderQty', description: 'Quantity ordered' },
-    39: { name: 'OrdStatus', description: 'Order status (0=New, 1=Partial, 2=Filled, etc.)' },
-    40: { name: 'OrdType', description: 'Order type (1=Market, 2=Limit, etc.)' },
-    41: { name: 'OrigClOrdID', description: 'Original Client Order ID' },
-    44: { name: 'Price', description: 'Price per unit' },
-    45: { name: 'RefSeqNum', description: 'Reference message sequence number' },
-    47: { name: 'Rule80A', description: 'Rule 80A (NYSE)' },
-    48: { name: 'SecurityID', description: 'Security identifier' },
-    50: { name: 'SenderSubID', description: 'Sender sub-identifier' },
-    54: { name: 'Side', description: 'Side of order (1=Buy, 2=Sell, etc.)' },
-    55: { name: 'Symbol', description: 'Ticker symbol' },
-    57: { name: 'TargetSubID', description: 'Target sub-identifier' },
-    58: { name: 'Text', description: 'Free text field' },
-    59: { name: 'TimeInForce', description: 'Time in force (0=Day, 1=GTC, etc.)' },
-    60: { name: 'TransactTime', description: 'Transaction time' },
-    63: { name: 'SettlType', description: 'Settlement type' },
-    64: { name: 'SettlDate', description: 'Settlement date' },
-    76: { name: 'ExecBroker', description: 'Executing broker' },
-    98: { name: 'EncryptMethod', description: 'Encryption method' },
-    99: { name: 'StopPx', description: 'Stop price for stop orders' },
-    100: { name: 'ExDestination', description: 'Execution destination' },
-    103: { name: 'OrdRejReason', description: 'Order rejection reason' },
-    108: { name: 'HeartBtInt', description: 'Heartbeat interval in seconds' },
-    109: { name: 'ClientID', description: 'Client ID' },
-    110: { name: 'MinQty', description: 'Minimum quantity' },
-    111: { name: 'MaxFloor', description: 'Maximum floor quantity' },
-    112: { name: 'TestReqID', description: 'Test request ID' },
-    115: { name: 'OnBehalfOfCompID', description: 'On behalf of company ID' },
-    116: { name: 'OnBehalfOfSubID', description: 'On behalf of sub-ID' },
-    117: { name: 'QuoteID', description: 'Quote ID' },
-    123: { name: 'GapFillFlag', description: 'Gap fill flag' },
-    126: { name: 'ExpireTime', description: 'Expiration time' },
-    128: { name: 'DeliverToCompID', description: 'Deliver to company ID' },
-    129: { name: 'DeliverToSubID', description: 'Deliver to sub-ID' },
-    141: { name: 'ResetSeqNumFlag', description: 'Reset sequence number flag' },
-    142: { name: 'SenderLocationID', description: 'Sender location ID' },
-    143: { name: 'TargetLocationID', description: 'Target location ID' },
-    146: { name: 'NoRelatedSym', description: 'Number of related symbols' },
-    150: { name: 'ExecType', description: 'Execution type (0=New, 1=Partial, 2=Fill, etc.)' },
-    151: { name: 'LeavesQty', description: 'Quantity still open for execution' },
-    167: { name: 'SecurityType', description: 'Security type (e.g., FUT, OPT, CS)' },
-    200: { name: 'MaturityMonthYear', description: 'Maturity month and year' },
-    201: { name: 'PutOrCall', description: 'Put or Call (0=Put, 1=Call)' },
-    202: { name: 'StrikePrice', description: 'Strike price for options' },
-    207: { name: 'SecurityExchange', description: 'Security exchange' },
-    262: { name: 'MDReqID', description: 'Market data request ID' },
-    263: { name: 'SubscriptionRequestType', description: 'Subscription request type (0=Snapshot, 1=Subscribe, 2=Unsubscribe)' },
-    264: { name: 'MarketDepth', description: 'Market depth (0=Full book, 1=Top of book)' },
-    265: { name: 'MDUpdateType', description: 'Market data update type (0=Full refresh, 1=Incremental)' },
-    267: { name: 'NoMDEntryTypes', description: 'Number of market data entry types' },
-    268: { name: 'NoMDEntries', description: 'Number of market data entries' },
-    269: { name: 'MDEntryType', description: 'Market data entry type (0=Bid, 1=Offer, 2=Trade)' },
-    270: { name: 'MDEntryPx', description: 'Market data entry price' },
-    271: { name: 'MDEntrySize', description: 'Market data entry size' },
-    279: { name: 'MDUpdateAction', description: 'Market data update action (0=New, 1=Change, 2=Delete)' },
-    281: { name: 'MDReqRejReason', description: 'Market data request reject reason' },
-    372: { name: 'RefMsgType', description: 'Reference message type' },
-    373: { name: 'SessionRejectReason', description: 'Session reject reason' },
-    378: { name: 'ExecRestatementReason', description: 'Execution restatement reason' },
-    380: { name: 'BusinessRejectRefID', description: 'Business reject reference ID' },
-    434: { name: 'CxlRejResponseTo', description: 'Cancel reject response to' },
-    447: { name: 'PartyIDSource', description: 'Party ID source' },
-    448: { name: 'PartyID', description: 'Party ID' },
-    452: { name: 'PartyRole', description: 'Party role' },
-    553: { name: 'Username', description: 'Username for authentication' },
-    554: { name: 'Password', description: 'Password for authentication' },
-    625: { name: 'TradingSessionID', description: 'Trading session ID' },
-    636: { name: 'WorkingIndicator', description: 'Working indicator' },
-    1128: { name: 'ApplVerID', description: 'Application version ID' },
-  };
-
-  const MSG_TYPES = {
-    '0': 'Heartbeat',
-    '1': 'Test Request',
-    '2': 'Resend Request',
-    '3': 'Reject',
-    '4': 'Sequence Reset',
-    '5': 'Logout',
-    '8': 'Execution Report',
-    '9': 'Order Cancel Reject',
-    'A': 'Logon',
-    'D': 'New Order - Single',
-    'F': 'Order Cancel Request',
-    'G': 'Order Cancel/Replace Request',
-    'H': 'Order Status Request',
-    'V': 'Market Data Request',
-    'W': 'Market Data - Snapshot/Full Refresh',
-    'X': 'Market Data - Incremental Refresh',
-    'Y': 'Market Data Request Reject',
-    'j': 'Business Message Reject',
-  };
-
-  const SAMPLE_MESSAGES = {
-    // Session Messages
-    'logon': '8=FIX.4.2|9=105|35=A|49=SENDER|56=TARGET|34=1|52=20240115-08:00:00|98=0|108=30|553=USERNAME|554=PASSWORD|10=000',
-    'logout': '8=FIX.4.2|9=85|35=5|49=SENDER|56=TARGET|34=100|52=20240115-18:00:00|58=Normal logout|10=000',
-    'heartbeat': '8=FIX.4.2|9=65|35=0|49=SENDER|56=TARGET|34=50|52=20240115-14:30:00|10=000',
-    'test-request': '8=FIX.4.2|9=75|35=1|49=SENDER|56=TARGET|34=51|52=20240115-14:35:00|112=TEST123|10=000',
-    'resend-request': '8=FIX.4.2|9=75|35=2|49=SENDER|56=TARGET|34=52|52=20240115-14:40:00|7=10|16=20|10=000',
-
-    // Order Messages - New Orders
-    'new-order': '8=FIX.4.2|9=178|35=D|49=SENDER|56=TARGET|34=1|52=20240115-12:30:00|11=ORDER123|21=1|55=AAPL|54=1|60=20240115-12:30:00|38=100|40=2|44=150.50|59=0|10=000',
-    'new-order-market': '8=FIX.4.2|9=165|35=D|49=SENDER|56=TARGET|34=2|52=20240115-12:35:00|11=ORDER124|21=1|55=TSLA|54=2|60=20240115-12:35:00|38=50|40=1|59=0|10=000',
-    'new-order-stop': '8=FIX.4.2|9=185|35=D|49=SENDER|56=TARGET|34=3|52=20240115-12:40:00|11=ORDER125|21=1|55=GOOGL|54=2|60=20240115-12:40:00|38=25|40=3|99=140.00|59=1|10=000',
-
-    // Execution Reports
-    'execution-report': '8=FIX.4.2|9=245|35=8|49=TARGET|56=SENDER|34=2|52=20240115-12:30:05|11=ORDER123|17=EXEC001|37=ORD456|39=2|54=1|55=AAPL|150=2|151=0|14=100|38=100|31=150.50|32=100|60=20240115-12:30:05|10=000',
-    'execution-report-partial': '8=FIX.4.2|9=240|35=8|49=TARGET|56=SENDER|34=3|52=20240115-12:35:10|11=ORDER124|17=EXEC002|37=ORD457|39=1|54=2|55=TSLA|150=1|151=20|14=30|38=50|31=245.75|32=30|60=20240115-12:35:10|10=000',
-    'execution-report-reject': '8=FIX.4.2|9=230|35=8|49=TARGET|56=SENDER|34=4|52=20240115-12:40:15|11=ORDER125|17=EXEC003|37=ORD458|39=8|54=2|55=GOOGL|150=8|151=25|14=0|38=25|103=1|58=Insufficient funds|60=20240115-12:40:15|10=000',
-
-    // Order Management
-    'order-cancel': '8=FIX.4.2|9=156|35=F|49=SENDER|56=TARGET|34=5|52=20240115-14:00:00|11=CANCEL001|41=ORDER123|55=AAPL|54=1|60=20240115-14:00:00|10=000',
-    'order-cancel-replace': '8=FIX.4.2|9=195|35=G|49=SENDER|56=TARGET|34=6|52=20240115-14:05:00|11=REPLACE001|41=ORDER124|55=TSLA|54=2|60=20240115-14:05:00|38=75|40=2|44=248.00|10=000',
-    'order-cancel-reject': '8=FIX.4.2|9=185|35=9|49=TARGET|56=SENDER|34=7|52=20240115-14:00:05|11=CANCEL001|41=ORDER123|37=ORD456|39=2|434=1|58=Order already filled|10=000',
-    'order-status-request': '8=FIX.4.2|9=145|35=H|49=SENDER|56=TARGET|34=8|52=20240115-14:10:00|11=ORDERSTAT001|37=ORD456|55=AAPL|54=1|10=000',
-
-    // Market Data
-    'market-data-request': '8=FIX.4.2|9=145|35=V|49=SENDER|56=TARGET|34=3|52=20240115-13:00:00|262=MDREQ001|263=1|264=0|265=0|146=1|55=MSFT|267=2|269=0|269=1|10=000',
-    'market-data-snapshot': '8=FIX.4.2|9=198|35=W|49=TARGET|56=SENDER|34=4|52=20240115-13:00:01|55=MSFT|262=MDREQ001|268=2|269=0|270=385.25|271=1000|269=1|270=385.50|271=800|10=000',
-    'market-data-incremental': '8=FIX.4.2|9=175|35=X|49=TARGET|56=SENDER|34=5|52=20240115-13:00:15|262=MDREQ001|268=1|279=1|269=0|270=385.30|271=1500|55=MSFT|10=000',
-    'market-data-reject': '8=FIX.4.2|9=135|35=Y|49=TARGET|56=SENDER|34=6|52=20240115-13:01:00|262=MDREQ002|58=Unknown symbol|281=1|10=000',
-
-    // Error Messages
-    'reject': '8=FIX.4.2|9=125|35=3|49=TARGET|56=SENDER|34=10|52=20240115-15:00:00|45=99|58=Invalid message type|372=D|373=5|10=000',
-    'business-reject': '8=FIX.4.2|9=145|35=j|49=TARGET|56=SENDER|34=11|52=20240115-15:05:00|45=100|372=D|380=BIZREJ001|58=Order type not supported|10=000'
-  };
-
-  // Field validation rules
-  const VALIDATION_RULES = {
-    // Numeric fields
-    9: { type: 'number', name: 'BodyLength' },
-    14: { type: 'number', name: 'CumQty' },
-    31: { type: 'price', name: 'LastPx' },
-    32: { type: 'number', name: 'LastQty' },
-    34: { type: 'number', name: 'MsgSeqNum' },
-    38: { type: 'number', name: 'OrderQty' },
-    44: { type: 'price', name: 'Price' },
-    110: { type: 'number', name: 'MinQty' },
-    111: { type: 'number', name: 'MaxFloor' },
-    151: { type: 'number', name: 'LeavesQty' },
-    202: { type: 'price', name: 'StrikePrice' },
-    268: { type: 'number', name: 'NoMDEntries' },
-    270: { type: 'price', name: 'MDEntryPx' },
-    271: { type: 'number', name: 'MDEntrySize' },
-
-    // Enum fields
-    39: { type: 'enum', name: 'OrdStatus', values: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E'] },
-    40: { type: 'enum', name: 'OrdType', values: ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'] },
-    54: { type: 'enum', name: 'Side', values: ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C'] },
-    59: { type: 'enum', name: 'TimeInForce', values: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] },
-    150: { type: 'enum', name: 'ExecType', values: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'] },
-
-    // Timestamp fields
-    52: { type: 'timestamp', name: 'SendingTime' },
-    60: { type: 'timestamp', name: 'TransactTime' },
-    64: { type: 'date', name: 'SettlDate' },
-    126: { type: 'timestamp', name: 'ExpireTime' },
-
-    // Checksum
-    10: { type: 'checksum', name: 'CheckSum' }
-  };
-
-  let parsedData = null;
-  let originalMessage = '';
-
-  export function init(context) {
-    const container = context.container;
-
-    // Get elements
-    const fixInput = container.querySelector('#fix-input');
-    const parseBtn = container.querySelector('#parse-btn');
-    const clearBtn = container.querySelector('#clear-btn');
-    const sampleSelect = container.querySelector('#sample-select');
-    const delimiterSelect = container.querySelector('#delimiter-select');
-    const fieldSearch = container.querySelector('#field-search');
-    const recalcChecksumBtn = container.querySelector('#recalc-checksum-btn');
-    const checksumStatus = container.querySelector('#checksum-status');
-
-    // Tab elements
-    const tabBtns = container.querySelectorAll('.tab-btn');
-    const tabContents = container.querySelectorAll('.tab-content');
-
-    // Output elements
-    const parsedOutput = container.querySelector('#parsed-output');
-    const rawOutput = container.querySelector('#raw-output');
-    const jsonOutput = container.querySelector('#json-output');
-    const messageInfo = container.querySelector('#message-info');
-
-    // Button elements
-    const copyRawBtn = container.querySelector('#copy-raw-btn');
-    const formatRawBtn = container.querySelector('#format-raw-btn');
-    const copyJsonBtn = container.querySelector('#copy-json-btn');
-    const downloadJsonBtn = container.querySelector('#download-json-btn');
-
-    // Event listeners
-    parseBtn.addEventListener('click', () => parseMessage());
-    clearBtn.addEventListener('click', () => clearAll());
-    sampleSelect.addEventListener('change', (e) => loadSample(e.target.value));
-    recalcChecksumBtn.addEventListener('click', () => recalculateChecksum());
-
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-
-    fieldSearch.addEventListener('input', (e) => filterFields(e.target.value));
-
-    copyRawBtn.addEventListener('click', () => copyToClipboard(rawOutput.value));
-    formatRawBtn.addEventListener('click', () => formatRawMessage());
-    copyJsonBtn.addEventListener('click', () => copyToClipboard(jsonOutput.textContent));
-    downloadJsonBtn.addEventListener('click', () => downloadJSON());
-
-    // Allow parsing with Enter (Ctrl+Enter in textarea)
-    fixInput.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 'Enter') {
-        parseMessage();
-      }
-    });
-
-    function parseMessage() {
-      const input = fixInput.value.trim();
-      if (!input) {
-        showError('Please enter a FIX message');
-        return;
-      }
-
-      originalMessage = input;
-      const delimiter = getDelimiter(input, delimiterSelect.value);
-
-      try {
-        parsedData = parseFIXMessage(input, delimiter);
-        displayParsedMessage(parsedData);
-        displayRawMessage(parsedData);
-        displayJSONMessage(parsedData);
-        updateMessageInfo(parsedData);
-        validateChecksum(parsedData);
-      } catch (error) {
-        showError(`Parse error: ${error.message}`);
-      }
-    }
-
-    function getDelimiter(message, selected) {
-      if (selected === 'auto') {
-        if (message.includes('|')) return '|';
-        if (message.includes('\x01') || message.includes('^A')) return '\x01';
-        return '|';
-      }
-      return selected === 'SOH' ? '\x01' : selected;
-    }
-
-    function parseFIXMessage(message, delimiter) {
-      // Replace ^A with actual SOH character
-      let msg = message.replace(/\^A/g, '\x01');
-
-      // Use the specified delimiter
-      const delim = delimiter === '\x01' ? '\x01' : delimiter;
-      const fields = msg.split(delim).filter(f => f.trim());
-
-      const parsed = {
-        fields: [],
-        raw: message,
-        delimiter: delimiter,
-        header: {},
-        body: {},
-        trailer: {}
-      };
-
-      fields.forEach(field => {
-        const [tag, ...valueParts] = field.split('=');
-        const value = valueParts.join('='); // Handle values with '=' in them
-
-        if (tag && value !== undefined) {
-          const tagNum = tag.trim();
-          const fieldDef = FIX_FIELDS[tagNum] || { name: `Tag${tagNum}`, description: 'Unknown field' };
-
-          const fieldData = {
-            tag: tagNum,
-            name: fieldDef.name,
-            value: value,
-            description: fieldDef.description,
-            editable: true
-          };
-
-          parsed.fields.push(fieldData);
-
-          // Categorize fields
-          if (['8', '9', '35', '49', '56', '34', '52'].includes(tagNum)) {
-            parsed.header[tagNum] = value;
-          } else if (tagNum === '10') {
-            parsed.trailer[tagNum] = value;
-          } else {
-            parsed.body[tagNum] = value;
-          }
-        }
-      });
-
-      return parsed;
-    }
-
-    function displayParsedMessage(data) {
-      parsedOutput.innerHTML = '';
-
-      // Header row
-      const headerRow = document.createElement('div');
-      headerRow.className = 'field-row header';
-      headerRow.innerHTML = `
-        <div>Tag</div>
-        <div>Field Name</div>
-        <div>Value</div>
-        <div>Actions</div>
-      `;
-      parsedOutput.appendChild(headerRow);
-
-      // Field rows
-      data.fields.forEach((field, index) => {
-        const row = createFieldRow(field, index);
-        parsedOutput.appendChild(row);
-
-        // Append validation row if exists
-        if (row.validationRow) {
-          parsedOutput.appendChild(row.validationRow);
-        }
-      });
-    }
-
-    function createFieldRow(field, index) {
-      const row = document.createElement('div');
-      row.className = 'field-row';
-      row.dataset.index = index;
-      row.dataset.tag = field.tag;
-      row.dataset.name = field.name.toLowerCase();
-      row.dataset.value = field.value.toLowerCase();
-
-      const tagDiv = document.createElement('div');
-      tagDiv.className = 'field-tag';
-      tagDiv.textContent = field.tag;
-
-      const nameDiv = document.createElement('div');
-      nameDiv.className = 'field-name';
-      nameDiv.textContent = field.name;
-
-      const valueDiv = document.createElement('div');
-      valueDiv.className = 'field-value';
-
-      const valueInput = document.createElement('input');
-      valueInput.type = 'text';
-      valueInput.value = field.value;
-      valueInput.dataset.originalValue = field.value;
-      valueInput.addEventListener('change', (e) => updateFieldValue(index, e.target.value));
-
-      // Validate field
-      const validation = validateField(field);
-      if (validation) {
-        if (validation.type === 'error') {
-          valueInput.classList.add('invalid');
-        } else if (validation.type === 'warning') {
-          valueInput.classList.add('warning');
-        }
-        valueInput.title = validation.message;
-      }
-
-      valueDiv.appendChild(valueInput);
-
-      const actionsDiv = document.createElement('div');
-      actionsDiv.className = 'field-actions';
-
-      const infoBtn = document.createElement('button');
-      infoBtn.className = 'icon-btn';
-      infoBtn.textContent = 'ℹ️';
-      infoBtn.title = 'Show description';
-      infoBtn.addEventListener('click', () => toggleDescription(row, field));
-
-      const copyBtn = document.createElement('button');
-      copyBtn.className = 'icon-btn';
-      copyBtn.textContent = '📋';
-      copyBtn.title = 'Copy value';
-      copyBtn.addEventListener('click', () => copyToClipboard(field.value));
-
-      actionsDiv.appendChild(infoBtn);
-      actionsDiv.appendChild(copyBtn);
-
-      row.appendChild(tagDiv);
-      row.appendChild(nameDiv);
-      row.appendChild(valueDiv);
-      row.appendChild(actionsDiv);
-
-      // Add validation message row if needed
-      if (validation) {
-        const validationRow = document.createElement('div');
-        validationRow.className = 'field-row';
-        const validationDiv = document.createElement('div');
-        validationDiv.className = validation.type === 'error' ? 'validation-error' : 'validation-warning';
-        validationDiv.textContent = validation.message;
-        validationRow.appendChild(validationDiv);
-
-        // Store validation row reference
-        row.dataset.hasValidation = 'true';
-        row.validationRow = validationRow;
-      }
-
-      return row;
-    }
-
-    function toggleDescription(row, field) {
-      const existing = row.nextElementSibling;
-      if (existing && existing.classList.contains('field-description')) {
-        existing.remove();
-        return;
-      }
-
-      const descRow = document.createElement('div');
-      descRow.className = 'field-row';
-      const descDiv = document.createElement('div');
-      descDiv.className = 'field-description';
-      descDiv.textContent = field.description;
-      descRow.appendChild(descDiv);
-
-      row.parentNode.insertBefore(descRow, row.nextSibling);
-    }
-
-    function updateFieldValue(index, newValue) {
-      if (parsedData && parsedData.fields[index]) {
-        parsedData.fields[index].value = newValue;
-        displayParsedMessage(parsedData); // Redisplay to show validation
-        displayRawMessage(parsedData);
-        displayJSONMessage(parsedData);
-        validateChecksum(parsedData); // Revalidate checksum
-      }
-    }
-
-    function displayRawMessage(data) {
-      const delim = data.delimiter === '\x01' ? '|' : data.delimiter;
-      const fields = data.fields.map(f => `${f.tag}=${f.value}`);
-      rawOutput.value = fields.join(delim);
-    }
-
-    function formatRawMessage() {
-      if (!parsedData) return;
-
-      const delim = parsedData.delimiter === '\x01' ? '|' : parsedData.delimiter;
-      const fields = parsedData.fields.map(f => {
-        const fieldDef = FIX_FIELDS[f.tag] || { name: `Tag${f.tag}` };
-        return `${f.tag}=${f.value}  // ${fieldDef.name}`;
-      });
-
-      rawOutput.value = fields.join('\n');
-    }
-
-    function displayJSONMessage(data) {
-      const json = {
-        header: {},
-        body: {},
-        trailer: {}
-      };
-
-      data.fields.forEach(field => {
-        const obj = {
-          name: field.name,
-          value: field.value,
-          description: field.description
-        };
-
-        if (['8', '9', '35', '49', '56', '34', '52'].includes(field.tag)) {
-          json.header[field.tag] = obj;
-        } else if (field.tag === '10') {
-          json.trailer[field.tag] = obj;
-        } else {
-          json.body[field.tag] = obj;
-        }
-      });
-
-      jsonOutput.textContent = JSON.stringify(json, null, 2);
-    }
-
-    function updateMessageInfo(data) {
-      messageInfo.innerHTML = '';
-
-      const version = data.header['8'];
-      if (version) {
-        const badge = document.createElement('span');
-        badge.className = 'info-badge version';
-        badge.textContent = version;
-        messageInfo.appendChild(badge);
-      }
-
-      const msgType = data.header['35'];
-      if (msgType) {
-        const badge = document.createElement('span');
-        badge.className = 'info-badge type';
-        badge.textContent = MSG_TYPES[msgType] || `Type ${msgType}`;
-        messageInfo.appendChild(badge);
-      }
-
-      const fieldCount = document.createElement('span');
-      fieldCount.className = 'info-badge';
-      fieldCount.textContent = `${data.fields.length} fields`;
-      messageInfo.appendChild(fieldCount);
-    }
-
-    function loadSample(sampleKey) {
-      if (!sampleKey) return;
-
-      const message = SAMPLE_MESSAGES[sampleKey];
-      if (message) {
-        fixInput.value = message;
-        parseMessage();
-        sampleSelect.value = ''; // Reset dropdown
-      }
-    }
-
-    function calculateChecksum(message) {
-      // FIX checksum is calculated on everything before the checksum field (10=)
-      // It's the sum of all bytes modulo 256, formatted as 3 digits
-      const checksumIndex = message.lastIndexOf('10=');
-      if (checksumIndex === -1) return null;
-
-      const messageBeforeChecksum = message.substring(0, checksumIndex);
-      let sum = 0;
-
-      for (let i = 0; i < messageBeforeChecksum.length; i++) {
-        sum += messageBeforeChecksum.charCodeAt(i);
-      }
-
-      const checksum = (sum % 256).toString().padStart(3, '0');
-      return checksum;
-    }
-
-    function validateChecksum(data) {
-      checksumStatus.innerHTML = '';
-      checksumStatus.className = 'checksum-status';
-
-      const checksumField = data.fields.find(f => f.tag === '10');
-      if (!checksumField) {
-        checksumStatus.textContent = 'No checksum';
-        checksumStatus.classList.add('missing');
-        return;
-      }
-
-      // Build message string for checksum calculation
-      const delim = data.delimiter === '\x01' ? '\x01' : data.delimiter;
-      const fieldsBeforeChecksum = data.fields.filter(f => f.tag !== '10');
-      const messageBeforeChecksum = fieldsBeforeChecksum.map(f => `${f.tag}=${f.value}`).join(delim) + delim + '10=';
-
-      let sum = 0;
-      for (let i = 0; i < messageBeforeChecksum.length; i++) {
-        sum += messageBeforeChecksum.charCodeAt(i);
-      }
-
-      const calculatedChecksum = (sum % 256).toString().padStart(3, '0');
-      const actualChecksum = checksumField.value;
-
-      if (calculatedChecksum === actualChecksum) {
-        checksumStatus.textContent = `✓ Checksum valid (${actualChecksum})`;
-        checksumStatus.classList.add('valid');
-      } else {
-        checksumStatus.textContent = `✗ Checksum invalid (expected ${calculatedChecksum}, got ${actualChecksum})`;
-        checksumStatus.classList.add('invalid');
-      }
-    }
-
-    function recalculateChecksum() {
-      if (!parsedData) return;
-
-      const delim = parsedData.delimiter === '\x01' ? '\x01' : parsedData.delimiter;
-      const fieldsBeforeChecksum = parsedData.fields.filter(f => f.tag !== '10');
-      const messageBeforeChecksum = fieldsBeforeChecksum.map(f => `${f.tag}=${f.value}`).join(delim) + delim + '10=';
-
-      let sum = 0;
-      for (let i = 0; i < messageBeforeChecksum.length; i++) {
-        sum += messageBeforeChecksum.charCodeAt(i);
-      }
-
-      const calculatedChecksum = (sum % 256).toString().padStart(3, '0');
-
-      // Update checksum field
-      const checksumField = parsedData.fields.find(f => f.tag === '10');
-      if (checksumField) {
-        checksumField.value = calculatedChecksum;
-        displayParsedMessage(parsedData);
-        displayRawMessage(parsedData);
-        displayJSONMessage(parsedData);
-        validateChecksum(parsedData);
-      }
-    }
-
-    function validateField(field) {
-      const rule = VALIDATION_RULES[field.tag];
-      if (!rule) return null;
-
-      const value = field.value;
-
-      switch (rule.type) {
-        case 'number':
-          if (!/^\d+$/.test(value)) {
-            return { type: 'error', message: `${rule.name} must be a positive integer` };
-          }
-          break;
-
-        case 'price':
-          if (!/^\d+(\.\d+)?$/.test(value)) {
-            return { type: 'error', message: `${rule.name} must be a valid price (e.g., 150.50)` };
-          }
-          break;
-
-        case 'enum':
-          if (!rule.values.includes(value)) {
-            return { type: 'warning', message: `${rule.name} has unexpected value '${value}'` };
-          }
-          break;
-
-        case 'timestamp':
-          // FIX timestamp format: YYYYMMDD-HH:MM:SS or YYYYMMDD-HH:MM:SS.sss
-          if (!/^\d{8}-\d{2}:\d{2}:\d{2}(\.\d{3})?$/.test(value)) {
-            return { type: 'error', message: `${rule.name} must be in format YYYYMMDD-HH:MM:SS` };
-          }
-          break;
-
-        case 'date':
-          // FIX date format: YYYYMMDD
-          if (!/^\d{8}$/.test(value)) {
-            return { type: 'error', message: `${rule.name} must be in format YYYYMMDD` };
-          }
-          break;
-
-        case 'checksum':
-          if (!/^\d{3}$/.test(value)) {
-            return { type: 'error', message: 'Checksum must be 3 digits' };
-          }
-          break;
-      }
-
-      return null;
-    }
-
-    function filterFields(query) {
-      if (!parsedData) return;
-
-      const lowerQuery = query.toLowerCase();
-      const rows = parsedOutput.querySelectorAll('.field-row:not(.header)');
-
-      rows.forEach(row => {
-        if (row.classList.contains('field-description')) {
-          row.style.display = 'none';
-          return;
-        }
-
-        const tag = row.dataset.tag || '';
-        const name = row.dataset.name || '';
-        const value = row.dataset.value || '';
-
-        const matches = tag.includes(lowerQuery) ||
-                       name.includes(lowerQuery) ||
-                       value.includes(lowerQuery);
-
-        row.style.display = matches ? 'grid' : 'none';
-      });
-    }
-
-    function switchTab(tabName) {
-      tabBtns.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tab === tabName);
-      });
-
-      tabContents.forEach(content => {
-        content.classList.toggle('active', content.id === `${tabName}-tab`);
-      });
-    }
-
-    function clearAll() {
-      fixInput.value = '';
-      parsedOutput.innerHTML = '';
-      rawOutput.value = '';
-      jsonOutput.textContent = '';
-      messageInfo.innerHTML = '';
-      checksumStatus.innerHTML = '';
-      checksumStatus.className = 'checksum-status';
-      fieldSearch.value = '';
-      sampleSelect.value = '';
-      parsedData = null;
-      originalMessage = '';
-
-      // Remove any error messages
-      const errors = container.querySelectorAll('.error-message, .warning-message');
-      errors.forEach(err => err.remove());
-    }
-
-    function showError(message) {
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'error-message';
-      errorDiv.textContent = message;
-
-      const inputSection = container.querySelector('.input-section');
-      const existing = inputSection.querySelector('.error-message');
-      if (existing) existing.remove();
-
-      inputSection.appendChild(errorDiv);
-
-      setTimeout(() => errorDiv.remove(), 5000);
-    }
-
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        // Show temporary feedback
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.textContent = '✓ Copied';
-        setTimeout(() => btn.textContent = originalText, 2000);
-      });
-    }
-
-    function downloadJSON() {
-      if (!parsedData) return;
-
-      const json = jsonOutput.textContent;
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'fix-message.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // Load sample message if requested
-    context.loadSample = () => {
-      fixInput.value = '8=FIX.4.2|9=178|35=D|49=SENDER|56=TARGET|34=1|52=20240115-12:30:00|11=ORDER123|21=1|55=AAPL|54=1|60=20240115-12:30:00|38=100|40=2|44=150.50|59=0|10=000';
-      parseMessage();
-    };
-  }
-
-  export function cleanup(context) {
-    // Cleanup if needed
-  }
-</script>
+<script type="module" src="fix-parser.js"></script>
 
 </body>
 </html>
