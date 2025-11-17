@@ -26,12 +26,35 @@
         <div class="controls">
           <select id="sample-select" class="sample-select">
             <option value="">Load Sample...</option>
-            <option value="logon">Logon (A)</option>
-            <option value="new-order">New Order - Single (D)</option>
-            <option value="execution-report">Execution Report (8)</option>
-            <option value="market-data-request">Market Data Request (V)</option>
-            <option value="market-data-snapshot">Market Data Snapshot (W)</option>
-            <option value="order-cancel">Order Cancel Request (F)</option>
+            <optgroup label="Session Messages">
+              <option value="logon">Logon (A)</option>
+              <option value="logout">Logout (5)</option>
+              <option value="heartbeat">Heartbeat (0)</option>
+              <option value="test-request">Test Request (1)</option>
+              <option value="resend-request">Resend Request (2)</option>
+            </optgroup>
+            <optgroup label="Order Messages">
+              <option value="new-order">New Order - Single (D)</option>
+              <option value="new-order-market">New Order - Market (D)</option>
+              <option value="new-order-stop">New Order - Stop Loss (D)</option>
+              <option value="execution-report">Execution Report - Fill (8)</option>
+              <option value="execution-report-partial">Execution Report - Partial (8)</option>
+              <option value="execution-report-reject">Execution Report - Reject (8)</option>
+              <option value="order-cancel">Order Cancel Request (F)</option>
+              <option value="order-cancel-replace">Order Cancel/Replace (G)</option>
+              <option value="order-cancel-reject">Order Cancel Reject (9)</option>
+              <option value="order-status-request">Order Status Request (H)</option>
+            </optgroup>
+            <optgroup label="Market Data">
+              <option value="market-data-request">Market Data Request (V)</option>
+              <option value="market-data-snapshot">Market Data Snapshot (W)</option>
+              <option value="market-data-incremental">Market Data Incremental (X)</option>
+              <option value="market-data-reject">Market Data Reject (Y)</option>
+            </optgroup>
+            <optgroup label="Error Messages">
+              <option value="reject">Reject (3)</option>
+              <option value="business-reject">Business Message Reject (j)</option>
+            </optgroup>
           </select>
           <select id="delimiter-select" class="delimiter-select">
             <option value="|">Pipe (|)</option>
@@ -501,9 +524,11 @@
     10: { name: 'CheckSum', description: 'Three-byte checksum' },
 
     // Common fields
+    7: { name: 'BeginSeqNo', description: 'Beginning sequence number for resend request' },
     11: { name: 'ClOrdID', description: 'Client Order ID (unique per order)' },
     14: { name: 'CumQty', description: 'Total quantity filled' },
     15: { name: 'Currency', description: 'Currency code (ISO 4217)' },
+    16: { name: 'EndSeqNo', description: 'Ending sequence number for resend request' },
     17: { name: 'ExecID', description: 'Execution ID (unique per execution)' },
     20: { name: 'ExecTransType', description: 'Execution transaction type' },
     21: { name: 'HandlInst', description: 'Handling instructions for order' },
@@ -517,6 +542,7 @@
     40: { name: 'OrdType', description: 'Order type (1=Market, 2=Limit, etc.)' },
     41: { name: 'OrigClOrdID', description: 'Original Client Order ID' },
     44: { name: 'Price', description: 'Price per unit' },
+    45: { name: 'RefSeqNum', description: 'Reference message sequence number' },
     47: { name: 'Rule80A', description: 'Rule 80A (NYSE)' },
     48: { name: 'SecurityID', description: 'Security identifier' },
     50: { name: 'SenderSubID', description: 'Sender sub-identifier' },
@@ -530,6 +556,7 @@
     64: { name: 'SettlDate', description: 'Settlement date' },
     76: { name: 'ExecBroker', description: 'Executing broker' },
     98: { name: 'EncryptMethod', description: 'Encryption method' },
+    99: { name: 'StopPx', description: 'Stop price for stop orders' },
     100: { name: 'ExDestination', description: 'Execution destination' },
     103: { name: 'OrdRejReason', description: 'Order rejection reason' },
     108: { name: 'HeartBtInt', description: 'Heartbeat interval in seconds' },
@@ -547,6 +574,7 @@
     141: { name: 'ResetSeqNumFlag', description: 'Reset sequence number flag' },
     142: { name: 'SenderLocationID', description: 'Sender location ID' },
     143: { name: 'TargetLocationID', description: 'Target location ID' },
+    146: { name: 'NoRelatedSym', description: 'Number of related symbols' },
     150: { name: 'ExecType', description: 'Execution type (0=New, 1=Partial, 2=Fill, etc.)' },
     151: { name: 'LeavesQty', description: 'Quantity still open for execution' },
     167: { name: 'SecurityType', description: 'Security type (e.g., FUT, OPT, CS)' },
@@ -555,10 +583,16 @@
     202: { name: 'StrikePrice', description: 'Strike price for options' },
     207: { name: 'SecurityExchange', description: 'Security exchange' },
     262: { name: 'MDReqID', description: 'Market data request ID' },
+    263: { name: 'SubscriptionRequestType', description: 'Subscription request type (0=Snapshot, 1=Subscribe, 2=Unsubscribe)' },
+    264: { name: 'MarketDepth', description: 'Market depth (0=Full book, 1=Top of book)' },
+    265: { name: 'MDUpdateType', description: 'Market data update type (0=Full refresh, 1=Incremental)' },
+    267: { name: 'NoMDEntryTypes', description: 'Number of market data entry types' },
     268: { name: 'NoMDEntries', description: 'Number of market data entries' },
-    269: { name: 'MDEntryType', description: 'Market data entry type' },
+    269: { name: 'MDEntryType', description: 'Market data entry type (0=Bid, 1=Offer, 2=Trade)' },
     270: { name: 'MDEntryPx', description: 'Market data entry price' },
     271: { name: 'MDEntrySize', description: 'Market data entry size' },
+    279: { name: 'MDUpdateAction', description: 'Market data update action (0=New, 1=Change, 2=Delete)' },
+    281: { name: 'MDReqRejReason', description: 'Market data request reject reason' },
     372: { name: 'RefMsgType', description: 'Reference message type' },
     373: { name: 'SessionRejectReason', description: 'Session reject reason' },
     378: { name: 'ExecRestatementReason', description: 'Execution restatement reason' },
@@ -596,12 +630,38 @@
   };
 
   const SAMPLE_MESSAGES = {
+    // Session Messages
     'logon': '8=FIX.4.2|9=105|35=A|49=SENDER|56=TARGET|34=1|52=20240115-08:00:00|98=0|108=30|553=USERNAME|554=PASSWORD|10=000',
+    'logout': '8=FIX.4.2|9=85|35=5|49=SENDER|56=TARGET|34=100|52=20240115-18:00:00|58=Normal logout|10=000',
+    'heartbeat': '8=FIX.4.2|9=65|35=0|49=SENDER|56=TARGET|34=50|52=20240115-14:30:00|10=000',
+    'test-request': '8=FIX.4.2|9=75|35=1|49=SENDER|56=TARGET|34=51|52=20240115-14:35:00|112=TEST123|10=000',
+    'resend-request': '8=FIX.4.2|9=75|35=2|49=SENDER|56=TARGET|34=52|52=20240115-14:40:00|7=10|16=20|10=000',
+
+    // Order Messages - New Orders
     'new-order': '8=FIX.4.2|9=178|35=D|49=SENDER|56=TARGET|34=1|52=20240115-12:30:00|11=ORDER123|21=1|55=AAPL|54=1|60=20240115-12:30:00|38=100|40=2|44=150.50|59=0|10=000',
+    'new-order-market': '8=FIX.4.2|9=165|35=D|49=SENDER|56=TARGET|34=2|52=20240115-12:35:00|11=ORDER124|21=1|55=TSLA|54=2|60=20240115-12:35:00|38=50|40=1|59=0|10=000',
+    'new-order-stop': '8=FIX.4.2|9=185|35=D|49=SENDER|56=TARGET|34=3|52=20240115-12:40:00|11=ORDER125|21=1|55=GOOGL|54=2|60=20240115-12:40:00|38=25|40=3|99=140.00|59=1|10=000',
+
+    // Execution Reports
     'execution-report': '8=FIX.4.2|9=245|35=8|49=TARGET|56=SENDER|34=2|52=20240115-12:30:05|11=ORDER123|17=EXEC001|37=ORD456|39=2|54=1|55=AAPL|150=2|151=0|14=100|38=100|31=150.50|32=100|60=20240115-12:30:05|10=000',
+    'execution-report-partial': '8=FIX.4.2|9=240|35=8|49=TARGET|56=SENDER|34=3|52=20240115-12:35:10|11=ORDER124|17=EXEC002|37=ORD457|39=1|54=2|55=TSLA|150=1|151=20|14=30|38=50|31=245.75|32=30|60=20240115-12:35:10|10=000',
+    'execution-report-reject': '8=FIX.4.2|9=230|35=8|49=TARGET|56=SENDER|34=4|52=20240115-12:40:15|11=ORDER125|17=EXEC003|37=ORD458|39=8|54=2|55=GOOGL|150=8|151=25|14=0|38=25|103=1|58=Insufficient funds|60=20240115-12:40:15|10=000',
+
+    // Order Management
+    'order-cancel': '8=FIX.4.2|9=156|35=F|49=SENDER|56=TARGET|34=5|52=20240115-14:00:00|11=CANCEL001|41=ORDER123|55=AAPL|54=1|60=20240115-14:00:00|10=000',
+    'order-cancel-replace': '8=FIX.4.2|9=195|35=G|49=SENDER|56=TARGET|34=6|52=20240115-14:05:00|11=REPLACE001|41=ORDER124|55=TSLA|54=2|60=20240115-14:05:00|38=75|40=2|44=248.00|10=000',
+    'order-cancel-reject': '8=FIX.4.2|9=185|35=9|49=TARGET|56=SENDER|34=7|52=20240115-14:00:05|11=CANCEL001|41=ORDER123|37=ORD456|39=2|434=1|58=Order already filled|10=000',
+    'order-status-request': '8=FIX.4.2|9=145|35=H|49=SENDER|56=TARGET|34=8|52=20240115-14:10:00|11=ORDERSTAT001|37=ORD456|55=AAPL|54=1|10=000',
+
+    // Market Data
     'market-data-request': '8=FIX.4.2|9=145|35=V|49=SENDER|56=TARGET|34=3|52=20240115-13:00:00|262=MDREQ001|263=1|264=0|265=0|146=1|55=MSFT|267=2|269=0|269=1|10=000',
     'market-data-snapshot': '8=FIX.4.2|9=198|35=W|49=TARGET|56=SENDER|34=4|52=20240115-13:00:01|55=MSFT|262=MDREQ001|268=2|269=0|270=385.25|271=1000|269=1|270=385.50|271=800|10=000',
-    'order-cancel': '8=FIX.4.2|9=156|35=F|49=SENDER|56=TARGET|34=5|52=20240115-14:00:00|11=CANCEL001|41=ORDER123|55=AAPL|54=1|60=20240115-14:00:00|10=000'
+    'market-data-incremental': '8=FIX.4.2|9=175|35=X|49=TARGET|56=SENDER|34=5|52=20240115-13:00:15|262=MDREQ001|268=1|279=1|269=0|270=385.30|271=1500|55=MSFT|10=000',
+    'market-data-reject': '8=FIX.4.2|9=135|35=Y|49=TARGET|56=SENDER|34=6|52=20240115-13:01:00|262=MDREQ002|58=Unknown symbol|281=1|10=000',
+
+    // Error Messages
+    'reject': '8=FIX.4.2|9=125|35=3|49=TARGET|56=SENDER|34=10|52=20240115-15:00:00|45=99|58=Invalid message type|372=D|373=5|10=000',
+    'business-reject': '8=FIX.4.2|9=145|35=j|49=TARGET|56=SENDER|34=11|52=20240115-15:05:00|45=100|372=D|380=BIZREJ001|58=Order type not supported|10=000'
   };
 
   // Field validation rules
