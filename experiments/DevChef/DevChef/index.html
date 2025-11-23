@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DevChef - Offline Developer Tools</title>
+  <title>DevChef V6.5 ULTIMATE - Productivity to the Moon 🚀🌙</title>
+  <meta name="description" content="DevChef V6.5 ULTIMATE - Snippets++, Universal Favorites, Macros, Batch Processing, Quick Panel - Developer productivity skyrocketed">
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -13,8 +14,8 @@
       <header>
         <div class="header-content">
           <div>
-            <h1>DevChef</h1>
-            <div class="subtitle">Offline Developer Tools</div>
+            <h1>DevChef <span class="version-badge">V6.5 ULTIMATE</span></h1>
+            <div class="subtitle">🚀 Productivity to the Moon! 🌙</div>
           </div>
           <button id="theme-toggle" title="Toggle theme">
             <span class="theme-icon">☀️</span>
@@ -22,9 +23,12 @@
         </div>
       </header>
       <div class="search-box">
-        <input type="text" id="tool-search" placeholder="Search tools..." />
+        <input type="text" id="tool-search" placeholder="Search tools... (Ctrl+F)" />
         <span class="search-icon">🔍</span>
       </div>
+      <!-- Recent Tools Section -->
+      <div id="recent-tools" class="recent-tools"></div>
+      <!-- Tool List -->
       <div id="tool-list">
         <!-- Tools will be rendered here dynamically -->
       </div>
@@ -34,13 +38,18 @@
       <div id="workspace">
         <!-- Tool UI will be rendered here -->
         <div class="welcome-screen">
-          <h2>Loading...</h2>
+          <h2>🚀 Loading DevChef V6.5 ULTIMATE...</h2>
+          <p class="loading-spinner">⏳</p>
+          <p style="margin-top: 20px; color: var(--text-secondary);">Snippets++ • Favorites • Macros • Batch • Quick Panel</p>
+          <p style="margin-top: 8px; font-weight: bold; color: var(--primary-color);">Productivity to the Moon! 🌙</p>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Command Palette (created dynamically) -->
+  <!-- Notification Container (created dynamically) -->
+  <!-- Dialogs (created dynamically) -->
 
   <!-- App Scripts -->
   <script type="module" src="app.js"></script>

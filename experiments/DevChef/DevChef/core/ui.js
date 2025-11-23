@@ -1,9 +1,12 @@
 /**
- * DevChef UI Rendering System
- * Handles tool rendering and workspace management
+ * DevChef V2 UI Rendering System
+ * Handles tool rendering, workspace management, and enhanced UI features
  */
 
 import { ToolRegistry } from './registry.js';
+import { storage } from './storage.js';
+import { searchTools, highlightMatches, groupByCategory } from './search.js';
+import { notifications } from './notifications.js';
 
 let currentToolId = null;
 let workspaceStyleElement = null;
@@ -12,19 +15,24 @@ let workspaceStyleElement = null;
  * Open and render a tool in the workspace
  * @param {string} id - Tool ID
  * @param {Object} context - Global context object
+ * @param {string} workspace - Workspace selector (default: "#workspace")
  */
-export function openTool(id, context) {
+export function openTool(id, context, workspace = "#workspace") {
   const tool = ToolRegistry.get(id);
 
   if (!tool) {
     console.error(`Tool ${id} not found`);
+    notifications.error(`Tool ${id} not found`);
     return;
   }
 
   currentToolId = id;
 
+  // Add to history
+  storage.addToHistory(id, tool.manifest.name);
+
   // Get workspace container
-  const container = document.querySelector("#workspace");
+  const container = document.querySelector(workspace);
   if (!container) {
     console.error("Workspace container not found");
     return;
@@ -46,6 +54,12 @@ export function openTool(id, context) {
     workspaceStyleElement = document.createElement("style");
     workspaceStyleElement.innerHTML = tool.style;
     container.appendChild(workspaceStyleElement);
+  }
+
+  // Restore tool state if available
+  const savedState = storage.getToolState(id);
+  if (savedState) {
+    context.restoredState = savedState;
   }
 
   // Initialize the tool
@@ -79,6 +93,9 @@ export function openTool(id, context) {
   // Update sidebar active state
   updateSidebarActiveState(id);
 
+  // Update recent tools display
+  updateRecentTools(context);
+
   console.log(`Opened tool: ${tool.manifest.name}`);
 }
 
@@ -111,27 +128,23 @@ export function renderToolList(context, searchQuery = "") {
 
   sidebar.innerHTML = "";
 
-  const categories = ToolRegistry.getCategories();
-  const query = searchQuery.toLowerCase().trim();
+  const tools = ToolRegistry.all();
+  const favorites = storage.getFavorites();
+  const recentTools = storage.getRecentTools();
+
+  // Use fuzzy search
+  const searchResults = searchTools(tools, searchQuery, {
+    favorites,
+    recentTools,
+    prioritizeFavorites: true
+  });
+
+  // Group by category
+  const grouped = groupByCategory(searchResults);
+  const categories = Object.keys(grouped).sort();
 
   categories.forEach(category => {
-    // Get tools in this category
-    const tools = ToolRegistry.getByCategory(category);
-
-    // Filter tools if search query exists
-    const filteredTools = query
-      ? tools.filter(manifest =>
-          manifest.name.toLowerCase().includes(query) ||
-          manifest.id.toLowerCase().includes(query) ||
-          (manifest.description && manifest.description.toLowerCase().includes(query)) ||
-          category.toLowerCase().includes(query)
-        )
-      : tools;
-
-    // Skip empty categories
-    if (filteredTools.length === 0) {
-      return;
-    }
+    const categoryTools = grouped[category];
 
     // Create category section
     const categorySection = document.createElement("div");
@@ -142,14 +155,39 @@ export function renderToolList(context, searchQuery = "") {
     categoryHeader.textContent = category;
     categorySection.appendChild(categoryHeader);
 
-    filteredTools.forEach(manifest => {
+    categoryTools.forEach(({ tool: manifest, isFavorite, isRecent }) => {
       const toolItem = document.createElement("div");
       toolItem.className = "tool-item";
       toolItem.dataset.toolId = manifest.id;
-      toolItem.textContent = manifest.name;
+
+      // Add favorite and recent indicators
+      const indicators = [];
+      if (isFavorite) {
+        indicators.push('<span class="tool-indicator favorite" title="Favorite">★</span>');
+      }
+      if (isRecent) {
+        indicators.push('<span class="tool-indicator recent" title="Recently used">⏱</span>');
+      }
+
+      toolItem.innerHTML = `
+        <span class="tool-name">${manifest.name}</span>
+        ${indicators.length > 0 ? `<span class="tool-indicators">${indicators.join('')}</span>` : ''}
+      `;
 
       toolItem.addEventListener("click", () => {
         openTool(manifest.id, context);
+      });
+
+      // Right-click to toggle favorite
+      toolItem.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        toggleFavorite(manifest.id);
+        renderToolList(context, searchQuery);
+        notifications.success(
+          storage.isFavorite(manifest.id)
+            ? `Added ${manifest.name} to favorites`
+            : `Removed ${manifest.name} from favorites`
+        );
       });
 
       categorySection.appendChild(toolItem);
@@ -159,7 +197,7 @@ export function renderToolList(context, searchQuery = "") {
   });
 
   // Show "no results" message if no tools match
-  if (query && sidebar.children.length === 0) {
+  if (searchQuery && sidebar.children.length === 0) {
     sidebar.innerHTML = '<div class="no-results">No tools found</div>';
   }
 }
@@ -239,33 +277,155 @@ function renderPaletteResults(query, palette, context) {
   results.innerHTML = "";
 
   const tools = ToolRegistry.all();
-  const filtered = tools.filter(t =>
-    t.name.toLowerCase().includes(query.toLowerCase()) ||
-    t.id.toLowerCase().includes(query.toLowerCase()) ||
-    (t.description && t.description.toLowerCase().includes(query.toLowerCase())) ||
-    (t.category && t.category.toLowerCase().includes(query.toLowerCase()))
-  );
+  const favorites = storage.getFavorites();
+  const recentTools = storage.getRecentTools();
 
-  filtered.forEach(manifest => {
-    const item = document.createElement("div");
-    item.className = "palette-item";
-    item.innerHTML = `
-      <div class="palette-item-name">${manifest.name}</div>
-      ${manifest.description ? `<div class="palette-item-description">${manifest.description}</div>` : ''}
-      <div class="palette-item-category">${manifest.category || "Uncategorized"}</div>
-    `;
+  // Use fuzzy search with favorites prioritization
+  const searchResults = searchTools(tools, query, {
+    favorites,
+    recentTools,
+    prioritizeFavorites: true,
+    maxResults: 30
+  });
 
-    item.addEventListener("click", () => {
-      openTool(manifest.id, context);
-      palette.style.display = "none";
-    });
+  // Add sections for recent and favorites if no query
+  if (!query) {
+    // Recent tools section
+    const recent = storage.getRecentTools(5);
+    if (recent.length > 0) {
+      const recentSection = document.createElement("div");
+      recentSection.className = "palette-section";
+      recentSection.innerHTML = '<div class="palette-section-title">Recently Used</div>';
 
+      recent.forEach(entry => {
+        const tool = ToolRegistry.get(entry.toolId);
+        if (!tool) return;
+
+        const item = createPaletteItem(tool.manifest, true, false, context, palette);
+        recentSection.appendChild(item);
+      });
+
+      results.appendChild(recentSection);
+    }
+
+    // Favorites section
+    if (favorites.length > 0) {
+      const favSection = document.createElement("div");
+      favSection.className = "palette-section";
+      favSection.innerHTML = '<div class="palette-section-title">Favorites</div>';
+
+      favorites.slice(0, 5).forEach(toolId => {
+        const tool = ToolRegistry.get(toolId);
+        if (!tool) return;
+
+        const item = createPaletteItem(tool.manifest, false, true, context, palette);
+        favSection.appendChild(item);
+      });
+
+      results.appendChild(favSection);
+    }
+  }
+
+  // Search results
+  searchResults.forEach(({ tool: manifest, isFavorite, isRecent }, index) => {
+    const item = createPaletteItem(manifest, isRecent, isFavorite, context, palette);
+    if (index === 0) {
+      item.classList.add('selected');
+    }
     results.appendChild(item);
   });
 
-  if (filtered.length === 0) {
+  if (searchResults.length === 0 && (query || (favorites.length === 0 && recentTools.length === 0))) {
     results.innerHTML = '<div class="palette-empty">No tools found</div>';
   }
+
+  // Set up keyboard navigation
+  setupPaletteKeyboardNav(palette, context);
+}
+
+/**
+ * Create a palette item element
+ * @param {Object} manifest - Tool manifest
+ * @param {boolean} isRecent - Is recently used
+ * @param {boolean} isFavorite - Is favorite
+ * @param {Object} context - Global context
+ * @param {HTMLElement} palette - Palette element
+ * @returns {HTMLElement} Palette item element
+ */
+function createPaletteItem(manifest, isRecent, isFavorite, context, palette) {
+  const item = document.createElement("div");
+  item.className = "palette-item";
+  item.dataset.toolId = manifest.id;
+
+  const indicators = [];
+  if (isFavorite) indicators.push('<span class="palette-indicator favorite">★</span>');
+  if (isRecent) indicators.push('<span class="palette-indicator recent">⏱</span>');
+
+  item.innerHTML = `
+    <div class="palette-item-header">
+      <div class="palette-item-name">${manifest.name}</div>
+      ${indicators.length > 0 ? `<div class="palette-item-indicators">${indicators.join('')}</div>` : ''}
+    </div>
+    ${manifest.description ? `<div class="palette-item-description">${manifest.description}</div>` : ''}
+    <div class="palette-item-category">${manifest.category || "Uncategorized"}</div>
+  `;
+
+  item.addEventListener("click", () => {
+    openTool(manifest.id, context);
+    palette.style.display = "none";
+  });
+
+  item.addEventListener("mouseenter", () => {
+    // Remove selected from all items
+    palette.querySelectorAll('.palette-item').forEach(i => i.classList.remove('selected'));
+    // Add to this item
+    item.classList.add('selected');
+  });
+
+  return item;
+}
+
+/**
+ * Set up keyboard navigation for palette
+ * @param {HTMLElement} palette - Palette element
+ * @param {Object} context - Global context
+ */
+function setupPaletteKeyboardNav(palette, context) {
+  const input = palette.querySelector('.palette-input');
+
+  const keyHandler = (e) => {
+    const items = Array.from(palette.querySelectorAll('.palette-item'));
+    const selected = palette.querySelector('.palette-item.selected');
+    let selectedIndex = items.indexOf(selected);
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+      items.forEach((item, i) => {
+        item.classList.toggle('selected', i === selectedIndex);
+      });
+      items[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedIndex = Math.max(selectedIndex - 1, 0);
+      items.forEach((item, i) => {
+        item.classList.toggle('selected', i === selectedIndex);
+      });
+      items[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selected) {
+        const toolId = selected.dataset.toolId;
+        openTool(toolId, context);
+        palette.style.display = "none";
+      }
+    }
+  };
+
+  // Remove old handler if exists
+  input.removeEventListener('keydown', keyHandler);
+  // Add new handler
+  input.addEventListener('keydown', keyHandler);
 }
 
 /**
@@ -274,4 +434,139 @@ function renderPaletteResults(query, palette, context) {
  */
 export function getCurrentToolId() {
   return currentToolId;
+}
+
+/**
+ * Toggle favorite status for a tool
+ * @param {string} toolId - Tool ID
+ * @returns {boolean} New favorite status
+ */
+export function toggleFavorite(toolId) {
+  return storage.toggleFavorite(toolId);
+}
+
+/**
+ * Update recent tools display in sidebar
+ * @param {Object} context - Global context
+ */
+export function updateRecentTools(context) {
+  const recentContainer = document.querySelector('#recent-tools');
+  if (!recentContainer) return;
+
+  const recent = storage.getRecentTools(5);
+
+  if (recent.length === 0) {
+    recentContainer.innerHTML = '';
+    recentContainer.style.display = 'none';
+    return;
+  }
+
+  recentContainer.style.display = 'block';
+  recentContainer.innerHTML = '<div class="recent-tools-title">Recent</div>';
+
+  recent.forEach(entry => {
+    const tool = ToolRegistry.get(entry.toolId);
+    if (!tool) return;
+
+    const item = document.createElement('div');
+    item.className = 'recent-tool-item';
+    item.textContent = tool.manifest.name;
+    item.title = tool.manifest.description || tool.manifest.name;
+
+    item.addEventListener('click', () => {
+      openTool(entry.toolId, context);
+    });
+
+    recentContainer.appendChild(item);
+  });
+}
+
+/**
+ * Export settings and data
+ */
+export function exportSettings() {
+  const data = storage.exportData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `devchef-v2-export-${Date.now()}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  notifications.success('Settings exported successfully');
+}
+
+/**
+ * Import settings and data
+ */
+export async function importSettings() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      const confirmed = await notifications.confirm(
+        'This will replace your current settings. Continue?',
+        { title: 'Import Settings' }
+      );
+
+      if (!confirmed) return;
+
+      const success = storage.importData(data);
+
+      if (success) {
+        notifications.success('Settings imported successfully');
+        // Reload page to apply new settings
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        notifications.error('Failed to import settings');
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      notifications.error(`Import failed: ${error.message}`);
+    }
+  });
+
+  input.click();
+}
+
+/**
+ * Clear all history
+ * @param {Object} context - Global context
+ */
+export async function clearHistory(context) {
+  const confirmed = await notifications.confirm(
+    'This will clear all tool usage history. Continue?',
+    { title: 'Clear History' }
+  );
+
+  if (confirmed) {
+    storage.clearHistory();
+    updateRecentTools(context);
+    notifications.success('History cleared');
+  }
+}
+
+/**
+ * Show storage statistics
+ */
+export function showStorageStats() {
+  const stats = storage.getStorageStats();
+
+  notifications.info(
+    `Storage: ${stats.totalKB} KB used\n` +
+    `Favorites: ${stats.favorites}\n` +
+    `History: ${stats.historyItems}\n` +
+    `Tool States: ${stats.toolStates}`,
+    { duration: 5000 }
+  );
 }
