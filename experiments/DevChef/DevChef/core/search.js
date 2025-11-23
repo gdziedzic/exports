@@ -107,7 +107,7 @@ export function searchTools(tools, query, options = {}) {
     const idScore = fuzzyScore(query, tool.id);
     const descScore = tool.description ? fuzzyScore(query, tool.description) * 0.7 : 0;
     const categoryScore = tool.category ? fuzzyScore(query, tool.category) * 0.5 : 0;
-    const keywordsScore = tool.keywords
+    const keywordsScore = tool.keywords && tool.keywords.length > 0
       ? Math.max(...tool.keywords.map(k => fuzzyScore(query, k))) * 0.6
       : 0;
 
