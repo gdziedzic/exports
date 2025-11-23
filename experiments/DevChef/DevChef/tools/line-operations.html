@@ -27,112 +27,166 @@
     </div>
 
     <div class="operations-layout">
+      <!-- Tab Navigation -->
       <div class="operations-panel">
-        <div class="panel-header">
-          <h3>🛠️ Operations</h3>
+        <div class="tab-navigation">
+          <button class="tab-btn active" data-tab="quick">⚡ Quick Transforms</button>
+          <button class="tab-btn" data-tab="code">💻 Code Transforms</button>
         </div>
 
-        <div class="operation-categories">
-          <div class="category">
-            <h4>✏️ Add/Remove</h4>
-            <div class="operation-control">
-              <input type="text" id="prefix-input" placeholder="Enter prefix..." />
-              <button class="op-btn" data-op="add-prefix">Add Prefix</button>
-            </div>
-            <div class="operation-control">
-              <input type="text" id="suffix-input" placeholder="Enter suffix..." />
-              <button class="op-btn" data-op="add-suffix">Add Suffix</button>
-            </div>
-            <div class="operation-control">
-              <div class="wrap-inputs">
-                <input type="text" id="wrap-start" placeholder="Start (e.g., [)" />
-                <input type="text" id="wrap-end" placeholder="End (e.g., ])" />
+        <!-- Quick Transforms Tab -->
+        <div class="tab-content active" id="tab-quick">
+          <div class="operation-categories">
+            <div class="category">
+              <h4>✏️ Add/Remove</h4>
+              <div class="operation-control">
+                <input type="text" id="prefix-input" placeholder="Enter prefix..." />
+                <button class="op-btn" data-op="add-prefix">Add Prefix</button>
               </div>
-              <button class="op-btn" data-op="wrap">Wrap Lines</button>
+              <div class="operation-control">
+                <input type="text" id="suffix-input" placeholder="Enter suffix..." />
+                <button class="op-btn" data-op="add-suffix">Add Suffix</button>
+              </div>
+              <div class="operation-control">
+                <div class="wrap-inputs">
+                  <input type="text" id="wrap-start" placeholder="Start (e.g., [)" />
+                  <input type="text" id="wrap-end" placeholder="End (e.g., ])" />
+                </div>
+                <button class="op-btn" data-op="wrap">Wrap Lines</button>
+              </div>
+              <button class="op-btn" data-op="remove-empty">Remove Empty Lines</button>
+              <button class="op-btn" data-op="remove-whitespace-only">Remove Whitespace-Only</button>
             </div>
-            <button class="op-btn" data-op="remove-empty">Remove Empty Lines</button>
-            <button class="op-btn" data-op="remove-whitespace-only">Remove Whitespace-Only</button>
-          </div>
 
-          <div class="category">
-            <h4>🔢 Numbering</h4>
-            <div class="operation-control">
-              <select id="number-format">
-                <option value="1. ">1. (Number dot space)</option>
-                <option value="1) ">1) (Number paren space)</option>
-                <option value="[1] ">[1] (Bracket number)</option>
-                <option value="1.\t">1.\t (Number dot tab)</option>
+            <div class="category">
+              <h4>🔢 Numbering</h4>
+              <div class="operation-control">
+                <select id="number-format">
+                  <option value="1. ">1. (Number dot space)</option>
+                  <option value="1) ">1) (Number paren space)</option>
+                  <option value="[1] ">[1] (Bracket number)</option>
+                  <option value="1.\t">1.\t (Number dot tab)</option>
+                </select>
+                <button class="op-btn" data-op="number-lines">Number Lines</button>
+              </div>
+              <button class="op-btn" data-op="remove-line-numbers">Remove Line Numbers</button>
+            </div>
+
+            <div class="category">
+              <h4>📏 Spacing</h4>
+              <div class="operation-control">
+                <input type="number" id="indent-spaces" value="4" min="1" max="20" style="width: 60px;" />
+                <button class="op-btn" data-op="indent">Indent</button>
+                <button class="op-btn" data-op="dedent">Dedent</button>
+              </div>
+              <button class="op-btn" data-op="trim-left">Trim Left</button>
+              <button class="op-btn" data-op="trim-right">Trim Right</button>
+              <button class="op-btn" data-op="trim-both">Trim Both</button>
+            </div>
+
+            <div class="category">
+              <h4>🔄 Sort & Order</h4>
+              <button class="op-btn" data-op="sort-asc">Sort A-Z</button>
+              <button class="op-btn" data-op="sort-desc">Sort Z-A</button>
+              <button class="op-btn" data-op="sort-length-asc">Sort by Length ↑</button>
+              <button class="op-btn" data-op="sort-length-desc">Sort by Length ↓</button>
+              <button class="op-btn" data-op="reverse">Reverse Order</button>
+              <button class="op-btn" data-op="shuffle">Shuffle</button>
+            </div>
+
+            <div class="category">
+              <h4>🎯 Filter & Select</h4>
+              <div class="operation-control">
+                <input type="text" id="filter-pattern" placeholder="Enter pattern..." />
+                <button class="op-btn" data-op="filter-contains">Keep Matching</button>
+                <button class="op-btn" data-op="filter-not-contains">Remove Matching</button>
+              </div>
+              <button class="op-btn" data-op="unique">Remove Duplicates</button>
+              <button class="op-btn" data-op="duplicates-only">Keep Duplicates Only</button>
+            </div>
+
+            <div class="category">
+              <h4>🔀 Transform</h4>
+              <button class="op-btn" data-op="uppercase">UPPERCASE</button>
+              <button class="op-btn" data-op="lowercase">lowercase</button>
+              <button class="op-btn" data-op="title-case">Title Case</button>
+              <button class="op-btn" data-op="quote-single">Quote ' '</button>
+              <button class="op-btn" data-op="quote-double">Quote " "</button>
+              <button class="op-btn" data-op="comma-separate">Comma Separate</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Code Transforms Tab -->
+        <div class="tab-content" id="tab-code">
+          <div class="code-panel">
+            <div class="code-header">
+              <h4>📚 Snippet Library</h4>
+              <select id="snippet-preset" class="snippet-select">
+                <option value="">-- Select a snippet or write custom code --</option>
+                <optgroup label="Text Extraction">
+                  <option value="extract-regex">Extract with Regex</option>
+                  <option value="extract-between">Extract Between Characters</option>
+                  <option value="extract-json">Extract JSON Field</option>
+                </optgroup>
+                <optgroup label="Text Modification">
+                  <option value="replace-regex">Replace with Regex</option>
+                  <option value="remove-chars">Remove Specific Characters</option>
+                  <option value="reverse-line">Reverse Each Line</option>
+                  <option value="capitalize-words">Capitalize All Words</option>
+                </optgroup>
+                <optgroup label="Data Transformation">
+                  <option value="split-join">Split & Join</option>
+                  <option value="keep-alpha">Keep Only Letters</option>
+                  <option value="keep-numeric">Keep Only Numbers</option>
+                </optgroup>
               </select>
-              <button class="op-btn" data-op="number-lines">Number Lines</button>
             </div>
-            <button class="op-btn" data-op="remove-line-numbers">Remove Line Numbers</button>
-          </div>
 
-          <div class="category">
-            <h4>📏 Spacing</h4>
-            <div class="operation-control">
-              <input type="number" id="indent-spaces" value="4" min="1" max="20" style="width: 60px;" />
-              <button class="op-btn" data-op="indent">Indent</button>
-              <button class="op-btn" data-op="dedent">Dedent</button>
+            <div class="code-editor-section">
+              <div class="code-info">
+                <p><strong>Available variables:</strong></p>
+                <ul>
+                  <li><code>line</code> - Current line text</li>
+                  <li><code>index</code> - Line index (0-based)</li>
+                  <li><code>lines</code> - Array of all lines</li>
+                </ul>
+                <p><strong>Return:</strong> The transformed line as a string</p>
+              </div>
+
+              <textarea id="custom-js" class="code-editor" placeholder="// Write custom JavaScript to transform each line&#10;// Example:&#10;return line.toUpperCase();" rows="12"></textarea>
+
+              <button class="run-code-btn" data-op="custom-transform">
+                <span class="btn-icon">▶</span> Run Custom Transform
+              </button>
+
+              <div class="custom-error" id="custom-error" style="display: none;"></div>
             </div>
-            <button class="op-btn" data-op="trim-left">Trim Left</button>
-            <button class="op-btn" data-op="trim-right">Trim Right</button>
-            <button class="op-btn" data-op="trim-both">Trim Both</button>
-          </div>
 
-          <div class="category">
-            <h4>🔄 Sort & Order</h4>
-            <button class="op-btn" data-op="sort-asc">Sort A-Z</button>
-            <button class="op-btn" data-op="sort-desc">Sort Z-A</button>
-            <button class="op-btn" data-op="sort-length-asc">Sort by Length ↑</button>
-            <button class="op-btn" data-op="sort-length-desc">Sort by Length ↓</button>
-            <button class="op-btn" data-op="reverse">Reverse Order</button>
-            <button class="op-btn" data-op="shuffle">Shuffle</button>
-          </div>
-
-          <div class="category">
-            <h4>🎯 Filter & Select</h4>
-            <div class="operation-control">
-              <input type="text" id="filter-pattern" placeholder="Enter pattern..." />
-              <button class="op-btn" data-op="filter-contains">Keep Matching</button>
-              <button class="op-btn" data-op="filter-not-contains">Remove Matching</button>
+            <div class="examples-section">
+              <details>
+                <summary>💡 Examples & Tips</summary>
+                <div class="examples-content">
+                  <div class="example">
+                    <strong>Extract email addresses:</strong>
+                    <code>const match = line.match(/[\w.-]+@[\w.-]+\.\w+/);
+return match ? match[0] : '';</code>
+                  </div>
+                  <div class="example">
+                    <strong>Add line numbers with custom format:</strong>
+                    <code>return `${index + 1}. ${line}`;</code>
+                  </div>
+                  <div class="example">
+                    <strong>Keep only lines longer than 10 chars:</strong>
+                    <code>return line.length > 10 ? line : '';</code>
+                  </div>
+                  <div class="example">
+                    <strong>Convert to markdown list:</strong>
+                    <code>return `- ${line.trim()}`;</code>
+                  </div>
+                </div>
+              </details>
             </div>
-            <button class="op-btn" data-op="unique">Remove Duplicates</button>
-            <button class="op-btn" data-op="duplicates-only">Keep Duplicates Only</button>
-          </div>
-
-          <div class="category">
-            <h4>🔀 Transform</h4>
-            <button class="op-btn" data-op="uppercase">UPPERCASE</button>
-            <button class="op-btn" data-op="lowercase">lowercase</button>
-            <button class="op-btn" data-op="title-case">Title Case</button>
-            <button class="op-btn" data-op="quote-single">Quote ' '</button>
-            <button class="op-btn" data-op="quote-double">Quote " "</button>
-            <button class="op-btn" data-op="comma-separate">Comma Separate</button>
-          </div>
-
-          <div class="category">
-            <h4>⚡ Custom Transform</h4>
-            <div class="operation-control">
-              <select id="snippet-preset">
-                <option value="">-- Select Snippet --</option>
-                <option value="extract-regex">Extract with Regex</option>
-                <option value="replace-regex">Replace with Regex</option>
-                <option value="extract-between">Extract Between Chars</option>
-                <option value="split-join">Split & Join</option>
-                <option value="remove-chars">Remove Characters</option>
-                <option value="extract-json">Extract JSON Field</option>
-                <option value="reverse-line">Reverse Each Line</option>
-                <option value="keep-alpha">Keep Only Letters</option>
-                <option value="keep-numeric">Keep Only Numbers</option>
-                <option value="capitalize-words">Capitalize Words</option>
-              </select>
-            </div>
-            <div class="operation-control">
-              <textarea id="custom-js" placeholder="// JavaScript code - 'line' variable available&#10;// Return the transformed line&#10;// Example: return line.toUpperCase();" rows="5"></textarea>
-              <button class="op-btn" data-op="custom-transform">▶ Run Custom Transform</button>
-            </div>
-            <div class="custom-error" id="custom-error" style="display: none;"></div>
           </div>
         </div>
       </div>
@@ -175,7 +229,7 @@
 <style>
   .operations-layout {
     display: grid;
-    grid-template-columns: 300px 1fr 1fr;
+    grid-template-columns: 320px 1fr 1fr;
     gap: 16px;
     margin-bottom: 24px;
   }
@@ -185,12 +239,62 @@
   .output-panel {
     background: var(--bg-secondary);
     border-radius: 12px;
-    padding: 16px;
   }
 
   .operations-panel {
     max-height: 800px;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .editor-panel,
+  .output-panel {
+    padding: 16px;
+  }
+
+  /* Tab Navigation */
+  .tab-navigation {
+    display: flex;
+    background: var(--bg-tertiary);
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+  }
+
+  .tab-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    background: var(--bg-secondary);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Tab Content */
+  .tab-content {
+    display: none;
+    height: 100%;
     overflow-y: auto;
+    padding: 16px;
+  }
+
+  .tab-content.active {
+    display: block;
   }
 
   .panel-header {
@@ -207,10 +311,194 @@
     margin: 0;
   }
 
+  /* Quick Transforms Styles */
   .operation-categories {
     display: flex;
     flex-direction: column;
     gap: 20px;
+  }
+
+  /* Code Panel Styles */
+  .code-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .code-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .code-header h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .snippet-select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    cursor: pointer;
+  }
+
+  .snippet-select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .code-editor-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .code-info {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .code-info p {
+    margin: 0 0 8px 0;
+    color: var(--text-secondary);
+  }
+
+  .code-info ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-primary);
+  }
+
+  .code-info li {
+    margin-bottom: 4px;
+  }
+
+  .code-info code {
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+  }
+
+  .code-editor {
+    width: 100%;
+    padding: 12px;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 200px;
+  }
+
+  .code-editor:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .run-code-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .run-code-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
+  }
+
+  .run-code-btn:active {
+    transform: translateY(0);
+  }
+
+  .btn-icon {
+    font-size: 16px;
+  }
+
+  .examples-section {
+    margin-top: 8px;
+  }
+
+  .examples-section details {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px;
+  }
+
+  .examples-section summary {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    user-select: none;
+  }
+
+  .examples-section summary:hover {
+    color: var(--accent);
+  }
+
+  .examples-content {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .example {
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .example strong {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+    font-size: 12px;
+  }
+
+  .example code {
+    display: block;
+    background: var(--bg-primary);
+    padding: 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    white-space: pre-wrap;
   }
 
   .category h4 {
@@ -451,12 +739,26 @@ export const DevChefTool = {
     const inputText = container.querySelector('#input-text');
     const outputText = container.querySelector('#output-text');
 
+    // Tab switching
+    container.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetTab = e.target.dataset.tab;
+        this.switchTab(targetTab);
+      });
+    });
+
     // Operation buttons
     container.querySelectorAll('.op-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const operation = e.target.dataset.op;
         this.performOperation(operation);
       });
+    });
+
+    // Run code button (separate handler for better visibility)
+    container.querySelector('.run-code-btn')?.addEventListener('click', (e) => {
+      const operation = e.target.dataset.op;
+      this.performOperation(operation);
     });
 
     // Input events
@@ -479,6 +781,26 @@ export const DevChefTool = {
     // Initialize
     this.updateInputStats();
     this.updateOutputStats();
+  },
+
+  switchTab(tabName) {
+    // Update tab buttons
+    this.container.querySelectorAll('.tab-btn').forEach(btn => {
+      if (btn.dataset.tab === tabName) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    // Update tab content
+    this.container.querySelectorAll('.tab-content').forEach(content => {
+      if (content.id === `tab-${tabName}`) {
+        content.classList.add('active');
+      } else {
+        content.classList.remove('active');
+      }
+    });
   },
 
   getSnippets() {
