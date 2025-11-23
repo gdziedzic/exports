@@ -96,6 +96,9 @@ async function init() {
   // Load all tools
   const toolCount = await initializeTools();
 
+  // Build advanced search index now that tools are loaded
+  advancedSearch.buildSearchIndex();
+
   // Show loading errors if any
   showLoadingErrors();
 
@@ -335,6 +338,7 @@ function initializeV6Features() {
   window.stateManager = stateManager;
   window.toolOrchestrator = toolOrchestrator;
   window.errorBoundary = errorBoundary;
+  window.ToolRegistry = ToolRegistry;
 
   // All V6 modules are auto-initialized on import
   console.log('🎨 V6: Ultimate Edition Features initialized');
@@ -355,11 +359,6 @@ function initializeV65Features() {
 
   // Start performance monitoring
   performanceMonitor.start();
-
-  // Integrate advanced search with Tool Orchestrator
-  if (window.toolOrchestrator) {
-    advancedSearch.indexTools(window.ToolRegistry.all());
-  }
 
   // All V6.5 modules are auto-initialized on import
   console.log('⚡ V6.5: Enhancement Edition Features initialized');

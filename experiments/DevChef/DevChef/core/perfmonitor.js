@@ -26,7 +26,7 @@ class PerformanceMonitor {
     };
     this.alerts = [];
     this.thresholds = {
-      fps: 30,
+      fps: 15, // Lowered from 30 to reduce noise
       memory: 100 * 1024 * 1024, // 100MB
       loadTime: 1000, // 1s
       interaction: 100 // 100ms
@@ -37,6 +37,13 @@ class PerformanceMonitor {
       memory: 200 * 1024 * 1024, // 200MB
       cacheSize: 10 * 1024 * 1024 // 10MB
     };
+    this.lastAlertTime = {
+      fps: 0,
+      memory: 0,
+      loadTime: 0,
+      interaction: 0
+    };
+    this.alertThrottle = 10000; // Throttle alerts to once per 10 seconds
     this.init();
   }
 
@@ -115,9 +122,13 @@ class PerformanceMonitor {
           this.metrics.fps.shift();
         }
 
-        // Alert on low FPS
+        // Alert on low FPS (throttled to avoid spam)
         if (fps < this.thresholds.fps) {
-          this.addAlert('Low FPS detected', `FPS: ${fps}`, 'warning');
+          const now = Date.now();
+          if (now - this.lastAlertTime.fps > this.alertThrottle) {
+            this.addAlert('Low FPS detected', `FPS: ${fps}`, 'warning');
+            this.lastAlertTime.fps = now;
+          }
         }
 
         this.lastFrameTime = now;
@@ -154,9 +165,13 @@ class PerformanceMonitor {
             this.metrics.memory.shift();
           }
 
-          // Alert on high memory
+          // Alert on high memory (throttled)
           if (memory.used > this.thresholds.memory) {
-            this.addAlert('High memory usage', `${(memory.used / 1024 / 1024).toFixed(2)}MB`, 'warning');
+            const now = Date.now();
+            if (now - this.lastAlertTime.memory > this.alertThrottle) {
+              this.addAlert('High memory usage', `${(memory.used / 1024 / 1024).toFixed(2)}MB`, 'warning');
+              this.lastAlertTime.memory = now;
+            }
           }
 
           // Detect memory leaks
@@ -222,7 +237,11 @@ class PerformanceMonitor {
             });
 
             if (loadTime > this.thresholds.loadTime) {
-              this.addAlert('Slow tool load', `${toolId}: ${loadTime.toFixed(0)}ms`, 'warning');
+              const now = Date.now();
+              if (now - this.lastAlertTime.loadTime > this.alertThrottle) {
+                this.addAlert('Slow tool load', `${toolId}: ${loadTime.toFixed(0)}ms`, 'warning');
+                this.lastAlertTime.loadTime = now;
+              }
             }
 
             return result;
@@ -262,7 +281,11 @@ class PerformanceMonitor {
           }
 
           if (interactionTime > this.thresholds.interaction) {
-            this.addAlert('Slow interaction', `${interactionTime.toFixed(0)}ms`, 'warning');
+            const now = Date.now();
+            if (now - this.lastAlertTime.interaction > this.alertThrottle) {
+              this.addAlert('Slow interaction', `${interactionTime.toFixed(0)}ms`, 'warning');
+              this.lastAlertTime.interaction = now;
+            }
           }
         });
       });

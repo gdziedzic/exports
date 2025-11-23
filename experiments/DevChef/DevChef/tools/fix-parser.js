@@ -858,16 +858,34 @@ function recalculateBodyLength() {
 function loadSample(sampleKey) {
   if (!sampleKey) return;
 
-  const message = SAMPLE_MESSAGES[sampleKey];
-  if (message) {
+  try {
+    const message = SAMPLE_MESSAGES[sampleKey];
+    if (!message) {
+      showError(`Sample message '${sampleKey}' not found`);
+      return;
+    }
+
+    if (!elements.fixInput) {
+      showError('Input field not initialized');
+      return;
+    }
+
     elements.fixInput.value = message;
+
     if (sampleKey === 'session-log') {
       parseSessionLog();
       switchTab('session');
     } else {
       parseMessage();
     }
-    elements.sampleSelect.value = '';
+
+    // Reset the dropdown
+    if (elements.sampleSelect) {
+      elements.sampleSelect.value = '';
+    }
+  } catch (error) {
+    showError(`Failed to load sample: ${error.message}`);
+    console.error('Sample load error:', error);
   }
 }
 
@@ -1480,25 +1498,68 @@ export function init(context) {
   };
 
   // Set up event listeners
-  elements.parseBtn.addEventListener('click', parseMessage);
-  elements.clearBtn.addEventListener('click', clearAll);
-  elements.sampleSelect.addEventListener('change', (e) => loadSample(e.target.value));
-  elements.recalcChecksumBtn.addEventListener('click', recalculateChecksum);
-  elements.recalcBodylengthBtn.addEventListener('click', recalculateBodyLength);
-  elements.fieldSearch.addEventListener('input', (e) => filterFields(e.target.value));
-  elements.copyRawBtn.addEventListener('click', () => copyToClipboard(elements.rawOutput.value));
-  elements.formatRawBtn.addEventListener('click', formatRawMessage);
-  elements.compactRawBtn.addEventListener('click', compactRawMessage);
-  elements.copyJsonBtn.addEventListener('click', () => copyToClipboard(elements.jsonOutput.textContent));
-  elements.downloadJsonBtn.addEventListener('click', () => downloadFile('fix-message.json', elements.jsonOutput.textContent, 'application/json'));
-  elements.exportCsvBtn.addEventListener('click', exportCSV);
-  elements.exportXmlBtn.addEventListener('click', exportXML);
-  elements.exportHtmlBtn.addEventListener('click', exportHTML);
-  elements.builderTemplate.addEventListener('change', (e) => loadBuilderTemplate(e.target.value));
-  elements.builderMsgtype.addEventListener('change', updateBuilderFields);
-  elements.builderGenerateBtn.addEventListener('click', generateMessage);
-  elements.parseSessionBtn.addEventListener('click', parseSessionLog);
-  elements.exportSessionBtn.addEventListener('click', exportSession);
+  if (elements.parseBtn) {
+    elements.parseBtn.addEventListener('click', parseMessage);
+  }
+  if (elements.clearBtn) {
+    elements.clearBtn.addEventListener('click', clearAll);
+  }
+  if (elements.sampleSelect) {
+    elements.sampleSelect.addEventListener('change', (e) => {
+      console.log('Sample selected:', e.target.value);
+      loadSample(e.target.value);
+    });
+  } else {
+    console.error('Sample select element not found!');
+  }
+  if (elements.recalcChecksumBtn) {
+    elements.recalcChecksumBtn.addEventListener('click', recalculateChecksum);
+  }
+  if (elements.recalcBodylengthBtn) {
+    elements.recalcBodylengthBtn.addEventListener('click', recalculateBodyLength);
+  }
+  if (elements.fieldSearch) {
+    elements.fieldSearch.addEventListener('input', (e) => filterFields(e.target.value));
+  }
+  if (elements.copyRawBtn) {
+    elements.copyRawBtn.addEventListener('click', () => copyToClipboard(elements.rawOutput.value));
+  }
+  if (elements.formatRawBtn) {
+    elements.formatRawBtn.addEventListener('click', formatRawMessage);
+  }
+  if (elements.compactRawBtn) {
+    elements.compactRawBtn.addEventListener('click', compactRawMessage);
+  }
+  if (elements.copyJsonBtn) {
+    elements.copyJsonBtn.addEventListener('click', () => copyToClipboard(elements.jsonOutput.textContent));
+  }
+  if (elements.downloadJsonBtn) {
+    elements.downloadJsonBtn.addEventListener('click', () => downloadFile('fix-message.json', elements.jsonOutput.textContent, 'application/json'));
+  }
+  if (elements.exportCsvBtn) {
+    elements.exportCsvBtn.addEventListener('click', exportCSV);
+  }
+  if (elements.exportXmlBtn) {
+    elements.exportXmlBtn.addEventListener('click', exportXML);
+  }
+  if (elements.exportHtmlBtn) {
+    elements.exportHtmlBtn.addEventListener('click', exportHTML);
+  }
+  if (elements.builderTemplate) {
+    elements.builderTemplate.addEventListener('change', (e) => loadBuilderTemplate(e.target.value));
+  }
+  if (elements.builderMsgtype) {
+    elements.builderMsgtype.addEventListener('change', updateBuilderFields);
+  }
+  if (elements.builderGenerateBtn) {
+    elements.builderGenerateBtn.addEventListener('click', generateMessage);
+  }
+  if (elements.parseSessionBtn) {
+    elements.parseSessionBtn.addEventListener('click', parseSessionLog);
+  }
+  if (elements.exportSessionBtn) {
+    elements.exportSessionBtn.addEventListener('click', exportSession);
+  }
 
   // Tab switching
   container.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1506,11 +1567,13 @@ export function init(context) {
   });
 
   // Keyboard shortcuts
-  elements.fixInput.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'Enter') {
-      parseMessage();
-    }
-  });
+  if (elements.fixInput) {
+    elements.fixInput.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Enter') {
+        parseMessage();
+      }
+    });
+  }
 
   // Initialize builder
   updateBuilderFields();
