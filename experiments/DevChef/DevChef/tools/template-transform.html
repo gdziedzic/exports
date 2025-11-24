@@ -122,6 +122,42 @@
             <div class="template-icon">🧪</div>
             <div class="template-name">REST API Test</div>
           </button>
+          <button class="template-card" data-template="csv-sql-insert">
+            <div class="template-icon">💾</div>
+            <div class="template-name">CSV to SQL INSERT</div>
+          </button>
+          <button class="template-card" data-template="csv-sql-update">
+            <div class="template-icon">📝</div>
+            <div class="template-name">CSV to SQL UPDATE</div>
+          </button>
+          <button class="template-card" data-template="csv-html-table">
+            <div class="template-icon">📊</div>
+            <div class="template-name">CSV to HTML Table</div>
+          </button>
+          <button class="template-card" data-template="csv-markdown-table">
+            <div class="template-icon">📋</div>
+            <div class="template-name">CSV to MD Table</div>
+          </button>
+          <button class="template-card" data-template="kv-env-file">
+            <div class="template-icon">🔐</div>
+            <div class="template-name">Env File</div>
+          </button>
+          <button class="template-card" data-template="kv-properties">
+            <div class="template-icon">⚙️</div>
+            <div class="template-name">Properties File</div>
+          </button>
+          <button class="template-card" data-template="kv-email">
+            <div class="template-icon">✉️</div>
+            <div class="template-name">Simple Email</div>
+          </button>
+          <button class="template-card" data-template="kv-config-yaml">
+            <div class="template-icon">📄</div>
+            <div class="template-name">YAML Config</div>
+          </button>
+          <button class="template-card" data-template="csv-to-json">
+            <div class="template-icon">🔄</div>
+            <div class="template-name">CSV to JSON</div>
+          </button>
         </div>
       </div>
     </div>
@@ -137,6 +173,7 @@
             <button id="json-format-btn" class="format-btn active">JSON</button>
             <button id="text-format-btn" class="format-btn">Key-Value</button>
             <button id="csv-format-btn" class="format-btn">CSV</button>
+            <button id="snippets-format-btn" class="format-btn">Templates/Snippets</button>
           </div>
 
           <div id="json-input-section" class="data-input-section">
@@ -151,6 +188,19 @@
           <div id="csv-input-section" class="data-input-section" style="display: none;">
             <textarea id="csv-input" placeholder='name,email,age\nJohn Doe,john@example.com,30\nJane Smith,jane@example.com,25'></textarea>
             <div class="format-hint">Format: First line = headers, following lines = data rows</div>
+          </div>
+
+          <div id="snippets-input-section" class="data-input-section" style="display: none;">
+            <div class="snippets-toolbar">
+              <button class="snippet-btn" data-snippet="sql-insert-basic">SQL INSERT (Basic)</button>
+              <button class="snippet-btn" data-snippet="sql-insert-multi">SQL INSERT (Multi-row)</button>
+              <button class="snippet-btn" data-snippet="sql-update-basic">SQL UPDATE (Basic)</button>
+              <button class="snippet-btn" data-snippet="sql-update-where">SQL UPDATE (WHERE)</button>
+              <button class="snippet-btn" data-snippet="sql-upsert">SQL UPSERT (MERGE)</button>
+              <button class="snippet-btn" data-snippet="sql-insert-select">INSERT INTO SELECT</button>
+            </div>
+            <textarea id="snippets-input" placeholder='Select a template above or define your own data in JSON format'></textarea>
+            <div class="format-hint">Click a template button to load pre-configured SQL snippets, or enter custom JSON data</div>
           </div>
 
           <div id="json-error" class="error-message"></div>
@@ -289,6 +339,40 @@
     font-style: italic;
   }
 
+  .snippets-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+  }
+
+  .snippet-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-mono);
+  }
+
+  .snippet-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .snippet-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
   .templates-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -386,6 +470,7 @@
   #json-input,
   #text-input,
   #csv-input,
+  #snippets-input,
   #template-input {
     min-height: 250px;
     font-family: var(--font-mono);
@@ -617,6 +702,133 @@ export const DevChefTool = {
   currentMode: 'simplified',
   currentDataFormat: 'json',
   autocompleteKeys: [],
+  currentSnippet: null,
+
+  snippets: {
+    'sql-insert-basic': {
+      name: 'SQL INSERT (Basic)',
+      json: JSON.stringify({
+        table: 'Users',
+        data: {
+          FirstName: 'John',
+          LastName: 'Doe',
+          Email: 'john@example.com',
+          Age: 30,
+          City: 'New York'
+        }
+      }, null, 2),
+      template: `-- INSERT INTO {{ table }}
+INSERT INTO [{{ table }}] ([FirstName], [LastName], [Email], [Age], [City])
+VALUES ('{{ data.FirstName }}', '{{ data.LastName }}', '{{ data.Email }}', {{ data.Age }}, '{{ data.City }}');`
+    },
+    'sql-insert-multi': {
+      name: 'SQL INSERT (Multi-row)',
+      json: JSON.stringify({
+        table: 'Products',
+        columns: ['ProductName', 'Category', 'Price', 'Stock'],
+        rows: [
+          { ProductName: 'Laptop', Category: 'Electronics', Price: 999.99, Stock: 50 },
+          { ProductName: 'Mouse', Category: 'Electronics', Price: 29.99, Stock: 200 },
+          { ProductName: 'Keyboard', Category: 'Electronics', Price: 79.99, Stock: 150 },
+          { ProductName: 'Monitor', Category: 'Electronics', Price: 299.99, Stock: 75 }
+        ]
+      }, null, 2),
+      template: `-- Multi-row INSERT INTO {{ table }}
+{% for row in rows %}
+INSERT INTO [{{ table }}] ([ProductName], [Category], [Price], [Stock])
+VALUES ('{{ row.ProductName }}', '{{ row.Category }}', {{ row.Price }}, {{ row.Stock }});
+{% endfor %}`
+    },
+    'sql-update-basic': {
+      name: 'SQL UPDATE (Basic)',
+      json: JSON.stringify({
+        table: 'Customers',
+        id: 101,
+        data: {
+          Email: 'newemail@example.com',
+          Phone: '555-0123',
+          Address: '123 Main St',
+          City: 'Boston',
+          Status: 'Active'
+        }
+      }, null, 2),
+      template: `-- UPDATE {{ table }}
+UPDATE [{{ table }}]
+SET [Email] = '{{ data.Email }}',
+    [Phone] = '{{ data.Phone }}',
+    [Address] = '{{ data.Address }}',
+    [City] = '{{ data.City }}',
+    [Status] = '{{ data.Status }}'
+WHERE [Id] = {{ id }};`
+    },
+    'sql-update-where': {
+      name: 'SQL UPDATE with WHERE conditions',
+      json: JSON.stringify({
+        table: 'Orders',
+        updates: [
+          {
+            setClause: { Status: 'Shipped', ShippedDate: '2024-01-15', Carrier: 'FedEx' },
+            whereClause: { OrderId: 1001 }
+          },
+          {
+            setClause: { Status: 'Delivered', DeliveredDate: '2024-01-20' },
+            whereClause: { OrderId: 1002 }
+          },
+          {
+            setClause: { Status: 'Cancelled', CancelledDate: '2024-01-18', Reason: 'Customer Request' },
+            whereClause: { OrderId: 1003 }
+          }
+        ]
+      }, null, 2),
+      template: `-- UPDATE {{ table }} with WHERE conditions
+{% for update in updates %}
+UPDATE [{{ table }}]
+SET {% for key in update.setClause %}[{{ key }}] = '{{ update.setClause[key] }}'{% if not loop.last %},
+    {% endif %}{% endfor %}
+WHERE [OrderId] = {{ update.whereClause.OrderId }};
+{% endfor %}`
+    },
+    'sql-upsert': {
+      name: 'SQL UPSERT (MERGE)',
+      json: JSON.stringify({
+        table: 'Inventory',
+        keyColumn: 'ProductId',
+        data: [
+          { ProductId: 1, ProductName: 'Widget A', Quantity: 100, Price: 19.99 },
+          { ProductId: 2, ProductName: 'Widget B', Quantity: 50, Price: 29.99 },
+          { ProductId: 3, ProductName: 'Widget C', Quantity: 75, Price: 24.99 }
+        ]
+      }, null, 2),
+      template: `-- UPSERT (MERGE) for {{ table }}
+{% for row in data %}
+MERGE INTO [{{ table }}] AS target
+USING (SELECT {{ row.ProductId }} AS ProductId) AS source
+ON target.{{ keyColumn }} = source.{{ keyColumn }}
+WHEN MATCHED THEN
+  UPDATE SET
+    [ProductName] = '{{ row.ProductName }}',
+    [Quantity] = {{ row.Quantity }},
+    [Price] = {{ row.Price }}
+WHEN NOT MATCHED THEN
+  INSERT ([ProductId], [ProductName], [Quantity], [Price])
+  VALUES ({{ row.ProductId }}, '{{ row.ProductName }}', {{ row.Quantity }}, {{ row.Price }});
+{% endfor %}`
+    },
+    'sql-insert-select': {
+      name: 'INSERT INTO SELECT',
+      json: JSON.stringify({
+        targetTable: 'ActiveUsers',
+        sourceTable: 'Users',
+        columns: ['UserId', 'Username', 'Email', 'CreatedDate'],
+        whereCondition: 'Status = \'Active\' AND LastLoginDate >= DATEADD(month, -6, GETDATE())'
+      }, null, 2),
+      template: `-- INSERT INTO {{ targetTable }} from {{ sourceTable }}
+INSERT INTO [{{ targetTable }}] ({% for col in columns %}[{{ col }}]{% if not loop.last %}, {% endif %}{% endfor %})
+SELECT {% for col in columns %}[{{ col }}]{% if not loop.last %}, {% endif %}{% endfor %}
+FROM [{{ sourceTable }}]
+WHERE {{ whereCondition }};`
+    }
+  },
 
   templates: {
     'sql-insert': {
@@ -1276,6 +1488,142 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
   });
 {% endfor %}
 });`
+    },
+    'csv-sql-insert': {
+      dataFormat: 'csv',
+      csv: `tableName,firstName,lastName,email,age\nUsers,John,Doe,john@example.com,30\nUsers,Jane,Smith,jane@example.com,25\nUsers,Bob,Johnson,bob@example.com,35`,
+      template: `-- SQL INSERT statements generated from CSV
+{% for row in rows %}
+INSERT INTO [{{ row.tableName }}] ([firstName], [lastName], [email], [age])
+VALUES ('{{ row.firstName }}', '{{ row.lastName }}', '{{ row.email }}', {{ row.age }});
+{% endfor %}`
+    },
+    'csv-sql-update': {
+      dataFormat: 'csv',
+      csv: `id,firstName,lastName,email,status\n1,John,Doe,john.updated@example.com,Active\n2,Jane,Smith,jane.updated@example.com,Inactive\n3,Bob,Johnson,bob.updated@example.com,Active`,
+      template: `-- SQL UPDATE statements generated from CSV
+{% for row in rows %}
+UPDATE [Users]
+SET [firstName] = '{{ row.firstName }}',
+    [lastName] = '{{ row.lastName }}',
+    [email] = '{{ row.email }}',
+    [status] = '{{ row.status }}'
+WHERE [id] = {{ row.id }};
+{% endfor %}`
+    },
+    'csv-html-table': {
+      dataFormat: 'csv',
+      csv: `name,email,department,salary\nJohn Doe,john@example.com,Engineering,75000\nJane Smith,jane@example.com,Marketing,65000\nBob Johnson,bob@example.com,Sales,70000`,
+      template: `<table>
+  <thead>
+    <tr>
+{% for header in headers %}
+      <th>{{ header }}</th>
+{% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+{% for row in rows %}
+    <tr>
+{% for header in headers %}
+      <td>{{ row[header] }}</td>
+{% endfor %}
+    </tr>
+{% endfor %}
+  </tbody>
+</table>`
+    },
+    'csv-markdown-table': {
+      dataFormat: 'csv',
+      csv: `feature,status,assignee,priority\nUser Authentication,In Progress,John Doe,High\nDashboard UI,Completed,Jane Smith,Medium\nAPI Integration,Not Started,Bob Johnson,High\nReporting Module,In Progress,Alice Brown,Low`,
+      template: `| {% for header in headers %}{{ header }} | {% endfor %}
+| {% for header in headers %}--- | {% endfor %}
+{% for row in rows %}
+| {% for header in headers %}{{ row[header] }} | {% endfor %}
+{% endfor %}`
+    },
+    'kv-env-file': {
+      dataFormat: 'text',
+      text: `APP_NAME=MyApplication\nAPP_ENV=production\nAPP_DEBUG=false\nAPP_URL=https://example.com\nDB_HOST=localhost\nDB_PORT=5432\nDB_DATABASE=myapp\nDB_USERNAME=dbuser\nDB_PASSWORD=secret123\nMAIL_HOST=smtp.mailtrap.io\nMAIL_PORT=2525`,
+      template: `# Environment Configuration
+# Generated on {{ APP_NAME }}
+
+# Application Settings
+APP_NAME={{ APP_NAME }}
+APP_ENV={{ APP_ENV }}
+APP_DEBUG={{ APP_DEBUG }}
+APP_URL={{ APP_URL }}
+
+# Database Configuration
+DB_HOST={{ DB_HOST }}
+DB_PORT={{ DB_PORT }}
+DB_DATABASE={{ DB_DATABASE }}
+DB_USERNAME={{ DB_USERNAME }}
+DB_PASSWORD={{ DB_PASSWORD }}
+
+# Mail Configuration
+MAIL_HOST={{ MAIL_HOST }}
+MAIL_PORT={{ MAIL_PORT }}`
+    },
+    'kv-properties': {
+      dataFormat: 'text',
+      text: `application.name=MyApp\napplication.version=1.0.0\nserver.port=8080\nserver.host=localhost\ndatabase.url=jdbc:postgresql://localhost:5432/mydb\ndatabase.username=admin\ndatabase.password=secret\nlogging.level=INFO\nlogging.file=/var/log/app.log`,
+      template: `# Application Properties
+# Generated configuration file
+
+application.name={{ application.name }}
+application.version={{ application.version }}
+
+server.port={{ server.port }}
+server.host={{ server.host }}
+
+database.url={{ database.url }}
+database.username={{ database.username }}
+database.password={{ database.password }}
+
+logging.level={{ logging.level }}
+logging.file={{ logging.file }}`
+    },
+    'kv-email': {
+      dataFormat: 'text',
+      text: `recipient=John Doe\nemail=john@example.com\nsubject=Welcome to Our Service\ncompany=Acme Corporation\nplan=Premium Plan\nprice=99.99\nsupport_email=support@acme.com`,
+      template: `Dear {{ recipient }},
+
+Welcome to {{ company }}! We're excited to have you on board.
+
+You have successfully subscribed to our {{ plan }}.
+Your subscription details:
+- Plan: {{ plan }}
+- Price: \${{ price }}/month
+- Email: {{ email }}
+
+If you have any questions, please don't hesitate to reach out to us at {{ support_email }}.
+
+Best regards,
+The {{ company }} Team`
+    },
+    'kv-config-yaml': {
+      dataFormat: 'text',
+      text: `app_name=MyApplication\nversion=1.0.0\nport=3000\nhost=localhost\ndb_host=localhost\ndb_port=5432\ndb_name=myapp\nlog_level=debug\nmax_connections=100`,
+      template: `# Application Configuration (YAML)
+app:
+  name: "{{ app_name }}"
+  version: "{{ version }}"
+
+server:
+  port: {{ port }}
+  host: "{{ host }}"
+
+database:
+  host: "{{ db_host }}"
+  port: {{ db_port }}
+  name: "{{ db_name }}"
+
+logging:
+  level: "{{ log_level }}"
+
+performance:
+  max_connections: {{ max_connections }}`
     }
   },
 
@@ -1288,9 +1636,11 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
     const jsonFormatBtn = container.querySelector("#json-format-btn");
     const textFormatBtn = container.querySelector("#text-format-btn");
     const csvFormatBtn = container.querySelector("#csv-format-btn");
+    const snippetsFormatBtn = container.querySelector("#snippets-format-btn");
     const jsonInput = container.querySelector("#json-input");
     const textInput = container.querySelector("#text-input");
     const csvInput = container.querySelector("#csv-input");
+    const snippetsInput = container.querySelector("#snippets-input");
     const templateInput = container.querySelector("#template-input");
     const copyOutputBtn = container.querySelector("#copy-output-btn");
 
@@ -1300,10 +1650,12 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
     jsonFormatBtn?.addEventListener("click", () => this.setDataFormat('json'));
     textFormatBtn?.addEventListener("click", () => this.setDataFormat('text'));
     csvFormatBtn?.addEventListener("click", () => this.setDataFormat('csv'));
+    snippetsFormatBtn?.addEventListener("click", () => this.setDataFormat('snippets'));
 
     jsonInput?.addEventListener("input", () => this.render());
     textInput?.addEventListener("input", () => this.render());
     csvInput?.addEventListener("input", () => this.render());
+    snippetsInput?.addEventListener("input", () => this.render());
     templateInput?.addEventListener("input", () => this.render());
     templateInput?.addEventListener("keyup", (e) => this.handleAutocomplete(e));
 
@@ -1325,8 +1677,40 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
       });
     });
 
+    // Snippet button listeners
+    container.querySelectorAll('.snippet-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const snippetId = e.currentTarget.dataset.snippet;
+        this.loadSnippet(snippetId);
+      });
+    });
+
     // Load default template
     this.loadTemplate('sql-insert');
+  },
+
+  loadSnippet(snippetId) {
+    const snippet = this.snippets[snippetId];
+    if (!snippet) return;
+
+    this.currentSnippet = snippetId;
+
+    const snippetsInput = this.container.querySelector("#snippets-input");
+    const templateInput = this.container.querySelector("#template-input");
+
+    // Update active state
+    this.container.querySelectorAll('.snippet-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.dataset.snippet === snippetId) {
+        btn.classList.add('active');
+      }
+    });
+
+    // Load snippet data and template
+    snippetsInput.value = snippet.json;
+    templateInput.value = snippet.template;
+
+    this.render();
   },
 
   setMode(mode) {
@@ -1350,19 +1734,23 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
     const jsonBtn = this.container.querySelector("#json-format-btn");
     const textBtn = this.container.querySelector("#text-format-btn");
     const csvBtn = this.container.querySelector("#csv-format-btn");
+    const snippetsBtn = this.container.querySelector("#snippets-format-btn");
     const jsonSection = this.container.querySelector("#json-input-section");
     const textSection = this.container.querySelector("#text-input-section");
     const csvSection = this.container.querySelector("#csv-input-section");
+    const snippetsSection = this.container.querySelector("#snippets-input-section");
 
     // Update button states
     jsonBtn.classList.remove('active');
     textBtn.classList.remove('active');
     csvBtn.classList.remove('active');
+    snippetsBtn.classList.remove('active');
 
     // Hide all sections
     jsonSection.style.display = 'none';
     textSection.style.display = 'none';
     csvSection.style.display = 'none';
+    snippetsSection.style.display = 'none';
 
     // Show selected section and activate button
     if (format === 'json') {
@@ -1374,6 +1762,13 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
     } else if (format === 'csv') {
       csvBtn.classList.add('active');
       csvSection.style.display = 'block';
+    } else if (format === 'snippets') {
+      snippetsBtn.classList.add('active');
+      snippetsSection.style.display = 'block';
+      // Load first snippet by default if none selected
+      if (!this.currentSnippet) {
+        this.loadSnippet('sql-insert-basic');
+      }
     }
 
     this.render();
@@ -1384,9 +1779,28 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
     if (!template) return;
 
     const jsonInput = this.container.querySelector("#json-input");
+    const textInput = this.container.querySelector("#text-input");
+    const csvInput = this.container.querySelector("#csv-input");
     const templateInput = this.container.querySelector("#template-input");
 
-    jsonInput.value = template.json;
+    // Determine which data format to use
+    const dataFormat = template.dataFormat || 'json';
+
+    // Switch to the appropriate data format
+    if (dataFormat !== this.currentDataFormat) {
+      this.setDataFormat(dataFormat);
+    }
+
+    // Load the data based on format
+    if (dataFormat === 'json') {
+      jsonInput.value = template.json;
+    } else if (dataFormat === 'text') {
+      textInput.value = template.text;
+    } else if (dataFormat === 'csv') {
+      csvInput.value = template.csv;
+    }
+
+    // Load the template
     templateInput.value = template.template;
 
     this.render();
@@ -1491,6 +1905,9 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
       } else if (this.currentDataFormat === 'csv') {
         const csvInput = this.container.querySelector("#csv-input");
         data = this.parseCSV(csvInput.value);
+      } else if (this.currentDataFormat === 'snippets') {
+        const snippetsInput = this.container.querySelector("#snippets-input");
+        data = JSON.parse(snippetsInput.value || '{}');
       }
       this.autocompleteKeys = this.extractKeys(data);
     } catch (e) {
