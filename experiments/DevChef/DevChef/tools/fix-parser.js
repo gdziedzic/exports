@@ -203,6 +203,7 @@ const REPEATING_GROUPS = {
   267: { name: 'MD Entry Types', fields: [269] },
   268: { name: 'MD Entries', fields: [269, 270, 271, 272, 273, 274, 276, 277, 278, 279, 280] },
   382: { name: 'Contra Brokers', fields: [375] },
+  384: { name: 'Message Types', fields: [372] },
   453: { name: 'Party IDs', fields: [448, 447, 452] },
   555: { name: 'Legs', fields: [600, 601, 602, 603] },
 };
