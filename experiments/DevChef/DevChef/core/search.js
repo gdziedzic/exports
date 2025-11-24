@@ -10,10 +10,10 @@
  * @returns {number} Score (0-100, higher is better match)
  */
 function fuzzyScore(query, text) {
-  if (!query) return 100;
-  if (!text) return 0;
+  if (!query || query.trim() === '') return 100;
+  if (!text || typeof text !== 'string') return 0;
 
-  query = query.toLowerCase();
+  query = query.toLowerCase().trim();
   text = text.toLowerCase();
 
   // Exact match gets highest score
@@ -26,15 +26,17 @@ function fuzzyScore(query, text) {
     return 80 + startBonus * lengthRatio;
   }
 
-  // Fuzzy matching
+  // Fuzzy matching - allow partial matches with lower scores
   let score = 0;
   let queryIndex = 0;
   let lastMatchIndex = -1;
   let consecutiveMatches = 0;
+  let matchedChars = 0;
 
   for (let i = 0; i < text.length && queryIndex < query.length; i++) {
     if (text[i] === query[queryIndex]) {
       // Match found
+      matchedChars++;
       score += 10;
 
       // Bonus for consecutive matches
@@ -46,7 +48,7 @@ function fuzzyScore(query, text) {
       }
 
       // Bonus for matching at word start
-      if (i === 0 || text[i - 1] === ' ' || text[i - 1] === '-') {
+      if (i === 0 || text[i - 1] === ' ' || text[i - 1] === '-' || text[i - 1] === '_') {
         score += 5;
       }
 
@@ -60,8 +62,16 @@ function fuzzyScore(query, text) {
     }
   }
 
-  // Penalty for unmatched query characters
-  if (queryIndex < query.length) {
+  // If we matched at least some characters, give partial credit
+  if (matchedChars > 0) {
+    const matchRatio = matchedChars / query.length;
+    score = score * matchRatio;
+
+    // Give minimum score of 10 for any partial match
+    if (score > 0 && score < 10) {
+      score = 10;
+    }
+  } else {
     return 0;
   }
 
@@ -77,6 +87,12 @@ function fuzzyScore(query, text) {
  * @returns {Array} Sorted array of matching tools with scores
  */
 export function searchTools(tools, query, options = {}) {
+  // Validate inputs
+  if (!Array.isArray(tools)) {
+    console.warn('searchTools: tools must be an array');
+    return [];
+  }
+
   const {
     maxResults = 50,
     minScore = 0,
@@ -90,24 +106,29 @@ export function searchTools(tools, query, options = {}) {
     return tools.map(tool => ({
       tool,
       score: 100,
-      isFavorite: favorites.includes(tool.id),
-      isRecent: recentTools.some(r => r.toolId === tool.id)
+      isFavorite: favorites.includes(tool?.id),
+      isRecent: recentTools.some(r => r?.toolId === tool?.id)
     })).sort((a, b) => {
       if (a.isFavorite && !b.isFavorite) return -1;
       if (!a.isFavorite && b.isFavorite) return 1;
       if (a.isRecent && !b.isRecent) return -1;
       if (!a.isRecent && b.isRecent) return 1;
-      return a.tool.name.localeCompare(b.tool.name);
+      return (a.tool?.name || '').localeCompare(b.tool?.name || '');
     }).slice(0, maxResults);
   }
 
   const results = tools.map(tool => {
-    // Calculate scores for different fields
-    const nameScore = fuzzyScore(query, tool.name);
-    const idScore = fuzzyScore(query, tool.id);
+    // Skip invalid tool objects
+    if (!tool || typeof tool !== 'object') {
+      return null;
+    }
+
+    // Calculate scores for different fields with null safety
+    const nameScore = tool.name ? fuzzyScore(query, tool.name) : 0;
+    const idScore = tool.id ? fuzzyScore(query, tool.id) : 0;
     const descScore = tool.description ? fuzzyScore(query, tool.description) * 0.7 : 0;
     const categoryScore = tool.category ? fuzzyScore(query, tool.category) * 0.5 : 0;
-    const keywordsScore = tool.keywords && tool.keywords.length > 0
+    const keywordsScore = tool.keywords && Array.isArray(tool.keywords) && tool.keywords.length > 0
       ? Math.max(...tool.keywords.map(k => fuzzyScore(query, k))) * 0.6
       : 0;
 
@@ -121,12 +142,12 @@ export function searchTools(tools, query, options = {}) {
     );
 
     // Bonus for favorites
-    if (prioritizeFavorites && favorites.includes(tool.id)) {
+    if (prioritizeFavorites && tool.id && favorites.includes(tool.id)) {
       score += 15;
     }
 
     // Bonus for recently used
-    const recentEntry = recentTools.find(r => r.toolId === tool.id);
+    const recentEntry = tool.id ? recentTools.find(r => r?.toolId === tool.id) : null;
     if (recentEntry) {
       score += 5;
     }
@@ -134,7 +155,7 @@ export function searchTools(tools, query, options = {}) {
     return {
       tool,
       score,
-      isFavorite: favorites.includes(tool.id),
+      isFavorite: tool.id ? favorites.includes(tool.id) : false,
       isRecent: !!recentEntry,
       matchDetails: {
         nameScore,
@@ -144,7 +165,7 @@ export function searchTools(tools, query, options = {}) {
         keywordsScore
       }
     };
-  });
+  }).filter(r => r !== null); // Remove invalid entries
 
   // Filter and sort results
   return results
@@ -161,7 +182,7 @@ export function searchTools(tools, query, options = {}) {
       if (a.isRecent && !b.isRecent) return -1;
       if (!a.isRecent && b.isRecent) return 1;
       // Finally alphabetical
-      return a.tool.name.localeCompare(b.tool.name);
+      return (a.tool?.name || '').localeCompare(b.tool?.name || '');
     })
     .slice(0, maxResults);
 }
