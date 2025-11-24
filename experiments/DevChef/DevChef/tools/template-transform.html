@@ -129,11 +129,30 @@
     <div class="editor-layout">
       <div class="editor-pane">
         <div class="tool-section">
-          <label class="section-label" for="json-input">
-            JSON Data
-            <span class="hint">Enter your data in JSON format</span>
+          <label class="section-label">
+            Data Input
+            <span class="hint">Choose your data format</span>
           </label>
-          <textarea id="json-input" placeholder='{\n  "name": "John Doe",\n  "items": [1, 2, 3]\n}'></textarea>
+          <div class="data-format-toggle">
+            <button id="json-format-btn" class="format-btn active">JSON</button>
+            <button id="text-format-btn" class="format-btn">Key-Value</button>
+            <button id="csv-format-btn" class="format-btn">CSV</button>
+          </div>
+
+          <div id="json-input-section" class="data-input-section">
+            <textarea id="json-input" placeholder='{\n  "name": "John Doe",\n  "items": [1, 2, 3]\n}'></textarea>
+          </div>
+
+          <div id="text-input-section" class="data-input-section" style="display: none;">
+            <textarea id="text-input" placeholder='name=John Doe\nemail=john@example.com\nage=30\ncity=New York'></textarea>
+            <div class="format-hint">Format: key=value (one per line) or key: value</div>
+          </div>
+
+          <div id="csv-input-section" class="data-input-section" style="display: none;">
+            <textarea id="csv-input" placeholder='name,email,age\nJohn Doe,john@example.com,30\nJane Smith,jane@example.com,25'></textarea>
+            <div class="format-hint">Format: First line = headers, following lines = data rows</div>
+          </div>
+
           <div id="json-error" class="error-message"></div>
         </div>
 
@@ -221,6 +240,53 @@
     background: var(--accent);
     color: white;
     border-color: var(--accent);
+  }
+
+  .data-format-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .format-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .format-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .format-btn:hover:not(.active) {
+    background: var(--bg-tertiary);
+  }
+
+  .data-input-section {
+    margin-bottom: 8px;
+  }
+
+  .data-input-section textarea {
+    min-height: 250px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  .format-hint {
+    margin-top: 6px;
+    padding: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
   }
 
   .templates-grid {
@@ -318,6 +384,8 @@
   }
 
   #json-input,
+  #text-input,
+  #csv-input,
   #template-input {
     min-height: 250px;
     font-family: var(--font-mono);
@@ -547,6 +615,7 @@ export const DevChefTool = {
   container: null,
   context: null,
   currentMode: 'simplified',
+  currentDataFormat: 'json',
   autocompleteKeys: [],
 
   templates: {
@@ -1216,14 +1285,25 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
 
     const simplifiedModeBtn = container.querySelector("#simplified-mode-btn");
     const advancedModeBtn = container.querySelector("#advanced-mode-btn");
+    const jsonFormatBtn = container.querySelector("#json-format-btn");
+    const textFormatBtn = container.querySelector("#text-format-btn");
+    const csvFormatBtn = container.querySelector("#csv-format-btn");
     const jsonInput = container.querySelector("#json-input");
+    const textInput = container.querySelector("#text-input");
+    const csvInput = container.querySelector("#csv-input");
     const templateInput = container.querySelector("#template-input");
     const copyOutputBtn = container.querySelector("#copy-output-btn");
 
     simplifiedModeBtn?.addEventListener("click", () => this.setMode('simplified'));
     advancedModeBtn?.addEventListener("click", () => this.setMode('advanced'));
 
+    jsonFormatBtn?.addEventListener("click", () => this.setDataFormat('json'));
+    textFormatBtn?.addEventListener("click", () => this.setDataFormat('text'));
+    csvFormatBtn?.addEventListener("click", () => this.setDataFormat('csv'));
+
     jsonInput?.addEventListener("input", () => this.render());
+    textInput?.addEventListener("input", () => this.render());
+    csvInput?.addEventListener("input", () => this.render());
     templateInput?.addEventListener("input", () => this.render());
     templateInput?.addEventListener("keyup", (e) => this.handleAutocomplete(e));
 
@@ -1263,6 +1343,40 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
       simplifiedBtn.classList.remove('active');
       this.container.querySelector('.tool-container').classList.add('mode-advanced');
     }
+  },
+
+  setDataFormat(format) {
+    this.currentDataFormat = format;
+    const jsonBtn = this.container.querySelector("#json-format-btn");
+    const textBtn = this.container.querySelector("#text-format-btn");
+    const csvBtn = this.container.querySelector("#csv-format-btn");
+    const jsonSection = this.container.querySelector("#json-input-section");
+    const textSection = this.container.querySelector("#text-input-section");
+    const csvSection = this.container.querySelector("#csv-input-section");
+
+    // Update button states
+    jsonBtn.classList.remove('active');
+    textBtn.classList.remove('active');
+    csvBtn.classList.remove('active');
+
+    // Hide all sections
+    jsonSection.style.display = 'none';
+    textSection.style.display = 'none';
+    csvSection.style.display = 'none';
+
+    // Show selected section and activate button
+    if (format === 'json') {
+      jsonBtn.classList.add('active');
+      jsonSection.style.display = 'block';
+    } else if (format === 'text') {
+      textBtn.classList.add('active');
+      textSection.style.display = 'block';
+    } else if (format === 'csv') {
+      csvBtn.classList.add('active');
+      csvSection.style.display = 'block';
+    }
+
+    this.render();
   },
 
   loadTemplate(templateId) {
@@ -1356,7 +1470,6 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
   },
 
   render() {
-    const jsonInput = this.container.querySelector("#json-input");
     const templateInput = this.container.querySelector("#template-input");
     const jsonError = this.container.querySelector("#json-error");
     const templateError = this.container.querySelector("#template-error");
@@ -1366,13 +1479,22 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
     jsonError.classList.remove('show');
     templateError.classList.remove('show');
 
-    // Parse JSON
+    // Parse data based on current format
     let data;
     try {
-      data = JSON.parse(jsonInput.value || '{}');
+      if (this.currentDataFormat === 'json') {
+        const jsonInput = this.container.querySelector("#json-input");
+        data = JSON.parse(jsonInput.value || '{}');
+      } else if (this.currentDataFormat === 'text') {
+        const textInput = this.container.querySelector("#text-input");
+        data = this.parseKeyValueText(textInput.value);
+      } else if (this.currentDataFormat === 'csv') {
+        const csvInput = this.container.querySelector("#csv-input");
+        data = this.parseCSV(csvInput.value);
+      }
       this.autocompleteKeys = this.extractKeys(data);
     } catch (e) {
-      jsonError.textContent = 'Invalid JSON: ' + e.message;
+      jsonError.textContent = 'Invalid data: ' + e.message;
       jsonError.classList.add('show');
       preview.textContent = '';
       return;
@@ -1388,6 +1510,65 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
       templateError.classList.add('show');
       preview.textContent = '';
     }
+  },
+
+  parseKeyValueText(text) {
+    const lines = text.trim().split('\n');
+    const data = {};
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (!trimmedLine || trimmedLine.startsWith('#')) continue; // Skip empty lines and comments
+
+      // Support both = and : as separators
+      const separatorIndex = trimmedLine.search(/[=:]/);
+      if (separatorIndex === -1) continue;
+
+      const key = trimmedLine.substring(0, separatorIndex).trim();
+      const value = trimmedLine.substring(separatorIndex + 1).trim();
+
+      // Try to parse as number or boolean
+      if (value === 'true') {
+        data[key] = true;
+      } else if (value === 'false') {
+        data[key] = false;
+      } else if (!isNaN(value) && value !== '') {
+        data[key] = Number(value);
+      } else {
+        // Remove quotes if present
+        data[key] = value.replace(/^["']|["']$/g, '');
+      }
+    }
+
+    return data;
+  },
+
+  parseCSV(text) {
+    const lines = text.trim().split('\n');
+    if (lines.length === 0) return { rows: [] };
+
+    // Parse header
+    const headers = lines[0].split(',').map(h => h.trim());
+
+    // Parse rows
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      const row = {};
+      headers.forEach((header, index) => {
+        const value = values[index] || '';
+        // Try to parse as number
+        if (!isNaN(value) && value !== '') {
+          row[header] = Number(value);
+        } else {
+          // Remove quotes if present
+          row[header] = value.replace(/^["']|["']$/g, '');
+        }
+      });
+      rows.push(row);
+    }
+
+    return { headers, rows };
   },
 
   extractKeys(obj, prefix = '') {
