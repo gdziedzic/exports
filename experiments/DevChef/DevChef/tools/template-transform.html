@@ -1507,6 +1507,8 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
         return String(value).toLowerCase();
       case 'length':
         return Array.isArray(value) ? value.length : String(value).length;
+      case 'tojson':
+        return JSON.stringify(value);
       default:
         return value;
     }
