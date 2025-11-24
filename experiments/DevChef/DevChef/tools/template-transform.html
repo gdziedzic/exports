@@ -1021,13 +1021,19 @@ spec:
             name: 'web_server',
             ami: 'ami-0c55b159cbfafe1f0',
             instance_type: 't2.micro',
-            tags: { Name: 'WebServer', Environment: 'Production' }
+            tags: [
+              { key: 'Name', value: 'WebServer' },
+              { key: 'Environment', value: 'Production' }
+            ]
           },
           {
             type: 'aws_s3_bucket',
             name: 'data_bucket',
             bucket_name: 'my-data-bucket',
-            tags: { Name: 'DataBucket', Environment: 'Production' }
+            tags: [
+              { key: 'Name', value: 'DataBucket' },
+              { key: 'Environment', value: 'Production' }
+            ]
           }
         ]
       }, null, 2),
@@ -1044,8 +1050,8 @@ resource "{{ resource.type }}" "{{ resource.name }}" {
 {% endif %}
 
   tags = {
-{% for key, value in resource.tags %}
-    {{ key }} = "{{ value }}"
+{% for tag in resource.tags %}
+    {{ tag.key }} = "{{ tag.value }}"
 {% endfor %}
   }
 }
@@ -1189,7 +1195,7 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
       method: '{{ test.method }}',
 {% if test.body %}
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({{ test.body | tojson }}),
+      body: {{ test.body | tojson }},
 {% endif %}
     });
 
