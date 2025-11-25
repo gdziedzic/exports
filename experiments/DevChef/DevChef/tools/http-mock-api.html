@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HTTP Mock API</title>
+</head>
+<body>
+
+<!-- Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "http-mock-api",
+  "name": "HTTP Mock API",
+  "description": "Create and manage mock REST API endpoints with custom responses",
+  "category": "Developer Tools",
+  "keywords": ["http", "api", "mock", "rest", "server", "json", "endpoint", "testing"]
+}
+</script>
+
+<!-- UI Template -->
+<template id="tool-ui">
+  <div class="http-mock-container">
+    <div class="mock-header">
+      <h2>🌐 HTTP Mock API Builder</h2>
+      <div class="mock-actions">
+        <button id="add-endpoint-btn" class="btn-primary">+ Add Endpoint</button>
+        <button id="export-config-btn" class="btn-secondary">Export Config</button>
+        <button id="import-config-btn" class="btn-secondary">Import Config</button>
+        <button id="generate-server-btn" class="btn-accent">Generate Server Code</button>
+      </div>
+    </div>
+
+    <div class="mock-layout">
+      <!-- Endpoints List -->
+      <div class="endpoints-panel">
+        <h3>Endpoints</h3>
+        <div id="endpoints-list" class="endpoints-list">
+          <div class="empty-state">No endpoints defined. Click "Add Endpoint" to start.</div>
+        </div>
+      </div>
+
+      <!-- Endpoint Editor -->
+      <div class="editor-panel">
+        <div id="endpoint-editor" class="endpoint-editor hidden">
+          <h3>Endpoint Configuration</h3>
+
+          <div class="form-group">
+            <label>Method</label>
+            <select id="method-select">
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="DELETE">DELETE</option>
+              <option value="PATCH">PATCH</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Path</label>
+            <input type="text" id="path-input" placeholder="/api/users" />
+          </div>
+
+          <div class="form-group">
+            <label>Status Code</label>
+            <input type="number" id="status-input" value="200" min="100" max="599" />
+          </div>
+
+          <div class="form-group">
+            <label>Response Headers (JSON)</label>
+            <textarea id="headers-input" rows="3" placeholder='{"Content-Type": "application/json"}'></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Response Body (JSON)</label>
+            <textarea id="body-input" rows="10" placeholder='{"message": "Success", "data": []}'></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Delay (ms)</label>
+            <input type="number" id="delay-input" value="0" min="0" max="10000" />
+          </div>
+
+          <div class="editor-actions">
+            <button id="save-endpoint-btn" class="btn-primary">Save Endpoint</button>
+            <button id="test-endpoint-btn" class="btn-secondary">Test</button>
+            <button id="delete-endpoint-btn" class="btn-danger">Delete</button>
+            <button id="cancel-edit-btn" class="btn-secondary">Cancel</button>
+          </div>
+        </div>
+
+        <div id="test-results" class="test-results hidden">
+          <h3>Test Results</h3>
+          <pre id="test-output"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generated Code Modal -->
+    <div id="code-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Generated Mock Server Code</h3>
+          <button id="close-modal-btn" class="btn-icon">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="express">Express.js</button>
+            <button class="tab-btn" data-tab="json-server">JSON Server</button>
+            <button class="tab-btn" data-tab="interceptor">Fetch Interceptor</button>
+          </div>
+          <div class="tab-content">
+            <div id="express-tab" class="tab-pane active">
+              <pre id="express-code"></pre>
+              <button class="copy-btn" data-target="express-code">Copy Code</button>
+            </div>
+            <div id="json-server-tab" class="tab-pane">
+              <pre id="json-server-code"></pre>
+              <button class="copy-btn" data-target="json-server-code">Copy Code</button>
+            </div>
+            <div id="interceptor-tab" class="tab-pane">
+              <pre id="interceptor-code"></pre>
+              <button class="copy-btn" data-target="interceptor-code">Copy Code</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Styles -->
+<style>
+.http-mock-container {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.mock-header h2 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.mock-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.mock-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.endpoints-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.endpoints-panel h3 {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.endpoints-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.endpoint-item {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.endpoint-item:hover {
+  border-color: var(--accent);
+  transform: translateX(4px);
+}
+
+.endpoint-item.active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.endpoint-method {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.method-GET { background: #10b981; color: white; }
+.method-POST { background: #3b82f6; color: white; }
+.method-PUT { background: #f59e0b; color: white; }
+.method-DELETE { background: #ef4444; color: white; }
+.method-PATCH { background: #8b5cf6; color: white; }
+
+.endpoint-path {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.endpoint-status {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.editor-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.endpoint-editor h3 {
+  margin: 0 0 20px 0;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.form-group textarea {
+  resize: vertical;
+  font-family: var(--font-mono);
+}
+
+.editor-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-primary, .btn-secondary, .btn-accent, .btn-danger {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--border-color);
+}
+
+.btn-accent {
+  background: #8b5cf6;
+  color: white;
+}
+
+.btn-accent:hover {
+  opacity: 0.9;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover {
+  opacity: 0.9;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.test-results {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.test-results h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+}
+
+.test-results pre {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 15px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  max-height: 300px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 900px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+  margin: 0;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.btn-icon:hover {
+  background: var(--bg-hover);
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.tabs {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+.tab-pane pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 15px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  max-height: 400px;
+  margin-bottom: 10px;
+}
+
+.copy-btn {
+  padding: 6px 12px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.copy-btn:hover {
+  opacity: 0.9;
+}
+</style>
+
+<!-- Module -->
+<script type="module">
+export function init(context) {
+  const { container } = context;
+
+  // State
+  let endpoints = [];
+  let currentEndpoint = null;
+  let editingIndex = -1;
+
+  // Elements
+  const endpointsList = container.querySelector('#endpoints-list');
+  const endpointEditor = container.querySelector('#endpoint-editor');
+  const testResults = container.querySelector('#test-results');
+  const codeModal = container.querySelector('#code-modal');
+
+  const addEndpointBtn = container.querySelector('#add-endpoint-btn');
+  const exportConfigBtn = container.querySelector('#export-config-btn');
+  const importConfigBtn = container.querySelector('#import-config-btn');
+  const generateServerBtn = container.querySelector('#generate-server-btn');
+
+  const methodSelect = container.querySelector('#method-select');
+  const pathInput = container.querySelector('#path-input');
+  const statusInput = container.querySelector('#status-input');
+  const headersInput = container.querySelector('#headers-input');
+  const bodyInput = container.querySelector('#body-input');
+  const delayInput = container.querySelector('#delay-input');
+
+  const saveEndpointBtn = container.querySelector('#save-endpoint-btn');
+  const testEndpointBtn = container.querySelector('#test-endpoint-btn');
+  const deleteEndpointBtn = container.querySelector('#delete-endpoint-btn');
+  const cancelEditBtn = container.querySelector('#cancel-edit-btn');
+
+  const closeModalBtn = container.querySelector('#close-modal-btn');
+
+  // Event Listeners
+  addEndpointBtn.addEventListener('click', () => {
+    editingIndex = -1;
+    currentEndpoint = {
+      method: 'GET',
+      path: '/api/endpoint',
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: { message: 'Success' },
+      delay: 0
+    };
+    showEditor();
+  });
+
+  exportConfigBtn.addEventListener('click', exportConfig);
+  importConfigBtn.addEventListener('click', importConfig);
+  generateServerBtn.addEventListener('click', showGeneratedCode);
+
+  saveEndpointBtn.addEventListener('click', saveEndpoint);
+  testEndpointBtn.addEventListener('click', testEndpoint);
+  deleteEndpointBtn.addEventListener('click', deleteEndpoint);
+  cancelEditBtn.addEventListener('click', hideEditor);
+
+  closeModalBtn.addEventListener('click', () => {
+    codeModal.classList.add('hidden');
+  });
+
+  // Tab switching
+  container.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      container.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      container.querySelector(`#${tab}-tab`).classList.add('active');
+    });
+  });
+
+  // Copy buttons
+  container.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.target;
+      const code = container.querySelector(`#${targetId}`).textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => {
+          btn.textContent = 'Copy Code';
+        }, 2000);
+      });
+    });
+  });
+
+  // Functions
+  function renderEndpoints() {
+    if (endpoints.length === 0) {
+      endpointsList.innerHTML = '<div class="empty-state">No endpoints defined. Click "Add Endpoint" to start.</div>';
+      return;
+    }
+
+    endpointsList.innerHTML = endpoints.map((endpoint, index) => `
+      <div class="endpoint-item ${editingIndex === index ? 'active' : ''}" data-index="${index}">
+        <div>
+          <span class="endpoint-method method-${endpoint.method}">${endpoint.method}</span>
+          <span class="endpoint-path">${endpoint.path}</span>
+        </div>
+        <div class="endpoint-status">Status: ${endpoint.status} ${endpoint.delay > 0 ? `| Delay: ${endpoint.delay}ms` : ''}</div>
+      </div>
+    `).join('');
+
+    // Add click handlers
+    container.querySelectorAll('.endpoint-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const index = parseInt(item.dataset.index);
+        editEndpoint(index);
+      });
+    });
+  }
+
+  function showEditor() {
+    endpointEditor.classList.remove('hidden');
+    testResults.classList.add('hidden');
+
+    // Populate form
+    methodSelect.value = currentEndpoint.method;
+    pathInput.value = currentEndpoint.path;
+    statusInput.value = currentEndpoint.status;
+    headersInput.value = JSON.stringify(currentEndpoint.headers, null, 2);
+    bodyInput.value = JSON.stringify(currentEndpoint.body, null, 2);
+    delayInput.value = currentEndpoint.delay;
+
+    deleteEndpointBtn.style.display = editingIndex >= 0 ? 'block' : 'none';
+  }
+
+  function hideEditor() {
+    endpointEditor.classList.add('hidden');
+    testResults.classList.add('hidden');
+    currentEndpoint = null;
+    editingIndex = -1;
+    renderEndpoints();
+  }
+
+  function editEndpoint(index) {
+    editingIndex = index;
+    currentEndpoint = { ...endpoints[index] };
+    showEditor();
+    renderEndpoints();
+  }
+
+  function saveEndpoint() {
+    try {
+      const endpoint = {
+        method: methodSelect.value,
+        path: pathInput.value.trim(),
+        status: parseInt(statusInput.value),
+        headers: JSON.parse(headersInput.value || '{}'),
+        body: JSON.parse(bodyInput.value || '{}'),
+        delay: parseInt(delayInput.value)
+      };
+
+      // Validation
+      if (!endpoint.path) {
+        alert('Path is required');
+        return;
+      }
+
+      if (editingIndex >= 0) {
+        endpoints[editingIndex] = endpoint;
+      } else {
+        endpoints.push(endpoint);
+      }
+
+      hideEditor();
+      renderEndpoints();
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  }
+
+  function deleteEndpoint() {
+    if (editingIndex >= 0 && confirm('Delete this endpoint?')) {
+      endpoints.splice(editingIndex, 1);
+      hideEditor();
+      renderEndpoints();
+    }
+  }
+
+  function testEndpoint() {
+    try {
+      const endpoint = {
+        method: methodSelect.value,
+        path: pathInput.value.trim(),
+        status: parseInt(statusInput.value),
+        headers: JSON.parse(headersInput.value || '{}'),
+        body: JSON.parse(bodyInput.value || '{}'),
+        delay: parseInt(delayInput.value)
+      };
+
+      testResults.classList.remove('hidden');
+
+      const output = {
+        request: {
+          method: endpoint.method,
+          path: endpoint.path
+        },
+        response: {
+          status: endpoint.status,
+          headers: endpoint.headers,
+          body: endpoint.body,
+          delay: endpoint.delay + 'ms'
+        }
+      };
+
+      container.querySelector('#test-output').textContent = JSON.stringify(output, null, 2);
+    } catch (error) {
+      container.querySelector('#test-output').textContent = 'Error: ' + error.message;
+    }
+  }
+
+  function exportConfig() {
+    const config = { endpoints };
+    const json = JSON.stringify(config, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mock-api-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importConfig() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const config = JSON.parse(event.target.result);
+          endpoints = config.endpoints || [];
+          renderEndpoints();
+        } catch (error) {
+          alert('Error importing config: ' + error.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  function showGeneratedCode() {
+    generateExpressCode();
+    generateJsonServerCode();
+    generateInterceptorCode();
+    codeModal.classList.remove('hidden');
+  }
+
+  function generateExpressCode() {
+    const code = `// Express.js Mock Server
+const express = require('express');
+const cors = require('cors');
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+${endpoints.map(e => `
+// ${e.method} ${e.path}
+app.${e.method.toLowerCase()}('${e.path}', (req, res) => {
+  ${e.delay > 0 ? `setTimeout(() => {` : ''}
+  res.status(${e.status})
+    .set(${JSON.stringify(e.headers)})
+    .json(${JSON.stringify(e.body, null, 2)});
+  ${e.delay > 0 ? `}, ${e.delay});` : ''}
+});
+`).join('\n')}
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(\`Mock API server running on http://localhost:\${PORT}\`);
+});`;
+
+    container.querySelector('#express-code').textContent = code;
+  }
+
+  function generateJsonServerCode() {
+    const db = {};
+    endpoints.forEach(e => {
+      const resource = e.path.split('/').filter(Boolean).pop();
+      db[resource] = Array.isArray(e.body) ? e.body : [e.body];
+    });
+
+    const code = `// db.json
+${JSON.stringify(db, null, 2)}
+
+// Run with: npx json-server --watch db.json --port 3000`;
+
+    container.querySelector('#json-server-code').textContent = code;
+  }
+
+  function generateInterceptorCode() {
+    const code = `// Fetch Interceptor (Browser)
+const mockEndpoints = ${JSON.stringify(endpoints, null, 2)};
+
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+  const [url, options = {}] = args;
+  const method = (options.method || 'GET').toUpperCase();
+
+  // Find matching mock endpoint
+  const mock = mockEndpoints.find(e => {
+    const urlPath = new URL(url, window.location.origin).pathname;
+    return e.method === method && e.path === urlPath;
+  });
+
+  if (mock) {
+    console.log('[Mock API]', method, url, '→', mock.status);
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(new Response(JSON.stringify(mock.body), {
+          status: mock.status,
+          headers: mock.headers
+        }));
+      }, mock.delay);
+    });
+  }
+
+  // No mock found, use real fetch
+  return originalFetch.apply(this, args);
+};
+
+// Usage: fetch('/api/users') will use mock data if defined`;
+
+    container.querySelector('#interceptor-code').textContent = code;
+  }
+
+  // Initialize
+  renderEndpoints();
+}
+
+export function cleanup(context) {
+  // Cleanup if needed
+}
+</script>
+
+</body>
+</html>

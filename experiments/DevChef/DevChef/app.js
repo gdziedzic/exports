@@ -932,7 +932,7 @@ function showKeyboardShortcutsHelp() {
             <kbd>Ctrl+K</kbd> <span>Open command palette</span>
           </div>
           <div class="shortcut-item">
-            <kbd>Ctrl+F</kbd> <span>Focus search</span>
+            <kbd>Ctrl+Shift+F</kbd> <span>Focus search</span>
           </div>
           <div class="shortcut-item">
             <kbd>Ctrl+E</kbd> <span>Recent tools</span>
