@@ -62,9 +62,22 @@ export function openTool(id, context, workspace = "#workspace") {
     context.restoredState = savedState;
   }
 
-  // Initialize the tool
-  if (tool.module.DevChefTool && tool.module.DevChefTool.init) {
-    tool.module.DevChefTool.init(container, context);
+  // Initialize the tool (support both old and new formats)
+  try {
+    if (tool.module.init) {
+      // New format: direct export
+      console.log(`Initializing tool (new format): ${tool.manifest.name}`);
+      tool.module.init({ container, ...context });
+    } else if (tool.module.DevChefTool && tool.module.DevChefTool.init) {
+      // Old format: DevChefTool object
+      console.log(`Initializing tool (old format): ${tool.manifest.name}`);
+      tool.module.DevChefTool.init(container, context);
+    } else {
+      console.warn(`Tool ${tool.manifest.name} has no init function`);
+    }
+  } catch (error) {
+    console.error(`Error initializing tool ${tool.manifest.name}:`, error);
+    notifications.error(`Failed to initialize tool: ${error.message}`);
   }
 
   // Set up input change handler
@@ -126,22 +139,27 @@ export function renderToolList(context, searchQuery = "") {
     return;
   }
 
-  sidebar.innerHTML = "";
+  try {
+    sidebar.innerHTML = "";
 
-  const tools = ToolRegistry.all();
-  const favorites = storage.getFavorites();
-  const recentTools = storage.getRecentTools();
+    const tools = ToolRegistry.all();
+    console.log(`Rendering ${tools.length} tools, search query: "${searchQuery}"`);
 
-  // Use fuzzy search
-  const searchResults = searchTools(tools, searchQuery, {
-    favorites,
-    recentTools,
-    prioritizeFavorites: true
-  });
+    const favorites = storage.getFavorites();
+    const recentTools = storage.getRecentTools();
 
-  // Group by category
-  const grouped = groupByCategory(searchResults);
-  const categories = Object.keys(grouped).sort();
+    // Use fuzzy search
+    const searchResults = searchTools(tools, searchQuery, {
+      favorites,
+      recentTools,
+      prioritizeFavorites: true
+    });
+
+    console.log(`Search returned ${searchResults.length} results`);
+
+    // Group by category
+    const grouped = groupByCategory(searchResults);
+    const categories = Object.keys(grouped).sort();
 
   categories.forEach(category => {
     const categoryTools = grouped[category];
@@ -196,9 +214,14 @@ export function renderToolList(context, searchQuery = "") {
     sidebar.appendChild(categorySection);
   });
 
-  // Show "no results" message if no tools match
-  if (searchQuery && sidebar.children.length === 0) {
-    sidebar.innerHTML = '<div class="no-results">No tools found</div>';
+    // Show "no results" message if no tools match
+    if (searchQuery && sidebar.children.length === 0) {
+      sidebar.innerHTML = '<div class="no-results">No tools found</div>';
+    }
+  } catch (error) {
+    console.error('Error rendering tool list:', error);
+    sidebar.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+    notifications.error(`Failed to render tool list: ${error.message}`);
   }
 }
 

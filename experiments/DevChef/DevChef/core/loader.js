@@ -50,11 +50,36 @@ async function loadTool(path) {
     }
     const templateHtml = template.innerHTML;
 
-    // Extract styles
-    const styleTag = doc.querySelector("style");
-    const style = styleTag ? styleTag.innerHTML : "";
+    // Extract styles (inline and external)
+    let style = "";
 
-    // Extract and load module
+    // Get inline styles
+    const styleTag = doc.querySelector("style");
+    if (styleTag) {
+      style += styleTag.innerHTML;
+    }
+
+    // Get external stylesheets
+    const linkTags = doc.querySelectorAll('link[rel="stylesheet"]');
+    const basePath = path.substring(0, path.lastIndexOf('/') + 1);
+
+    for (const link of linkTags) {
+      const href = link.getAttribute('href');
+      if (href) {
+        try {
+          const cssPath = basePath + href;
+          const cssContent = await fetch(cssPath).then(r => {
+            if (!r.ok) throw new Error(`Failed to load CSS ${cssPath}: ${r.status}`);
+            return r.text();
+          });
+          style += '\n' + cssContent;
+        } catch (cssError) {
+          console.warn(`Failed to load external CSS from ${href}:`, cssError);
+        }
+      }
+    }
+
+    // Extract and load module (inline or external)
     const scriptTag = doc.querySelector('script[type="module"]');
     if (!scriptTag) {
       const error = `No module script found in ${path}`;
@@ -63,8 +88,30 @@ async function loadTool(path) {
       return;
     }
 
+    let scriptContent;
+
+    // Check if script has src attribute (external file)
+    const scriptSrc = scriptTag.getAttribute('src');
+    if (scriptSrc) {
+      try {
+        const jsPath = basePath + scriptSrc;
+        scriptContent = await fetch(jsPath).then(r => {
+          if (!r.ok) throw new Error(`Failed to load JS ${jsPath}: ${r.status}`);
+          return r.text();
+        });
+      } catch (jsError) {
+        const error = `Failed to load external JS from ${scriptSrc}: ${jsError.message}`;
+        console.error(error);
+        loadingErrors.push({ path, error, toolName: manifest.name });
+        return;
+      }
+    } else {
+      // Use inline script content
+      scriptContent = scriptTag.textContent;
+    }
+
     // Create a blob URL for the module
-    const blob = new Blob([scriptTag.textContent], { type: "text/javascript" });
+    const blob = new Blob([scriptContent], { type: "text/javascript" });
     const moduleUrl = URL.createObjectURL(blob);
     const module = await import(moduleUrl);
 

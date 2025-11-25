@@ -447,12 +447,74 @@ function applySavedLayout() {
 function setupToolSearch(context) {
   const searchInput = document.querySelector('#tool-search');
   if (!searchInput) {
-    console.warn('Tool search input not found');
+    console.error('Tool search input not found - search will not work!');
     return;
   }
 
+  console.log('✓ Tool search initialized');
+
+  let selectedToolIndex = -1;
+
+  // Add input event listener with error handling
   searchInput.addEventListener('input', (e) => {
-    renderToolList(context, e.target.value);
+    try {
+      const query = e.target.value;
+      console.log(`Searching for: "${query}"`);
+      renderToolList(context, query);
+      selectedToolIndex = -1; // Reset selection on new search
+    } catch (error) {
+      console.error('Error during search:', error);
+      notifications.error(`Search error: ${error.message}`);
+    }
+  });
+
+  // Keyboard navigation for tool list
+  searchInput.addEventListener('keydown', (e) => {
+    const toolItems = Array.from(document.querySelectorAll('#tool-list .tool-item'));
+
+    console.log(`Key pressed: ${e.key}, Found ${toolItems.length} tool items`);
+
+    if (toolItems.length === 0) {
+      console.warn('No tool items found for keyboard navigation');
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedToolIndex = Math.min(selectedToolIndex + 1, toolItems.length - 1);
+      updateToolSelection(toolItems, selectedToolIndex);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedToolIndex = Math.max(selectedToolIndex - 1, -1);
+      updateToolSelection(toolItems, selectedToolIndex);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedToolIndex >= 0 && selectedToolIndex < toolItems.length) {
+        const selectedTool = toolItems[selectedToolIndex];
+        const toolId = selectedTool.dataset.toolId;
+        if (toolId) {
+          openTool(toolId, context);
+        }
+      } else if (toolItems.length === 1) {
+        // If only one tool matches, open it
+        const toolId = toolItems[0].dataset.toolId;
+        if (toolId) {
+          openTool(toolId, context);
+        }
+      }
+    } else if (e.key === 'Escape') {
+      searchInput.value = '';
+      renderToolList(context, '');
+      selectedToolIndex = -1;
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      selectedToolIndex = 0;
+      updateToolSelection(toolItems, selectedToolIndex);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      selectedToolIndex = toolItems.length - 1;
+      updateToolSelection(toolItems, selectedToolIndex);
+    }
   });
 
   // Focus search on Ctrl+F or Cmd+F
@@ -461,6 +523,26 @@ function setupToolSearch(context) {
       e.preventDefault();
       searchInput.focus();
       searchInput.select();
+      selectedToolIndex = -1;
+    }
+  });
+}
+
+/**
+ * Update tool selection in sidebar
+ * @param {Array} toolItems - Array of tool item elements
+ * @param {number} selectedIndex - Index of selected tool
+ */
+function updateToolSelection(toolItems, selectedIndex) {
+  console.log(`Updating selection: index ${selectedIndex} of ${toolItems.length} tools`);
+
+  toolItems.forEach((item, index) => {
+    if (index === selectedIndex) {
+      item.classList.add('keyboard-selected');
+      item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      console.log(`Selected tool: ${item.dataset.toolId}`);
+    } else {
+      item.classList.remove('keyboard-selected');
     }
   });
 }

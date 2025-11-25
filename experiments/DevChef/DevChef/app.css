@@ -232,6 +232,13 @@ body {
   border-radius: 0 3px 3px 0;
 }
 
+.tool-item.keyboard-selected {
+  background: var(--accent-bg, rgba(59, 130, 246, 0.1));
+  border-left: 3px solid var(--accent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  outline: none;
+}
+
 /* Main Area */
 #main {
   flex: 1;

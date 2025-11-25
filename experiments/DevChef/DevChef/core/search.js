@@ -95,7 +95,7 @@ export function searchTools(tools, query, options = {}) {
 
   const {
     maxResults = 50,
-    minScore = 0,
+    minScore = 20,
     prioritizeFavorites = false,
     favorites = [],
     recentTools = []
@@ -123,33 +123,62 @@ export function searchTools(tools, query, options = {}) {
       return null;
     }
 
-    // Calculate scores for different fields with null safety
-    const nameScore = tool.name ? fuzzyScore(query, tool.name) : 0;
-    const idScore = tool.id ? fuzzyScore(query, tool.id) : 0;
-    const descScore = tool.description ? fuzzyScore(query, tool.description) * 0.7 : 0;
-    const categoryScore = tool.category ? fuzzyScore(query, tool.category) * 0.5 : 0;
-    const keywordsScore = tool.keywords && Array.isArray(tool.keywords) && tool.keywords.length > 0
-      ? Math.max(...tool.keywords.map(k => fuzzyScore(query, k))) * 0.6
-      : 0;
+    const lowerQuery = query.toLowerCase().trim();
+    const lowerName = tool.name ? tool.name.toLowerCase() : '';
+    const lowerCategory = tool.category ? tool.category.toLowerCase() : '';
 
-    // Combined score (weighted)
-    let score = Math.max(
-      nameScore * 1.0,
-      idScore * 0.9,
-      descScore,
-      categoryScore,
-      keywordsScore
-    );
+    // Check for exact matches (case-insensitive) - should show ONLY that tool
+    const exactNameMatch = lowerName === lowerQuery;
 
-    // Bonus for favorites
-    if (prioritizeFavorites && tool.id && favorites.includes(tool.id)) {
-      score += 15;
+    // If exact match, give it maximum score and return immediately
+    if (exactNameMatch) {
+      return {
+        tool,
+        score: 1000, // Very high score for exact name match
+        isFavorite: tool.id ? favorites.includes(tool.id) : false,
+        isRecent: !!recentTools.find(r => r?.toolId === tool.id),
+        matchDetails: {
+          nameScore: 1000,
+          descScore: 0,
+          categoryScore: 0
+        }
+      };
     }
 
-    // Bonus for recently used
+    // Calculate scores only for name, description, and category
+    let nameScore = tool.name ? fuzzyScore(query, tool.name) : 0;
+
+    // Boost score if query is contained in name (substring match)
+    if (lowerName && lowerName.includes(lowerQuery)) {
+      nameScore = Math.max(nameScore, 90);
+    }
+
+    const descScore = tool.description ? fuzzyScore(query, tool.description) * 0.5 : 0;
+    const categoryScore = tool.category ? fuzzyScore(query, tool.category) * 0.7 : 0;
+
+    // Combined score (weighted)
+    let baseScore = Math.max(
+      nameScore * 1.0,
+      descScore,
+      categoryScore
+    );
+
+    // Check if tool is recent (needed for display, regardless of score)
     const recentEntry = tool.id ? recentTools.find(r => r?.toolId === tool.id) : null;
-    if (recentEntry) {
-      score += 5;
+
+    // Only add bonuses if there's a base match
+    let score = baseScore;
+
+    if (baseScore > 0) {
+      // Bonus for favorites
+      if (prioritizeFavorites && tool.id && favorites.includes(tool.id)) {
+        score += 15;
+      }
+
+      // Bonus for recently used
+      if (recentEntry) {
+        score += 5;
+      }
     }
 
     return {
@@ -159,17 +188,21 @@ export function searchTools(tools, query, options = {}) {
       isRecent: !!recentEntry,
       matchDetails: {
         nameScore,
-        idScore,
         descScore,
-        categoryScore,
-        keywordsScore
+        categoryScore
       }
     };
   }).filter(r => r !== null); // Remove invalid entries
 
-  // Filter and sort results
-  return results
-    .filter(r => r.score >= minScore)
+  // Filter and sort results - only include tools with actual matches (score > 0)
+  const filtered = results.filter(r => r.score > minScore);
+
+  // Debug logging for search
+  if (query && filtered.length < results.length) {
+    console.log(`Filtered from ${results.length} to ${filtered.length} tools (query: "${query}")`);
+  }
+
+  return filtered
     .sort((a, b) => {
       // Sort by score (descending)
       if (Math.abs(a.score - b.score) > 1) {
