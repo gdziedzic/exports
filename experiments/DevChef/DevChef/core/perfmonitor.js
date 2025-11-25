@@ -122,14 +122,14 @@ class PerformanceMonitor {
           this.metrics.fps.shift();
         }
 
-        // Alert on low FPS (throttled to avoid spam)
-        if (fps < this.thresholds.fps) {
-          const now = Date.now();
-          if (now - this.lastAlertTime.fps > this.alertThrottle) {
-            this.addAlert('Low FPS detected', `FPS: ${fps}`, 'warning');
-            this.lastAlertTime.fps = now;
-          }
-        }
+        // FPS alerts disabled (too noisy)
+        // if (fps < this.thresholds.fps) {
+        //   const now = Date.now();
+        //   if (now - this.lastAlertTime.fps > this.alertThrottle) {
+        //     this.addAlert('Low FPS detected', `FPS: ${fps}`, 'warning');
+        //     this.lastAlertTime.fps = now;
+        //   }
+        // }
 
         this.lastFrameTime = now;
         requestAnimationFrame(measureFPS);

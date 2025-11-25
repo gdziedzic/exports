@@ -517,9 +517,9 @@ function setupToolSearch(context) {
     }
   });
 
-  // Focus search on Ctrl+F or Cmd+F
+  // Focus search on Ctrl+Shift+F or Cmd+Shift+F
   document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
       e.preventDefault();
       searchInput.focus();
       searchInput.select();
