@@ -5732,3 +5732,411 @@ body[data-breakpoint="tablet"] #sidebar {
 [data-theme="dark"] .quick-action-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
+
+/* ===== Workflow Snapshots ===== */
+
+/* Snapshot Save Modal */
+.snapshot-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+}
+
+.snapshot-modal {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+.snapshot-modal h2 {
+  margin: 0 0 20px 0;
+  color: var(--text-primary);
+  font-size: 24px;
+}
+
+.snapshot-modal .form-group {
+  margin-bottom: 16px;
+}
+
+.snapshot-modal label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.snapshot-modal input[type="text"],
+.snapshot-modal textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.snapshot-modal input[type="text"]:focus,
+.snapshot-modal textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.snapshot-modal textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.snapshot-modal .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.snapshot-modal button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.snapshot-modal .cancel-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.snapshot-modal .cancel-btn:hover {
+  background: var(--bg-hover);
+}
+
+.snapshot-modal .save-btn {
+  background: var(--primary-color);
+  color: white;
+}
+
+.snapshot-modal .save-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* Snapshots Manager Modal */
+.snapshots-manager-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+}
+
+.snapshots-manager {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+.snapshots-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.snapshots-header h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 24px;
+}
+
+.snapshots-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.snapshots-header .close-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.snapshots-toolbar {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.snapshots-search {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.snapshots-search:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.snapshots-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.snapshots-actions button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.snapshots-actions button:hover {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.snapshots-actions .save-current-btn {
+  background: var(--primary-color);
+  color: white;
+}
+
+.snapshots-actions .save-current-btn:hover {
+  background: var(--primary-hover);
+}
+
+.snapshots-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+}
+
+.snapshots-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.snapshots-empty p {
+  margin: 8px 0;
+}
+
+.snapshots-empty .help-text {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.snapshot-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  background: var(--bg-secondary);
+  transition: all 0.2s;
+}
+
+.snapshot-item:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.snapshot-info {
+  flex: 1;
+}
+
+.snapshot-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.snapshot-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.snapshot-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.snapshot-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.snapshot-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+.snapshot-actions button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.snapshot-actions .restore-btn {
+  background: var(--primary-color);
+  color: white;
+}
+
+.snapshot-actions .restore-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.snapshot-actions .delete-btn {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.snapshot-actions .delete-btn:hover {
+  background: #ff4444;
+  color: white;
+}
+
+.snapshots-footer {
+  padding: 12px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.snapshots-count {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .snapshot-modal,
+[data-theme="dark"] .snapshots-manager {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .snapshot-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .snapshots-manager {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .snapshot-modal {
+    width: 95%;
+  }
+
+  .snapshots-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .snapshots-search {
+    width: 100%;
+  }
+
+  .snapshots-actions {
+    flex-wrap: wrap;
+  }
+
+  .snapshot-item {
+    flex-direction: column;
+  }
+
+  .snapshot-actions {
+    margin-left: 0;
+    margin-top: 12px;
+    width: 100%;
+  }
+
+  .snapshot-actions button {
+    flex: 1;
+  }
+}

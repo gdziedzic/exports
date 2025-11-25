@@ -10,7 +10,8 @@ const STORAGE_KEYS = {
   SETTINGS: 'devchef-v2-settings',
   PRESETS: 'devchef-v2-presets',
   THEME: 'devchef-theme',
-  LAYOUT: 'devchef-v2-layout'
+  LAYOUT: 'devchef-v2-layout',
+  WORKFLOW_SNAPSHOTS: 'devchef-v2-workflow-snapshots'
 };
 
 const DEFAULT_SETTINGS = {
@@ -26,7 +27,8 @@ const DEFAULT_SETTINGS = {
     console: 'ctrl+`',
     search: 'ctrl+f',
     toggleFavorite: 'ctrl+d',
-    recentTools: 'ctrl+e'
+    recentTools: 'ctrl+e',
+    workflowSnapshots: 'ctrl+shift+s'
   }
 };
 
@@ -422,7 +424,8 @@ class StorageManager {
       items: stats,
       favorites: this.getFavorites().length,
       historyItems: this.getHistory().length,
-      toolStates: Object.keys(this.get(STORAGE_KEYS.TOOL_STATES) || {}).length
+      toolStates: Object.keys(this.get(STORAGE_KEYS.TOOL_STATES) || {}).length,
+      workflowSnapshots: (this.get(STORAGE_KEYS.WORKFLOW_SNAPSHOTS)?.snapshots || []).length
     };
   }
 }

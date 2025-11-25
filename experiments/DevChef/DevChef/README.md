@@ -144,6 +144,58 @@ window.quickPanel.addAction({
 
 ---
 
+### 📸 **Workflow Snapshots** - Save and Restore Complete Workflows
+
+Save your current workflow state and restore it later - perfect for power users who repeat workflows.
+
+**Features:**
+- **Complete State Capture**: Saves current tool, all tool states, and settings
+- **Named Snapshots**: Give descriptive names and descriptions to your workflows
+- **Quick Restore**: Restore entire workflows with one click
+- **Search & Filter**: Find snapshots by name or description
+- **Export/Import**: Share workflows with team or backup to file
+- **Recent Snapshots**: Quick access to recently used workflows
+- **Auto-tracking**: Automatically tracks which tools were used
+
+**How it works:**
+1. Set up your workflow (open tools, configure settings, enter data)
+2. Press `Ctrl+Shift+S` or click "Save Current" to create a snapshot
+3. Give it a name like "API Testing Flow" or "Data Processing Pipeline"
+4. Restore anytime by pressing `Ctrl+Shift+W` and selecting the snapshot
+
+**Keyboard Shortcuts:**
+- `Ctrl+Shift+S` / `Cmd+Shift+S` - Save current workflow snapshot
+- `Ctrl+Shift+W` / `Cmd+Shift+W` - Open workflow snapshots manager
+
+**Use Cases:**
+- **Repeated Workflows**: Save multi-step processes you run frequently
+- **Context Switching**: Quickly switch between different project workflows
+- **Team Collaboration**: Export and share workflow configurations
+- **Onboarding**: Create workflow templates for new team members
+- **Testing**: Save different test scenarios and restore them quickly
+
+**How to use:**
+```javascript
+// Save current workflow programmatically
+window.workflowSnapshots.saveSnapshot({
+  name: 'API Testing Flow',
+  description: 'JWT decoder → JSON formatter → cURL builder',
+  currentToolId: 'json-formatter',
+  toolStates: { /* all tool states */ }
+});
+
+// Restore a workflow
+window.workflowSnapshots.restoreSnapshot(snapshotId);
+
+// Export all snapshots
+const jsonData = window.workflowSnapshots.exportSnapshots();
+
+// Import snapshots
+window.workflowSnapshots.importSnapshots(jsonData, true);
+```
+
+---
+
 ## 📌 ULTIMATE Keyboard Shortcuts
 
 ### Core Features
@@ -158,6 +210,8 @@ window.quickPanel.addAction({
 - `Ctrl+Shift+M` - Record/Stop Macro
 - `Ctrl+Shift+B` - Batch Processor
 - `Ctrl+Shift+H` - Command History
+- `Ctrl+Shift+S` - Save Workflow Snapshot
+- `Ctrl+Shift+W` - Workflow Snapshots Manager
 - `Double-tap ESC` - Quick Panel
 
 ---

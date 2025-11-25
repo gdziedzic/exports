@@ -7,6 +7,7 @@ import { ToolRegistry } from './registry.js';
 import { storage } from './storage.js';
 import { searchTools, highlightMatches, groupByCategory } from './search.js';
 import { notifications } from './notifications.js';
+import { workflowSnapshots } from './workflowsnapshots.js';
 
 let currentToolId = null;
 let workspaceStyleElement = null;
@@ -589,7 +590,466 @@ export function showStorageStats() {
     `Storage: ${stats.totalKB} KB used\n` +
     `Favorites: ${stats.favorites}\n` +
     `History: ${stats.historyItems}\n` +
-    `Tool States: ${stats.toolStates}`,
+    `Tool States: ${stats.toolStates}\n` +
+    `Workflow Snapshots: ${stats.workflowSnapshots}`,
     { duration: 5000 }
   );
+}
+
+/**
+ * Save current workflow as a snapshot
+ * @param {Object} context - Global context
+ */
+export async function saveCurrentWorkflow(context) {
+  if (!workflowSnapshots) {
+    notifications.error('Workflow snapshots not initialized');
+    return;
+  }
+
+  if (!currentToolId) {
+    notifications.warning('No tool is currently active');
+    return;
+  }
+
+  // Create modal for snapshot name
+  const modal = createSnapshotNameModal();
+  document.body.appendChild(modal);
+
+  // Handle form submission
+  const form = modal.querySelector('form');
+  const nameInput = modal.querySelector('#snapshot-name');
+  const descInput = modal.querySelector('#snapshot-description');
+  const cancelBtn = modal.querySelector('.cancel-btn');
+
+  nameInput.focus();
+
+  const cleanup = () => {
+    modal.remove();
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name = nameInput.value.trim();
+    const description = descInput.value.trim();
+
+    if (!name) {
+      notifications.warning('Snapshot name is required');
+      return;
+    }
+
+    try {
+      // Get all tool states from storage
+      const toolStates = storage.get('devchef-v2-tool-states') || {};
+
+      // Save the snapshot
+      const snapshot = workflowSnapshots.saveSnapshot({
+        name,
+        description,
+        currentToolId,
+        toolStates
+      });
+
+      notifications.success(`Workflow snapshot "${name}" saved`);
+      cleanup();
+    } catch (error) {
+      console.error('Failed to save snapshot:', error);
+      notifications.error(`Failed to save snapshot: ${error.message}`);
+    }
+  });
+
+  cancelBtn.addEventListener('click', cleanup);
+
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      cleanup();
+    }
+  });
+
+  // Close on escape
+  modal.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      cleanup();
+    }
+  });
+}
+
+/**
+ * Create modal for snapshot name input
+ * @returns {HTMLElement} Modal element
+ */
+function createSnapshotNameModal() {
+  const modal = document.createElement('div');
+  modal.className = 'snapshot-modal-overlay';
+  modal.innerHTML = `
+    <div class="snapshot-modal">
+      <h2>Save Workflow Snapshot</h2>
+      <form>
+        <div class="form-group">
+          <label for="snapshot-name">Name *</label>
+          <input
+            type="text"
+            id="snapshot-name"
+            placeholder="e.g., API Testing Flow"
+            required
+            maxlength="100"
+          />
+        </div>
+        <div class="form-group">
+          <label for="snapshot-description">Description</label>
+          <textarea
+            id="snapshot-description"
+            placeholder="Optional description of this workflow..."
+            rows="3"
+            maxlength="500"
+          ></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="cancel-btn">Cancel</button>
+          <button type="submit" class="save-btn">Save Snapshot</button>
+        </div>
+      </form>
+    </div>
+  `;
+  return modal;
+}
+
+/**
+ * Show workflow snapshots manager
+ * @param {Object} context - Global context
+ */
+export function showWorkflowSnapshotsManager(context) {
+  if (!workflowSnapshots) {
+    notifications.error('Workflow snapshots not initialized');
+    return;
+  }
+
+  // Create modal
+  const modal = createSnapshotsManagerModal(context);
+  document.body.appendChild(modal);
+
+  // Render snapshots list
+  renderSnapshotsList(modal, context);
+
+  // Setup event handlers
+  setupSnapshotsManagerEvents(modal, context);
+}
+
+/**
+ * Create snapshots manager modal
+ * @param {Object} context - Global context
+ * @returns {HTMLElement} Modal element
+ */
+function createSnapshotsManagerModal(context) {
+  const modal = document.createElement('div');
+  modal.className = 'snapshots-manager-overlay';
+  modal.innerHTML = `
+    <div class="snapshots-manager">
+      <div class="snapshots-header">
+        <h2>Workflow Snapshots</h2>
+        <button class="close-btn" title="Close">✕</button>
+      </div>
+      <div class="snapshots-toolbar">
+        <input
+          type="text"
+          class="snapshots-search"
+          placeholder="Search snapshots..."
+        />
+        <div class="snapshots-actions">
+          <button class="save-current-btn" title="Save current workflow">
+            💾 Save Current
+          </button>
+          <button class="export-snapshots-btn" title="Export all snapshots">
+            📤 Export
+          </button>
+          <button class="import-snapshots-btn" title="Import snapshots">
+            📥 Import
+          </button>
+        </div>
+      </div>
+      <div class="snapshots-list"></div>
+      <div class="snapshots-footer">
+        <span class="snapshots-count">0 snapshots</span>
+      </div>
+    </div>
+  `;
+  return modal;
+}
+
+/**
+ * Render snapshots list in manager modal
+ * @param {HTMLElement} modal - Modal element
+ * @param {Object} context - Global context
+ * @param {string} searchQuery - Optional search query
+ */
+function renderSnapshotsList(modal, context, searchQuery = '') {
+  const listContainer = modal.querySelector('.snapshots-list');
+  const countSpan = modal.querySelector('.snapshots-count');
+
+  // Get snapshots (filtered by search if query provided)
+  const snapshots = searchQuery
+    ? workflowSnapshots.searchSnapshots(searchQuery)
+    : workflowSnapshots.getSnapshots();
+
+  // Update count
+  countSpan.textContent = `${snapshots.length} snapshot${snapshots.length !== 1 ? 's' : ''}`;
+
+  // Clear list
+  listContainer.innerHTML = '';
+
+  if (snapshots.length === 0) {
+    listContainer.innerHTML = `
+      <div class="snapshots-empty">
+        <p>No workflow snapshots yet</p>
+        <p class="help-text">Save your current workflow with Ctrl+Shift+S</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Render each snapshot
+  snapshots.forEach(snapshot => {
+    const item = createSnapshotItem(snapshot, context);
+    listContainer.appendChild(item);
+  });
+}
+
+/**
+ * Create a snapshot list item
+ * @param {Object} snapshot - Snapshot object
+ * @param {Object} context - Global context
+ * @returns {HTMLElement} Snapshot item element
+ */
+function createSnapshotItem(snapshot, context) {
+  const item = document.createElement('div');
+  item.className = 'snapshot-item';
+  item.dataset.snapshotId = snapshot.id;
+
+  const createdDate = new Date(snapshot.created).toLocaleDateString();
+  const createdTime = new Date(snapshot.created).toLocaleTimeString();
+  const toolCount = Object.keys(snapshot.toolStates || {}).length;
+
+  item.innerHTML = `
+    <div class="snapshot-info">
+      <div class="snapshot-name">${escapeHtml(snapshot.name)}</div>
+      ${snapshot.description ? `<div class="snapshot-description">${escapeHtml(snapshot.description)}</div>` : ''}
+      <div class="snapshot-meta">
+        <span class="snapshot-date" title="${createdDate} ${createdTime}">
+          📅 ${createdDate}
+        </span>
+        <span class="snapshot-tools" title="Number of tool states saved">
+          🔧 ${toolCount} tool${toolCount !== 1 ? 's' : ''}
+        </span>
+      </div>
+    </div>
+    <div class="snapshot-actions">
+      <button class="restore-btn" title="Restore this workflow">
+        ↩️ Restore
+      </button>
+      <button class="delete-btn" title="Delete this snapshot">
+        🗑️
+      </button>
+    </div>
+  `;
+
+  // Restore button
+  const restoreBtn = item.querySelector('.restore-btn');
+  restoreBtn.addEventListener('click', () => {
+    restoreWorkflow(snapshot.id, context);
+  });
+
+  // Delete button
+  const deleteBtn = item.querySelector('.delete-btn');
+  deleteBtn.addEventListener('click', async () => {
+    const confirmed = await notifications.confirm(
+      `Delete snapshot "${snapshot.name}"?`,
+      { title: 'Delete Snapshot' }
+    );
+
+    if (confirmed) {
+      workflowSnapshots.deleteSnapshot(snapshot.id);
+      const modal = document.querySelector('.snapshots-manager-overlay');
+      if (modal) {
+        const searchInput = modal.querySelector('.snapshots-search');
+        renderSnapshotsList(modal, context, searchInput?.value || '');
+      }
+      notifications.success('Snapshot deleted');
+    }
+  });
+
+  return item;
+}
+
+/**
+ * Setup event handlers for snapshots manager
+ * @param {HTMLElement} modal - Modal element
+ * @param {Object} context - Global context
+ */
+function setupSnapshotsManagerEvents(modal, context) {
+  // Close button
+  const closeBtn = modal.querySelector('.close-btn');
+  closeBtn.addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+
+  // Close on escape
+  modal.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      modal.remove();
+    }
+  });
+
+  // Search input
+  const searchInput = modal.querySelector('.snapshots-search');
+  searchInput.addEventListener('input', (e) => {
+    renderSnapshotsList(modal, context, e.target.value);
+  });
+
+  // Save current button
+  const saveCurrentBtn = modal.querySelector('.save-current-btn');
+  saveCurrentBtn.addEventListener('click', async () => {
+    modal.remove();
+    await saveCurrentWorkflow(context);
+    // Reopen manager if user wants to see the saved snapshot
+    // (optional - could be removed if too intrusive)
+  });
+
+  // Export button
+  const exportBtn = modal.querySelector('.export-snapshots-btn');
+  exportBtn.addEventListener('click', () => {
+    exportWorkflowSnapshots();
+  });
+
+  // Import button
+  const importBtn = modal.querySelector('.import-snapshots-btn');
+  importBtn.addEventListener('click', async () => {
+    await importWorkflowSnapshots();
+    renderSnapshotsList(modal, context);
+  });
+}
+
+/**
+ * Restore a workflow from snapshot
+ * @param {string} snapshotId - Snapshot ID
+ * @param {Object} context - Global context
+ */
+export async function restoreWorkflow(snapshotId, context) {
+  if (!workflowSnapshots) {
+    notifications.error('Workflow snapshots not initialized');
+    return;
+  }
+
+  try {
+    const snapshot = workflowSnapshots.restoreSnapshot(snapshotId);
+
+    if (!snapshot) {
+      notifications.error('Snapshot not found');
+      return;
+    }
+
+    // Restore all tool states to storage
+    if (snapshot.toolStates) {
+      Object.entries(snapshot.toolStates).forEach(([toolId, state]) => {
+        storage.saveToolState(toolId, state);
+      });
+    }
+
+    // Open the current tool from the snapshot
+    if (snapshot.currentToolId) {
+      openTool(snapshot.currentToolId, context);
+    }
+
+    // Close the snapshots manager if open
+    const managerModal = document.querySelector('.snapshots-manager-overlay');
+    if (managerModal) {
+      managerModal.remove();
+    }
+
+    notifications.success(`Workflow "${snapshot.name}" restored`);
+  } catch (error) {
+    console.error('Failed to restore workflow:', error);
+    notifications.error(`Failed to restore workflow: ${error.message}`);
+  }
+}
+
+/**
+ * Export workflow snapshots to JSON file
+ */
+export function exportWorkflowSnapshots() {
+  if (!workflowSnapshots) {
+    notifications.error('Workflow snapshots not initialized');
+    return;
+  }
+
+  try {
+    const jsonData = workflowSnapshots.exportSnapshots();
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `devchef-workflow-snapshots-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    notifications.success('Workflow snapshots exported');
+  } catch (error) {
+    console.error('Export failed:', error);
+    notifications.error(`Export failed: ${error.message}`);
+  }
+}
+
+/**
+ * Import workflow snapshots from JSON file
+ */
+export async function importWorkflowSnapshots() {
+  if (!workflowSnapshots) {
+    notifications.error('Workflow snapshots not initialized');
+    return;
+  }
+
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+
+      const confirmed = await notifications.confirm(
+        'Import snapshots? Existing snapshots with the same name will be kept.',
+        { title: 'Import Workflow Snapshots' }
+      );
+
+      if (!confirmed) return;
+
+      const count = workflowSnapshots.importSnapshots(text, true);
+      notifications.success(`${count} snapshot${count !== 1 ? 's' : ''} imported`);
+    } catch (error) {
+      console.error('Import error:', error);
+      notifications.error(`Import failed: ${error.message}`);
+    }
+  });
+
+  input.click();
+}
+
+/**
+ * Escape HTML to prevent XSS
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped text
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }

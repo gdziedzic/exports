@@ -5,11 +5,12 @@
 
 import { context } from './core/state.js';
 import { initializeTools, getLoadingErrors } from './core/loader.js';
-import { renderToolList, showCommandPalette, openTool, updateRecentTools, toggleFavorite, exportSettings, importSettings, clearHistory, showStorageStats, getCurrentToolId } from './core/ui.js';
+import { renderToolList, showCommandPalette, openTool, updateRecentTools, toggleFavorite, exportSettings, importSettings, clearHistory, showStorageStats, getCurrentToolId, saveCurrentWorkflow, showWorkflowSnapshotsManager } from './core/ui.js';
 import { ToolRegistry } from './core/registry.js';
 import { debugConsole } from './core/console.js';
 import { storage } from './core/storage.js';
 import { notifications } from './core/notifications.js';
+import { initWorkflowSnapshots } from './core/workflowsnapshots.js';
 
 // V2.5 New Features
 import { clipboardDetector } from './core/clipboard.js';
@@ -89,6 +90,10 @@ async function init() {
 
   // Initialize theme
   initializeTheme();
+
+  // Initialize workflow snapshots
+  initWorkflowSnapshots(storage);
+  console.log('✅ Workflow snapshots initialized');
 
   // Apply saved layout
   applySavedLayout();
@@ -630,6 +635,18 @@ function setupKeyboardShortcuts() {
     if ((e.ctrlKey || e.metaKey) && e.key === "w") {
       e.preventDefault();
       showWorkspaceSwitcher();
+    }
+
+    // Ctrl+Shift+S - Save current workflow snapshot
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "S") {
+      e.preventDefault();
+      saveCurrentWorkflow(context);
+    }
+
+    // Ctrl+Shift+W - Show workflow snapshots manager
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "W") {
+      e.preventDefault();
+      showWorkflowSnapshotsManager(context);
     }
   });
 }
