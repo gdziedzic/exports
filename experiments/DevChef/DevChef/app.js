@@ -125,6 +125,9 @@ async function init() {
   // Set up theme toggle
   setupThemeToggle();
 
+  // Set up workflow snapshot buttons
+  setupSnapshotButtons();
+
   // Set up debug console
   setupDebugConsole();
 
@@ -726,6 +729,26 @@ function updateThemeIcon(theme) {
   const icon = document.querySelector('.theme-icon');
   if (icon) {
     icon.textContent = theme === 'light' ? '🌙' : '☀️';
+  }
+}
+
+/**
+ * Set up workflow snapshot buttons
+ */
+function setupSnapshotButtons() {
+  const saveBtn = document.querySelector('#save-snapshot-btn');
+  const manageBtn = document.querySelector('#manage-snapshots-btn');
+
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      saveCurrentWorkflow(context);
+    });
+  }
+
+  if (manageBtn) {
+    manageBtn.addEventListener('click', () => {
+      showWorkflowSnapshotsManager(context);
+    });
   }
 }
 
