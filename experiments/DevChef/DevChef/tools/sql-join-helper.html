@@ -27,6 +27,12 @@
     </div>
 
     <div class="tool-section">
+      <label class="section-label">Load from JSON Schema</label>
+      <textarea id="json-schema-input" placeholder='Paste JSON schema here (format: {"tables": [{"name": "Users", "schema": "dbo", "columns": [...]}, ...]})'></textarea>
+      <button id="load-schema-btn" class="secondary">Load from JSON Schema</button>
+    </div>
+
+    <div class="tool-section">
       <label class="section-label">Tables</label>
       <div id="tables-list" class="tables-list"></div>
       <button id="add-table-btn" class="secondary">+ Add Table</button>
@@ -185,6 +191,13 @@
   #column-list {
     min-height: 80px;
     margin-top: 8px;
+  }
+
+  #json-schema-input {
+    min-height: 120px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    margin-bottom: 8px;
   }
 
   #output {
@@ -356,6 +369,7 @@ export const DevChefTool = {
   context: null,
   tables: [],
   joins: [],
+  schemaData: null,
 
   init(container, context) {
     this.container = container;
@@ -367,12 +381,14 @@ export const DevChefTool = {
     const addTableBtn = container.querySelector("#add-table-btn");
     const addJoinBtn = container.querySelector("#add-join-btn");
     const selectMode = container.querySelector("#select-mode");
+    const loadSchemaBtn = container.querySelector("#load-schema-btn");
 
     generateBtn?.addEventListener("click", () => this.generateSQL());
     copyBtn?.addEventListener("click", () => this.copyOutput());
     resetBtn?.addEventListener("click", () => this.reset());
     addTableBtn?.addEventListener("click", () => this.addTable());
     addJoinBtn?.addEventListener("click", () => this.addJoin());
+    loadSchemaBtn?.addEventListener("click", () => this.loadFromJsonSchema());
 
     selectMode?.addEventListener("change", (e) => {
       const explicitColumns = container.querySelector("#explicit-columns");
@@ -385,8 +401,62 @@ export const DevChefTool = {
     this.addJoin();
   },
 
-  addTable(name = '', alias = '') {
-    const table = { name, alias };
+  loadFromJsonSchema() {
+    const jsonSchemaInput = this.container.querySelector("#json-schema-input");
+    const json = jsonSchemaInput?.value || '';
+
+    if (!json.trim()) {
+      alert('Please paste a JSON schema');
+      return;
+    }
+
+    try {
+      this.schemaData = JSON.parse(json);
+
+      if (!this.schemaData.tables || !Array.isArray(this.schemaData.tables)) {
+        alert('Invalid schema format. Expected: {"tables": [...]}');
+        return;
+      }
+
+      if (this.schemaData.tables.length === 0) {
+        alert('No tables found in schema');
+        return;
+      }
+
+      // Clear existing tables and joins
+      this.tables = [];
+      this.joins = [];
+
+      // Load all tables from schema
+      this.schemaData.tables.forEach((table, index) => {
+        const alias = this.generateAlias(table.name, index);
+        this.addTable(table.name, alias, table.schema || 'dbo', table.columns);
+      });
+
+      // Add one join to get started
+      if (this.tables.length > 1) {
+        this.addJoin();
+      }
+
+      alert(`Successfully loaded ${this.schemaData.tables.length} table(s) from schema!`);
+
+    } catch (error) {
+      alert(`Error parsing JSON: ${error.message}`);
+      console.error(error);
+    }
+  },
+
+  generateAlias(tableName, index) {
+    // Generate short alias from table name
+    const words = tableName.match(/[A-Z][a-z]*/g) || [tableName];
+    if (words.length > 1) {
+      return words.map(w => w[0].toLowerCase()).join('');
+    }
+    return tableName.substring(0, 1).toLowerCase();
+  },
+
+  addTable(name = '', alias = '', schema = 'dbo', columns = []) {
+    const table = { name, alias, schema, columns };
     this.tables.push(table);
     this.renderTables();
   },
@@ -395,10 +465,13 @@ export const DevChefTool = {
     const tablesList = this.container.querySelector("#tables-list");
     if (!tablesList) return;
 
-    tablesList.innerHTML = this.tables.map((table, index) => `
+    tablesList.innerHTML = this.tables.map((table, index) => {
+      const displayName = table.schema ? `${table.schema}.${table.name}` : table.name;
+      const columnCount = table.columns ? ` (${table.columns.length} columns)` : '';
+      return `
       <div class="table-row">
         <div class="table-field">
-          <label>Table Name</label>
+          <label>Table Name${columnCount}</label>
           <input type="text" class="table-name" data-index="${index}" value="${table.name}" placeholder="TableName">
         </div>
         <div class="table-field">
@@ -407,7 +480,8 @@ export const DevChefTool = {
         </div>
         <button class="remove-btn remove-table" data-index="${index}">Remove</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     // Attach event listeners
     tablesList.querySelectorAll('.table-name').forEach(input => {
@@ -447,9 +521,27 @@ export const DevChefTool = {
     const joinsList = this.container.querySelector("#joins-list");
     if (!joinsList) return;
 
-    const tableOptions = this.tables.map(t => `<option value="${t.name}">${t.name}${t.alias ? ' (' + t.alias + ')' : ''}</option>`).join('');
+    const tableOptions = this.tables.map(t => {
+      const displayName = t.schema ? `${t.schema}.${t.name}` : t.name;
+      return `<option value="${t.name}">${displayName}${t.alias ? ' (' + t.alias + ')' : ''}</option>`;
+    }).join('');
 
-    joinsList.innerHTML = this.joins.map((join, index) => `
+    joinsList.innerHTML = this.joins.map((join, index) => {
+      // Get column suggestions for selected tables
+      const leftTable = this.tables.find(t => t.name === join.leftTable);
+      const rightTable = this.tables.find(t => t.name === join.rightTable);
+
+      const leftColumnOptions = leftTable?.columns
+        ? leftTable.columns.map(c => `<option value="${c.name}">${c.name}</option>`).join('')
+        : '';
+      const rightColumnOptions = rightTable?.columns
+        ? rightTable.columns.map(c => `<option value="${c.name}">${c.name}</option>`).join('')
+        : '';
+
+      const showLeftDatalist = leftColumnOptions.length > 0;
+      const showRightDatalist = rightColumnOptions.length > 0;
+
+      return `
       <div class="join-row">
         <div class="join-field">
           <label>Left Table</label>
@@ -477,15 +569,30 @@ export const DevChefTool = {
         </div>
         <div class="join-field">
           <label>ON Left.Column</label>
-          <input type="text" class="join-left-column" data-index="${index}" value="${join.leftColumn}" placeholder="Id">
+          ${showLeftDatalist ? `
+            <input type="text" list="left-columns-${index}" class="join-left-column" data-index="${index}" value="${join.leftColumn}" placeholder="Id">
+            <datalist id="left-columns-${index}">
+              ${leftColumnOptions}
+            </datalist>
+          ` : `
+            <input type="text" class="join-left-column" data-index="${index}" value="${join.leftColumn}" placeholder="Id">
+          `}
         </div>
         <div class="join-field">
           <label>= Right.Column</label>
-          <input type="text" class="join-right-column" data-index="${index}" value="${join.rightColumn}" placeholder="UserId">
+          ${showRightDatalist ? `
+            <input type="text" list="right-columns-${index}" class="join-right-column" data-index="${index}" value="${join.rightColumn}" placeholder="UserId">
+            <datalist id="right-columns-${index}">
+              ${rightColumnOptions}
+            </datalist>
+          ` : `
+            <input type="text" class="join-right-column" data-index="${index}" value="${join.rightColumn}" placeholder="UserId">
+          `}
         </div>
         <button class="remove-btn remove-join" data-index="${index}">Remove</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     // Set selected values
     this.joins.forEach((join, index) => {
@@ -499,12 +606,14 @@ export const DevChefTool = {
     joinsList.querySelectorAll('.join-left-table').forEach(select => {
       select.addEventListener('change', (e) => {
         this.joins[e.target.dataset.index].leftTable = e.target.value;
+        this.renderJoins(); // Re-render to update column suggestions
       });
     });
 
     joinsList.querySelectorAll('.join-right-table').forEach(select => {
       select.addEventListener('change', (e) => {
         this.joins[e.target.dataset.index].rightTable = e.target.value;
+        this.renderJoins(); // Re-render to update column suggestions
       });
     });
 

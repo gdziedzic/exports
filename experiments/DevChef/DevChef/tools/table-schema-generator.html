@@ -27,6 +27,16 @@
     </div>
 
     <div class="tool-section">
+      <label class="section-label">Load from JSON Schema</label>
+      <textarea id="json-schema-input" placeholder='Paste JSON schema here (format: {"tables": [{"name": "Users", "schema": "dbo", "columns": [{"name": "Id", "type": "INT", "nullable": false}, ...]}]})'></textarea>
+      <div id="table-selector-container" style="display: none; margin-top: 12px;">
+        <label for="table-selector">Select Table:</label>
+        <select id="table-selector"></select>
+      </div>
+      <button id="load-schema-btn" class="secondary">Load from JSON Schema</button>
+    </div>
+
+    <div class="tool-section">
       <label class="section-label">Table Information</label>
       <div class="table-info-grid">
         <div class="info-item">
@@ -172,6 +182,18 @@
     cursor: pointer;
   }
 
+  #json-schema-input {
+    min-height: 120px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  #table-selector {
+    width: 100%;
+    margin-top: 8px;
+  }
+
   #output {
     min-height: 400px;
     font-family: var(--font-mono);
@@ -308,6 +330,7 @@ export const DevChefTool = {
   container: null,
   context: null,
   columns: [],
+  schemaData: null,
 
   dataTypes: [
     'INT', 'BIGINT', 'SMALLINT', 'TINYINT',
@@ -327,15 +350,135 @@ export const DevChefTool = {
     const copyBtn = container.querySelector("#copy-btn");
     const resetBtn = container.querySelector("#reset-btn");
     const addColumnBtn = container.querySelector("#add-column-btn");
+    const loadSchemaBtn = container.querySelector("#load-schema-btn");
+    const tableSelector = container.querySelector("#table-selector");
 
     generateBtn?.addEventListener("click", () => this.generateSchema());
     copyBtn?.addEventListener("click", () => this.copyOutput());
     resetBtn?.addEventListener("click", () => this.reset());
     addColumnBtn?.addEventListener("click", () => this.addColumn());
+    loadSchemaBtn?.addEventListener("click", () => this.loadFromJsonSchema());
+    tableSelector?.addEventListener("change", () => this.selectTableFromSchema());
 
     // Add initial columns
     this.addColumn('Name', 'NVARCHAR(100)', false, true);
     this.addColumn('Email', 'NVARCHAR(255)', true, false);
+  },
+
+  loadFromJsonSchema() {
+    const jsonSchemaInput = this.container.querySelector("#json-schema-input");
+    const json = jsonSchemaInput?.value || '';
+
+    if (!json.trim()) {
+      alert('Please paste a JSON schema');
+      return;
+    }
+
+    try {
+      this.schemaData = JSON.parse(json);
+
+      if (!this.schemaData.tables || !Array.isArray(this.schemaData.tables)) {
+        alert('Invalid schema format. Expected: {"tables": [...]}');
+        return;
+      }
+
+      if (this.schemaData.tables.length === 0) {
+        alert('No tables found in schema');
+        return;
+      }
+
+      // Show table selector if multiple tables
+      const tableSelectorContainer = this.container.querySelector("#table-selector-container");
+      const tableSelector = this.container.querySelector("#table-selector");
+
+      if (this.schemaData.tables.length > 1) {
+        tableSelectorContainer.style.display = 'block';
+        tableSelector.innerHTML = this.schemaData.tables.map((table, index) =>
+          `<option value="${index}">${table.schema || 'dbo'}.${table.name}</option>`
+        ).join('');
+        // Load first table
+        this.selectTableFromSchema();
+      } else {
+        tableSelectorContainer.style.display = 'none';
+        // Load single table
+        this.loadTableFromSchema(this.schemaData.tables[0]);
+      }
+
+      alert(`Successfully loaded schema with ${this.schemaData.tables.length} table(s)!`);
+
+    } catch (error) {
+      alert(`Error parsing JSON: ${error.message}`);
+      console.error(error);
+    }
+  },
+
+  selectTableFromSchema() {
+    const tableSelector = this.container.querySelector("#table-selector");
+    const selectedIndex = parseInt(tableSelector.value);
+
+    if (this.schemaData && this.schemaData.tables[selectedIndex]) {
+      this.loadTableFromSchema(this.schemaData.tables[selectedIndex]);
+    }
+  },
+
+  loadTableFromSchema(table) {
+    // Set table info
+    this.container.querySelector("#schema-name").value = table.schema || 'dbo';
+    this.container.querySelector("#table-name").value = table.name || '';
+
+    // Clear existing columns
+    this.columns = [];
+
+    // Load columns from schema (skip primary key as it's added via checkbox)
+    if (table.columns && Array.isArray(table.columns)) {
+      table.columns.forEach(col => {
+        // Skip auto-generated columns (they're handled by options checkboxes)
+        if (col.isPrimaryKey || col.isIdentity) return;
+        if (col.name === 'CreatedDate' || col.name === 'ModifiedDate') return;
+        if (col.name === 'IsDeleted' || col.name === 'DeletedDate') return;
+        if (col.name === 'RowVersion') return;
+
+        // Map type to data type string
+        const dataType = this.mapSchemaTypeToDataType(col);
+        this.addColumn(col.name, dataType, col.nullable || false, col.unique || false);
+      });
+    }
+
+    // Try to detect and set checkboxes based on columns
+    const hasPrimaryKey = table.columns?.some(c => c.isPrimaryKey || c.isIdentity);
+    const hasTimestamps = table.columns?.some(c => c.name === 'CreatedDate' || c.name === 'ModifiedDate');
+    const hasSoftDelete = table.columns?.some(c => c.name === 'IsDeleted');
+    const hasRowVersion = table.columns?.some(c => c.name === 'RowVersion');
+
+    this.container.querySelector("#add-primary-key").checked = hasPrimaryKey || false;
+    this.container.querySelector("#add-timestamps").checked = hasTimestamps || false;
+    this.container.querySelector("#add-soft-delete").checked = hasSoftDelete || false;
+    this.container.querySelector("#add-rowversion").checked = hasRowVersion || false;
+  },
+
+  mapSchemaTypeToDataType(column) {
+    const type = (column.type || 'NVARCHAR').toUpperCase();
+    const length = column.length;
+    const precision = column.precision;
+    const scale = column.scale;
+
+    // Handle types with length/precision/scale
+    if (type.includes('VARCHAR') || type.includes('CHAR')) {
+      if (length) {
+        return `${type}(${length})`;
+      }
+      return type.includes('N') ? 'NVARCHAR(100)' : 'VARCHAR(100)';
+    }
+
+    if (type.includes('DECIMAL') || type.includes('NUMERIC')) {
+      if (precision && scale !== undefined) {
+        return `${type}(${precision},${scale})`;
+      }
+      return 'DECIMAL(18,2)';
+    }
+
+    // Return type as-is for simple types
+    return type;
   },
 
   addColumn(name = '', dataType = 'NVARCHAR(100)', nullable = false, unique = false) {

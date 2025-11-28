@@ -27,6 +27,16 @@
     </div>
 
     <div class="tool-section">
+      <label class="section-label">Load from JSON Schema</label>
+      <textarea id="json-schema-input" placeholder='Paste JSON schema here (format: {"tables": [{"name": "Users", "schema": "dbo", "columns": [...]}]})'></textarea>
+      <div id="table-selector-container" style="display: none; margin-top: 12px;">
+        <label for="table-selector">Select Table for Templates:</label>
+        <select id="table-selector"></select>
+      </div>
+      <button id="load-schema-btn" class="secondary">Load from JSON Schema</button>
+    </div>
+
+    <div class="tool-section">
       <label class="section-label" for="input">SQL Query</label>
       <textarea id="input" placeholder="Paste your SQL query here..."></textarea>
     </div>
@@ -157,6 +167,18 @@
     font-family: var(--font-mono);
   }
 
+  #json-schema-input {
+    min-height: 100px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  #table-selector {
+    width: 100%;
+    margin-top: 8px;
+  }
+
   #input,
   #output {
     min-height: 300px;
@@ -280,6 +302,8 @@
 export const DevChefTool = {
   container: null,
   context: null,
+  schemaData: null,
+  selectedTable: null,
 
   keywords: [
     'SELECT', 'FROM', 'WHERE', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE',
@@ -299,6 +323,8 @@ export const DevChefTool = {
     const formatBtn = container.querySelector("#format-btn");
     const minifyBtn = container.querySelector("#minify-btn");
     const copyBtn = container.querySelector("#copy-btn");
+    const loadSchemaBtn = container.querySelector("#load-schema-btn");
+    const tableSelector = container.querySelector("#table-selector");
 
     inputEl?.addEventListener("input", (e) => {
       context.setInput(e.target.value);
@@ -307,6 +333,8 @@ export const DevChefTool = {
     formatBtn?.addEventListener("click", () => this.formatSQL());
     minifyBtn?.addEventListener("click", () => this.minifySQL());
     copyBtn?.addEventListener("click", () => this.copyOutput());
+    loadSchemaBtn?.addEventListener("click", () => this.loadFromJsonSchema());
+    tableSelector?.addEventListener("change", () => this.selectTableFromSchema());
 
     // Template buttons
     const templateBtns = container.querySelectorAll(".template-btn");
@@ -317,6 +345,57 @@ export const DevChefTool = {
         context.setInput(template);
       });
     });
+  },
+
+  loadFromJsonSchema() {
+    const jsonSchemaInput = this.container.querySelector("#json-schema-input");
+    const json = jsonSchemaInput?.value || '';
+
+    if (!json.trim()) {
+      alert('Please paste a JSON schema');
+      return;
+    }
+
+    try {
+      this.schemaData = JSON.parse(json);
+
+      if (!this.schemaData.tables || !Array.isArray(this.schemaData.tables)) {
+        alert('Invalid schema format. Expected: {"tables": [...]}');
+        return;
+      }
+
+      if (this.schemaData.tables.length === 0) {
+        alert('No tables found in schema');
+        return;
+      }
+
+      // Show table selector
+      const tableSelectorContainer = this.container.querySelector("#table-selector-container");
+      const tableSelector = this.container.querySelector("#table-selector");
+
+      tableSelectorContainer.style.display = 'block';
+      tableSelector.innerHTML = this.schemaData.tables.map((table, index) =>
+        `<option value="${index}">${table.schema || 'dbo'}.${table.name}</option>`
+      ).join('');
+
+      // Select first table
+      this.selectTableFromSchema();
+
+      alert(`Successfully loaded schema with ${this.schemaData.tables.length} table(s)! Templates will now use actual table/column names.`);
+
+    } catch (error) {
+      alert(`Error parsing JSON: ${error.message}`);
+      console.error(error);
+    }
+  },
+
+  selectTableFromSchema() {
+    const tableSelector = this.container.querySelector("#table-selector");
+    const selectedIndex = parseInt(tableSelector.value);
+
+    if (this.schemaData && this.schemaData.tables[selectedIndex]) {
+      this.selectedTable = this.schemaData.tables[selectedIndex];
+    }
   },
 
   formatSQL() {
@@ -432,6 +511,12 @@ export const DevChefTool = {
   },
 
   getTemplate(type) {
+    // If schema is loaded, generate schema-aware templates
+    if (this.selectedTable) {
+      return this.getSchemaAwareTemplate(type);
+    }
+
+    // Otherwise, return generic templates
     const templates = {
       'select': `SELECT
     column1,
@@ -494,6 +579,105 @@ GO`
     };
 
     return templates[type] || '';
+  },
+
+  getSchemaAwareTemplate(type) {
+    const table = this.selectedTable;
+    const tableName = `[${table.schema || 'dbo'}].[${table.name}]`;
+    const columns = table.columns || [];
+
+    // Get first few non-identity columns for examples
+    const dataColumns = columns.filter(c => !c.isIdentity && !c.isPrimaryKey).slice(0, 3);
+    const allColumns = columns.slice(0, 5);
+    const pkColumn = columns.find(c => c.isPrimaryKey) || { name: 'Id' };
+
+    if (type === 'select') {
+      const columnList = allColumns.map(c => `    [${c.name}]`).join(',\n');
+      return `SELECT
+${columnList || '    *'}
+FROM
+    ${tableName}
+WHERE
+    [${pkColumn.name}] = 1
+ORDER BY
+    [${allColumns[0]?.name || 'Id'}] DESC;`;
+    }
+
+    if (type === 'insert') {
+      const columnList = dataColumns.map(c => `    [${c.name}]`).join(',\n');
+      const valuesList = dataColumns.map(c => {
+        if ((c.type || '').toUpperCase().includes('INT')) return '    0';
+        if ((c.type || '').toUpperCase().includes('BIT')) return '    1';
+        if ((c.type || '').toUpperCase().includes('DATE')) return '    GETDATE()';
+        return `    'value'`;
+      }).join(',\n');
+
+      return `INSERT INTO ${tableName} (
+${columnList}
+)
+VALUES (
+${valuesList}
+);`;
+    }
+
+    if (type === 'update') {
+      const setList = dataColumns.slice(0, 2).map(c => {
+        const value = (c.type || '').toUpperCase().includes('INT') ? '0' : `'new value'`;
+        return `    [${c.name}] = ${value}`;
+      }).join(',\n');
+
+      return `UPDATE ${tableName}
+SET
+${setList}
+WHERE
+    [${pkColumn.name}] = 1;`;
+    }
+
+    if (type === 'delete') {
+      return `DELETE FROM ${tableName}
+WHERE
+    [${pkColumn.name}] = 1;`;
+    }
+
+    if (type === 'create-table') {
+      const columnDefs = columns.map(c => {
+        let def = `    [${c.name}] ${c.type || 'NVARCHAR(100)'}`;
+        if (c.length && !(c.type || '').includes('(')) {
+          def += `(${c.length})`;
+        }
+        if (c.isPrimaryKey) def += ' PRIMARY KEY';
+        if (c.isIdentity) def += ' IDENTITY(1,1)';
+        if (!c.nullable && !c.isPrimaryKey) def += ' NOT NULL';
+        if (c.unique && !c.isPrimaryKey) def += ' UNIQUE';
+        return def;
+      }).join(',\n');
+
+      return `CREATE TABLE ${tableName} (
+${columnDefs}
+);`;
+    }
+
+    if (type === 'stored-proc') {
+      const firstParam = dataColumns[0] || { name: 'Parameter1', type: 'INT' };
+      const columnList = allColumns.slice(0, 3).map(c => `        [${c.name}]`).join(',\n');
+
+      return `CREATE PROCEDURE sp_Get${table.name}
+    @${firstParam.name} ${firstParam.type || 'INT'}
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+${columnList}
+    FROM
+        ${tableName}
+    WHERE
+        [${firstParam.name}] = @${firstParam.name};
+END;
+GO`;
+    }
+
+    return '';
   },
 
   copyOutput() {
