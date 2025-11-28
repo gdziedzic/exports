@@ -678,7 +678,8 @@ export const DevChefTool = {
 
     // FROM clause - first table
     const firstTable = this.tables[0];
-    sql += `    ${firstTable.name}`;
+    const firstTableName = firstTable.schema ? `[${firstTable.schema}].[${firstTable.name}]` : firstTable.name;
+    sql += `    ${firstTableName}`;
     if (firstTable.alias) {
       sql += ` ${firstTable.alias}`;
     }
@@ -688,16 +689,24 @@ export const DevChefTool = {
     this.joins.forEach(join => {
       if (!join.leftTable || !join.rightTable) return;
 
-      const leftAlias = this.tables.find(t => t.name === join.leftTable)?.alias || join.leftTable;
-      const rightAlias = this.tables.find(t => t.name === join.rightTable)?.alias || join.rightTable;
+      const leftTable = this.tables.find(t => t.name === join.leftTable);
+      const rightTable = this.tables.find(t => t.name === join.rightTable);
 
-      sql += `    ${join.joinType} ${join.rightTable}`;
+      const leftAlias = leftTable?.alias || join.leftTable;
+      const rightAlias = rightTable?.alias || join.rightTable;
+
+      // Format right table name with schema if available
+      const rightTableName = rightTable?.schema
+        ? `[${rightTable.schema}].[${rightTable.name}]`
+        : join.rightTable;
+
+      sql += `    ${join.joinType} ${rightTableName}`;
       if (rightAlias !== join.rightTable) {
         sql += ` ${rightAlias}`;
       }
 
       if (join.joinType !== 'CROSS JOIN') {
-        sql += ` ON ${leftAlias}.${join.leftColumn} = ${rightAlias}.${join.rightColumn}`;
+        sql += ` ON ${leftAlias}.[${join.leftColumn}] = ${rightAlias}.[${join.rightColumn}]`;
       }
 
       sql += '\n';
