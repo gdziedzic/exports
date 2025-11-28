@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSON Schema Loader - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "json-schema-loader",
+  "name": "JSON Schema Loader",
+  "category": "Database",
+  "description": "Load database schema from SQL results or generate example schemas for testing",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">JSON Schema Loader</h2>
+      <p class="tool-description">Convert database schema to JSON format or generate example schemas for testing SQL tools</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tool-section">
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="from-db">From Database</button>
+        <button class="tab-btn" data-tab="generate">Generate Example</button>
+      </div>
+    </div>
+
+    <!-- Tab: From Database -->
+    <div id="tab-from-db" class="tab-content active">
+      <div class="tool-section">
+        <label class="section-label">Step 1: Run SQL Query</label>
+        <p class="help-text">Run this query in your database to get schema information:</p>
+        <div class="code-block">
+          <button class="copy-query-btn" data-query="sql-server">Copy SQL Server Query</button>
+          <button class="copy-query-btn" data-query="mysql">Copy MySQL Query</button>
+          <button class="copy-query-btn" data-query="postgresql">Copy PostgreSQL Query</button>
+        </div>
+        <textarea id="example-query" readonly></textarea>
+      </div>
+
+      <div class="tool-section">
+        <label class="section-label">Step 2: Paste Query Results</label>
+        <p class="help-text">Copy the results from your database tool and paste below (supports tab-separated or CSV format):</p>
+        <textarea id="db-results-input" placeholder="Paste query results here (tab-separated or CSV)..."></textarea>
+        <div class="parse-options">
+          <label>
+            <span>Format:</span>
+            <select id="result-format">
+              <option value="tsv">Tab-separated (TSV)</option>
+              <option value="csv">Comma-separated (CSV)</option>
+              <option value="json">JSON array</option>
+            </select>
+          </label>
+          <label>
+            <input type="checkbox" id="has-header" checked>
+            <span>First row is header</span>
+          </label>
+        </div>
+        <button id="parse-results-btn">Parse Results</button>
+      </div>
+    </div>
+
+    <!-- Tab: Generate Example -->
+    <div id="tab-generate" class="tab-content">
+      <div class="tool-section">
+        <label class="section-label">Schema Templates</label>
+        <p class="help-text">Generate common database schema patterns for testing:</p>
+        <div class="templates-grid">
+          <button class="template-btn" data-template="ecommerce">E-Commerce</button>
+          <button class="template-btn" data-template="blog">Blog / CMS</button>
+          <button class="template-btn" data-template="crm">CRM</button>
+          <button class="template-btn" data-template="hr">HR System</button>
+          <button class="template-btn" data-template="inventory">Inventory</button>
+          <button class="template-btn" data-template="simple">Simple (2 tables)</button>
+        </div>
+      </div>
+
+      <div class="tool-section">
+        <label class="section-label">Custom Random Schema</label>
+        <div class="random-options">
+          <label>
+            <span>Number of tables:</span>
+            <input type="number" id="num-tables" min="1" max="10" value="3">
+          </label>
+          <label>
+            <span>Columns per table:</span>
+            <input type="number" id="num-columns" min="2" max="15" value="5">
+          </label>
+        </div>
+        <button id="generate-random-btn" class="secondary">Generate Random Schema</button>
+      </div>
+    </div>
+
+    <!-- Output Section -->
+    <div class="tool-section">
+      <label class="section-label">Generated JSON Schema</label>
+      <textarea id="output" readonly placeholder="Your JSON schema will appear here..."></textarea>
+      <div class="button-group">
+        <button id="copy-btn" class="secondary">Copy JSON</button>
+        <button id="format-btn" class="secondary">Format JSON</button>
+        <button id="validate-btn" class="secondary">Validate Schema</button>
+        <button id="clear-btn" class="secondary">Clear</button>
+      </div>
+      <div id="stats" class="stats-display"></div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .tab-nav {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 24px;
+  }
+
+  .tab-btn {
+    padding: 12px 24px;
+    margin: 0;
+    margin-bottom: -2px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: transparent;
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .help-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .code-block {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .copy-query-btn {
+    padding: 8px 16px;
+    margin: 0;
+    font-size: 12px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .copy-query-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  .parse-options {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    margin-top: 12px;
+    margin-bottom: 12px;
+  }
+
+  .parse-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .parse-options select {
+    width: auto;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .parse-options input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+  }
+
+  .templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .template-btn {
+    padding: 16px;
+    margin: 0;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .template-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .random-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .random-options label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .random-options input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stats-display {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: none;
+  }
+
+  .stats-display.visible {
+    display: block;
+  }
+
+  #db-results-input {
+    min-height: 200px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  #example-query {
+    min-height: 150px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg-tertiary);
+    resize: vertical;
+  }
+
+  #output {
+    min-height: 400px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  @media (max-width: 768px) {
+    .tab-nav {
+      flex-direction: column;
+    }
+
+    .templates-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --success: #27ae60;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  textarea {
+    resize: vertical;
+    font-family: var(--font-mono);
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+  }
+
+  button.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  button.secondary:hover {
+    background: var(--border-color);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+  currentQuery: '',
+
+  sqlQueries: {
+    'sql-server': `-- SQL Server: Get table and column information
+SELECT
+    t.TABLE_SCHEMA as [schema],
+    t.TABLE_NAME as [name],
+    c.COLUMN_NAME as column_name,
+    c.DATA_TYPE as column_type,
+    c.CHARACTER_MAXIMUM_LENGTH as column_length,
+    c.NUMERIC_PRECISION as column_precision,
+    c.NUMERIC_SCALE as column_scale,
+    c.IS_NULLABLE as column_nullable,
+    CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 1 ELSE 0 END as column_isPrimaryKey,
+    CASE WHEN c.COLUMN_DEFAULT LIKE '%identity%' OR COLUMNPROPERTY(OBJECT_ID(t.TABLE_SCHEMA + '.' + t.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') = 1 THEN 1 ELSE 0 END as column_isIdentity
+FROM
+    INFORMATION_SCHEMA.TABLES t
+    INNER JOIN INFORMATION_SCHEMA.COLUMNS c ON t.TABLE_NAME = c.TABLE_NAME AND t.TABLE_SCHEMA = c.TABLE_SCHEMA
+    LEFT JOIN (
+        SELECT ku.TABLE_SCHEMA, ku.TABLE_NAME, ku.COLUMN_NAME
+        FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+        INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE ku ON tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
+        WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+    ) pk ON c.TABLE_NAME = pk.TABLE_NAME AND c.COLUMN_NAME = pk.COLUMN_NAME AND c.TABLE_SCHEMA = pk.TABLE_SCHEMA
+WHERE
+    t.TABLE_TYPE = 'BASE TABLE'
+    AND t.TABLE_SCHEMA = 'dbo' -- Change schema if needed
+ORDER BY
+    t.TABLE_SCHEMA, t.TABLE_NAME, c.ORDINAL_POSITION;`,
+
+    'mysql': `-- MySQL: Get table and column information
+SELECT
+    t.TABLE_SCHEMA as 'schema',
+    t.TABLE_NAME as 'name',
+    c.COLUMN_NAME as column_name,
+    c.DATA_TYPE as column_type,
+    c.CHARACTER_MAXIMUM_LENGTH as column_length,
+    c.NUMERIC_PRECISION as column_precision,
+    c.NUMERIC_SCALE as column_scale,
+    c.IS_NULLABLE as column_nullable,
+    CASE WHEN c.COLUMN_KEY = 'PRI' THEN 1 ELSE 0 END as column_isPrimaryKey,
+    CASE WHEN c.EXTRA = 'auto_increment' THEN 1 ELSE 0 END as column_isIdentity
+FROM
+    INFORMATION_SCHEMA.TABLES t
+    INNER JOIN INFORMATION_SCHEMA.COLUMNS c ON t.TABLE_NAME = c.TABLE_NAME AND t.TABLE_SCHEMA = c.TABLE_SCHEMA
+WHERE
+    t.TABLE_TYPE = 'BASE TABLE'
+    AND t.TABLE_SCHEMA = DATABASE()
+ORDER BY
+    t.TABLE_SCHEMA, t.TABLE_NAME, c.ORDINAL_POSITION;`,
+
+    'postgresql': `-- PostgreSQL: Get table and column information
+SELECT
+    t.table_schema as "schema",
+    t.table_name as "name",
+    c.column_name as column_name,
+    c.data_type as column_type,
+    c.character_maximum_length as column_length,
+    c.numeric_precision as column_precision,
+    c.numeric_scale as column_scale,
+    c.is_nullable as column_nullable,
+    CASE WHEN pk.column_name IS NOT NULL THEN 1 ELSE 0 END as column_isPrimaryKey,
+    CASE WHEN c.column_default LIKE 'nextval%' THEN 1 ELSE 0 END as column_isIdentity
+FROM
+    information_schema.tables t
+    INNER JOIN information_schema.columns c ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+    LEFT JOIN (
+        SELECT ku.table_schema, ku.table_name, ku.column_name
+        FROM information_schema.table_constraints tc
+        INNER JOIN information_schema.key_column_usage ku ON tc.constraint_name = ku.constraint_name
+        WHERE tc.constraint_type = 'PRIMARY KEY'
+    ) pk ON c.table_name = pk.table_name AND c.column_name = pk.column_name AND c.table_schema = pk.table_schema
+WHERE
+    t.table_type = 'BASE TABLE'
+    AND t.table_schema = 'public'
+ORDER BY
+    t.table_schema, t.table_name, c.ordinal_position;`
+  },
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    // Tab navigation
+    const tabBtns = container.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
+    });
+
+    // Query copy buttons
+    const copyQueryBtns = container.querySelectorAll('.copy-query-btn');
+    copyQueryBtns.forEach(btn => {
+      btn.addEventListener('click', () => this.copyQuery(btn.dataset.query));
+    });
+
+    // Parse results button
+    const parseResultsBtn = container.querySelector('#parse-results-btn');
+    parseResultsBtn?.addEventListener('click', () => this.parseResults());
+
+    // Template buttons
+    const templateBtns = container.querySelectorAll('.template-btn');
+    templateBtns.forEach(btn => {
+      btn.addEventListener('click', () => this.generateTemplate(btn.dataset.template));
+    });
+
+    // Random generator
+    const generateRandomBtn = container.querySelector('#generate-random-btn');
+    generateRandomBtn?.addEventListener('click', () => this.generateRandom());
+
+    // Output buttons
+    const copyBtn = container.querySelector('#copy-btn');
+    const formatBtn = container.querySelector('#format-btn');
+    const validateBtn = container.querySelector('#validate-btn');
+    const clearBtn = container.querySelector('#clear-btn');
+
+    copyBtn?.addEventListener('click', () => this.copyOutput());
+    formatBtn?.addEventListener('click', () => this.formatOutput());
+    validateBtn?.addEventListener('click', () => this.validateSchema());
+    clearBtn?.addEventListener('click', () => this.clearOutput());
+
+    // Show first query by default
+    this.showQuery('sql-server');
+  },
+
+  switchTab(tabName) {
+    // Update tab buttons
+    this.container.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+
+    // Update tab content
+    this.container.querySelectorAll('.tab-content').forEach(content => {
+      content.classList.toggle('active', content.id === `tab-${tabName}`);
+    });
+  },
+
+  showQuery(dbType) {
+    const queryTextarea = this.container.querySelector('#example-query');
+    if (queryTextarea) {
+      queryTextarea.value = this.sqlQueries[dbType];
+      this.currentQuery = this.sqlQueries[dbType];
+    }
+  },
+
+  copyQuery(dbType) {
+    const query = this.sqlQueries[dbType];
+    navigator.clipboard.writeText(query).then(() => {
+      this.showQuery(dbType);
+      alert(`${dbType.toUpperCase()} query copied to clipboard!`);
+    });
+  },
+
+  parseResults() {
+    const input = this.container.querySelector('#db-results-input')?.value || '';
+    const format = this.container.querySelector('#result-format')?.value || 'tsv';
+    const hasHeader = this.container.querySelector('#has-header')?.checked || false;
+
+    if (!input.trim()) {
+      alert('Please paste query results');
+      return;
+    }
+
+    try {
+      let rows = [];
+
+      if (format === 'json') {
+        rows = JSON.parse(input);
+      } else {
+        const delimiter = format === 'csv' ? ',' : '\t';
+        const lines = input.trim().split('\n');
+        const headers = hasHeader ? lines[0].split(delimiter).map(h => h.trim()) : [];
+        const dataLines = hasHeader ? lines.slice(1) : lines;
+
+        rows = dataLines.map(line => {
+          const values = line.split(delimiter).map(v => v.trim());
+          if (hasHeader) {
+            const obj = {};
+            headers.forEach((header, i) => {
+              obj[header] = values[i];
+            });
+            return obj;
+          }
+          return values;
+        });
+      }
+
+      const schema = this.convertToSchema(rows);
+      this.setOutput(schema);
+      this.showStats(schema);
+
+    } catch (error) {
+      alert(`Error parsing results: ${error.message}`);
+      console.error(error);
+    }
+  },
+
+  convertToSchema(rows) {
+    const tablesMap = new Map();
+
+    rows.forEach(row => {
+      const tableName = row.name || row.TABLE_NAME;
+      const schemaName = row.schema || row.TABLE_SCHEMA || 'dbo';
+
+      if (!tableName) return;
+
+      const tableKey = `${schemaName}.${tableName}`;
+
+      if (!tablesMap.has(tableKey)) {
+        tablesMap.set(tableKey, {
+          name: tableName,
+          schema: schemaName,
+          columns: []
+        });
+      }
+
+      const table = tablesMap.get(tableKey);
+
+      // Extract column info
+      const column = {
+        name: row.column_name || row.COLUMN_NAME,
+        type: (row.column_type || row.COLUMN_TYPE || row.DATA_TYPE || 'VARCHAR').toUpperCase(),
+        nullable: this.parseBoolean(row.column_nullable || row.IS_NULLABLE),
+        isPrimaryKey: this.parseBoolean(row.column_isPrimaryKey),
+        isIdentity: this.parseBoolean(row.column_isIdentity)
+      };
+
+      // Add length/precision/scale if present
+      if (row.column_length || row.CHARACTER_MAXIMUM_LENGTH) {
+        column.length = parseInt(row.column_length || row.CHARACTER_MAXIMUM_LENGTH);
+      }
+      if (row.column_precision || row.NUMERIC_PRECISION) {
+        column.precision = parseInt(row.column_precision || row.NUMERIC_PRECISION);
+      }
+      if (row.column_scale || row.NUMERIC_SCALE) {
+        column.scale = parseInt(row.column_scale || row.NUMERIC_SCALE);
+      }
+
+      table.columns.push(column);
+    });
+
+    return {
+      tables: Array.from(tablesMap.values())
+    };
+  },
+
+  parseBoolean(value) {
+    if (value === true || value === 1 || value === '1') return true;
+    if (value === 'YES' || value === 'yes') return true;
+    return false;
+  },
+
+  generateTemplate(templateName) {
+    const templates = {
+      'ecommerce': {
+        tables: [
+          {
+            name: 'Users',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'Username', type: 'NVARCHAR', length: 50, nullable: false, unique: true },
+              { name: 'Email', type: 'NVARCHAR', length: 100, nullable: false, unique: true },
+              { name: 'PasswordHash', type: 'NVARCHAR', length: 255, nullable: false },
+              { name: 'CreatedDate', type: 'DATETIME2', nullable: false },
+              { name: 'IsActive', type: 'BIT', nullable: false }
+            ]
+          },
+          {
+            name: 'Products',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'Name', type: 'NVARCHAR', length: 200, nullable: false },
+              { name: 'Description', type: 'NVARCHAR', length: -1, nullable: true },
+              { name: 'Price', type: 'DECIMAL', precision: 18, scale: 2, nullable: false },
+              { name: 'StockQuantity', type: 'INT', nullable: false },
+              { name: 'CategoryId', type: 'INT', nullable: true },
+              { name: 'CreatedDate', type: 'DATETIME2', nullable: false }
+            ]
+          },
+          {
+            name: 'Orders',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'UserId', type: 'INT', nullable: false },
+              { name: 'OrderDate', type: 'DATETIME2', nullable: false },
+              { name: 'TotalAmount', type: 'DECIMAL', precision: 18, scale: 2, nullable: false },
+              { name: 'Status', type: 'NVARCHAR', length: 50, nullable: false },
+              { name: 'ShippingAddress', type: 'NVARCHAR', length: 500, nullable: true }
+            ]
+          },
+          {
+            name: 'OrderItems',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'OrderId', type: 'INT', nullable: false },
+              { name: 'ProductId', type: 'INT', nullable: false },
+              { name: 'Quantity', type: 'INT', nullable: false },
+              { name: 'UnitPrice', type: 'DECIMAL', precision: 18, scale: 2, nullable: false }
+            ]
+          }
+        ]
+      },
+
+      'blog': {
+        tables: [
+          {
+            name: 'Users',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'Username', type: 'NVARCHAR', length: 50, nullable: false, unique: true },
+              { name: 'Email', type: 'NVARCHAR', length: 100, nullable: false },
+              { name: 'DisplayName', type: 'NVARCHAR', length: 100, nullable: true },
+              { name: 'Bio', type: 'NVARCHAR', length: 500, nullable: true },
+              { name: 'CreatedDate', type: 'DATETIME2', nullable: false }
+            ]
+          },
+          {
+            name: 'Posts',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'Title', type: 'NVARCHAR', length: 200, nullable: false },
+              { name: 'Slug', type: 'NVARCHAR', length: 200, nullable: false, unique: true },
+              { name: 'Content', type: 'NVARCHAR', length: -1, nullable: false },
+              { name: 'AuthorId', type: 'INT', nullable: false },
+              { name: 'PublishedDate', type: 'DATETIME2', nullable: true },
+              { name: 'IsPublished', type: 'BIT', nullable: false },
+              { name: 'ViewCount', type: 'INT', nullable: false }
+            ]
+          },
+          {
+            name: 'Comments',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'PostId', type: 'INT', nullable: false },
+              { name: 'UserId', type: 'INT', nullable: false },
+              { name: 'Content', type: 'NVARCHAR', length: 1000, nullable: false },
+              { name: 'CreatedDate', type: 'DATETIME2', nullable: false },
+              { name: 'IsApproved', type: 'BIT', nullable: false }
+            ]
+          }
+        ]
+      },
+
+      'crm': {
+        tables: [
+          {
+            name: 'Contacts',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'FirstName', type: 'NVARCHAR', length: 50, nullable: false },
+              { name: 'LastName', type: 'NVARCHAR', length: 50, nullable: false },
+              { name: 'Email', type: 'NVARCHAR', length: 100, nullable: false },
+              { name: 'Phone', type: 'NVARCHAR', length: 20, nullable: true },
+              { name: 'Company', type: 'NVARCHAR', length: 100, nullable: true },
+              { name: 'CreatedDate', type: 'DATETIME2', nullable: false }
+            ]
+          },
+          {
+            name: 'Opportunities',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'ContactId', type: 'INT', nullable: false },
+              { name: 'Title', type: 'NVARCHAR', length: 200, nullable: false },
+              { name: 'Value', type: 'DECIMAL', precision: 18, scale: 2, nullable: false },
+              { name: 'Stage', type: 'NVARCHAR', length: 50, nullable: false },
+              { name: 'Probability', type: 'INT', nullable: false },
+              { name: 'ExpectedCloseDate', type: 'DATE', nullable: true }
+            ]
+          },
+          {
+            name: 'Activities',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'ContactId', type: 'INT', nullable: false },
+              { name: 'Type', type: 'NVARCHAR', length: 50, nullable: false },
+              { name: 'Subject', type: 'NVARCHAR', length: 200, nullable: false },
+              { name: 'Notes', type: 'NVARCHAR', length: 1000, nullable: true },
+              { name: 'ActivityDate', type: 'DATETIME2', nullable: false }
+            ]
+          }
+        ]
+      },
+
+      'hr': {
+        tables: [
+          {
+            name: 'Employees',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'EmployeeNumber', type: 'NVARCHAR', length: 20, nullable: false, unique: true },
+              { name: 'FirstName', type: 'NVARCHAR', length: 50, nullable: false },
+              { name: 'LastName', type: 'NVARCHAR', length: 50, nullable: false },
+              { name: 'Email', type: 'NVARCHAR', length: 100, nullable: false },
+              { name: 'DepartmentId', type: 'INT', nullable: true },
+              { name: 'HireDate', type: 'DATE', nullable: false },
+              { name: 'Salary', type: 'DECIMAL', precision: 18, scale: 2, nullable: true }
+            ]
+          },
+          {
+            name: 'Departments',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'Name', type: 'NVARCHAR', length: 100, nullable: false },
+              { name: 'ManagerId', type: 'INT', nullable: true },
+              { name: 'Location', type: 'NVARCHAR', length: 100, nullable: true }
+            ]
+          },
+          {
+            name: 'TimeOff',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'EmployeeId', type: 'INT', nullable: false },
+              { name: 'StartDate', type: 'DATE', nullable: false },
+              { name: 'EndDate', type: 'DATE', nullable: false },
+              { name: 'Type', type: 'NVARCHAR', length: 50, nullable: false },
+              { name: 'Status', type: 'NVARCHAR', length: 20, nullable: false },
+              { name: 'RequestDate', type: 'DATETIME2', nullable: false }
+            ]
+          }
+        ]
+      },
+
+      'inventory': {
+        tables: [
+          {
+            name: 'Items',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'SKU', type: 'NVARCHAR', length: 50, nullable: false, unique: true },
+              { name: 'Name', type: 'NVARCHAR', length: 200, nullable: false },
+              { name: 'Description', type: 'NVARCHAR', length: 500, nullable: true },
+              { name: 'CategoryId', type: 'INT', nullable: true },
+              { name: 'UnitPrice', type: 'DECIMAL', precision: 18, scale: 2, nullable: false }
+            ]
+          },
+          {
+            name: 'Warehouses',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'Name', type: 'NVARCHAR', length: 100, nullable: false },
+              { name: 'Location', type: 'NVARCHAR', length: 200, nullable: false },
+              { name: 'Capacity', type: 'INT', nullable: false }
+            ]
+          },
+          {
+            name: 'Stock',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'ItemId', type: 'INT', nullable: false },
+              { name: 'WarehouseId', type: 'INT', nullable: false },
+              { name: 'Quantity', type: 'INT', nullable: false },
+              { name: 'LastUpdated', type: 'DATETIME2', nullable: false }
+            ]
+          }
+        ]
+      },
+
+      'simple': {
+        tables: [
+          {
+            name: 'Users',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'Username', type: 'NVARCHAR', length: 50, nullable: false },
+              { name: 'Email', type: 'NVARCHAR', length: 100, nullable: false },
+              { name: 'CreatedDate', type: 'DATETIME2', nullable: false }
+            ]
+          },
+          {
+            name: 'Orders',
+            schema: 'dbo',
+            columns: [
+              { name: 'Id', type: 'INT', nullable: false, isPrimaryKey: true, isIdentity: true },
+              { name: 'UserId', type: 'INT', nullable: false },
+              { name: 'OrderDate', type: 'DATETIME2', nullable: false },
+              { name: 'Total', type: 'DECIMAL', precision: 18, scale: 2, nullable: false }
+            ]
+          }
+        ]
+      }
+    };
+
+    const schema = templates[templateName];
+    if (schema) {
+      this.setOutput(schema);
+      this.showStats(schema);
+    }
+  },
+
+  generateRandom() {
+    const numTables = parseInt(this.container.querySelector('#num-tables')?.value) || 3;
+    const numColumns = parseInt(this.container.querySelector('#num-columns')?.value) || 5;
+
+    const tableNames = ['Users', 'Products', 'Orders', 'Categories', 'Customers', 'Invoices', 'Shipments', 'Reviews', 'Payments', 'Addresses'];
+    const columnNames = ['Id', 'Name', 'Title', 'Description', 'Email', 'Phone', 'Address', 'City', 'State', 'ZipCode', 'CreatedDate', 'ModifiedDate', 'IsActive', 'Status', 'Price', 'Quantity', 'Total'];
+    const dataTypes = ['INT', 'BIGINT', 'NVARCHAR', 'VARCHAR', 'DECIMAL', 'BIT', 'DATETIME2', 'DATE'];
+
+    const tables = [];
+
+    for (let i = 0; i < numTables; i++) {
+      const tableName = tableNames[i % tableNames.length] + (i >= tableNames.length ? (i + 1) : '');
+      const columns = [];
+
+      // Always add Id column
+      columns.push({
+        name: 'Id',
+        type: 'INT',
+        nullable: false,
+        isPrimaryKey: true,
+        isIdentity: true
+      });
+
+      // Add random columns
+      for (let j = 1; j < numColumns; j++) {
+        const colName = columnNames[j % columnNames.length];
+        const dataType = dataTypes[Math.floor(Math.random() * dataTypes.length)];
+
+        const column = {
+          name: colName + (j > columnNames.length ? j : ''),
+          type: dataType,
+          nullable: Math.random() > 0.5
+        };
+
+        if (dataType === 'NVARCHAR' || dataType === 'VARCHAR') {
+          column.length = [50, 100, 255, 500][Math.floor(Math.random() * 4)];
+        }
+
+        if (dataType === 'DECIMAL') {
+          column.precision = 18;
+          column.scale = 2;
+        }
+
+        columns.push(column);
+      }
+
+      tables.push({
+        name: tableName,
+        schema: 'dbo',
+        columns
+      });
+    }
+
+    const schema = { tables };
+    this.setOutput(schema);
+    this.showStats(schema);
+  },
+
+  setOutput(schema) {
+    const json = JSON.stringify(schema, null, 2);
+    const outputEl = this.container.querySelector('#output');
+    if (outputEl) outputEl.value = json;
+    this.context.setOutput(json);
+  },
+
+  formatOutput() {
+    const output = this.context.getOutput();
+    if (!output.trim()) return;
+
+    try {
+      const obj = JSON.parse(output);
+      const formatted = JSON.stringify(obj, null, 2);
+      const outputEl = this.container.querySelector('#output');
+      if (outputEl) outputEl.value = formatted;
+      this.context.setOutput(formatted);
+    } catch (error) {
+      alert(`Error formatting JSON: ${error.message}`);
+    }
+  },
+
+  validateSchema() {
+    const output = this.context.getOutput();
+    if (!output.trim()) {
+      alert('No schema to validate');
+      return;
+    }
+
+    try {
+      const schema = JSON.parse(output);
+
+      // Validation checks
+      const errors = [];
+
+      if (!schema.tables || !Array.isArray(schema.tables)) {
+        errors.push('Schema must have a "tables" array');
+      } else {
+        schema.tables.forEach((table, i) => {
+          if (!table.name) errors.push(`Table ${i + 1}: Missing "name" property`);
+          if (!table.columns || !Array.isArray(table.columns)) {
+            errors.push(`Table "${table.name}": Missing "columns" array`);
+          } else {
+            table.columns.forEach((col, j) => {
+              if (!col.name) errors.push(`Table "${table.name}", Column ${j + 1}: Missing "name"`);
+              if (!col.type) errors.push(`Table "${table.name}", Column "${col.name}": Missing "type"`);
+            });
+          }
+        });
+      }
+
+      if (errors.length === 0) {
+        alert('✓ Schema is valid!\n\nTables: ' + schema.tables.length + '\nTotal columns: ' + schema.tables.reduce((sum, t) => sum + (t.columns?.length || 0), 0));
+      } else {
+        alert('Schema validation errors:\n\n' + errors.join('\n'));
+      }
+
+    } catch (error) {
+      alert(`Invalid JSON: ${error.message}`);
+    }
+  },
+
+  showStats(schema) {
+    const statsEl = this.container.querySelector('#stats');
+    if (!statsEl) return;
+
+    const tableCount = schema.tables.length;
+    const columnCount = schema.tables.reduce((sum, t) => sum + (t.columns?.length || 0), 0);
+    const pkCount = schema.tables.reduce((sum, t) => sum + (t.columns?.filter(c => c.isPrimaryKey).length || 0), 0);
+
+    statsEl.innerHTML = `
+      <strong>Schema Summary:</strong>
+      ${tableCount} table(s),
+      ${columnCount} column(s),
+      ${pkCount} primary key(s)
+    `;
+    statsEl.classList.add('visible');
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (output) {
+      navigator.clipboard.writeText(output).then(() => {
+        const copyBtn = this.container.querySelector('#copy-btn');
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = '✓ Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      });
+    }
+  },
+
+  clearOutput() {
+    const outputEl = this.container.querySelector('#output');
+    if (outputEl) outputEl.value = '';
+    this.context.setOutput('');
+
+    const statsEl = this.container.querySelector('#stats');
+    if (statsEl) statsEl.classList.remove('visible');
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) {
+          this.output = val;
+          const outputEl = document.querySelector("#output");
+          if (outputEl) outputEl.value = val;
+        },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
