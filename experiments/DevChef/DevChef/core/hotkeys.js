@@ -35,7 +35,7 @@ class HotkeyManager {
   registerDefaultHotkeys() {
     // Navigation
     this.register('ctrl+k, cmd+k', () => this.emit('command-palette'));
-    this.register('ctrl+/', () => this.emit('search-tools'));
+    this.register('ctrl+/, ctrl+shift+f, cmd+shift+f', () => this.emit('search-tools'));
     this.register('ctrl+p, cmd+p', () => this.emit('show-pipelines'));
     this.register('ctrl+b, cmd+b', () => this.emit('show-snippets'));
     this.register('ctrl+i, cmd+i', () => this.emit('show-insights'));

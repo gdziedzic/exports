@@ -158,62 +158,111 @@ export function renderToolList(context, searchQuery = "") {
 
     console.log(`Search returned ${searchResults.length} results`);
 
-    // Group by category
-    const grouped = groupByCategory(searchResults);
-    const categories = Object.keys(grouped).sort();
+    // When searching, show results by relevance (no grouping)
+    // When not searching, group by category
+    if (searchQuery && searchQuery.trim() !== "") {
+      // Search mode: Display results in relevance order without category grouping
+      searchResults.forEach(({ tool: manifest, isFavorite, isRecent }) => {
+        const toolItem = document.createElement("div");
+        toolItem.className = "tool-item";
+        toolItem.dataset.toolId = manifest.id;
 
-  categories.forEach(category => {
-    const categoryTools = grouped[category];
+        // Add favorite and recent indicators
+        const indicators = [];
+        if (isFavorite) {
+          indicators.push('<span class="tool-indicator favorite" title="Favorite">★</span>');
+        }
+        if (isRecent) {
+          indicators.push('<span class="tool-indicator recent" title="Recently used">⏱</span>');
+        }
 
-    // Create category section
-    const categorySection = document.createElement("div");
-    categorySection.className = "category-section";
+        // Show category badge in search mode
+        const categoryBadge = manifest.category
+          ? `<span class="tool-category-badge">${manifest.category}</span>`
+          : '';
 
-    const categoryHeader = document.createElement("div");
-    categoryHeader.className = "category-header";
-    categoryHeader.textContent = category;
-    categorySection.appendChild(categoryHeader);
+        toolItem.innerHTML = `
+          <span class="tool-name">${manifest.name}</span>
+          ${categoryBadge}
+          ${indicators.length > 0 ? `<span class="tool-indicators">${indicators.join('')}</span>` : ''}
+        `;
 
-    categoryTools.forEach(({ tool: manifest, isFavorite, isRecent }) => {
-      const toolItem = document.createElement("div");
-      toolItem.className = "tool-item";
-      toolItem.dataset.toolId = manifest.id;
+        toolItem.addEventListener("click", () => {
+          openTool(manifest.id, context);
+        });
 
-      // Add favorite and recent indicators
-      const indicators = [];
-      if (isFavorite) {
-        indicators.push('<span class="tool-indicator favorite" title="Favorite">★</span>');
-      }
-      if (isRecent) {
-        indicators.push('<span class="tool-indicator recent" title="Recently used">⏱</span>');
-      }
+        // Right-click to toggle favorite
+        toolItem.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          toggleFavorite(manifest.id);
+          renderToolList(context, searchQuery);
+          notifications.success(
+            storage.isFavorite(manifest.id)
+              ? `Added ${manifest.name} to favorites`
+              : `Removed ${manifest.name} from favorites`
+          );
+        });
 
-      toolItem.innerHTML = `
-        <span class="tool-name">${manifest.name}</span>
-        ${indicators.length > 0 ? `<span class="tool-indicators">${indicators.join('')}</span>` : ''}
-      `;
-
-      toolItem.addEventListener("click", () => {
-        openTool(manifest.id, context);
+        sidebar.appendChild(toolItem);
       });
+    } else {
+      // Browse mode: Group by category
+      const grouped = groupByCategory(searchResults);
+      const categories = Object.keys(grouped).sort();
 
-      // Right-click to toggle favorite
-      toolItem.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        toggleFavorite(manifest.id);
-        renderToolList(context, searchQuery);
-        notifications.success(
-          storage.isFavorite(manifest.id)
-            ? `Added ${manifest.name} to favorites`
-            : `Removed ${manifest.name} from favorites`
-        );
+      categories.forEach(category => {
+        const categoryTools = grouped[category];
+
+        // Create category section
+        const categorySection = document.createElement("div");
+        categorySection.className = "category-section";
+
+        const categoryHeader = document.createElement("div");
+        categoryHeader.className = "category-header";
+        categoryHeader.textContent = category;
+        categorySection.appendChild(categoryHeader);
+
+        categoryTools.forEach(({ tool: manifest, isFavorite, isRecent }) => {
+          const toolItem = document.createElement("div");
+          toolItem.className = "tool-item";
+          toolItem.dataset.toolId = manifest.id;
+
+          // Add favorite and recent indicators
+          const indicators = [];
+          if (isFavorite) {
+            indicators.push('<span class="tool-indicator favorite" title="Favorite">★</span>');
+          }
+          if (isRecent) {
+            indicators.push('<span class="tool-indicator recent" title="Recently used">⏱</span>');
+          }
+
+          toolItem.innerHTML = `
+            <span class="tool-name">${manifest.name}</span>
+            ${indicators.length > 0 ? `<span class="tool-indicators">${indicators.join('')}</span>` : ''}
+          `;
+
+          toolItem.addEventListener("click", () => {
+            openTool(manifest.id, context);
+          });
+
+          // Right-click to toggle favorite
+          toolItem.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            toggleFavorite(manifest.id);
+            renderToolList(context, searchQuery);
+            notifications.success(
+              storage.isFavorite(manifest.id)
+                ? `Added ${manifest.name} to favorites`
+                : `Removed ${manifest.name} from favorites`
+            );
+          });
+
+          categorySection.appendChild(toolItem);
+        });
+
+        sidebar.appendChild(categorySection);
       });
-
-      categorySection.appendChild(toolItem);
-    });
-
-    sidebar.appendChild(categorySection);
-  });
+    }
 
     // Show "no results" message if no tools match
     if (searchQuery && sidebar.children.length === 0) {

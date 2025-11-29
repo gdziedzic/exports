@@ -277,9 +277,9 @@ class UniversalFavorites {
       this.shortcuts = new Map(saved);
     }
 
-    // Ctrl+Shift+F - Show favorites panel
+    // Ctrl+Alt+F - Show favorites panel
     document.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+      if ((e.ctrlKey || e.metaKey) && e.altKey && e.key === 'f') {
         e.preventDefault();
         this.showFavoritesPanel();
       }

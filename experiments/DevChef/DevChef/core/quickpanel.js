@@ -114,7 +114,7 @@ class QuickPanel {
         icon: '⭐',
         label: 'Favorites',
         description: 'View all favorites',
-        shortcut: 'Ctrl+Shift+F',
+        shortcut: 'Ctrl+Alt+F',
         action: () => window.universalFavorites?.showFavoritesPanel()
       },
       {

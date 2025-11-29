@@ -148,20 +148,33 @@ export function searchTools(tools, query, options = {}) {
     // Calculate scores only for name, description, and category
     let nameScore = tool.name ? fuzzyScore(query, tool.name) : 0;
 
-    // Boost score if query is contained in name (substring match)
+    // Strong boost for name matches
     if (lowerName && lowerName.includes(lowerQuery)) {
-      nameScore = Math.max(nameScore, 90);
+      // Name contains query - very high score
+      nameScore = Math.max(nameScore, 95);
+
+      // Extra bonus if name STARTS with query
+      if (lowerName.startsWith(lowerQuery)) {
+        nameScore = Math.max(nameScore, 98);
+      }
     }
 
-    const descScore = tool.description ? fuzzyScore(query, tool.description) * 0.5 : 0;
-    const categoryScore = tool.category ? fuzzyScore(query, tool.category) * 0.7 : 0;
+    const descScore = tool.description ? fuzzyScore(query, tool.description) * 0.3 : 0;
+    const categoryScore = tool.category ? fuzzyScore(query, tool.category) * 0.4 : 0;
 
-    // Combined score (weighted)
-    let baseScore = Math.max(
-      nameScore * 1.0,
-      descScore,
-      categoryScore
-    );
+    // Combined score - heavily weighted towards name
+    let baseScore;
+    if (nameScore > 50) {
+      // If name matches well, use name score primarily
+      baseScore = nameScore + (descScore * 0.1) + (categoryScore * 0.1);
+    } else {
+      // If name doesn't match well, allow description/category to contribute more
+      baseScore = Math.max(
+        nameScore * 2.0,  // Double weight for name even in weak matches
+        descScore,
+        categoryScore
+      );
+    }
 
     // Check if tool is recent (needed for display, regardless of score)
     const recentEntry = tool.id ? recentTools.find(r => r?.toolId === tool.id) : null;
@@ -204,16 +217,27 @@ export function searchTools(tools, query, options = {}) {
 
   return filtered
     .sort((a, b) => {
-      // Sort by score (descending)
-      if (Math.abs(a.score - b.score) > 1) {
+      // First, prioritize by overall score (descending)
+      if (Math.abs(a.score - b.score) > 5) {
         return b.score - a.score;
       }
-      // If scores are similar, prioritize favorites
+
+      // If scores are very similar (within 5 points), prioritize by name match quality
+      const aNameScore = a.matchDetails?.nameScore || 0;
+      const bNameScore = b.matchDetails?.nameScore || 0;
+
+      if (Math.abs(aNameScore - bNameScore) > 5) {
+        return bNameScore - aNameScore;
+      }
+
+      // If name scores are also similar, prioritize favorites
       if (a.isFavorite && !b.isFavorite) return -1;
       if (!a.isFavorite && b.isFavorite) return 1;
+
       // Then recent tools
       if (a.isRecent && !b.isRecent) return -1;
       if (!a.isRecent && b.isRecent) return 1;
+
       // Finally alphabetical
       return (a.tool?.name || '').localeCompare(b.tool?.name || '');
     })

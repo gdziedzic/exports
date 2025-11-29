@@ -550,7 +550,7 @@ console.log(emailRegex.test('user@example.com')); // true`,
     if (lower.includes('pipeline')) {
       this.addMessage(`To create a pipeline in DevChef:
 
-1. **Visual Flow Canvas**: Press Ctrl+Shift+F or click 🎨
+1. **Visual Flow Canvas**: Press Ctrl+Shift+L or click 🎨
    - Drag tools onto the canvas
    - Connect them by clicking output → input
    - Click ▶️ Run to execute
@@ -565,10 +565,11 @@ Pipelines automatically chain tool outputs to inputs!`, 'assistant');
       this.addMessage(`DevChef Keyboard Shortcuts:
 
 **Essential:**
-• Ctrl+K - Command Palette
+• Ctrl+K / Ctrl+Shift+F - Search & Command Palette
 • Ctrl+Shift+V - Universal Quick Input
-• Ctrl+Shift+F - Visual Flow Canvas
+• Ctrl+Shift+L - Visual Flow Canvas
 • Ctrl+Shift+A - AI Assistant (me!)
+• Ctrl+Alt+F - Favorites
 
 **Tools:**
 • Ctrl+Space - Quick Actions

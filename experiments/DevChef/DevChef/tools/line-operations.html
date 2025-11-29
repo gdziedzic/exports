@@ -36,83 +36,165 @@
 
         <!-- Quick Transforms Tab -->
         <div class="tab-content active" id="tab-quick">
+          <div class="apply-section">
+            <button class="apply-all-btn" id="apply-all-btn">
+              ⚡ Apply Selected Transforms
+            </button>
+            <button class="clear-selection-btn" id="clear-selection-btn">
+              Clear Selection
+            </button>
+          </div>
+
           <div class="operation-categories">
             <div class="category">
               <h4>✏️ Add/Remove</h4>
-              <div class="operation-control">
-                <input type="text" id="prefix-input" placeholder="Enter prefix..." />
-                <button class="op-btn" data-op="add-prefix">Add Prefix</button>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-add-prefix" data-op="add-prefix" />
+                <label for="check-add-prefix" class="op-label">Add Prefix</label>
+                <input type="text" id="prefix-input" placeholder="Enter prefix..." class="op-input" />
               </div>
-              <div class="operation-control">
-                <input type="text" id="suffix-input" placeholder="Enter suffix..." />
-                <button class="op-btn" data-op="add-suffix">Add Suffix</button>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-add-suffix" data-op="add-suffix" />
+                <label for="check-add-suffix" class="op-label">Add Suffix</label>
+                <input type="text" id="suffix-input" placeholder="Enter suffix..." class="op-input" />
               </div>
-              <div class="operation-control">
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-wrap" data-op="wrap" />
+                <label for="check-wrap" class="op-label">Wrap Lines</label>
                 <div class="wrap-inputs">
                   <input type="text" id="wrap-start" placeholder="Start (e.g., [)" />
                   <input type="text" id="wrap-end" placeholder="End (e.g., ])" />
                 </div>
-                <button class="op-btn" data-op="wrap">Wrap Lines</button>
               </div>
-              <button class="op-btn" data-op="remove-empty">Remove Empty Lines</button>
-              <button class="op-btn" data-op="remove-whitespace-only">Remove Whitespace-Only</button>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-remove-empty" data-op="remove-empty" />
+                <label for="check-remove-empty" class="op-label">Remove Empty Lines</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-remove-whitespace-only" data-op="remove-whitespace-only" />
+                <label for="check-remove-whitespace-only" class="op-label">Remove Whitespace-Only</label>
+              </div>
             </div>
 
             <div class="category">
               <h4>🔢 Numbering</h4>
-              <div class="operation-control">
-                <select id="number-format">
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-number-lines" data-op="number-lines" />
+                <label for="check-number-lines" class="op-label">Number Lines</label>
+                <select id="number-format" class="op-select">
                   <option value="1. ">1. (Number dot space)</option>
                   <option value="1) ">1) (Number paren space)</option>
                   <option value="[1] ">[1] (Bracket number)</option>
                   <option value="1.\t">1.\t (Number dot tab)</option>
                 </select>
-                <button class="op-btn" data-op="number-lines">Number Lines</button>
               </div>
-              <button class="op-btn" data-op="remove-line-numbers">Remove Line Numbers</button>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-remove-line-numbers" data-op="remove-line-numbers" />
+                <label for="check-remove-line-numbers" class="op-label">Remove Line Numbers</label>
+              </div>
             </div>
 
             <div class="category">
               <h4>📏 Spacing</h4>
-              <div class="operation-control">
-                <input type="number" id="indent-spaces" value="4" min="1" max="20" style="width: 60px;" />
-                <button class="op-btn" data-op="indent">Indent</button>
-                <button class="op-btn" data-op="dedent">Dedent</button>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-indent" data-op="indent" />
+                <label for="check-indent" class="op-label">Indent</label>
+                <input type="number" id="indent-spaces" value="4" min="1" max="20" class="op-number" />
               </div>
-              <button class="op-btn" data-op="trim-left">Trim Left</button>
-              <button class="op-btn" data-op="trim-right">Trim Right</button>
-              <button class="op-btn" data-op="trim-both">Trim Both</button>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-dedent" data-op="dedent" />
+                <label for="check-dedent" class="op-label">Dedent</label>
+                <input type="number" id="dedent-spaces" value="4" min="1" max="20" class="op-number" />
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-trim-left" data-op="trim-left" />
+                <label for="check-trim-left" class="op-label">Trim Left</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-trim-right" data-op="trim-right" />
+                <label for="check-trim-right" class="op-label">Trim Right</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-trim-both" data-op="trim-both" />
+                <label for="check-trim-both" class="op-label">Trim Both</label>
+              </div>
             </div>
 
             <div class="category">
               <h4>🔄 Sort & Order</h4>
-              <button class="op-btn" data-op="sort-asc">Sort A-Z</button>
-              <button class="op-btn" data-op="sort-desc">Sort Z-A</button>
-              <button class="op-btn" data-op="sort-length-asc">Sort by Length ↑</button>
-              <button class="op-btn" data-op="sort-length-desc">Sort by Length ↓</button>
-              <button class="op-btn" data-op="reverse">Reverse Order</button>
-              <button class="op-btn" data-op="shuffle">Shuffle</button>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-sort-asc" data-op="sort-asc" />
+                <label for="check-sort-asc" class="op-label">Sort A-Z</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-sort-desc" data-op="sort-desc" />
+                <label for="check-sort-desc" class="op-label">Sort Z-A</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-sort-length-asc" data-op="sort-length-asc" />
+                <label for="check-sort-length-asc" class="op-label">Sort by Length ↑</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-sort-length-desc" data-op="sort-length-desc" />
+                <label for="check-sort-length-desc" class="op-label">Sort by Length ↓</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-reverse" data-op="reverse" />
+                <label for="check-reverse" class="op-label">Reverse Order</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-shuffle" data-op="shuffle" />
+                <label for="check-shuffle" class="op-label">Shuffle</label>
+              </div>
             </div>
 
             <div class="category">
               <h4>🎯 Filter & Select</h4>
-              <div class="operation-control">
-                <input type="text" id="filter-pattern" placeholder="Enter pattern..." />
-                <button class="op-btn" data-op="filter-contains">Keep Matching</button>
-                <button class="op-btn" data-op="filter-not-contains">Remove Matching</button>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-filter-contains" data-op="filter-contains" />
+                <label for="check-filter-contains" class="op-label">Keep Matching</label>
+                <input type="text" id="filter-pattern" placeholder="Enter pattern..." class="op-input" />
               </div>
-              <button class="op-btn" data-op="unique">Remove Duplicates</button>
-              <button class="op-btn" data-op="duplicates-only">Keep Duplicates Only</button>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-filter-not-contains" data-op="filter-not-contains" />
+                <label for="check-filter-not-contains" class="op-label">Remove Matching</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-unique" data-op="unique" />
+                <label for="check-unique" class="op-label">Remove Duplicates</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-duplicates-only" data-op="duplicates-only" />
+                <label for="check-duplicates-only" class="op-label">Keep Duplicates Only</label>
+              </div>
             </div>
 
             <div class="category">
               <h4>🔀 Transform</h4>
-              <button class="op-btn" data-op="uppercase">UPPERCASE</button>
-              <button class="op-btn" data-op="lowercase">lowercase</button>
-              <button class="op-btn" data-op="title-case">Title Case</button>
-              <button class="op-btn" data-op="quote-single">Quote ' '</button>
-              <button class="op-btn" data-op="quote-double">Quote " "</button>
-              <button class="op-btn" data-op="comma-separate">Comma Separate</button>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-uppercase" data-op="uppercase" />
+                <label for="check-uppercase" class="op-label">UPPERCASE</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-lowercase" data-op="lowercase" />
+                <label for="check-lowercase" class="op-label">lowercase</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-title-case" data-op="title-case" />
+                <label for="check-title-case" class="op-label">Title Case</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-quote-single" data-op="quote-single" />
+                <label for="check-quote-single" class="op-label">Quote ' '</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-quote-double" data-op="quote-double" />
+                <label for="check-quote-double" class="op-label">Quote " "</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-comma-separate" data-op="comma-separate" />
+                <label for="check-comma-separate" class="op-label">Comma Separate</label>
+              </div>
             </div>
           </div>
         </div>
@@ -242,7 +324,8 @@ return match ? match[0] : '';</code>
   }
 
   .operations-panel {
-    max-height: 800px;
+    max-height: calc(100vh - 200px);
+    min-height: 700px;
     display: flex;
     flex-direction: column;
     padding: 0;
@@ -311,11 +394,127 @@ return match ? match[0] : '';</code>
     margin: 0;
   }
 
+  /* Apply Section */
+  .apply-section {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .apply-all-btn {
+    flex: 1;
+    padding: 14px 20px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .apply-all-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
+  }
+
+  .apply-all-btn:active {
+    transform: translateY(0);
+  }
+
+  .clear-selection-btn {
+    padding: 14px 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .clear-selection-btn:hover {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--accent);
+  }
+
   /* Quick Transforms Styles */
   .operation-categories {
     display: flex;
     flex-direction: column;
     gap: 20px;
+  }
+
+  .operation-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    transition: all 0.2s;
+  }
+
+  .operation-item:hover {
+    border-color: var(--accent);
+    background: var(--bg-secondary);
+  }
+
+  .op-checkbox {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+    accent-color: var(--accent);
+  }
+
+  .op-label {
+    flex: 0 0 140px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+  }
+
+  .op-label:hover {
+    color: var(--accent);
+  }
+
+  .op-input,
+  .op-select,
+  .op-number {
+    flex: 1;
+    padding: 6px 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--font-mono);
+  }
+
+  .op-number {
+    flex: 0 0 60px;
+  }
+
+  .op-input:focus,
+  .op-select:focus,
+  .op-number:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg-primary);
   }
 
   /* Code Panel Styles */
@@ -510,46 +709,27 @@ return match ? match[0] : '';</code>
     letter-spacing: 0.5px;
   }
 
-  .operation-control {
-    margin-bottom: 8px;
-  }
-
-  .operation-control input,
-  .operation-control select {
-    width: 100%;
-    padding: 8px 10px;
-    margin-bottom: 6px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-primary);
-    font-size: 12px;
-    font-family: var(--font-mono);
-  }
-
-  .operation-control textarea {
-    width: 100%;
-    padding: 8px 10px;
-    margin-bottom: 6px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-primary);
-    font-size: 12px;
-    font-family: var(--font-mono);
-    resize: vertical;
-    line-height: 1.5;
-  }
-
   .wrap-inputs {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 6px;
-    margin-bottom: 6px;
+    flex: 1;
   }
 
   .wrap-inputs input {
-    margin-bottom: 0;
+    padding: 6px 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--font-mono);
+  }
+
+  .wrap-inputs input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg-primary);
   }
 
   .custom-error {
@@ -563,30 +743,6 @@ return match ? match[0] : '';</code>
     margin-top: 6px;
   }
 
-  .op-btn {
-    display: block;
-    width: 100%;
-    padding: 10px 12px;
-    margin-bottom: 6px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-primary);
-    font-size: 13px;
-    text-align: left;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .op-btn:hover {
-    border-color: var(--accent);
-    background: var(--bg-tertiary);
-    transform: translateX(4px);
-  }
-
-  .op-btn:active {
-    transform: translateX(4px) scale(0.98);
-  }
 
   .small-btn {
     padding: 6px 12px;
@@ -614,7 +770,8 @@ return match ? match[0] : '';</code>
   #input-text,
   #output-text {
     width: 100%;
-    min-height: 600px;
+    min-height: calc(100vh - 280px);
+    height: calc(100vh - 280px);
     font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.5;
@@ -747,18 +904,42 @@ export const DevChefTool = {
       });
     });
 
-    // Operation buttons
-    container.querySelectorAll('.op-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const operation = e.target.dataset.op;
-        this.performOperation(operation);
-      });
+    // Apply All button
+    container.querySelector('#apply-all-btn')?.addEventListener('click', () => {
+      this.applySelectedOperations();
     });
 
-    // Run code button (separate handler for better visibility)
+    // Clear Selection button
+    container.querySelector('#clear-selection-btn')?.addEventListener('click', () => {
+      container.querySelectorAll('.op-checkbox').forEach(cb => cb.checked = false);
+    });
+
+    // Run code button (for custom transforms)
     container.querySelector('.run-code-btn')?.addEventListener('click', (e) => {
       const operation = e.target.dataset.op;
       this.performOperation(operation);
+    });
+
+    // Prevent input fields from triggering checkbox toggles when clicking
+    container.querySelectorAll('.op-input, .op-select, .op-number, .wrap-inputs input').forEach(input => {
+      input.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      input.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+      });
+    });
+
+    // Make labels properly toggle their associated checkboxes
+    container.querySelectorAll('.op-label').forEach(label => {
+      label.addEventListener('click', (e) => {
+        e.preventDefault();
+        const checkboxId = label.getAttribute('for');
+        const checkbox = container.querySelector(`#${checkboxId}`);
+        if (checkbox) {
+          checkbox.checked = !checkbox.checked;
+        }
+      });
     });
 
     // Input events
@@ -866,9 +1047,41 @@ return line.split(' ').map(w =>
     }
   },
 
-  performOperation(operation) {
-    const inputText = this.container.querySelector('#input-text').value;
-    const lines = inputText.split('\n');
+  applySelectedOperations() {
+    // Get all checked operations in DOM order
+    const checkboxes = this.container.querySelectorAll('.op-checkbox:checked');
+
+    if (checkboxes.length === 0) {
+      return; // No operations selected
+    }
+
+    // Start with the input text
+    let currentText = this.container.querySelector('#input-text').value;
+
+    // Apply each operation sequentially
+    checkboxes.forEach(checkbox => {
+      const operation = checkbox.dataset.op;
+
+      // Temporarily set the input to current state
+      const originalInput = this.container.querySelector('#input-text').value;
+      this.container.querySelector('#input-text').value = currentText;
+
+      // Perform the operation
+      const lines = currentText.split('\n');
+      const result = this.applyOperation(operation, lines);
+
+      // Update current text with the result
+      currentText = result.join('\n');
+
+      // Restore original input
+      this.container.querySelector('#input-text').value = originalInput;
+    });
+
+    // Set the final output
+    this.setOutput(currentText);
+  },
+
+  applyOperation(operation, lines) {
     let result = [];
 
     switch (operation) {
@@ -912,7 +1125,7 @@ return line.split(' ').map(w =>
         break;
 
       case 'dedent':
-        const dedentSpaces = parseInt(this.container.querySelector('#indent-spaces').value) || 4;
+        const dedentSpaces = parseInt(this.container.querySelector('#dedent-spaces').value) || 4;
         result = lines.map(line => {
           for (let i = 0; i < dedentSpaces; i++) {
             if (line[0] === ' ') line = line.substring(1);
@@ -1010,36 +1223,36 @@ return line.split(' ').map(w =>
         if (!customCode) {
           errorDiv.textContent = 'Please enter JavaScript code or select a snippet';
           errorDiv.style.display = 'block';
-          return;
-        }
+          result = lines; // Return unchanged
+        } else {
+          try {
+            // Clear previous errors
+            errorDiv.style.display = 'none';
 
-        try {
-          // Clear previous errors
-          errorDiv.style.display = 'none';
+            // Create a function from the custom code
+            // The user's code should return the transformed line
+            const transformFn = new Function('line', 'index', 'lines', customCode);
 
-          // Create a function from the custom code
-          // The user's code should return the transformed line
-          const transformFn = new Function('line', 'index', 'lines', customCode);
-
-          // Apply transformation to each line
-          result = lines.map((line, index) => {
-            try {
-              const transformed = transformFn(line, index, lines);
-              // Handle various return types
-              if (transformed === null || transformed === undefined) {
-                return '';
+            // Apply transformation to each line
+            result = lines.map((line, index) => {
+              try {
+                const transformed = transformFn(line, index, lines);
+                // Handle various return types
+                if (transformed === null || transformed === undefined) {
+                  return '';
+                }
+                return String(transformed);
+              } catch (lineError) {
+                // If error on specific line, return original line
+                return line;
               }
-              return String(transformed);
-            } catch (lineError) {
-              // If error on specific line, return original line
-              return line;
-            }
-          });
+            });
 
-        } catch (error) {
-          errorDiv.textContent = `Error: ${error.message}`;
-          errorDiv.style.display = 'block';
-          return;
+          } catch (error) {
+            errorDiv.textContent = `Error: ${error.message}`;
+            errorDiv.style.display = 'block';
+            result = lines; // Return unchanged on error
+          }
         }
         break;
 
@@ -1047,6 +1260,13 @@ return line.split(' ').map(w =>
         result = lines;
     }
 
+    return result;
+  },
+
+  performOperation(operation) {
+    const inputText = this.container.querySelector('#input-text').value;
+    const lines = inputText.split('\n');
+    const result = this.applyOperation(operation, lines);
     this.setOutput(result.join('\n'));
   },
 

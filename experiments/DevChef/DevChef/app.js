@@ -152,9 +152,9 @@ async function init() {
   console.log(`🌙 ULTIMATE Features: Snippets++ | Universal Favorites | Macros | Batch | Quick Panel`);
   console.log(``);
   console.log(`📌 ULTIMATE SHORTCUTS:`);
-  console.log(`   ⚡ Quick Panel: Ctrl+Shift+Q  |  ⭐ Favorites: Ctrl+Shift+F  |  🕐 Recent: Ctrl+Shift+R`);
+  console.log(`   ⚡ Quick Panel: Ctrl+Shift+Q  |  ⭐ Favorites: Ctrl+Alt+F  |  🕐 Recent: Ctrl+Shift+R`);
   console.log(`   🔴 Macro: Ctrl+Shift+M  |  ⚡ Batch: Ctrl+Shift+B  |  📜 History: Ctrl+Shift+H`);
-  console.log(`   🔍 Search: Ctrl+K  |  📝 Snippets: Ctrl+B  |  🛠️ DevTools: F12`);
+  console.log(`   🔍 Search: Ctrl+K / Ctrl+Shift+F  |  📝 Snippets: Ctrl+B  |  🛠️ DevTools: F12`);
   console.log(``);
   console.log(`🚀 PRODUCTIVITY TO THE MOON! 🌙`);
 }
@@ -201,7 +201,7 @@ function initializeV31Features() {
 
   console.log('🎯 V3.1 Ultimate Features initialized');
   console.log('   - Smart Context Engine: Learning your patterns');
-  console.log('   - Visual Flow Canvas: Ctrl+Shift+F');
+  console.log('   - Visual Flow Canvas: Ctrl+Shift+L');
   console.log('   - Universal Quick Input: Ctrl+Shift+V');
 }
 
@@ -273,7 +273,7 @@ function setupFlowCanvasButton() {
   const flowCanvasBtn = document.createElement('button');
   flowCanvasBtn.id = 'flow-canvas-btn';
   flowCanvasBtn.className = 'icon-btn';
-  flowCanvasBtn.title = 'Visual Flow Canvas (Ctrl+Shift+F)';
+  flowCanvasBtn.title = 'Visual Flow Canvas (Ctrl+Shift+L)';
   flowCanvasBtn.innerHTML = '🎨';
 
   flowCanvasBtn.addEventListener('click', () => {
@@ -284,7 +284,7 @@ function setupFlowCanvasButton() {
 
   // Keyboard shortcut
   document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
       e.preventDefault();
       showFlowCanvasDialog();
     }
@@ -389,7 +389,7 @@ function initializeUltimateFeatures() {
   console.log('🚀 V6.5 ULTIMATE: Productivity Features initialized');
   console.log('   🌙 MOON-SHOT PRODUCTIVITY MODE ACTIVATED');
   console.log('   - Snippets Plus: Variable substitution {{var}} & templates');
-  console.log('   - Universal Favorites: Unified favorites (Ctrl+Shift+F)');
+  console.log('   - Universal Favorites: Unified favorites (Ctrl+Alt+F)');
   console.log('   - Productivity Engine: Macros (Ctrl+Shift+M), Batch (Ctrl+Shift+B)');
   console.log('   - Quick Panel: Floating action button (Ctrl+Shift+Q)');
   console.log('   ⚡ ONE-CLICK EVERYTHING | 🎯 ZERO FRICTION | 🔥 MAX EFFICIENCY');
@@ -973,6 +973,7 @@ function showKeyboardShortcutsHelp() {
           </div>
           <div class="shortcut-item">
             <kbd>Ctrl+Shift+F</kbd> <span>Focus search</span>
+            <kbd>Ctrl+Alt+F</kbd> <span>Show favorites</span>
           </div>
           <div class="shortcut-item">
             <kbd>Ctrl+E</kbd> <span>Recent tools</span>
