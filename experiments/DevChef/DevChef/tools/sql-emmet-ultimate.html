@@ -1,0 +1,2206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SQL Emmet ULTIMATE - The Perfect SQL Generator</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "sql-emmet-ultimate",
+  "name": "SQL Emmet ULTIMATE",
+  "category": "Database",
+  "description": "The perfect SQL generator - schema-aware, ultra-powerful, beautiful UI, live preview, natural language",
+  "version": "ULTIMATE",
+  "keywords": ["sql", "ultimate", "perfect", "awesome", "great", "power"]
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="sql-ultimate" id="sql-ultimate">
+
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="brand">
+        <h1>⚡ SQL Emmet <span class="ultimate-badge">ULTIMATE</span></h1>
+        <p class="tagline">The Perfect SQL Generator • Schema-Aware • Ultra-Powerful • Beautiful</p>
+      </div>
+      <div class="top-right">
+        <button id="theme-btn" class="top-btn" title="Toggle Theme">🌙</button>
+        <button id="help-btn" class="top-btn" title="Keyboard Shortcuts">⌨️</button>
+        <select id="dialect-sel" class="dialect-sel">
+          <option value="tsql">T-SQL (SQL Server)</option>
+          <option value="mysql">MySQL</option>
+          <option value="pgsql">PostgreSQL</option>
+          <option value="oracle">Oracle</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+
+      <!-- Left: Schema + Templates -->
+      <div class="left-col">
+
+        <!-- Schema Panel -->
+        <div class="panel schema-panel">
+          <div class="panel-head">
+            <span>📐 Schema (All Tables)</span>
+            <button id="parse-schema" class="mini-btn">Parse</button>
+          </div>
+          <textarea id="schema-input" class="schema-input" placeholder="Define your complete schema:
+
+@Users(
+  Id:int pk identity,
+  Email:nvarchar(255) unique not null,
+  Name:nvarchar(100) not null,
+  Active:bit default 1,
+  Country:nvarchar(50),
+  Role:nvarchar(50),
+  Created:datetime default getutcdate()
+)
+
+@Orders(
+  Id:int pk identity,
+  UserId:int fk Users.Id not null,
+  Total:decimal(18,2) not null,
+  Status:nvarchar(50) not null,
+  ShippingAddress:nvarchar(max),
+  Created:datetime default getutcdate()
+)
+
+@Products(
+  Id:int pk identity,
+  Name:nvarchar(200) not null,
+  Description:nvarchar(max),
+  Price:decimal(18,2) not null,
+  Stock:int not null default 0,
+  Category:nvarchar(100),
+  Active:bit default 1
+)
+
+@OrderItems(
+  Id:int pk identity,
+  OrderId:int fk Orders.Id not null,
+  ProductId:int fk Products.Id not null,
+  Quantity:int not null,
+  Price:decimal(18,2) not null
+)
+
+@Categories(
+  Id:int pk identity,
+  Name:nvarchar(100) unique not null,
+  ParentId:int fk Categories.Id
+)"></textarea>
+
+          <div class="schema-stats" id="schema-stats">
+            <div class="stat-item">
+              <div class="stat-label">Tables</div>
+              <div class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Columns</div>
+              <div class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Relations</div>
+              <div class="stat-value">0</div>
+            </div>
+          </div>
+
+          <div class="schema-viz" id="schema-viz">
+            <!-- Schema visualization -->
+          </div>
+
+          <div class="quick-schemas">
+            <div class="panel-head-sm">🎯 Quick Load</div>
+            <button class="quick-schema" data-schema="ecommerce">🛒 E-Commerce (Full)</button>
+            <button class="quick-schema" data-schema="blog">📝 Blog Platform</button>
+            <button class="quick-schema" data-schema="saas">☁️ SaaS Multi-Tenant</button>
+            <button class="quick-schema" data-schema="social">👥 Social Network</button>
+          </div>
+        </div>
+
+        <!-- Templates Panel -->
+        <div class="panel templates-panel">
+          <div class="panel-head">
+            <span>📚 Templates</span>
+          </div>
+          <div class="template-list">
+            <button class="template-btn" data-template="basic-select">📖 Basic SELECT</button>
+            <button class="template-btn" data-template="join">🔗 Multi-Table JOIN</button>
+            <button class="template-btn" data-template="aggregation">📊 Aggregation</button>
+            <button class="template-btn" data-template="subquery">🔍 Subquery</button>
+            <button class="template-btn" data-template="window">📈 Window Function</button>
+            <button class="template-btn" data-template="cte">📋 CTE (WITH)</button>
+            <button class="template-btn" data-template="pagination">📄 Pagination</button>
+            <button class="template-btn" data-template="search">🔎 Full-Text Search</button>
+            <button class="template-btn" data-template="upsert">🔄 UPSERT</button>
+            <button class="template-btn" data-template="pivot">🔀 PIVOT</button>
+            <button class="template-btn" data-template="recursive">🔁 Recursive CTE</button>
+            <button class="template-btn" data-template="exists">✓ EXISTS Check</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Center: Command + Output -->
+      <div class="center-col">
+
+        <!-- Mode Switcher -->
+        <div class="mode-switcher">
+          <button class="mode-btn active" data-mode="shortcuts">⚡ Shortcuts</button>
+          <button class="mode-btn" data-mode="natural">🧠 Natural Language</button>
+          <button class="mode-btn" data-mode="visual">🎨 Visual Builder</button>
+        </div>
+
+        <!-- Shortcuts Mode -->
+        <div class="mode-panel active" data-mode="shortcuts">
+          <div class="input-section">
+            <div class="input-header">
+              <label>⚡ Ultra-Powerful Commands (Full Schema Context - NO table selection!)</label>
+              <div class="input-actions">
+                <button id="gen-btn" class="btn-primary">Generate SQL</button>
+                <button id="explain-btn" class="btn-secondary">💡 Explain</button>
+                <button id="clear-btn" class="btn-secondary">Clear</button>
+              </div>
+            </div>
+            <textarea id="command-input" class="command-input" placeholder="Type ultra-powerful commands across your ENTIRE schema:
+
+═══════════════════════════════════════════════════════════════════════════════
+🎯 SINGLE TABLE - Just reference table.columns directly
+═══════════════════════════════════════════════════════════════════════════════
+users.id,email,name[active=1]^created desc#10
+products[price>100,stock>0]|category,avg(price),count(*),sum(stock)
+orders[status='pending',created>=dateadd(day,-7,getutcdate())]^created desc
+
+═══════════════════════════════════════════════════════════════════════════════
+🔗 MULTI-TABLE JOINS - Auto-detect foreign keys across ANY tables
+═══════════════════════════════════════════════════════════════════════════════
+users>orders>orderitems>products
+users.name,email,country + orders.total,status + products.name,price
+customers>orders[total>1000]|status,count(*),sum(total)^sum desc
+
+═══════════════════════════════════════════════════════════════════════════════
+📊 CROSS-TABLE AGGREGATIONS - Combine data from multiple sources
+═══════════════════════════════════════════════════════════════════════════════
+users.country,count(orders.*) as orderCount,sum(orders.total) as revenue^revenue desc
+products.category,sum(orderitems.quantity*orderitems.price) as totalRevenue|category
+users|country + orders|status
+
+═══════════════════════════════════════════════════════════════════════════════
+🔍 SUBQUERIES - Reference ANY table in nested queries
+═══════════════════════════════════════════════════════════════════════════════
+users[id in (select userId from orders where total>1000)]
+products[price > (select avg(price) from products where category='Electronics')]
+users[exists (select 1 from orders where userId=users.id and status='completed')]
+users[not exists (select 1 from orders where userId=users.id)]
+
+═══════════════════════════════════════════════════════════════════════════════
+📈 WINDOW FUNCTIONS - Advanced analytics
+═══════════════════════════════════════════════════════════════════════════════
+users.*,row_number() over(partition by country order by created) as rn
+products.*,rank() over(partition by category order by price desc) as rank
+orders.*,sum(total) over(partition by userId order by created) as runningTotal
+users.email,dense_rank() over(order by created) as userRank
+
+═══════════════════════════════════════════════════════════════════════════════
+🔄 UNION/COMBINE - Multiple result sets
+═══════════════════════════════════════════════════════════════════════════════
+users.email,name,'customer' as type | admins.email,name,'admin' as type
+orders[status='pending'] union orders[status='processing']
+products[active=1] + products[stock>0]
+
+═══════════════════════════════════════════════════════════════════════════════
+📝 CTEs - Common Table Expressions (named subqueries)
+═══════════════════════════════════════════════════════════════════════════════
+@active_users = users[active=1]
+@recent_orders = orders[created>=dateadd(month,-1,getutcdate())]
+active_users.email + recent_orders.id,total
+
+@top_customers = users>orders|userId,sum(total) as totalSpent^totalSpent desc#10
+top_customers.userId + users.name,email
+
+═══════════════════════════════════════════════════════════════════════════════
+✏️ DML OPERATIONS - Insert/Update/Delete
+═══════════════════════════════════════════════════════════════════════════════
+insert users(email,name,country) values('john@example.com','John Doe','USA')
+update users{active=0,updatedAt=getutcdate()}[lastLogin<dateadd(year,-1,getutcdate())]
+delete orders[status='cancelled',created<dateadd(month,-6,getutcdate())]
+upsert users on email set name,country
+
+═══════════════════════════════════════════════════════════════════════════════
+🚀 ADVANCED PATTERNS - Complex queries made simple
+═══════════════════════════════════════════════════════════════════════════════
+users.name,(select count(*) from orders where userId=users.id) as orderCount
+products top 5 by price
+users.email where exists in orders.userId
+users.country distinct count
+orders pivot by status show count,sum(total)
+products recursive category tree
+
+═══════════════════════════════════════════════════════════════════════════════
+💪 You have FULL SCHEMA CONTEXT - Reference ANY table ANYWHERE, ANYTIME!
+═══════════════════════════════════════════════════════════════════════════════"></textarea>
+            <div id="live-preview" class="live-preview">
+              <div class="preview-label">👁️ Live Preview</div>
+              <div id="preview-content" class="preview-content">Type a command to see instant preview...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Natural Language Mode -->
+        <div class="mode-panel" data-mode="natural">
+          <div class="input-section">
+            <div class="input-header">
+              <label>🧠 Describe What You Want in Plain English</label>
+              <div class="input-actions">
+                <button id="gen-nl-btn" class="btn-primary">Generate SQL</button>
+                <button id="clear-nl-btn" class="btn-secondary">Clear</button>
+              </div>
+            </div>
+            <textarea id="natural-input" class="natural-input" placeholder="Examples:
+
+• get all active users sorted by creation date
+• find users with gmail email who created orders in the last 30 days
+• count total orders and revenue by country
+• show top 10 products by sales
+• list users who never placed an order
+• calculate average order value by month
+• find products that are low in stock (less than 10 items)
+• get users with their total spending amount
+• show all orders with customer details and product names
+• find duplicate email addresses in users table"></textarea>
+            <div class="nl-suggestions">
+              <div class="suggestion-label">💡 Quick Suggestions:</div>
+              <div class="suggestion-chips" id="nl-chips">
+                <button class="chip">get all users</button>
+                <button class="chip">get active users</button>
+                <button class="chip">count orders by status</button>
+                <button class="chip">top 10 products by price</button>
+                <button class="chip">users with gmail email</button>
+                <button class="chip">total revenue by country</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Builder Mode -->
+        <div class="mode-panel" data-mode="visual">
+          <div class="visual-builder">
+            <div class="vb-step">
+              <div class="step-label">1️⃣ Operation</div>
+              <div class="op-grid">
+                <button class="op-btn active" data-op="select">SELECT</button>
+                <button class="op-btn" data-op="insert">INSERT</button>
+                <button class="op-btn" data-op="update">UPDATE</button>
+                <button class="op-btn" data-op="delete">DELETE</button>
+              </div>
+            </div>
+            <div class="vb-step">
+              <div class="step-label">2️⃣ Table(s)</div>
+              <select id="vb-table" class="vb-select" multiple></select>
+            </div>
+            <div class="vb-step">
+              <div class="step-label">3️⃣ Columns</div>
+              <div id="vb-columns" class="vb-columns"></div>
+            </div>
+            <div class="vb-step">
+              <div class="step-label">4️⃣ Conditions (WHERE)</div>
+              <div id="vb-where" class="vb-where">
+                <button id="add-where" class="add-btn">+ Add Condition</button>
+              </div>
+            </div>
+            <div class="vb-actions">
+              <button id="vb-gen-btn" class="btn-primary">Generate from Builder</button>
+              <button id="vb-reset-btn" class="btn-secondary">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output Section -->
+        <div class="output-section">
+          <div class="output-header">
+            <div class="output-title">
+              <span>✨ Generated SQL</span>
+              <div class="output-meta" id="output-meta">
+                <span class="meta-item">Lines: <strong>0</strong></span>
+                <span class="meta-item">Tables: <strong>0</strong></span>
+                <span class="meta-item">Complexity: <strong>-</strong></span>
+              </div>
+            </div>
+            <div class="output-actions">
+              <button id="copy-sql-btn" class="action-btn">📋 Copy</button>
+              <button id="format-sql-btn" class="action-btn">🎨 Format</button>
+              <button id="save-fav-btn" class="action-btn">⭐ Favorite</button>
+              <button id="export-sql-btn" class="action-btn">💾 Export</button>
+            </div>
+          </div>
+          <pre id="sql-output" class="sql-output">-- Your beautiful SQL will appear here
+-- Work with your ENTIRE SCHEMA - no table selection needed!
+-- Use shortcuts, natural language, or visual builder
+
+SELECT
+    u.Id,
+    u.Email,
+    u.Name,
+    u.Country
+FROM Users u
+WHERE u.Active = 1
+ORDER BY u.Created DESC;</pre>
+        </div>
+
+      </div>
+
+      <!-- Right: Analysis + Reference -->
+      <div class="right-col">
+
+        <!-- Performance Analysis -->
+        <div class="panel analysis-panel">
+          <div class="panel-head">
+            <span>🎯 Smart Analysis</span>
+          </div>
+          <div id="analysis-results" class="analysis-results">
+            <div class="analysis-item analysis-info">
+              <div class="analysis-icon">💡</div>
+              <div class="analysis-text">
+                <div class="analysis-title">Ready to Analyze</div>
+                <div class="analysis-desc">Generate a query to see performance insights</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Reference -->
+        <div class="panel reference-panel">
+          <div class="panel-head">
+            <span>📖 Quick Reference</span>
+          </div>
+          <div class="ref-accordion">
+            <details open>
+              <summary>🎯 Table Reference</summary>
+              <div class="ref-content">
+                <code>table.col</code> Direct column access<br>
+                <code>table.*</code> All columns<br>
+                <code>table.col1,col2</code> Multiple columns
+              </div>
+            </details>
+            <details>
+              <summary>🔗 Joins</summary>
+              <div class="ref-content">
+                <code>t1>t2</code> Inner join<br>
+                <code>t1>t2>t3</code> Multi-join<br>
+                <code>t1+t2</code> Separate queries
+              </div>
+            </details>
+            <details>
+              <summary>🔍 Filters</summary>
+              <div class="ref-content">
+                <code>[col=val]</code> WHERE equal<br>
+                <code>[a>1,b<10]</code> Multiple conditions<br>
+                <code>[col in (...)]</code> IN clause<br>
+                <code>exists in</code> EXISTS check
+              </div>
+            </details>
+            <details>
+              <summary>📊 Aggregates</summary>
+              <div class="ref-content">
+                <code>|col</code> GROUP BY<br>
+                <code>count(*)</code> COUNT<br>
+                <code>sum(col)</code> SUM<br>
+                <code>avg(col)</code> AVERAGE
+              </div>
+            </details>
+            <details>
+              <summary>↕️ Sort & Limit</summary>
+              <div class="ref-content">
+                <code>^col</code> ORDER BY ASC<br>
+                <code>^col desc</code> ORDER BY DESC<br>
+                <code>#N</code> TOP/LIMIT N<br>
+                <code>top N by col</code> Top N records
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="panel history-panel">
+          <div class="panel-head">
+            <span>📜 History</span>
+            <button id="clear-history" class="mini-btn">Clear</button>
+          </div>
+          <div id="history-list" class="history-list">
+            <div class="empty-state">No history yet</div>
+          </div>
+        </div>
+
+        <!-- Favorites -->
+        <div class="panel favorites-panel">
+          <div class="panel-head">
+            <span>⭐ Favorites</span>
+            <button id="clear-favorites" class="mini-btn">Clear</button>
+          </div>
+          <div id="favorites-list" class="favorites-list">
+            <div class="empty-state">No favorites yet</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>⌨️ Keyboard Shortcuts</h3>
+          <button id="close-help" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="shortcut-grid">
+            <div class="shortcut-item">
+              <kbd>Ctrl/Cmd</kbd> + <kbd>Enter</kbd>
+              <span>Generate SQL</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Ctrl/Cmd</kbd> + <kbd>K</kbd>
+              <span>Copy SQL</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Ctrl/Cmd</kbd> + <kbd>S</kbd>
+              <span>Save to Favorites</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Ctrl/Cmd</kbd> + <kbd>/</kbd>
+              <span>Toggle Help</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Ctrl/Cmd</kbd> + <kbd>L</kbd>
+              <span>Clear Input</span>
+            </div>
+            <div class="shortcut-item">
+              <kbd>Esc</kbd>
+              <span>Close Modals</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<!-- Styles -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --accent: #8b5cf6;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --bg: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-elevated: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+    --shadow: 0 1px 3px 0 rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+    --radius: 10px;
+    --transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .dark {
+    --primary: #818cf8;
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-elevated: #334155;
+    --border: #334155;
+    --text: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --shadow: 0 1px 3px 0 rgba(0,0,0,0.5);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    background: var(--bg-secondary);
+    color: var(--text);
+  }
+
+  .sql-ultimate {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Top Bar */
+  .topbar {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: white;
+    padding: 20px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .brand h1 {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+
+  .ultimate-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 6px;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+
+  .tagline {
+    font-size: 13px;
+    opacity: 0.95;
+    font-weight: 500;
+  }
+
+  .top-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .top-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.15);
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .top-btn:hover {
+    background: rgba(255,255,255,0.25);
+    transform: scale(1.05);
+  }
+
+  .dialect-sel {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.15);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .dialect-sel option {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* Main Container */
+  .main-container {
+    display: grid;
+    grid-template-columns: 340px 1fr 320px;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  .left-col, .center-col, .right-col {
+    overflow-y: auto;
+    background: var(--bg);
+  }
+
+  .left-col {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .right-col {
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .center-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Panels */
+  .panel {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel:last-child {
+    border-bottom: none;
+  }
+
+  .panel-head {
+    padding: 14px 20px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .panel-head-sm {
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mini-btn {
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .mini-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  /* Schema Panel */
+  .schema-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .schema-input {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    min-height: 300px;
+  }
+
+  .schema-stats {
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--primary);
+  }
+
+  .schema-viz {
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .table-viz {
+    background: var(--bg-elevated);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+
+  .table-viz-header {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-viz-cols {
+    font-size: 10px;
+    font-family: monospace;
+    color: var(--text-secondary);
+  }
+
+  .quick-schemas {
+    padding: 16px;
+  }
+
+  .quick-schema {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+  }
+
+  .quick-schema:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    transform: translateX(4px);
+    box-shadow: var(--shadow);
+  }
+
+  /* Templates */
+  .template-list {
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .template-btn {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+  }
+
+  .template-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  /* Mode Switcher */
+  .mode-switcher {
+    display: flex;
+    background: var(--bg-elevated);
+    border-bottom: 2px solid var(--border);
+    padding: 0 16px;
+  }
+
+  .mode-btn {
+    padding: 14px 24px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: -2px;
+    transition: var(--transition);
+  }
+
+  .mode-btn:hover {
+    color: var(--text);
+  }
+
+  .mode-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+
+  .mode-panel {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .mode-panel.active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Input Section */
+  .input-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .input-header {
+    padding: 16px 20px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .input-header label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .input-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .btn-secondary {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-elevated);
+    border-color: var(--primary);
+  }
+
+  .command-input, .natural-input {
+    flex: 1;
+    padding: 20px;
+    border: none;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    resize: none;
+    outline: none;
+    min-height: 300px;
+  }
+
+  .natural-input {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+  }
+
+  .live-preview {
+    padding: 14px 20px;
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
+  }
+
+  .preview-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .preview-content {
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg);
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .nl-suggestions {
+    padding: 16px 20px;
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
+  }
+
+  .suggestion-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .suggestion-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .chip:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    transform: translateY(-2px);
+  }
+
+  /* Visual Builder */
+  .visual-builder {
+    padding: 20px;
+  }
+
+  .vb-step {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .step-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  .op-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .op-btn {
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .op-btn:hover {
+    border-color: var(--primary);
+  }
+
+  .op-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .vb-select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  .vb-columns, .vb-where {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .add-btn {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .add-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--bg-secondary);
+  }
+
+  .vb-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  /* Output */
+  .output-section {
+    border-top: 2px solid var(--border);
+  }
+
+  .output-header {
+    padding: 14px 20px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .output-title {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .output-meta {
+    display: flex;
+    gap: 16px;
+  }
+
+  .meta-item {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
+  .meta-item strong {
+    color: var(--primary);
+    font-weight: 700;
+  }
+
+  .output-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .action-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .action-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .sql-output {
+    padding: 24px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    min-height: 280px;
+    max-height: 350px;
+    overflow-y: auto;
+    margin: 0;
+  }
+
+  /* Analysis */
+  .analysis-results {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .analysis-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+
+  .analysis-info {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
+  .analysis-success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .analysis-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  .analysis-danger {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .analysis-icon {
+    font-size: 16px;
+  }
+
+  .analysis-text {
+    flex: 1;
+  }
+
+  .analysis-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .analysis-desc {
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  /* Reference */
+  .ref-accordion {
+    padding: 12px;
+  }
+
+  .ref-accordion details {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+
+  .ref-accordion summary {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary);
+    list-style: none;
+    user-select: none;
+  }
+
+  .ref-content {
+    margin-top: 10px;
+    font-size: 11px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+
+  .ref-content code {
+    background: var(--bg);
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    color: var(--primary);
+    font-weight: 700;
+    margin-right: 8px;
+  }
+
+  /* History & Favorites */
+  .history-list, .favorites-list {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 250px;
+    overflow-y: auto;
+  }
+
+  .history-item, .favorite-item {
+    padding: 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .history-item:hover, .favorite-item:hover {
+    background: var(--bg);
+    border-color: var(--primary);
+    transform: translateX(-4px);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+
+  /* Modal */
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: var(--bg-elevated);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    min-width: 500px;
+    max-width: 90%;
+  }
+
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-header h3 {
+    font-size: 18px;
+    color: var(--text);
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .close-btn:hover {
+    background: var(--danger);
+    color: white;
+  }
+
+  .modal-body {
+    padding: 24px;
+  }
+
+  .shortcut-grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  .shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .shortcut-item span {
+    color: var(--text-secondary);
+  }
+
+  kbd {
+    padding: 4px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+  @media (max-width: 1400px) {
+    .main-container {
+      grid-template-columns: 300px 1fr 280px;
+    }
+  }
+</style>
+
+<!-- Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+  schema: null,
+  history: [],
+  favorites: [],
+  theme: 'light',
+  dialect: 'tsql',
+  currentMode: 'shortcuts',
+  autoGenerateTimer: null,
+
+  quickSchemas: {
+    ecommerce: `@Users(Id:int pk identity, Email:nvarchar(255) unique not null, Name:nvarchar(100) not null, Active:bit default 1, Country:nvarchar(50), Role:nvarchar(50), Created:datetime default getutcdate())
+@Orders(Id:int pk identity, UserId:int fk Users.Id not null, Total:decimal(18,2) not null, Status:nvarchar(50) not null, ShippingAddress:nvarchar(max), Created:datetime default getutcdate())
+@Products(Id:int pk identity, Name:nvarchar(200) not null, Description:nvarchar(max), Price:decimal(18,2) not null, Stock:int not null default 0, Category:nvarchar(100), Active:bit default 1)
+@OrderItems(Id:int pk identity, OrderId:int fk Orders.Id not null, ProductId:int fk Products.Id not null, Quantity:int not null, Price:decimal(18,2) not null)
+@Categories(Id:int pk identity, Name:nvarchar(100) unique not null, ParentId:int fk Categories.Id)`,
+
+    blog: `@Posts(Id:int pk identity, Title:nvarchar(200) not null, Content:nvarchar(max), AuthorId:int fk Authors.Id, Published:bit default 0, Created:datetime)
+@Authors(Id:int pk identity, Name:nvarchar(100), Email:nvarchar(255) unique, Bio:nvarchar(500))
+@Comments(Id:int pk identity, PostId:int fk Posts.Id, Content:nvarchar(1000), AuthorName:nvarchar(100), Created:datetime)
+@Tags(Id:int pk identity, Name:nvarchar(50) unique)
+@PostTags(PostId:int fk Posts.Id, TagId:int fk Tags.Id)`,
+
+    saas: `@Tenants(Id:int pk identity, Name:nvarchar(100), Domain:nvarchar(100) unique, Plan:nvarchar(50), Status:nvarchar(50), Created:datetime)
+@Users(Id:int pk identity, TenantId:int fk Tenants.Id, Email:nvarchar(255), Name:nvarchar(100), Role:nvarchar(50), Active:bit)
+@Subscriptions(Id:int pk identity, TenantId:int fk Tenants.Id, PlanId:int, Amount:decimal(18,2), Status:nvarchar(50), StartDate:datetime, EndDate:datetime)
+@UsageMetrics(Id:int pk identity, TenantId:int fk Tenants.Id, MetricType:nvarchar(50), Value:int, Date:datetime)`,
+
+    social: `@Users(Id:int pk identity, Username:nvarchar(50) unique, Email:nvarchar(255), FullName:nvarchar(100), Bio:nvarchar(500), Created:datetime)
+@Posts(Id:int pk identity, UserId:int fk Users.Id, Content:nvarchar(max), ImageUrl:nvarchar(500), Created:datetime)
+@Likes(Id:int pk identity, PostId:int fk Posts.Id, UserId:int fk Users.Id, Created:datetime)
+@Comments(Id:int pk identity, PostId:int fk Posts.Id, UserId:int fk Users.Id, Content:nvarchar(1000), Created:datetime)
+@Follows(FollowerId:int fk Users.Id, FollowingId:int fk Users.Id, Created:datetime)`
+  },
+
+  templates: {
+    'basic-select': 'users.id,email,name[active=1]^created desc#10',
+    'join': 'users>orders>products',
+    'aggregation': 'orders|status,count(*),sum(total)^count desc',
+    'subquery': 'users[id in (select userId from orders where total>1000)]',
+    'window': 'users.*,row_number() over(partition by country order by created) as rn',
+    'cte': '@active=users[active=1]\nactive.email,name',
+    'pagination': 'users.id,email,name^id offset 0 rows fetch next 20 rows only',
+    'search': 'products[name like \'%search%\' or description like \'%search%\']',
+    'upsert': 'merge users on email set name,country',
+    'pivot': 'orders pivot by status show count,sum(total)',
+    'recursive': 'categories recursive tree by parentId',
+    'exists': 'users[exists (select 1 from orders where userId=users.id)]'
+  },
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+    this.loadStorage();
+    this.attachEvents();
+
+    // Auto-load default schema
+    const schemaInput = this.container.querySelector('#schema-input');
+    if (!schemaInput.value.trim()) {
+      schemaInput.value = this.quickSchemas.ecommerce;
+      this.parseSchema();
+    }
+
+    this.renderHistory();
+    this.renderFavorites();
+  },
+
+  loadStorage() {
+    try {
+      const data = JSON.parse(localStorage.getItem('sqlEmmetUltimate') || '{}');
+      this.history = data.history || [];
+      this.favorites = data.favorites || [];
+      this.theme = data.theme || 'light';
+      this.dialect = data.dialect || 'tsql';
+
+      if (this.theme === 'dark') {
+        this.container.classList.add('dark');
+      }
+    } catch (e) {}
+  },
+
+  saveStorage() {
+    try {
+      localStorage.setItem('sqlEmmetUltimate', JSON.stringify({
+        history: this.history.slice(-30),
+        favorites: this.favorites.slice(-50),
+        theme: this.theme,
+        dialect: this.dialect
+      }));
+    } catch (e) {}
+  },
+
+  attachEvents() {
+    // Theme toggle
+    this.container.querySelector('#theme-btn')?.addEventListener('click', () => {
+      this.theme = this.theme === 'light' ? 'dark' : 'light';
+      this.container.classList.toggle('dark');
+      this.container.querySelector('#theme-btn').textContent = this.theme === 'dark' ? '☀️' : '🌙';
+      this.saveStorage();
+    });
+
+    // Help
+    this.container.querySelector('#help-btn')?.addEventListener('click', () => {
+      this.container.querySelector('#help-modal').style.display = 'flex';
+    });
+
+    this.container.querySelector('#close-help')?.addEventListener('click', () => {
+      this.container.querySelector('#help-modal').style.display = 'none';
+    });
+
+    // Dialect
+    this.container.querySelector('#dialect-sel')?.addEventListener('change', (e) => {
+      this.dialect = e.target.value;
+      this.saveStorage();
+    });
+
+    // Parse schema
+    this.container.querySelector('#parse-schema')?.addEventListener('click', () => {
+      this.parseSchema();
+    });
+
+    // Quick schemas
+    this.container.querySelectorAll('.quick-schema').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const schema = e.target.dataset.schema;
+        this.container.querySelector('#schema-input').value = this.quickSchemas[schema] || '';
+        this.parseSchema();
+      });
+    });
+
+    // Templates
+    this.container.querySelectorAll('.template-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const template = e.target.dataset.template;
+        this.container.querySelector('#command-input').value = this.templates[template] || '';
+        this.switchMode('shortcuts');
+      });
+    });
+
+    // Mode switcher
+    this.container.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.switchMode(e.target.dataset.mode);
+      });
+    });
+
+    // Generate buttons
+    this.container.querySelector('#gen-btn')?.addEventListener('click', () => {
+      this.generateSQL();
+    });
+
+    this.container.querySelector('#gen-nl-btn')?.addEventListener('click', () => {
+      this.generateFromNL();
+    });
+
+    this.container.querySelector('#vb-gen-btn')?.addEventListener('click', () => {
+      this.generateFromVB();
+    });
+
+    // Clear buttons
+    this.container.querySelector('#clear-btn')?.addEventListener('click', () => {
+      this.container.querySelector('#command-input').value = '';
+    });
+
+    this.container.querySelector('#clear-nl-btn')?.addEventListener('click', () => {
+      this.container.querySelector('#natural-input').value = '';
+    });
+
+    // Output actions
+    this.container.querySelector('#copy-sql-btn')?.addEventListener('click', () => {
+      this.copySQL();
+    });
+
+    this.container.querySelector('#format-sql-btn')?.addEventListener('click', () => {
+      this.formatSQL();
+    });
+
+    this.container.querySelector('#save-fav-btn')?.addEventListener('click', () => {
+      this.saveFavorite();
+    });
+
+    // History/Favorites clear
+    this.container.querySelector('#clear-history')?.addEventListener('click', () => {
+      this.history = [];
+      this.saveStorage();
+      this.renderHistory();
+    });
+
+    this.container.querySelector('#clear-favorites')?.addEventListener('click', () => {
+      this.favorites = [];
+      this.saveStorage();
+      this.renderFavorites();
+    });
+
+    // Live preview
+    this.container.querySelector('#command-input')?.addEventListener('input', (e) => {
+      this.updateLivePreview(e.target.value);
+      this.scheduleAutoGenerate();
+    });
+
+    // NL chips
+    this.container.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        this.container.querySelector('#natural-input').value = e.target.textContent;
+        this.generateFromNL();
+      });
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        this.generateSQL();
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        this.copySQL();
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        this.saveFavorite();
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        this.container.querySelector('#help-modal').style.display = 'flex';
+      }
+
+      if (e.key === 'Escape') {
+        this.container.querySelector('#help-modal').style.display = 'none';
+      }
+    });
+  },
+
+  switchMode(mode) {
+    this.currentMode = mode;
+
+    this.container.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    this.container.querySelectorAll('.mode-panel').forEach(panel => {
+      panel.classList.toggle('active', panel.dataset.mode === mode);
+    });
+  },
+
+  parseSchema() {
+    const input = this.container.querySelector('#schema-input')?.value.trim() || '';
+    if (!input) return alert('Please define schema');
+
+    this.schema = { tables: {} };
+
+    const regex = /@(\w+)\(([^)]+)\)/g;
+    let match;
+
+    while ((match = regex.exec(input)) !== null) {
+      const tableName = match[1];
+      const columnsStr = match[2];
+      const columns = [];
+
+      columnsStr.split(',').forEach(colDef => {
+        const parts = colDef.trim().split(':');
+        if (parts.length >= 2) {
+          const name = parts[0].trim();
+          const rest = parts.slice(1).join(':').trim();
+
+          const col = {
+            name,
+            type: rest.split(/\s+/)[0].toUpperCase(),
+            pk: rest.includes('pk'),
+            identity: rest.includes('identity'),
+            unique: rest.includes('unique'),
+            nullable: !rest.includes('not null') && !rest.includes('pk'),
+            fk: null
+          };
+
+          const fkMatch = rest.match(/fk\s+(\w+)\.(\w+)/);
+          if (fkMatch) {
+            col.fk = { table: fkMatch[1], column: fkMatch[2] };
+          }
+
+          columns.push(col);
+        }
+      });
+
+      this.schema.tables[tableName] = { columns };
+    }
+
+    const tCount = Object.keys(this.schema.tables).length;
+    const cCount = Object.values(this.schema.tables).reduce((s, t) => s + t.columns.length, 0);
+    const fkCount = Object.values(this.schema.tables).reduce((s, t) => s + t.columns.filter(c => c.fk).length, 0);
+
+    const stats = this.container.querySelectorAll('.stat-value');
+    if (stats[0]) stats[0].textContent = tCount;
+    if (stats[1]) stats[1].textContent = cCount;
+    if (stats[2]) stats[2].textContent = fkCount;
+
+    this.visualizeSchema();
+    alert(`✓ Loaded ${tCount} tables with ${cCount} columns!`);
+  },
+
+  visualizeSchema() {
+    const viz = this.container.querySelector('#schema-viz');
+    viz.innerHTML = '';
+
+    Object.entries(this.schema.tables).forEach(([name, table]) => {
+      const div = document.createElement('div');
+      div.className = 'table-viz';
+      div.innerHTML = `
+        <div class="table-viz-header">${name}</div>
+        <div class="table-viz-cols">${table.columns.slice(0,3).map(c => c.name).join(', ')}${table.columns.length > 3 ? '...' : ''}</div>
+      `;
+      viz.appendChild(div);
+    });
+  },
+
+  updateLivePreview(cmd) {
+    if (!cmd.trim()) {
+      this.container.querySelector('#preview-content').textContent = 'Type a command to see instant preview...';
+      return;
+    }
+
+    let preview = '';
+    if (cmd.includes('>')) preview = 'Multi-table JOIN query';
+    else if (cmd.includes('|')) preview = 'GROUP BY aggregation';
+    else if (cmd.includes('^')) preview = 'Sorted query';
+    else if (cmd.match(/^insert/i)) preview = 'INSERT statement';
+    else if (cmd.match(/^update/i)) preview = 'UPDATE statement';
+    else if (cmd.match(/^delete/i)) preview = 'DELETE statement';
+    else preview = 'SELECT query';
+
+    this.container.querySelector('#preview-content').textContent = preview;
+  },
+
+  scheduleAutoGenerate() {
+    clearTimeout(this.autoGenerateTimer);
+    this.autoGenerateTimer = setTimeout(() => this.generateSQL(true), 350);
+  },
+
+  generateSQL(skipHistory = false) {
+    const cmd = this.container.querySelector('#command-input')?.value.trim() || '';
+    if (!cmd) {
+      this.setOutput('-- Enter a command');
+      return;
+    }
+    if (!this.schema) {
+      this.setOutput('-- Parse schema first');
+      return;
+    }
+
+    try {
+      const sql = this.parse(cmd);
+      this.setOutput(sql);
+      if (!skipHistory) this.addHistory(cmd);
+      this.analyzeSQL(sql);
+    } catch (e) {
+      this.setOutput(`-- Error: ${e.message}`);
+    }
+  },
+
+  generateFromNL() {
+    const nl = this.container.querySelector('#natural-input')?.value.trim() || '';
+    if (!nl) return this.setOutput('-- Enter a description');
+
+    // Simple NL parsing
+    let cmd = '';
+
+    if (nl.match(/get|find|show|select/i)) {
+      const tableMatch = nl.match(/(users|orders|products|customers)/i);
+      const table = tableMatch ? tableMatch[1].toLowerCase() : 'users';
+
+      cmd = `${table}.*`;
+
+      if (nl.includes('active')) cmd += '[active=1]';
+      if (nl.includes('gmail')) cmd += '[email~gmail]';
+      if (nl.match(/sorted by|order by/i)) cmd += '^created desc';
+      if (nl.match(/top\s+(\d+)/i)) {
+        const n = nl.match(/top\s+(\d+)/i)[1];
+        cmd += `#${n}`;
+      }
+    } else if (nl.match(/count/i)) {
+      cmd = 'orders|status,count(*)';
+    }
+
+    this.container.querySelector('#command-input').value = cmd;
+    this.switchMode('shortcuts');
+    this.generateSQL();
+  },
+
+  generateFromVB() {
+    // Visual builder generation (simplified)
+    this.setOutput('-- Visual builder: Generate SQL from UI selections');
+  },
+
+  parse(cmd) {
+    cmd = cmd.trim();
+
+    if (cmd.includes('\n') && !cmd.startsWith('@')) {
+      return cmd.split('\n')
+        .filter(l => l.trim() && !l.trim().startsWith('#'))
+        .map(l => this.parseLine(l))
+        .join('\n\n');
+    }
+
+    return this.parseLine(cmd);
+  },
+
+  parseLine(cmd) {
+    cmd = cmd.trim();
+
+    if (cmd.match(/^insert/i)) return this.parseInsert(cmd);
+    if (cmd.match(/^update/i)) return this.parseUpdate(cmd);
+    if (cmd.match(/^delete/i)) return this.parseDelete(cmd);
+
+    return this.parseSelect(cmd);
+  },
+
+  parseSelect(cmd) {
+    const tableMatch = cmd.match(/^(\w+)/);
+    if (!tableMatch) return '-- No table found';
+
+    const mainTable = tableMatch[1];
+    const table = this.findTable(mainTable);
+    if (!table) return `-- Table '${mainTable}' not found`;
+
+    let sql = 'SELECT ';
+
+    const colMatch = cmd.match(/^\w+\.([^\[>|^#]+)/);
+    if (colMatch) {
+      const colsList = colMatch[1].trim();
+      if (colsList === '*') {
+        sql += '*';
+      } else {
+        const cols = colsList.split(',').map(c => {
+          const t = c.trim();
+          if (t.includes('(')) return t.toUpperCase();
+          const col = table.columns.find(tc => tc.name.toLowerCase() === t.toLowerCase());
+          return col ? `[${col.name}]` : `[${t}]`;
+        });
+        sql += cols.join(', ');
+      }
+    } else {
+      sql += '*';
+    }
+
+    sql += `\nFROM [${mainTable}]`;
+
+    // JOINs
+    const joinMatches = (cmd.match(/>(\w+)/g) || []).map(j => j.substring(1));
+    if (joinMatches.length) {
+      let lastTable = mainTable;
+      joinMatches.forEach(jt => {
+        if (!this.findTable(jt)) return;
+        const condition = this.buildJoinCondition(lastTable, jt);
+        sql += `\nINNER JOIN [${jt}] ${condition}`;
+        lastTable = jt;
+      });
+    }
+
+    // WHERE
+    const whereMatch = cmd.match(/\[([^\]]+)\]/);
+    if (whereMatch) {
+      sql += `\nWHERE ${this.parseWhere(whereMatch[1], table)}`;
+    }
+
+    // GROUP BY
+    const groupMatch = cmd.match(/\|([^|^#]+)/);
+    if (groupMatch) {
+      const gcols = groupMatch[1].trim().split(',').map(c => {
+        const t = c.trim();
+        if (t.includes('(')) return null;
+        const col = table.columns.find(tc => tc.name.toLowerCase() === t.toLowerCase());
+        return col ? `[${col.name}]` : `[${t}]`;
+      }).filter(Boolean);
+      if (gcols.length > 0) sql += `\nGROUP BY ${gcols.join(', ')}`;
+    }
+
+    // ORDER BY
+    const orderMatch = cmd.match(/\^([^#]+)/);
+    if (orderMatch) {
+      const ostr = orderMatch[1].trim();
+      const oparts = ostr.split(/\s+/);
+      const ocol = oparts[0];
+      const odir = (oparts[1] || 'ASC').toUpperCase();
+      const col = table.columns.find(c => c.name.toLowerCase() === ocol.toLowerCase());
+      sql += `\nORDER BY [${col ? col.name : ocol}] ${odir}`;
+    }
+
+    // LIMIT
+    const limitMatch = cmd.match(/#(\d+)/);
+    if (limitMatch) {
+      const lim = limitMatch[1];
+      if (this.dialect === 'tsql') {
+        sql = sql.replace('SELECT ', `SELECT TOP ${lim} `);
+      } else {
+        sql += `\nLIMIT ${lim}`;
+      }
+    }
+
+    sql += ';';
+    return sql;
+  },
+
+  buildJoinCondition(leftTableName, rightTableName) {
+    const leftTable = this.findTable(leftTableName);
+    const rightTable = this.findTable(rightTableName);
+    if (!leftTable || !rightTable) {
+      return `ON [${leftTableName}].[${rightTableName}Id] = [${rightTableName}].[Id]`;
+    }
+
+    const leftLower = leftTableName.toLowerCase();
+    const rightLower = rightTableName.toLowerCase();
+
+    const forwardFK = leftTable.columns.find(c => c.fk && c.fk.table && c.fk.table.toLowerCase() === rightLower);
+    if (forwardFK) {
+      const targetCol = forwardFK.fk.column || 'Id';
+      return `ON [${leftTableName}].[${forwardFK.name}] = [${rightTableName}].[${targetCol}]`;
+    }
+
+    const reverseFK = rightTable.columns.find(c => c.fk && c.fk.table && c.fk.table.toLowerCase() === leftLower);
+    if (reverseFK) {
+      const targetCol = reverseFK.fk.column || 'Id';
+      return `ON [${rightTableName}].[${reverseFK.name}] = [${leftTableName}].[${targetCol}]`;
+    }
+
+    const guess = leftTable.columns.find(c => c.name.toLowerCase() === `${rightLower}id`);
+    if (guess) {
+      return `ON [${leftTableName}].[${guess.name}] = [${rightTableName}].[Id]`;
+    }
+
+    return `ON [${leftTableName}].[${rightTableName}Id] = [${rightTableName}].[Id]`;
+  },
+
+  parseWhere(cond, table) {
+    return cond.split(',').map(c => {
+      c = c.trim();
+
+      if (c.includes(' in ')) {
+        const parts = c.split(' in ');
+        return `[${parts[0].trim()}] IN ${parts[1].trim()}`;
+      }
+
+      let op = '=';
+      let parts;
+
+      if (c.includes('>=')) { op = '>='; parts = c.split('>='); }
+      else if (c.includes('<=')) { op = '<='; parts = c.split('<='); }
+      else if (c.includes('!=')) { op = '!='; parts = c.split('!='); }
+      else if (c.includes('>')) { op = '>'; parts = c.split('>'); }
+      else if (c.includes('<')) { op = '<'; parts = c.split('<'); }
+      else { parts = c.split('='); }
+
+      if (parts.length !== 2) return c;
+
+      const colName = parts[0].trim();
+      const value = parts[1].trim();
+      const col = table.columns.find(tc => tc.name.toLowerCase() === colName.toLowerCase());
+
+      let fval = value;
+      if (!value.match(/^['"]/) && isNaN(value)) fval = `N'${value}'`;
+
+      return `[${col ? col.name : colName}] ${op} ${fval}`;
+    }).join('\n  AND ');
+  },
+
+  parseInsert(cmd) {
+    const match = cmd.match(/insert\s+(\w+)\(([^)]+)\)/i);
+    if (!match) return '-- Invalid INSERT';
+
+    const tname = match[1];
+    const cols = match[2].split(',').map(c => c.trim());
+
+    let sql = `INSERT INTO [${tname}]\n(\n`;
+    sql += cols.map(c => `    [${c}]`).join(',\n');
+    sql += '\n)\nVALUES\n(\n';
+    sql += cols.map(() => `    N'value'`).join(',\n');
+    sql += '\n);';
+
+    return sql;
+  },
+
+  parseUpdate(cmd) {
+    const match = cmd.match(/update\s+(\w+)\{([^}]+)\}(?:\[([^\]]+)\])?/i);
+    if (!match) return '-- Invalid UPDATE';
+
+    const tname = match[1];
+    const setClause = match[2];
+    const whereCl = match[3] || '';
+
+    const table = this.findTable(tname);
+
+    let sql = `UPDATE [${tname}]\nSET\n`;
+
+    const assigns = setClause.split(',').map(a => {
+      const [col, val] = a.split('=').map(s => s.trim());
+      const fval = !val.match(/^['"]/) && isNaN(val) ? `N'${val}'` : val;
+      return `    [${col}] = ${fval}`;
+    });
+
+    sql += assigns.join(',\n');
+
+    if (whereCl && table) {
+      sql += `\nWHERE ${this.parseWhere(whereCl, table)}`;
+    }
+
+    sql += ';';
+    return sql;
+  },
+
+  parseDelete(cmd) {
+    const match = cmd.match(/delete\s+(\w+)(?:\[([^\]]+)\])?/i);
+    if (!match) return '-- Invalid DELETE';
+
+    const tname = match[1];
+    const whereCl = match[2] || '';
+
+    const table = this.findTable(tname);
+
+    let sql = `DELETE FROM [${tname}]`;
+
+    if (whereCl && table) {
+      sql += `\nWHERE ${this.parseWhere(whereCl, table)}`;
+    }
+
+    sql += ';';
+    return sql;
+  },
+
+  findTable(name) {
+    const key = Object.keys(this.schema.tables).find(k => k.toLowerCase() === name.toLowerCase());
+    return key ? this.schema.tables[key] : null;
+  },
+
+  setOutput(sql) {
+    this.container.querySelector('#sql-output').textContent = sql;
+    if (this.context) this.context.setOutput(sql);
+
+    const lines = sql.split('\n').length;
+    const tables = (sql.match(/FROM|JOIN/gi) || []).length;
+    const complexity = lines > 20 ? 'Complex' : lines > 10 ? 'Moderate' : 'Simple';
+
+    const meta = this.container.querySelectorAll('.meta-item strong');
+    if (meta[0]) meta[0].textContent = lines;
+    if (meta[1]) meta[1].textContent = tables;
+    if (meta[2]) meta[2].textContent = complexity;
+  },
+
+  analyzeSQL(sql) {
+    const analyses = [];
+
+    if (!sql.includes('WHERE') && sql.includes('SELECT')) {
+      analyses.push({
+        type: 'warning',
+        icon: '⚠️',
+        title: 'Missing WHERE Clause',
+        desc: 'Query will scan entire table - consider adding WHERE to filter results'
+      });
+    }
+
+    if (sql.includes('SELECT *')) {
+      analyses.push({
+        type: 'info',
+        icon: '💡',
+        title: 'SELECT *',
+        desc: 'Consider selecting only needed columns instead of * for better performance'
+      });
+    }
+
+    if (analyses.length === 0) {
+      analyses.push({
+        type: 'success',
+        icon: '✅',
+        title: 'Looks Good!',
+        desc: 'No major performance concerns detected'
+      });
+    }
+
+    const container = this.container.querySelector('#analysis-results');
+    container.innerHTML = analyses.map(a => `
+      <div class="analysis-item analysis-${a.type}">
+        <div class="analysis-icon">${a.icon}</div>
+        <div class="analysis-text">
+          <div class="analysis-title">${a.title}</div>
+          <div class="analysis-desc">${a.desc}</div>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  copySQL() {
+    const sql = this.container.querySelector('#sql-output').textContent;
+    navigator.clipboard.writeText(sql).then(() => {
+      const btn = this.container.querySelector('#copy-sql-btn');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = orig, 2000);
+    });
+  },
+
+  formatSQL() {
+    const sql = this.container.querySelector('#sql-output').textContent;
+    const fmt = sql
+      .replace(/\bSELECT\b/gi, 'SELECT')
+      .replace(/\bFROM\b/gi, '\nFROM')
+      .replace(/\bWHERE\b/gi, '\nWHERE')
+      .replace(/\bGROUP BY\b/gi, '\nGROUP BY')
+      .replace(/\bORDER BY\b/gi, '\nORDER BY');
+
+    this.setOutput(fmt);
+  },
+
+  saveFavorite() {
+    const sql = this.container.querySelector('#sql-output').textContent;
+    if (sql.startsWith('--')) return;
+
+    this.favorites.push({ sql, ts: Date.now() });
+    this.saveStorage();
+    this.renderFavorites();
+    alert('✓ Saved to favorites!');
+  },
+
+  addHistory(cmd) {
+    this.history.push({ cmd, ts: Date.now() });
+    if (this.history.length > 30) this.history = this.history.slice(-30);
+    this.saveStorage();
+    this.renderHistory();
+  },
+
+  renderHistory() {
+    const hist = this.container.querySelector('#history-list');
+    if (this.history.length === 0) {
+      hist.innerHTML = '<div class="empty-state">No history yet</div>';
+      return;
+    }
+
+    hist.innerHTML = this.history.slice(-10).reverse().map((h, i) => `
+      <div class="history-item" data-idx="${i}">${h.cmd}</div>
+    `).join('');
+
+    hist.querySelectorAll('.history-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        const h = this.history[this.history.length - 1 - idx];
+        this.container.querySelector('#command-input').value = h.cmd;
+        this.switchMode('shortcuts');
+      });
+    });
+  },
+
+  renderFavorites() {
+    const fav = this.container.querySelector('#favorites-list');
+    if (this.favorites.length === 0) {
+      fav.innerHTML = '<div class="empty-state">No favorites yet</div>';
+      return;
+    }
+
+    fav.innerHTML = this.favorites.slice(-10).reverse().map((f, i) => `
+      <div class="favorite-item" data-idx="${i}">${f.sql.substring(0,60)}...</div>
+    `).join('');
+
+    fav.querySelectorAll('.favorite-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        const f = this.favorites[this.favorites.length - 1 - idx];
+        this.setOutput(f.sql);
+      });
+    });
+  },
+
+  cleanup() {}
+};
+
+// Standalone
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const template = document.querySelector('#tool-ui');
+    if (template) {
+      document.body.innerHTML = template.innerHTML;
+      DevChefTool.init(document.body, {
+        setOutput(v) { document.querySelector('#sql-output').textContent = v; },
+        getOutput() { return document.querySelector('#sql-output')?.textContent || ''; }
+      });
+    }
+  });
+}
+</script>
+
+</body>
+</html>
+
