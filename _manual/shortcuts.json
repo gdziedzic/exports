@@ -1,0 +1,16 @@
+[
+  {
+    "Type": "Shell",
+    "ShellType": "Pwsh",
+    "Arguments": "(Get-Clipboard) -replace \u0027([^\\r\\n]\u002B)(\\r?\\n?)\u0027, \u005c\u0022\u0027\u0060$1\u0060$2\u0027,\u005c\u0022 | Set-Clipboard",
+    "Silent": false,
+    "Key": "wrap-string-for-sql"
+  },
+  {
+    "Type": "Shell",
+    "ShellType": "Pwsh",
+    "Arguments": "(Get-Clipboard -Raw) -replace \u005c\u0022([^\\r\\n]\u002B)(\\r?\\n?)\u005c\u0022, \u005c\u0022\u0060$1\u0060$2,\u005c\u0022 | Set-Clipboard",
+    "Silent": false,
+    "Key": "wrap-integer-for-sql"
+  }
+]
