@@ -1,11 +1,6 @@
 version: '3'
 
 tasks:
-  hello:
-    desc: "Example task"
-    cmds:
-      - echo "Hello World"
-
   start_server:
     desc: 'starts http server'
     cmds:
