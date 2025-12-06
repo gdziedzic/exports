@@ -164,8 +164,8 @@
             <div class="input-header">
               <label>⚡ Ultra-Powerful Commands (Full Schema Context - NO table selection!)</label>
               <div class="input-actions">
-                <button id="gen-btn" class="btn-primary">Generate SQL</button>
-                <button id="explain-btn" class="btn-secondary">💡 Explain</button>
+                <span class="auto-gen-badge">🔥 Live Auto-Generation Active</span>
+                <button id="gen-btn" class="btn-secondary">⚡ Generate Now</button>
                 <button id="clear-btn" class="btn-secondary">Clear</button>
               </div>
             </div>
@@ -247,7 +247,7 @@ products recursive category tree
 💪 You have FULL SCHEMA CONTEXT - Reference ANY table ANYWHERE, ANYTIME!
 ═══════════════════════════════════════════════════════════════════════════════"></textarea>
             <div id="live-preview" class="live-preview">
-              <div class="preview-label">👁️ Live Preview</div>
+              <div class="preview-label">⚡ Query Type Detection (SQL auto-generates below as you type!)</div>
               <div id="preview-content" class="preview-content">Type a command to see instant preview...</div>
             </div>
           </div>
@@ -259,7 +259,8 @@ products recursive category tree
             <div class="input-header">
               <label>🧠 Describe What You Want in Plain English</label>
               <div class="input-actions">
-                <button id="gen-nl-btn" class="btn-primary">Generate SQL</button>
+                <span class="auto-gen-badge">🔥 Live Auto-Generation Active</span>
+                <button id="gen-nl-btn" class="btn-secondary">⚡ Generate Now</button>
                 <button id="clear-nl-btn" class="btn-secondary">Clear</button>
               </div>
             </div>
@@ -326,7 +327,7 @@ products recursive category tree
         <div class="output-section">
           <div class="output-header">
             <div class="output-title">
-              <span>✨ Generated SQL</span>
+              <span>✨ Generated SQL <span class="live-indicator">● LIVE</span></span>
               <div class="output-meta" id="output-meta">
                 <span class="meta-item">Lines: <strong>0</strong></span>
                 <span class="meta-item">Tables: <strong>0</strong></span>
@@ -898,6 +899,24 @@ ORDER BY u.Created DESC;</pre>
   .input-actions {
     display: flex;
     gap: 8px;
+    align-items: center;
+  }
+
+  .auto-gen-badge {
+    padding: 8px 14px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    animation: pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.02); }
   }
 
   .btn-primary {
@@ -1127,6 +1146,19 @@ ORDER BY u.Created DESC;</pre>
     font-size: 14px;
     font-weight: 700;
     color: var(--text);
+  }
+
+  .live-indicator {
+    font-size: 10px;
+    color: #10b981;
+    font-weight: 800;
+    letter-spacing: 1px;
+    animation: blink 1.5s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
   }
 
   .output-meta {
@@ -1421,6 +1453,7 @@ export const DevChefTool = {
   dialect: 'tsql',
   currentMode: 'shortcuts',
   autoGenerateTimer: null,
+  autoGenerateNLTimer: null,
 
   quickSchemas: {
     ecommerce: `@Users(Id:int pk identity, Email:nvarchar(255) unique not null, Name:nvarchar(100) not null, Active:bit default 1, Country:nvarchar(50), Role:nvarchar(50), Created:datetime default getutcdate())
@@ -1606,10 +1639,15 @@ export const DevChefTool = {
       this.renderFavorites();
     });
 
-    // Live preview
+    // Live preview & auto-generate for shortcuts mode
     this.container.querySelector('#command-input')?.addEventListener('input', (e) => {
       this.updateLivePreview(e.target.value);
       this.scheduleAutoGenerate();
+    });
+
+    // Auto-generate for natural language mode
+    this.container.querySelector('#natural-input')?.addEventListener('input', () => {
+      this.scheduleAutoGenerateNL();
     });
 
     // NL chips
@@ -1750,7 +1788,12 @@ export const DevChefTool = {
 
   scheduleAutoGenerate() {
     clearTimeout(this.autoGenerateTimer);
-    this.autoGenerateTimer = setTimeout(() => this.generateSQL(true), 350);
+    this.autoGenerateTimer = setTimeout(() => this.generateSQL(true), 300);
+  },
+
+  scheduleAutoGenerateNL() {
+    clearTimeout(this.autoGenerateNLTimer);
+    this.autoGenerateNLTimer = setTimeout(() => this.generateFromNL(true), 300);
   },
 
   generateSQL(skipHistory = false) {
@@ -1774,7 +1817,7 @@ export const DevChefTool = {
     }
   },
 
-  generateFromNL() {
+  generateFromNL(skipHistory = false) {
     const nl = this.container.querySelector('#natural-input')?.value.trim() || '';
     if (!nl) return this.setOutput('-- Enter a description');
 
@@ -1799,8 +1842,9 @@ export const DevChefTool = {
     }
 
     this.container.querySelector('#command-input').value = cmd;
-    this.switchMode('shortcuts');
-    this.generateSQL();
+    // Don't switch mode during auto-generation to avoid jarring UX
+    if (!skipHistory) this.switchMode('shortcuts');
+    this.generateSQL(skipHistory);
   },
 
   generateFromVB() {
@@ -2183,7 +2227,11 @@ export const DevChefTool = {
     });
   },
 
-  cleanup() {}
+  cleanup() {
+    // Clear auto-generation timers
+    clearTimeout(this.autoGenerateTimer);
+    clearTimeout(this.autoGenerateNLTimer);
+  }
 };
 
 // Standalone

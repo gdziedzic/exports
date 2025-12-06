@@ -711,15 +711,11 @@ Test/Path,https://example.com/test/path`,
     sections.forEach(section => {
       if (section.type === 'ONCE') {
         result += this.processOnce(section.content, header, dataRows);
-      } else if (section.type === 'EACH') {
-        dataRows.forEach((row, index) => {
-          result += this.processEach(section.content, row, index, header, dataRows.length);
-        });
-      } else if (section.type === 'EACH+') {
-        // Skip header row
-        dataRows.forEach((row, index) => {
-          result += this.processEach(section.content, row, index, header, dataRows.length);
-        });
+      } else if (section.type === 'EACH' || section.type === 'EACH+') {
+        const rowOutputs = dataRows.map((row, index) =>
+          this.processEach(section.content, row, index, header, dataRows.length)
+        );
+        result += this.combineRowOutputs(rowOutputs);
       }
     });
 
@@ -769,6 +765,13 @@ Test/Path,https://example.com/test/path`,
 
   processEach(content, row, rowIndex, header, totalRows) {
     return this.replaceVariables(content, row, rowIndex, header, totalRows);
+  },
+
+  combineRowOutputs(outputs) {
+    if (!outputs || outputs.length === 0) return '';
+
+    const needsNewlines = outputs.length > 1 && !outputs.some(out => /[\\r\\n]/.test(out));
+    return needsNewlines ? outputs.join('\\n') : outputs.join('');
   },
 
   replaceVariables(content, row, rowIndex, header, totalRows) {
@@ -1025,3 +1028,4 @@ if (typeof window !== 'undefined' && !window.DevChef) {
 
 </body>
 </html>
+
