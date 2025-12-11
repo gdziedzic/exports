@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Line Operations - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "line-operations",
+  "name": "Line Operations",
+  "category": "Text",
+  "description": "Powerful line-by-line text operations: prefix, suffix, sort, filter, and more",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">Line Operations</h2>
+      <p class="tool-description">Transform text line-by-line with powerful operations</p>
+    </div>
+
+    <div class="operations-layout">
+      <!-- Tab Navigation -->
+      <div class="operations-panel">
+        <div class="tab-navigation">
+          <button class="tab-btn active" data-tab="quick">⚡ Quick Transforms</button>
+          <button class="tab-btn" data-tab="code">💻 Code Transforms</button>
+        </div>
+
+        <!-- Quick Transforms Tab -->
+        <div class="tab-content active" id="tab-quick">
+          <div class="apply-section">
+            <button class="apply-all-btn" id="apply-all-btn">
+              ⚡ Apply Selected Transforms
+            </button>
+            <button class="clear-selection-btn" id="clear-selection-btn">
+              Clear Selection
+            </button>
+          </div>
+
+          <div class="operation-categories">
+            <div class="category">
+              <h4>✏️ Add/Remove</h4>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-add-prefix" data-op="add-prefix" />
+                <label for="check-add-prefix" class="op-label">Add Prefix</label>
+                <input type="text" id="prefix-input" placeholder="Enter prefix..." class="op-input" />
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-add-suffix" data-op="add-suffix" />
+                <label for="check-add-suffix" class="op-label">Add Suffix</label>
+                <input type="text" id="suffix-input" placeholder="Enter suffix..." class="op-input" />
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-wrap" data-op="wrap" />
+                <label for="check-wrap" class="op-label">Wrap Lines</label>
+                <div class="wrap-inputs">
+                  <input type="text" id="wrap-start" placeholder="Start (e.g., [)" />
+                  <input type="text" id="wrap-end" placeholder="End (e.g., ])" />
+                </div>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-remove-empty" data-op="remove-empty" />
+                <label for="check-remove-empty" class="op-label">Remove Empty Lines</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-remove-whitespace-only" data-op="remove-whitespace-only" />
+                <label for="check-remove-whitespace-only" class="op-label">Remove Whitespace-Only</label>
+              </div>
+            </div>
+
+            <div class="category">
+              <h4>🔢 Numbering</h4>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-number-lines" data-op="number-lines" />
+                <label for="check-number-lines" class="op-label">Number Lines</label>
+                <select id="number-format" class="op-select">
+                  <option value="1. ">1. (Number dot space)</option>
+                  <option value="1) ">1) (Number paren space)</option>
+                  <option value="[1] ">[1] (Bracket number)</option>
+                  <option value="1.\t">1.\t (Number dot tab)</option>
+                </select>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-remove-line-numbers" data-op="remove-line-numbers" />
+                <label for="check-remove-line-numbers" class="op-label">Remove Line Numbers</label>
+              </div>
+            </div>
+
+            <div class="category">
+              <h4>📏 Spacing</h4>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-indent" data-op="indent" />
+                <label for="check-indent" class="op-label">Indent</label>
+                <input type="number" id="indent-spaces" value="4" min="1" max="20" class="op-number" />
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-dedent" data-op="dedent" />
+                <label for="check-dedent" class="op-label">Dedent</label>
+                <input type="number" id="dedent-spaces" value="4" min="1" max="20" class="op-number" />
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-trim-left" data-op="trim-left" />
+                <label for="check-trim-left" class="op-label">Trim Left</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-trim-right" data-op="trim-right" />
+                <label for="check-trim-right" class="op-label">Trim Right</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-trim-both" data-op="trim-both" />
+                <label for="check-trim-both" class="op-label">Trim Both</label>
+              </div>
+            </div>
+
+            <div class="category">
+              <h4>🔄 Sort & Order</h4>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-sort-asc" data-op="sort-asc" />
+                <label for="check-sort-asc" class="op-label">Sort A-Z</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-sort-desc" data-op="sort-desc" />
+                <label for="check-sort-desc" class="op-label">Sort Z-A</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-sort-length-asc" data-op="sort-length-asc" />
+                <label for="check-sort-length-asc" class="op-label">Sort by Length ↑</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-sort-length-desc" data-op="sort-length-desc" />
+                <label for="check-sort-length-desc" class="op-label">Sort by Length ↓</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-reverse" data-op="reverse" />
+                <label for="check-reverse" class="op-label">Reverse Order</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-shuffle" data-op="shuffle" />
+                <label for="check-shuffle" class="op-label">Shuffle</label>
+              </div>
+            </div>
+
+            <div class="category">
+              <h4>🎯 Filter & Select</h4>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-filter-contains" data-op="filter-contains" />
+                <label for="check-filter-contains" class="op-label">Keep Matching</label>
+                <input type="text" id="filter-pattern" placeholder="Enter pattern..." class="op-input" />
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-filter-not-contains" data-op="filter-not-contains" />
+                <label for="check-filter-not-contains" class="op-label">Remove Matching</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-unique" data-op="unique" />
+                <label for="check-unique" class="op-label">Remove Duplicates</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-duplicates-only" data-op="duplicates-only" />
+                <label for="check-duplicates-only" class="op-label">Keep Duplicates Only</label>
+              </div>
+            </div>
+
+            <div class="category">
+              <h4>🔀 Transform</h4>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-uppercase" data-op="uppercase" />
+                <label for="check-uppercase" class="op-label">UPPERCASE</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-lowercase" data-op="lowercase" />
+                <label for="check-lowercase" class="op-label">lowercase</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-title-case" data-op="title-case" />
+                <label for="check-title-case" class="op-label">Title Case</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-quote-single" data-op="quote-single" />
+                <label for="check-quote-single" class="op-label">Quote ' '</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-quote-double" data-op="quote-double" />
+                <label for="check-quote-double" class="op-label">Quote " "</label>
+              </div>
+              <div class="operation-item">
+                <input type="checkbox" class="op-checkbox" id="check-comma-separate" data-op="comma-separate" />
+                <label for="check-comma-separate" class="op-label">Comma Separate</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Code Transforms Tab -->
+        <div class="tab-content" id="tab-code">
+          <div class="code-panel">
+            <div class="code-header">
+              <h4>📚 Snippet Library</h4>
+              <select id="snippet-preset" class="snippet-select">
+                <option value="">-- Select a snippet or write custom code --</option>
+                <optgroup label="Text Extraction">
+                  <option value="extract-regex">Extract with Regex</option>
+                  <option value="extract-between">Extract Between Characters</option>
+                  <option value="extract-json">Extract JSON Field</option>
+                </optgroup>
+                <optgroup label="Text Modification">
+                  <option value="replace-regex">Replace with Regex</option>
+                  <option value="remove-chars">Remove Specific Characters</option>
+                  <option value="reverse-line">Reverse Each Line</option>
+                  <option value="capitalize-words">Capitalize All Words</option>
+                </optgroup>
+                <optgroup label="Data Transformation">
+                  <option value="split-join">Split & Join</option>
+                  <option value="keep-alpha">Keep Only Letters</option>
+                  <option value="keep-numeric">Keep Only Numbers</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="code-editor-section">
+              <div class="code-info">
+                <p><strong>Available variables:</strong></p>
+                <ul>
+                  <li><code>line</code> - Current line text</li>
+                  <li><code>index</code> - Line index (0-based)</li>
+                  <li><code>lines</code> - Array of all lines</li>
+                </ul>
+                <p><strong>Return:</strong> The transformed line as a string</p>
+              </div>
+
+              <textarea id="custom-js" class="code-editor" placeholder="// Write custom JavaScript to transform each line&#10;// Example:&#10;return line.toUpperCase();" rows="12"></textarea>
+
+              <button class="run-code-btn" data-op="custom-transform">
+                <span class="btn-icon">▶</span> Run Custom Transform
+              </button>
+
+              <div class="custom-error" id="custom-error" style="display: none;"></div>
+            </div>
+
+            <div class="examples-section">
+              <details>
+                <summary>💡 Examples & Tips</summary>
+                <div class="examples-content">
+                  <div class="example">
+                    <strong>Extract email addresses:</strong>
+                    <code>const match = line.match(/[\w.-]+@[\w.-]+\.\w+/);
+return match ? match[0] : '';</code>
+                  </div>
+                  <div class="example">
+                    <strong>Add line numbers with custom format:</strong>
+                    <code>return `${index + 1}. ${line}`;</code>
+                  </div>
+                  <div class="example">
+                    <strong>Keep only lines longer than 10 chars:</strong>
+                    <code>return line.length > 10 ? line : '';</code>
+                  </div>
+                  <div class="example">
+                    <strong>Convert to markdown list:</strong>
+                    <code>return `- ${line.trim()}`;</code>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-panel">
+        <div class="panel-header">
+          <h3>📝 Input</h3>
+          <button id="clear-input-btn" class="small-btn">Clear</button>
+        </div>
+        <textarea id="input-text" placeholder="Enter your text here...&#10;Each line will be processed separately."></textarea>
+
+        <div class="stats">
+          <span class="stat-item">Lines: <strong id="input-lines">0</strong></span>
+          <span class="stat-item">Characters: <strong id="input-chars">0</strong></span>
+          <span class="stat-item">Non-empty: <strong id="input-nonempty">0</strong></span>
+        </div>
+      </div>
+
+      <div class="output-panel">
+        <div class="panel-header">
+          <h3>✨ Output</h3>
+          <div class="output-controls">
+            <button id="copy-output-btn" class="small-btn">📋 Copy</button>
+            <button id="use-as-input-btn" class="small-btn">↩️ Use as Input</button>
+          </div>
+        </div>
+        <textarea id="output-text" readonly placeholder="Results will appear here..."></textarea>
+
+        <div class="stats">
+          <span class="stat-item">Lines: <strong id="output-lines">0</strong></span>
+          <span class="stat-item">Characters: <strong id="output-chars">0</strong></span>
+          <span class="stat-item">Non-empty: <strong id="output-nonempty">0</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .operations-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .operations-panel,
+  .editor-panel,
+  .output-panel {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+  }
+
+  .operations-panel {
+    max-height: calc(100vh - 200px);
+    min-height: 700px;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .editor-panel,
+  .output-panel {
+    padding: 16px;
+  }
+
+  /* Tab Navigation */
+  .tab-navigation {
+    display: flex;
+    background: var(--bg-tertiary);
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+  }
+
+  .tab-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    background: var(--bg-secondary);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Tab Content */
+  .tab-content {
+    display: none;
+    height: 100%;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .panel-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  /* Apply Section */
+  .apply-section {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .apply-all-btn {
+    flex: 1;
+    padding: 14px 20px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .apply-all-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
+  }
+
+  .apply-all-btn:active {
+    transform: translateY(0);
+  }
+
+  .clear-selection-btn {
+    padding: 14px 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .clear-selection-btn:hover {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--accent);
+  }
+
+  /* Quick Transforms Styles */
+  .operation-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .operation-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    transition: all 0.2s;
+  }
+
+  .operation-item:hover {
+    border-color: var(--accent);
+    background: var(--bg-secondary);
+  }
+
+  .op-checkbox {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+    accent-color: var(--accent);
+  }
+
+  .op-label {
+    flex: 0 0 140px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+  }
+
+  .op-label:hover {
+    color: var(--accent);
+  }
+
+  .op-input,
+  .op-select,
+  .op-number {
+    flex: 1;
+    padding: 6px 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--font-mono);
+  }
+
+  .op-number {
+    flex: 0 0 60px;
+  }
+
+  .op-input:focus,
+  .op-select:focus,
+  .op-number:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg-primary);
+  }
+
+  /* Code Panel Styles */
+  .code-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .code-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .code-header h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .snippet-select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    cursor: pointer;
+  }
+
+  .snippet-select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .code-editor-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .code-info {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .code-info p {
+    margin: 0 0 8px 0;
+    color: var(--text-secondary);
+  }
+
+  .code-info ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-primary);
+  }
+
+  .code-info li {
+    margin-bottom: 4px;
+  }
+
+  .code-info code {
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+  }
+
+  .code-editor {
+    width: 100%;
+    padding: 12px;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 200px;
+  }
+
+  .code-editor:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .run-code-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .run-code-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
+  }
+
+  .run-code-btn:active {
+    transform: translateY(0);
+  }
+
+  .btn-icon {
+    font-size: 16px;
+  }
+
+  .examples-section {
+    margin-top: 8px;
+  }
+
+  .examples-section details {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px;
+  }
+
+  .examples-section summary {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    user-select: none;
+  }
+
+  .examples-section summary:hover {
+    color: var(--accent);
+  }
+
+  .examples-content {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .example {
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .example strong {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+    font-size: 12px;
+  }
+
+  .example code {
+    display: block;
+    background: var(--bg-primary);
+    padding: 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+  }
+
+  .category h4 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .wrap-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .wrap-inputs input {
+    padding: 6px 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--font-mono);
+  }
+
+  .wrap-inputs input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg-primary);
+  }
+
+  .custom-error {
+    padding: 8px;
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid var(--error);
+    border-radius: 6px;
+    color: var(--error);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    margin-top: 6px;
+  }
+
+
+  .small-btn {
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .small-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .output-controls {
+    display: flex;
+    gap: 6px;
+  }
+
+  #input-text,
+  #output-text {
+    width: 100%;
+    min-height: calc(100vh - 280px);
+    height: calc(100vh - 280px);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--text-primary);
+    resize: vertical;
+    margin-bottom: 12px;
+  }
+
+  #input-text:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  #output-text {
+    background: var(--bg-primary);
+  }
+
+  .stats {
+    display: flex;
+    gap: 16px;
+    padding: 10px;
+    background: var(--bg-primary);
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .stat-item {
+    color: var(--text-secondary);
+  }
+
+  .stat-item strong {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  @media (max-width: 1400px) {
+    .operations-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .operations-panel {
+      max-height: 400px;
+    }
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #0078d4;
+    --accent-hover: #106ebe;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 36px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  button {
+    font-family: var(--font-sans);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const inputText = container.querySelector('#input-text');
+    const outputText = container.querySelector('#output-text');
+
+    // Tab switching
+    container.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetTab = e.target.dataset.tab;
+        this.switchTab(targetTab);
+      });
+    });
+
+    // Apply All button
+    container.querySelector('#apply-all-btn')?.addEventListener('click', () => {
+      this.applySelectedOperations();
+    });
+
+    // Clear Selection button
+    container.querySelector('#clear-selection-btn')?.addEventListener('click', () => {
+      container.querySelectorAll('.op-checkbox').forEach(cb => cb.checked = false);
+    });
+
+    // Run code button (for custom transforms)
+    container.querySelector('.run-code-btn')?.addEventListener('click', (e) => {
+      const operation = e.target.dataset.op;
+      this.performOperation(operation);
+    });
+
+    // Prevent input fields from triggering checkbox toggles when clicking
+    container.querySelectorAll('.op-input, .op-select, .op-number, .wrap-inputs input').forEach(input => {
+      input.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      input.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+      });
+    });
+
+    // Make labels properly toggle their associated checkboxes
+    container.querySelectorAll('.op-label').forEach(label => {
+      label.addEventListener('click', (e) => {
+        e.preventDefault();
+        const checkboxId = label.getAttribute('for');
+        const checkbox = container.querySelector(`#${checkboxId}`);
+        if (checkbox) {
+          checkbox.checked = !checkbox.checked;
+        }
+      });
+    });
+
+    // Input events
+    inputText?.addEventListener('input', () => this.updateInputStats());
+
+    // Control buttons
+    container.querySelector('#clear-input-btn')?.addEventListener('click', () => {
+      inputText.value = '';
+      this.updateInputStats();
+    });
+
+    container.querySelector('#copy-output-btn')?.addEventListener('click', () => this.copyOutput());
+    container.querySelector('#use-as-input-btn')?.addEventListener('click', () => this.useAsInput());
+
+    // Snippet preset handler
+    container.querySelector('#snippet-preset')?.addEventListener('change', (e) => {
+      this.loadSnippet(e.target.value);
+    });
+
+    // Initialize
+    this.updateInputStats();
+    this.updateOutputStats();
+  },
+
+  switchTab(tabName) {
+    // Update tab buttons
+    this.container.querySelectorAll('.tab-btn').forEach(btn => {
+      if (btn.dataset.tab === tabName) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    // Update tab content
+    this.container.querySelectorAll('.tab-content').forEach(content => {
+      if (content.id === `tab-${tabName}`) {
+        content.classList.add('active');
+      } else {
+        content.classList.remove('active');
+      }
+    });
+  },
+
+  getSnippets() {
+    return {
+      'extract-regex': `// Extract text matching a regex pattern
+const match = line.match(/pattern_here/);
+return match ? match[0] : '';`,
+
+      'replace-regex': `// Replace text using regex
+return line.replace(/find_pattern/g, 'replacement');`,
+
+      'extract-between': `// Extract text between two characters
+const start = line.indexOf('[');
+const end = line.indexOf(']');
+if (start >= 0 && end > start) {
+  return line.substring(start + 1, end);
+}
+return line;`,
+
+      'split-join': `// Split by comma, join with pipe
+return line.split(',').join('|');`,
+
+      'remove-chars': `// Remove specific characters
+return line.replace(/[,;.]/g, '');`,
+
+      'extract-json': `// Extract field from JSON line
+try {
+  const obj = JSON.parse(line);
+  return obj.fieldName || '';
+} catch(e) {
+  return line;
+}`,
+
+      'reverse-line': `// Reverse the characters in line
+return line.split('').reverse().join('');`,
+
+      'keep-alpha': `// Keep only letters and spaces
+return line.replace(/[^a-zA-Z ]/g, '');`,
+
+      'keep-numeric': `// Keep only numbers
+return line.replace(/[^0-9]/g, '');`,
+
+      'capitalize-words': `// Capitalize first letter of each word
+return line.split(' ').map(w =>
+  w.charAt(0).toUpperCase() + w.slice(1)
+).join(' ');`
+    };
+  },
+
+  loadSnippet(snippetName) {
+    if (!snippetName) return;
+
+    const snippets = this.getSnippets();
+    const code = snippets[snippetName];
+
+    if (code) {
+      const textarea = this.container.querySelector('#custom-js');
+      textarea.value = code;
+
+      // Clear error
+      const errorDiv = this.container.querySelector('#custom-error');
+      errorDiv.style.display = 'none';
+    }
+  },
+
+  applySelectedOperations() {
+    // Get all checked operations in DOM order
+    const checkboxes = this.container.querySelectorAll('.op-checkbox:checked');
+
+    if (checkboxes.length === 0) {
+      return; // No operations selected
+    }
+
+    // Start with the input text
+    let currentText = this.container.querySelector('#input-text').value;
+
+    // Apply each operation sequentially
+    checkboxes.forEach(checkbox => {
+      const operation = checkbox.dataset.op;
+
+      // Temporarily set the input to current state
+      const originalInput = this.container.querySelector('#input-text').value;
+      this.container.querySelector('#input-text').value = currentText;
+
+      // Perform the operation
+      const lines = currentText.split('\n');
+      const result = this.applyOperation(operation, lines);
+
+      // Update current text with the result
+      currentText = result.join('\n');
+
+      // Restore original input
+      this.container.querySelector('#input-text').value = originalInput;
+    });
+
+    // Set the final output
+    this.setOutput(currentText);
+  },
+
+  applyOperation(operation, lines) {
+    let result = [];
+
+    switch (operation) {
+      case 'add-prefix':
+        const prefix = this.container.querySelector('#prefix-input').value;
+        result = lines.map(line => prefix + line);
+        break;
+
+      case 'add-suffix':
+        const suffix = this.container.querySelector('#suffix-input').value;
+        result = lines.map(line => line + suffix);
+        break;
+
+      case 'wrap':
+        const wrapStart = this.container.querySelector('#wrap-start').value;
+        const wrapEnd = this.container.querySelector('#wrap-end').value;
+        result = lines.map(line => wrapStart + line + wrapEnd);
+        break;
+
+      case 'remove-empty':
+        result = lines.filter(line => line.length > 0);
+        break;
+
+      case 'remove-whitespace-only':
+        result = lines.filter(line => line.trim().length > 0);
+        break;
+
+      case 'number-lines':
+        const format = this.container.querySelector('#number-format').value;
+        result = lines.map((line, i) => format.replace('1', i + 1) + line);
+        break;
+
+      case 'remove-line-numbers':
+        result = lines.map(line => line.replace(/^\s*\[?\d+[\].)]\s*/, ''));
+        break;
+
+      case 'indent':
+        const spaces = parseInt(this.container.querySelector('#indent-spaces').value) || 4;
+        const indent = ' '.repeat(spaces);
+        result = lines.map(line => indent + line);
+        break;
+
+      case 'dedent':
+        const dedentSpaces = parseInt(this.container.querySelector('#dedent-spaces').value) || 4;
+        result = lines.map(line => {
+          for (let i = 0; i < dedentSpaces; i++) {
+            if (line[0] === ' ') line = line.substring(1);
+          }
+          return line;
+        });
+        break;
+
+      case 'trim-left':
+        result = lines.map(line => line.trimStart());
+        break;
+
+      case 'trim-right':
+        result = lines.map(line => line.trimEnd());
+        break;
+
+      case 'trim-both':
+        result = lines.map(line => line.trim());
+        break;
+
+      case 'sort-asc':
+        result = [...lines].sort();
+        break;
+
+      case 'sort-desc':
+        result = [...lines].sort().reverse();
+        break;
+
+      case 'sort-length-asc':
+        result = [...lines].sort((a, b) => a.length - b.length);
+        break;
+
+      case 'sort-length-desc':
+        result = [...lines].sort((a, b) => b.length - a.length);
+        break;
+
+      case 'reverse':
+        result = [...lines].reverse();
+        break;
+
+      case 'shuffle':
+        result = [...lines].sort(() => Math.random() - 0.5);
+        break;
+
+      case 'filter-contains':
+        const pattern = this.container.querySelector('#filter-pattern').value;
+        result = lines.filter(line => line.includes(pattern));
+        break;
+
+      case 'filter-not-contains':
+        const notPattern = this.container.querySelector('#filter-pattern').value;
+        result = lines.filter(line => !line.includes(notPattern));
+        break;
+
+      case 'unique':
+        result = [...new Set(lines)];
+        break;
+
+      case 'duplicates-only':
+        const counts = {};
+        lines.forEach(line => counts[line] = (counts[line] || 0) + 1);
+        result = [...new Set(lines.filter(line => counts[line] > 1))];
+        break;
+
+      case 'uppercase':
+        result = lines.map(line => line.toUpperCase());
+        break;
+
+      case 'lowercase':
+        result = lines.map(line => line.toLowerCase());
+        break;
+
+      case 'title-case':
+        result = lines.map(line =>
+          line.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase())
+        );
+        break;
+
+      case 'quote-single':
+        result = lines.map(line => `'${line}'`);
+        break;
+
+      case 'quote-double':
+        result = lines.map(line => `"${line}"`);
+        break;
+
+      case 'comma-separate':
+        result = [lines.join(', ')];
+        break;
+
+      case 'custom-transform':
+        const customCode = this.container.querySelector('#custom-js').value.trim();
+        const errorDiv = this.container.querySelector('#custom-error');
+
+        if (!customCode) {
+          errorDiv.textContent = 'Please enter JavaScript code or select a snippet';
+          errorDiv.style.display = 'block';
+          result = lines; // Return unchanged
+        } else {
+          try {
+            // Clear previous errors
+            errorDiv.style.display = 'none';
+
+            // Create a function from the custom code
+            // The user's code should return the transformed line
+            const transformFn = new Function('line', 'index', 'lines', customCode);
+
+            // Apply transformation to each line
+            result = lines.map((line, index) => {
+              try {
+                const transformed = transformFn(line, index, lines);
+                // Handle various return types
+                if (transformed === null || transformed === undefined) {
+                  return '';
+                }
+                return String(transformed);
+              } catch (lineError) {
+                // If error on specific line, return original line
+                return line;
+              }
+            });
+
+          } catch (error) {
+            errorDiv.textContent = `Error: ${error.message}`;
+            errorDiv.style.display = 'block';
+            result = lines; // Return unchanged on error
+          }
+        }
+        break;
+
+      default:
+        result = lines;
+    }
+
+    return result;
+  },
+
+  performOperation(operation) {
+    const inputText = this.container.querySelector('#input-text').value;
+    const lines = inputText.split('\n');
+    const result = this.applyOperation(operation, lines);
+    this.setOutput(result.join('\n'));
+  },
+
+  setOutput(text) {
+    const outputText = this.container.querySelector('#output-text');
+    outputText.value = text;
+    this.updateOutputStats();
+    this.context.setOutput(text);
+  },
+
+  updateInputStats() {
+    const inputText = this.container.querySelector('#input-text').value;
+    const lines = inputText.split('\n');
+    const nonEmpty = lines.filter(line => line.trim().length > 0).length;
+
+    this.container.querySelector('#input-lines').textContent = lines.length;
+    this.container.querySelector('#input-chars').textContent = inputText.length;
+    this.container.querySelector('#input-nonempty').textContent = nonEmpty;
+  },
+
+  updateOutputStats() {
+    const outputText = this.container.querySelector('#output-text').value;
+    const lines = outputText.split('\n');
+    const nonEmpty = lines.filter(line => line.trim().length > 0).length;
+
+    this.container.querySelector('#output-lines').textContent = lines.length;
+    this.container.querySelector('#output-chars').textContent = outputText.length;
+    this.container.querySelector('#output-nonempty').textContent = nonEmpty;
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (output) {
+      navigator.clipboard.writeText(output).then(() => {
+        const btn = this.container.querySelector('#copy-output-btn');
+        const original = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = original, 2000);
+      });
+    }
+  },
+
+  useAsInput() {
+    const outputText = this.container.querySelector('#output-text').value;
+    this.container.querySelector('#input-text').value = outputText;
+    this.updateInputStats();
+  },
+
+  onInput(input, context) {
+    this.container.querySelector('#input-text').value = input;
+    this.updateInputStats();
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

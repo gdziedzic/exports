@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bimble Transforms - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "bimble-transforms",
+  "name": "Bimble Transforms",
+  "category": "Development",
+  "description": "Text manipulation and code generation using pattern-based transformation",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">Bimble Transforms</h2>
+      <p class="tool-description">Transform data using powerful pattern-based templates with $0 $1 syntax</p>
+    </div>
+
+    <div class="quick-examples">
+      <label class="section-label">Quick Examples</label>
+      <div class="examples-grid">
+        <button class="example-btn" data-example="sql-insert">SQL INSERT</button>
+        <button class="example-btn" data-example="html-table">HTML Table</button>
+        <button class="example-btn" data-example="json-array">JSON Array</button>
+        <button class="example-btn" data-example="csv-transform">CSV Transform</button>
+        <button class="example-btn" data-example="where-filter">WHERE Filter</button>
+        <button class="example-btn" data-example="url-encode">URL Encoding</button>
+      </div>
+    </div>
+
+    <div class="editor-layout">
+      <div class="left-pane">
+        <div class="tool-section">
+          <label class="section-label" for="data-input">
+            Data (CSV, TSV, or custom delimiter)
+            <span class="hint">Each row will be processed by the pattern</span>
+          </label>
+          <div class="input-controls">
+            <label class="control-label">
+              Delimiter:
+              <select id="delimiter-select">
+                <option value=",">Comma (,)</option>
+                <option value="\t">Tab (\t)</option>
+                <option value="|">Pipe (|)</option>
+                <option value=";">Semicolon (;)</option>
+                <option value=" ">Space</option>
+                <option value="custom">Custom</option>
+              </select>
+            </label>
+            <input type="text" id="custom-delimiter" placeholder="Custom delimiter" style="display: none; width: 100px;">
+            <label class="control-label">
+              <input type="checkbox" id="has-header">
+              First row is header
+            </label>
+          </div>
+          <textarea id="data-input" placeholder="id,name,email&#10;1,John Doe,john@example.com&#10;2,Jane Smith,jane@example.com"></textarea>
+        </div>
+
+        <div class="tool-section">
+          <label class="section-label" for="pattern-input">
+            Pattern
+            <span class="hint">Use $0, $1, $2 for columns; $ONCE/$EACH for control</span>
+          </label>
+          <div class="pattern-toolbar">
+            <button class="toolbar-btn" data-insert="$0">$0</button>
+            <button class="toolbar-btn" data-insert="$1">$1</button>
+            <button class="toolbar-btn" data-insert="$-1">$-1</button>
+            <button class="toolbar-btn" data-insert="$h0">$h0</button>
+            <button class="toolbar-btn" data-insert="$ONCE">$ONCE</button>
+            <button class="toolbar-btn" data-insert="$EACH">$EACH</button>
+            <button class="toolbar-btn" data-insert="$rowNum">$rowNum</button>
+          </div>
+          <textarea id="pattern-input" placeholder="$ONCE&#10;INSERT INTO Users (id, name, email) VALUES&#10;$EACH&#10;  ($0, '$1', '$2'),"></textarea>
+        </div>
+
+        <div class="tool-section">
+          <label class="section-label" for="where-input">
+            WHERE Clause (Optional)
+            <span class="hint">JavaScript expression to filter rows (e.g., $0 > 5)</span>
+          </label>
+          <input type="text" id="where-input" placeholder="$0 > 10 || $1.includes('Smith')">
+        </div>
+      </div>
+
+      <div class="right-pane">
+        <div class="tool-section">
+          <label class="section-label">
+            Output
+            <button id="copy-btn" class="inline-btn">Copy</button>
+            <button id="clear-btn" class="inline-btn secondary">Clear</button>
+          </label>
+          <div id="output"></div>
+        </div>
+
+        <div class="tool-section">
+          <label class="section-label">Syntax Reference</label>
+          <div class="syntax-ref">
+            <div class="syntax-group">
+              <strong>Column References</strong>
+              <div class="syntax-item"><code>$0</code> First column</div>
+              <div class="syntax-item"><code>$1</code> Second column</div>
+              <div class="syntax-item"><code>$-1</code> Last column</div>
+              <div class="syntax-item"><code>$h0</code> First header (if has header)</div>
+            </div>
+            <div class="syntax-group">
+              <strong>Control Keywords</strong>
+              <div class="syntax-item"><code>$ONCE</code> Output once (header/footer)</div>
+              <div class="syntax-item"><code>$EACH</code> Output for each row</div>
+              <div class="syntax-item"><code>$EACH+</code> Each row, skip header</div>
+            </div>
+            <div class="syntax-group">
+              <strong>Row Info</strong>
+              <div class="syntax-item"><code>$rowNum</code> Row number (0-based)</div>
+              <div class="syntax-item"><code>$rowNumOne</code> Row number (1-based)</div>
+              <div class="syntax-item"><code>$numColumns</code> Column count</div>
+            </div>
+            <div class="syntax-group">
+              <strong>Case Functions</strong>
+              <div class="syntax-item"><code>$0.toUpperCase()</code> UPPERCASE</div>
+              <div class="syntax-item"><code>$1.toLowerCase()</code> lowercase</div>
+              <div class="syntax-item"><code>$0.toTitleCase()</code> Title Case</div>
+              <div class="syntax-item"><code>$1.toPascalCase()</code> PascalCase</div>
+              <div class="syntax-item"><code>$2.toCamelCase()</code> camelCase</div>
+              <div class="syntax-item"><code>$0.toSnakeCase()</code> snake_case</div>
+            </div>
+            <div class="syntax-group">
+              <strong>String Functions</strong>
+              <div class="syntax-item"><code>$0.trim()</code> Remove whitespace</div>
+              <div class="syntax-item"><code>$1.replace('a','b')</code> Replace text</div>
+              <div class="syntax-item"><code>$0.substring(0,5)</code> Get substring</div>
+              <div class="syntax-item"><code>$1.indexOf('text')</code> Find position</div>
+              <div class="syntax-item"><code>$0.charAt(0)</code> Get character</div>
+              <div class="syntax-item"><code>$1.split(',')</code> Split string</div>
+              <div class="syntax-item"><code>$0.length()</code> String length</div>
+            </div>
+            <div class="syntax-group">
+              <strong>Encoding Functions</strong>
+              <div class="syntax-item"><code>$0.urlEncode()</code> URL encoding</div>
+              <div class="syntax-item"><code>$1.urlDecode()</code> URL decoding</div>
+              <div class="syntax-item"><code>$0.htmlEncode()</code> HTML encoding</div>
+              <div class="syntax-item"><code>$1.htmlDecode()</code> HTML decoding</div>
+              <div class="syntax-item"><code>$0.xmlEncode()</code> XML encoding</div>
+            </div>
+            <div class="syntax-group">
+              <strong>Math Functions</strong>
+              <div class="syntax-item"><code>$0.toInt()</code> Convert to integer</div>
+              <div class="syntax-item"><code>$1.toFloat()</code> Convert to float</div>
+              <div class="syntax-item"><code>$0.floor()</code> Round down</div>
+              <div class="syntax-item"><code>$1.ceil()</code> Round up</div>
+              <div class="syntax-item"><code>$0.round()</code> Round nearest</div>
+              <div class="syntax-item"><code>$1.abs()</code> Absolute value</div>
+            </div>
+            <div class="syntax-group">
+              <strong>WHERE Clause</strong>
+              <div class="syntax-item"><code>$0 > 5</code> Numeric comparison</div>
+              <div class="syntax-item"><code>$1 == 'text'</code> String equality</div>
+              <div class="syntax-item"><code>$0.includes('x')</code> Contains check</div>
+              <div class="syntax-item"><code>$rowNum % 2 == 0</code> Even rows</div>
+            </div>
+            <div class="syntax-group">
+              <strong>Special Characters</strong>
+              <div class="syntax-item"><code>$lt;</code> &lt;</div>
+              <div class="syntax-item"><code>$gt;</code> &gt;</div>
+              <div class="syntax-item"><code>$dollar;</code> $</div>
+              <div class="syntax-item"><code>$percent;</code> %</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .quick-examples {
+    margin-bottom: 24px;
+  }
+
+  .examples-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .example-btn {
+    padding: 8px 16px;
+    font-size: 12px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .example-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .editor-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .left-pane,
+  .right-pane {
+    min-width: 0;
+  }
+
+  .input-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 12px;
+    align-items: center;
+  }
+
+  .control-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .control-label select {
+    margin-left: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+  }
+
+  .control-label input[type="checkbox"] {
+    cursor: pointer;
+  }
+
+  .hint {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-left: 8px;
+  }
+
+  .pattern-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .toolbar-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .toolbar-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .inline-btn {
+    padding: 4px 12px;
+    font-size: 11px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+
+  .inline-btn.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+  }
+
+  #data-input,
+  #pattern-input {
+    min-height: 300px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  #output {
+    min-height: 600px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
+
+  .syntax-ref {
+    display: grid;
+    gap: 16px;
+    font-size: 12px;
+  }
+
+  .syntax-group {
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 6px;
+  }
+
+  .syntax-group strong {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .syntax-item {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 8px;
+    padding: 4px 0;
+    color: var(--text-secondary);
+  }
+
+  .syntax-item code {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 11px;
+  }
+
+  @media (max-width: 1200px) {
+    .editor-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input[type="text"],
+  select,
+  textarea {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  textarea {
+    min-height: 150px;
+    resize: vertical;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    margin-right: 8px;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+  }
+
+  button.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  button.secondary:hover {
+    background: var(--border-color);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  examples: {
+    'sql-insert': {
+      data: `id,name,email
+1,John Doe,john@example.com
+2,Jane Smith,jane@example.com
+3,Bob Johnson,bob@example.com`,
+      pattern: `$ONCE
+INSERT INTO Users (id, name, email) VALUES
+$EACH
+  ($0, '$1', '$2'),
+$ONCE
+-- End of inserts`,
+      delimiter: ',',
+      hasHeader: true
+    },
+    'html-table': {
+      data: `Product,Price,Stock
+Laptop,999.99,15
+Mouse,29.99,50
+Keyboard,79.99,30`,
+      pattern: `$ONCE
+<table>
+  <thead>
+    <tr><th>$h0</th><th>$h1</th><th>$h2</th></tr>
+  </thead>
+  <tbody>
+$EACH+
+    <tr><td>$0</td><td>$1</td><td>$2</td></tr>
+$ONCE
+  </tbody>
+</table>`,
+      delimiter: ',',
+      hasHeader: true
+    },
+    'json-array': {
+      data: `id,name,active
+1,John,true
+2,Jane,false
+3,Bob,true`,
+      pattern: `$ONCE
+[
+$EACH
+  { "id": $0, "name": "$1", "active": $2 },
+$ONCE
+]`,
+      delimiter: ',',
+      hasHeader: true
+    },
+    'csv-transform': {
+      data: `firstName,lastName,email
+john,doe,john.doe@example.com
+jane,smith,jane.smith@example.com`,
+      pattern: `$ONCE
+Full Name,Email
+$EACH+
+$0.toTitleCase() $1.toTitleCase(),$2.toLowerCase()`,
+      delimiter: ',',
+      hasHeader: true
+    },
+    'where-filter': {
+      data: `id,name,score,status
+1,John Doe,85,active
+2,Jane Smith,92,active
+3,Bob Johnson,67,inactive
+4,Alice Brown,95,active
+5,Charlie Wilson,45,inactive`,
+      pattern: `$EACH
+$1 scored $2 points`,
+      delimiter: ',',
+      hasHeader: true,
+      where: '$2 >= 90'
+    },
+    'url-encode': {
+      data: `title,url
+Hello World,https://example.com/search?q=hello world
+Special&Characters,https://example.com?a=1&b=2
+Test/Path,https://example.com/test/path`,
+      pattern: `$EACH
+<a href="$1.urlEncode()">$0</a>`,
+      delimiter: ',',
+      hasHeader: true
+    }
+  },
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const dataInput = container.querySelector("#data-input");
+    const patternInput = container.querySelector("#pattern-input");
+    const whereInput = container.querySelector("#where-input");
+    const delimiterSelect = container.querySelector("#delimiter-select");
+    const customDelimiter = container.querySelector("#custom-delimiter");
+    const hasHeaderCheck = container.querySelector("#has-header");
+    const copyBtn = container.querySelector("#copy-btn");
+    const clearBtn = container.querySelector("#clear-btn");
+
+    dataInput?.addEventListener("input", () => this.process());
+    patternInput?.addEventListener("input", () => this.process());
+    whereInput?.addEventListener("input", () => this.process());
+    delimiterSelect?.addEventListener("change", (e) => {
+      if (e.target.value === 'custom') {
+        customDelimiter.style.display = 'inline-block';
+      } else {
+        customDelimiter.style.display = 'none';
+        this.process();
+      }
+    });
+    customDelimiter?.addEventListener("input", () => this.process());
+    hasHeaderCheck?.addEventListener("change", () => this.process());
+
+    copyBtn?.addEventListener("click", () => this.copyOutput());
+    clearBtn?.addEventListener("click", () => this.clear());
+
+    // Toolbar buttons
+    container.querySelectorAll('.toolbar-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const insert = e.target.dataset.insert;
+        this.insertAtCursor(patternInput, insert);
+      });
+    });
+
+    // Example buttons
+    container.querySelectorAll('.example-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const exampleId = e.target.dataset.example;
+        this.loadExample(exampleId);
+      });
+    });
+
+    // Load default example
+    this.loadExample('sql-insert');
+  },
+
+  loadExample(exampleId) {
+    const example = this.examples[exampleId];
+    if (!example) return;
+
+    const dataInput = this.container.querySelector("#data-input");
+    const patternInput = this.container.querySelector("#pattern-input");
+    const whereInput = this.container.querySelector("#where-input");
+    const delimiterSelect = this.container.querySelector("#delimiter-select");
+    const hasHeaderCheck = this.container.querySelector("#has-header");
+
+    dataInput.value = example.data;
+    patternInput.value = example.pattern;
+    whereInput.value = example.where || '';
+    delimiterSelect.value = example.delimiter;
+    hasHeaderCheck.checked = example.hasHeader;
+
+    this.process();
+  },
+
+  insertAtCursor(textarea, text) {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const value = textarea.value;
+
+    textarea.value = value.substring(0, start) + text + value.substring(end);
+    textarea.selectionStart = textarea.selectionEnd = start + text.length;
+    textarea.focus();
+
+    this.process();
+  },
+
+  getDelimiter() {
+    const delimiterSelect = this.container.querySelector("#delimiter-select");
+    const customDelimiter = this.container.querySelector("#custom-delimiter");
+
+    if (delimiterSelect.value === 'custom') {
+      return customDelimiter.value || ',';
+    }
+
+    // Handle escaped characters
+    return delimiterSelect.value === '\\t' ? '\t' : delimiterSelect.value;
+  },
+
+  process() {
+    const dataInput = this.container.querySelector("#data-input");
+    const patternInput = this.container.querySelector("#pattern-input");
+    const whereInput = this.container.querySelector("#where-input");
+    const hasHeaderCheck = this.container.querySelector("#has-header");
+    const output = this.container.querySelector("#output");
+
+    const data = dataInput.value;
+    const pattern = patternInput.value;
+    const whereClause = whereInput.value;
+    const delimiter = this.getDelimiter();
+    const hasHeader = hasHeaderCheck.checked;
+
+    try {
+      const result = this.transform(data, pattern, delimiter, hasHeader, whereClause);
+      output.textContent = result;
+      this.context.setOutput(result);
+    } catch (error) {
+      output.textContent = `Error: ${error.message}`;
+      this.context.setOutput('');
+    }
+  },
+
+  transform(data, pattern, delimiter, hasHeader, whereClause) {
+    if (!data.trim() || !pattern.trim()) {
+      return '';
+    }
+
+    // Parse data into rows
+    const lines = data.split('\n').filter(line => line.trim());
+    const rows = lines.map(line => this.parseRow(line, delimiter));
+
+    // Extract header if present
+    const header = hasHeader ? rows[0] : null;
+    let dataRows = hasHeader ? rows.slice(1) : rows;
+
+    // Apply WHERE clause filter if provided
+    if (whereClause && whereClause.trim()) {
+      dataRows = dataRows.filter((row, index) => this.evaluateWhere(whereClause, row, index, header));
+    }
+
+    // Process pattern sections
+    const sections = this.parsePattern(pattern);
+    let result = '';
+
+    sections.forEach(section => {
+      if (section.type === 'ONCE') {
+        result += this.processOnce(section.content, header, dataRows);
+      } else if (section.type === 'EACH' || section.type === 'EACH+') {
+        const rowOutputs = dataRows.map((row, index) =>
+          this.processEach(section.content, row, index, header, dataRows.length)
+        );
+        result += this.combineRowOutputs(rowOutputs);
+      }
+    });
+
+    return result;
+  },
+
+  parseRow(line, delimiter) {
+    // Simple CSV parsing (doesn't handle quoted fields with delimiters)
+    return line.split(delimiter).map(field => field.trim());
+  },
+
+  parsePattern(pattern) {
+    const sections = [];
+    const regex = /\$(ONCE|EACH\+?)/gi;
+    let lastIndex = 0;
+    let currentType = 'EACH'; // Default to EACH
+
+    const matches = [...pattern.matchAll(regex)];
+
+    if (matches.length === 0) {
+      // No control keywords, treat entire pattern as EACH
+      sections.push({ type: 'EACH', content: pattern });
+      return sections;
+    }
+
+    matches.forEach((match, i) => {
+      const content = pattern.substring(lastIndex, match.index);
+      if (content && lastIndex > 0) {
+        sections.push({ type: currentType, content });
+      }
+      currentType = match[1].toUpperCase();
+      lastIndex = match.index + match[0].length;
+    });
+
+    // Add remaining content
+    const remaining = pattern.substring(lastIndex);
+    if (remaining) {
+      sections.push({ type: currentType, content: remaining });
+    }
+
+    return sections;
+  },
+
+  processOnce(content, header, dataRows) {
+    return this.replaceVariables(content, header || [], 0, header, dataRows.length);
+  },
+
+  processEach(content, row, rowIndex, header, totalRows) {
+    return this.replaceVariables(content, row, rowIndex, header, totalRows);
+  },
+
+  combineRowOutputs(outputs) {
+    if (!outputs || outputs.length === 0) return '';
+
+    const needsNewlines = outputs.length > 1 && !outputs.some(out => /[\\r\\n]/.test(out));
+    return needsNewlines ? outputs.join('\\n') : outputs.join('');
+  },
+
+  replaceVariables(content, row, rowIndex, header, totalRows) {
+    let result = content;
+
+    // Replace special characters
+    result = result.replace(/\$lt;/g, '<');
+    result = result.replace(/\$gt;/g, '>');
+    result = result.replace(/\$dollar;/g, '$');
+    result = result.replace(/\$percent;/g, '%');
+
+    // Replace row info
+    result = result.replace(/\$rowNum\b/g, rowIndex);
+    result = result.replace(/\$rowNumOne\b/g, rowIndex + 1);
+    result = result.replace(/\$numColumns\b/g, row.length);
+
+    // Replace header references (if header exists)
+    if (header) {
+      header.forEach((headerValue, i) => {
+        const regex = new RegExp(`\\$h${i}\\b`, 'g');
+        result = result.replace(regex, headerValue);
+      });
+    }
+
+    // Replace column references with function support
+    // Match patterns like $0, $1.toUpperCase(), $-1.trim(), etc.
+    const columnRegex = /\$(-?\d+)((?:\.\w+\([^)]*\))*)/g;
+    result = result.replace(columnRegex, (match, colIndex, functions) => {
+      let index = parseInt(colIndex);
+
+      // Handle negative indices
+      if (index < 0) {
+        index = row.length + index;
+      }
+
+      if (index < 0 || index >= row.length) {
+        return '';
+      }
+
+      let value = row[index];
+
+      // Apply functions if present
+      if (functions) {
+        value = this.applyFunctions(value, functions);
+      }
+
+      return value;
+    });
+
+    return result;
+  },
+
+  applyFunctions(value, functionChain) {
+    // Parse and apply function calls like .toUpperCase().trim()
+    const funcRegex = /\.(\w+)\(([^)]*)\)/g;
+    let result = value;
+
+    let match;
+    while ((match = funcRegex.exec(functionChain)) !== null) {
+      const funcName = match[1];
+      const args = match[2];
+
+      result = this.callFunction(result, funcName, args);
+    }
+
+    return result;
+  },
+
+  evaluateWhere(whereClause, row, rowIndex, header) {
+    try {
+      // Replace column references with actual values
+      let expression = whereClause;
+
+      // Replace $rowNum and $rowNumOne
+      expression = expression.replace(/\$rowNum\b/g, rowIndex);
+      expression = expression.replace(/\$rowNumOne\b/g, rowIndex + 1);
+
+      // Replace column references ($0, $1, $-1, etc.)
+      expression = expression.replace(/\$(-?\d+)/g, (match, colIndex) => {
+        let index = parseInt(colIndex);
+        if (index < 0) {
+          index = row.length + index;
+        }
+        if (index < 0 || index >= row.length) {
+          return '""';
+        }
+        const value = row[index];
+        // Quote strings for JavaScript evaluation
+        return isNaN(value) ? `"${value}"` : value;
+      });
+
+      // Evaluate the expression
+      return eval(expression);
+    } catch (error) {
+      console.error('WHERE clause evaluation error:', error);
+      return false;
+    }
+  },
+
+  callFunction(value, funcName, argsStr) {
+    const str = String(value);
+
+    switch (funcName) {
+      // Standard JavaScript string methods
+      case 'toUpperCase':
+        return str.toUpperCase();
+      case 'toLowerCase':
+        return str.toLowerCase();
+      case 'trim':
+        return str.trim();
+      case 'replace':
+        const args = argsStr.split(',').map(a => a.trim().replace(/^['"]|['"]$/g, ''));
+        return str.replace(new RegExp(args[0], 'g'), args[1] || '');
+      case 'substring':
+      case 'substr':
+        const subArgs = argsStr.split(',').map(a => parseInt(a.trim()));
+        return str.substring(...subArgs);
+      case 'slice':
+        const sliceArgs = argsStr.split(',').map(a => parseInt(a.trim()));
+        return str.slice(...sliceArgs);
+      case 'indexOf':
+        const searchStr = argsStr.trim().replace(/^['"]|['"]$/g, '');
+        return str.indexOf(searchStr);
+      case 'lastIndexOf':
+        const lastSearchStr = argsStr.trim().replace(/^['"]|['"]$/g, '');
+        return str.lastIndexOf(lastSearchStr);
+      case 'charAt':
+        const charIndex = parseInt(argsStr.trim());
+        return str.charAt(charIndex);
+      case 'split':
+        const delimiter = argsStr.trim().replace(/^['"]|['"]$/g, '');
+        return str.split(delimiter).join(', ');
+      case 'length':
+        return str.length;
+
+      // Custom case conversion methods
+      case 'toTitleCase':
+        return str.replace(/\w\S*/g, txt =>
+          txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+        );
+      case 'toPascalCase':
+        return str.replace(/\w+/g, word =>
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).replace(/\s+/g, '');
+      case 'toCamelCase':
+        const pascal = str.replace(/\w+/g, word =>
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).replace(/\s+/g, '');
+        return pascal.charAt(0).toLowerCase() + pascal.slice(1);
+      case 'toSnakeCase':
+        return str.replace(/\s+/g, '_').toLowerCase();
+      case 'toKebabCase':
+        return str.replace(/\s+/g, '-').toLowerCase();
+      case 'toSentenceCase':
+        return str.charAt(0).toUpperCase() + str.slice(1);
+
+      // Encoding functions
+      case 'urlEncode':
+        return encodeURIComponent(str);
+      case 'urlDecode':
+        return decodeURIComponent(str);
+      case 'htmlEncode':
+        return str.replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;')
+                  .replace(/'/g, '&#39;');
+      case 'htmlDecode':
+        return str.replace(/&amp;/g, '&')
+                  .replace(/&lt;/g, '<')
+                  .replace(/&gt;/g, '>')
+                  .replace(/&quot;/g, '"')
+                  .replace(/&#39;/g, "'");
+      case 'xmlEncode':
+        return str.replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;')
+                  .replace(/'/g, '&apos;');
+
+      // Math functions
+      case 'toInt':
+        return parseInt(str) || 0;
+      case 'toFloat':
+        return parseFloat(str) || 0;
+      case 'floor':
+        return Math.floor(parseFloat(str) || 0);
+      case 'ceil':
+        return Math.ceil(parseFloat(str) || 0);
+      case 'round':
+        return Math.round(parseFloat(str) || 0);
+      case 'abs':
+        return Math.abs(parseFloat(str) || 0);
+
+      default:
+        return str;
+    }
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (output) {
+      navigator.clipboard.writeText(output).then(() => {
+        const copyBtn = this.container.querySelector("#copy-btn");
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = "✓ Copied!";
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      });
+    }
+  },
+
+  clear() {
+    const dataInput = this.container.querySelector("#data-input");
+    const patternInput = this.container.querySelector("#pattern-input");
+    const output = this.container.querySelector("#output");
+
+    dataInput.value = '';
+    patternInput.value = '';
+    output.textContent = '';
+    this.context.setOutput('');
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
+

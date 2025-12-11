@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>T-SQL Snippets - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "tsql-snippets",
+  "name": "T-SQL Snippets",
+  "category": "Database",
+  "description": "Quick reference library for common T-SQL patterns and snippets",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">T-SQL Snippets Library</h2>
+      <p class="tool-description">Quick reference for common SQL Server patterns and code snippets</p>
+    </div>
+
+    <div class="tool-section">
+      <input type="text" id="search" placeholder="Search snippets...">
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Categories</label>
+      <div class="category-tabs">
+        <button class="category-tab active" data-category="all">All</button>
+        <button class="category-tab" data-category="queries">Queries</button>
+        <button class="category-tab" data-category="procedures">Procedures</button>
+        <button class="category-tab" data-category="tables">Tables</button>
+        <button class="category-tab" data-category="performance">Performance</button>
+        <button class="category-tab" data-category="maintenance">Maintenance</button>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <div id="snippets-list" class="snippets-list"></div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  #search {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    border: 2px solid var(--border-color);
+  }
+
+  #search:focus {
+    border-color: var(--accent);
+  }
+
+  .category-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .category-tab {
+    padding: 10px 20px;
+    margin: 0;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    font-size: 13px;
+  }
+
+  .category-tab.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .snippets-list {
+    display: grid;
+    gap: 16px;
+  }
+
+  .snippet-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .snippet-header {
+    padding: 16px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .snippet-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .snippet-category {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent);
+    color: white;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .snippet-description {
+    padding: 12px 16px;
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  .snippet-code {
+    padding: 16px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  .snippet-code pre {
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  .snippet-actions {
+    padding: 12px 16px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .copy-snippet-btn {
+    padding: 8px 16px;
+    margin: 0;
+    font-size: 13px;
+    background: var(--accent);
+    color: white;
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+  currentCategory: 'all',
+
+  snippets: [
+    {
+      title: 'Basic SELECT with JOIN',
+      category: 'queries',
+      description: 'Standard INNER JOIN query with WHERE clause',
+      code: `SELECT
+    u.UserId,
+    u.UserName,
+    u.Email,
+    o.OrderId,
+    o.OrderDate,
+    o.TotalAmount
+FROM
+    Users u
+    INNER JOIN Orders o ON u.UserId = o.UserId
+WHERE
+    o.OrderDate >= DATEADD(MONTH, -1, GETDATE())
+ORDER BY
+    o.OrderDate DESC;`
+    },
+    {
+      title: 'CTE (Common Table Expression)',
+      category: 'queries',
+      description: 'Use CTEs for complex queries and recursive operations',
+      code: `WITH RecentOrders AS (
+    SELECT
+        UserId,
+        OrderId,
+        OrderDate,
+        TotalAmount,
+        ROW_NUMBER() OVER (PARTITION BY UserId ORDER BY OrderDate DESC) AS RowNum
+    FROM
+        Orders
+)
+SELECT
+    u.UserName,
+    ro.OrderId,
+    ro.OrderDate,
+    ro.TotalAmount
+FROM
+    RecentOrders ro
+    INNER JOIN Users u ON ro.UserId = u.UserId
+WHERE
+    ro.RowNum <= 5;`
+    },
+    {
+      title: 'Stored Procedure Template',
+      category: 'procedures',
+      description: 'Complete stored procedure with error handling',
+      code: `CREATE PROCEDURE dbo.usp_GetUserOrders
+    @UserId INT,
+    @StartDate DATETIME = NULL,
+    @EndDate DATETIME = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        -- Validate parameters
+        IF @UserId IS NULL
+            THROW 50001, 'UserId cannot be null', 1;
+
+        -- Set defaults
+        SET @StartDate = ISNULL(@StartDate, DATEADD(YEAR, -1, GETDATE()));
+        SET @EndDate = ISNULL(@EndDate, GETDATE());
+
+        -- Main query
+        SELECT
+            o.OrderId,
+            o.OrderDate,
+            o.TotalAmount,
+            o.Status
+        FROM
+            Orders o
+        WHERE
+            o.UserId = @UserId
+            AND o.OrderDate BETWEEN @StartDate AND @EndDate
+        ORDER BY
+            o.OrderDate DESC;
+
+    END TRY
+    BEGIN CATCH
+        THROW;
+    END CATCH
+END;
+GO`
+    },
+    {
+      title: 'CREATE TABLE with Constraints',
+      category: 'tables',
+      description: 'Table with primary key, foreign key, and indexes',
+      code: `CREATE TABLE dbo.Orders (
+    OrderId INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT NOT NULL,
+    OrderDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    TotalAmount DECIMAL(18,2) NOT NULL,
+    Status NVARCHAR(50) NOT NULL DEFAULT 'Pending',
+    CreatedDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    ModifiedDate DATETIME2 NULL,
+    CONSTRAINT FK_Orders_Users FOREIGN KEY (UserId)
+        REFERENCES dbo.Users(UserId),
+    CONSTRAINT CK_Orders_TotalAmount CHECK (TotalAmount >= 0)
+);
+
+CREATE NONCLUSTERED INDEX IX_Orders_UserId_OrderDate
+ON dbo.Orders (UserId, OrderDate DESC);
+
+CREATE NONCLUSTERED INDEX IX_Orders_Status
+ON dbo.Orders (Status) WHERE Status = 'Pending';`
+    },
+    {
+      title: 'MERGE Statement (UPSERT)',
+      category: 'queries',
+      description: 'Insert or update based on matching condition',
+      code: `MERGE INTO dbo.ProductPrices AS target
+USING (
+    SELECT ProductId, Price, EffectiveDate
+    FROM dbo.StagingPrices
+) AS source
+ON target.ProductId = source.ProductId
+    AND target.EffectiveDate = source.EffectiveDate
+WHEN MATCHED THEN
+    UPDATE SET
+        target.Price = source.Price,
+        target.ModifiedDate = GETUTCDATE()
+WHEN NOT MATCHED BY TARGET THEN
+    INSERT (ProductId, Price, EffectiveDate, CreatedDate)
+    VALUES (source.ProductId, source.Price, source.EffectiveDate, GETUTCDATE())
+WHEN NOT MATCHED BY SOURCE THEN
+    DELETE;`
+    },
+    {
+      title: 'Find Expensive Queries',
+      category: 'performance',
+      description: 'Identify top resource-consuming queries',
+      code: `SELECT TOP 20
+    qs.total_worker_time / qs.execution_count AS avg_cpu_time,
+    qs.total_elapsed_time / qs.execution_count AS avg_elapsed_time,
+    qs.execution_count,
+    SUBSTRING(
+        qt.text,
+        (qs.statement_start_offset/2)+1,
+        ((CASE qs.statement_end_offset
+            WHEN -1 THEN DATALENGTH(qt.text)
+            ELSE qs.statement_end_offset
+        END - qs.statement_start_offset)/2)+1
+    ) AS query_text
+FROM
+    sys.dm_exec_query_stats qs
+    CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) qt
+ORDER BY
+    avg_cpu_time DESC;`
+    },
+    {
+      title: 'Index Usage Statistics',
+      category: 'performance',
+      description: 'Check which indexes are being used',
+      code: `SELECT
+    OBJECT_NAME(ius.object_id) AS TableName,
+    i.name AS IndexName,
+    ius.user_seeks,
+    ius.user_scans,
+    ius.user_lookups,
+    ius.user_updates,
+    ius.last_user_seek,
+    ius.last_user_scan
+FROM
+    sys.dm_db_index_usage_stats ius
+    INNER JOIN sys.indexes i ON ius.object_id = i.object_id
+        AND ius.index_id = i.index_id
+WHERE
+    OBJECTPROPERTY(ius.object_id, 'IsUserTable') = 1
+    AND ius.database_id = DB_ID()
+ORDER BY
+    ius.user_seeks + ius.user_scans + ius.user_lookups DESC;`
+    },
+    {
+      title: 'Database Backup',
+      category: 'maintenance',
+      description: 'Full database backup with compression',
+      code: `DECLARE @BackupPath NVARCHAR(500) = 'C:\\Backups\\';
+DECLARE @DatabaseName NVARCHAR(128) = DB_NAME();
+DECLARE @FileName NVARCHAR(500);
+
+SET @FileName = @BackupPath + @DatabaseName + '_'
+    + CONVERT(VARCHAR(20), GETDATE(), 112) + '_'
+    + REPLACE(CONVERT(VARCHAR(8), GETDATE(), 108), ':', '') + '.bak';
+
+BACKUP DATABASE @DatabaseName
+TO DISK = @FileName
+WITH
+    COMPRESSION,
+    INIT,
+    NAME = @DatabaseName + ' Full Backup',
+    DESCRIPTION = 'Full backup of ' + @DatabaseName;
+
+PRINT 'Backup completed: ' + @FileName;`
+    },
+    {
+      title: 'Transaction with Error Handling',
+      category: 'procedures',
+      description: 'Safe transaction pattern with rollback',
+      code: `BEGIN TRANSACTION;
+
+BEGIN TRY
+    -- Your operations here
+    UPDATE Users
+    SET Balance = Balance - 100
+    WHERE UserId = 1;
+
+    UPDATE Users
+    SET Balance = Balance + 100
+    WHERE UserId = 2;
+
+    -- Commit if all succeeded
+    COMMIT TRANSACTION;
+    PRINT 'Transaction committed successfully';
+END TRY
+BEGIN CATCH
+    -- Rollback on any error
+    IF @@TRANCOUNT > 0
+        ROLLBACK TRANSACTION;
+
+    -- Rethrow the error
+    DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+    DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+    DECLARE @ErrorState INT = ERROR_STATE();
+
+    RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+END CATCH;`
+    },
+    {
+      title: 'Rebuild All Indexes',
+      category: 'maintenance',
+      description: 'Rebuild fragmented indexes on a table',
+      code: `DECLARE @TableName NVARCHAR(255) = 'YourTableName';
+
+DECLARE @SQL NVARCHAR(MAX) = '';
+
+SELECT @SQL = @SQL +
+    'ALTER INDEX ' + QUOTENAME(i.name) +
+    ' ON ' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + '.' + QUOTENAME(t.name) +
+    ' REBUILD WITH (ONLINE = ON, MAXDOP = 4);' + CHAR(13)
+FROM
+    sys.indexes i
+    INNER JOIN sys.tables t ON i.object_id = t.object_id
+WHERE
+    t.name = @TableName
+    AND i.type > 0;  -- Exclude heaps
+
+PRINT @SQL;
+EXEC sp_executesql @SQL;`
+    },
+    {
+      title: 'Dynamic SQL with Parameters',
+      category: 'procedures',
+      description: 'Execute dynamic SQL safely with sp_executesql',
+      code: `DECLARE @SQL NVARCHAR(MAX);
+DECLARE @TableName NVARCHAR(128) = 'Users';
+DECLARE @MinDate DATETIME = '2024-01-01';
+DECLARE @Status NVARCHAR(50) = 'Active';
+
+SET @SQL = N'
+    SELECT
+        UserId,
+        UserName,
+        Email,
+        CreatedDate
+    FROM ' + QUOTENAME(@TableName) + '
+    WHERE
+        CreatedDate >= @MinDate
+        AND Status = @Status
+    ORDER BY
+        CreatedDate DESC;';
+
+EXEC sp_executesql
+    @SQL,
+    N'@MinDate DATETIME, @Status NVARCHAR(50)',
+    @MinDate = @MinDate,
+    @Status = @Status;`
+    },
+    {
+      title: 'Table Size and Row Count',
+      category: 'maintenance',
+      description: 'Get size information for all tables',
+      code: `SELECT
+    t.name AS TableName,
+    s.name AS SchemaName,
+    p.rows AS RowCount,
+    SUM(a.total_pages) * 8 / 1024 AS TotalSpaceMB,
+    SUM(a.used_pages) * 8 / 1024 AS UsedSpaceMB,
+    (SUM(a.total_pages) - SUM(a.used_pages)) * 8 / 1024 AS UnusedSpaceMB
+FROM
+    sys.tables t
+    INNER JOIN sys.indexes i ON t.object_id = i.object_id
+    INNER JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+    INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
+    INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE
+    t.is_ms_shipped = 0
+    AND i.object_id > 255
+GROUP BY
+    t.name, s.name, p.rows
+ORDER BY
+    TotalSpaceMB DESC;`
+    }
+  ],
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    // Search
+    const searchInput = container.querySelector("#search");
+    searchInput?.addEventListener("input", (e) => {
+      this.filterSnippets(e.target.value);
+    });
+
+    // Category tabs
+    const categoryTabs = container.querySelectorAll(".category-tab");
+    categoryTabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        categoryTabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        this.currentCategory = tab.dataset.category;
+        this.renderSnippets();
+      });
+    });
+
+    // Initial render
+    this.renderSnippets();
+  },
+
+  filterSnippets(query) {
+    const filtered = this.snippets.filter(snippet => {
+      const searchText = (snippet.title + snippet.description + snippet.code).toLowerCase();
+      return searchText.includes(query.toLowerCase());
+    });
+
+    this.renderSnippets(filtered);
+  },
+
+  renderSnippets(snippets = null) {
+    const snippetsList = this.container.querySelector("#snippets-list");
+    if (!snippetsList) return;
+
+    let toRender = snippets || this.snippets;
+
+    // Filter by category
+    if (this.currentCategory !== 'all') {
+      toRender = toRender.filter(s => s.category === this.currentCategory);
+    }
+
+    snippetsList.innerHTML = toRender.map((snippet, index) => `
+      <div class="snippet-card">
+        <div class="snippet-header">
+          <div class="snippet-title">${snippet.title}</div>
+          <span class="snippet-category">${snippet.category}</span>
+        </div>
+        <div class="snippet-description">${snippet.description}</div>
+        <div class="snippet-code"><pre>${this.escapeHtml(snippet.code)}</pre></div>
+        <div class="snippet-actions">
+          <button class="copy-snippet-btn" data-index="${index}">Copy Snippet</button>
+        </div>
+      </div>
+    `).join('');
+
+    // Attach copy handlers
+    snippetsList.querySelectorAll('.copy-snippet-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        this.copySnippet(toRender[index].code);
+        e.target.textContent = "✓ Copied!";
+        setTimeout(() => {
+          e.target.textContent = "Copy Snippet";
+        }, 2000);
+      });
+    });
+  },
+
+  copySnippet(code) {
+    navigator.clipboard.writeText(code);
+  },
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FIX Parser</title>
+  <link rel="stylesheet" href="fix-parser.css">
+</head>
+<body>
+
+<!-- Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "fix-parser",
+  "name": "FIX Parser",
+  "description": "Advanced FIX protocol parser with repeating groups, message builder, and session log analysis",
+  "category": "Developer Tools",
+  "keywords": ["fix", "parser", "financial", "protocol", "trading", "message", "decoder", "builder", "session"]
+}
+</script>
+
+<!-- UI Template -->
+<template id="tool-ui">
+  <div class="fix-parser-container">
+    <div class="input-section">
+      <div class="section-header">
+        <h3>FIX Message Input</h3>
+        <div class="controls">
+          <select id="sample-select" class="sample-select">
+            <option value="">Load Sample...</option>
+            <option value="logon">Logon (A)</option>
+            <option value="new-order">New Order - Single (D)</option>
+            <option value="execution-report">Execution Report (8)</option>
+            <option value="market-data-request">Market Data Request (V)</option>
+            <option value="market-data-snapshot">Market Data Snapshot (W)</option>
+            <option value="order-cancel">Order Cancel Request (F)</option>
+            <option value="order-cancel-replace">Order Cancel/Replace (G)</option>
+            <option value="reject">Reject (3)</option>
+            <option value="session-log">Session Log (Multiple Messages)</option>
+          </select>
+          <select id="delimiter-select" class="delimiter-select">
+            <option value="|">Pipe (|)</option>
+            <option value="SOH">SOH (^A)</option>
+            <option value="auto">Auto-detect</option>
+          </select>
+          <button id="parse-btn" class="btn btn-primary">Parse</button>
+          <button id="clear-btn" class="btn btn-secondary">Clear</button>
+        </div>
+      </div>
+      <textarea id="fix-input" class="fix-input" placeholder="Paste FIX message(s) here (e.g., 8=FIX.4.2|9=178|35=D|49=SENDER|56=TARGET|...)"></textarea>
+    </div>
+
+    <div class="output-section">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="parsed">Parsed View</button>
+        <button class="tab-btn" data-tab="builder">Message Builder</button>
+        <button class="tab-btn" data-tab="session">Session Log</button>
+        <button class="tab-btn" data-tab="raw">Raw View</button>
+        <button class="tab-btn" data-tab="json">JSON</button>
+        <button class="tab-btn" data-tab="export">Export</button>
+      </div>
+
+      <!-- Parsed View Tab -->
+      <div class="tab-content active" id="parsed-tab">
+        <div class="parsed-header">
+          <div class="field-search-container">
+            <input type="text" id="field-search" class="field-search" placeholder="Search fields...">
+          </div>
+          <div class="header-right">
+            <div class="checksum-status" id="checksum-status"></div>
+            <button id="recalc-checksum-btn" class="btn btn-secondary btn-sm">Recalculate Checksum</button>
+            <button id="recalc-bodylength-btn" class="btn btn-secondary btn-sm">Recalculate BodyLength</button>
+            <div class="message-info" id="message-info"></div>
+          </div>
+        </div>
+        <div class="parsed-output" id="parsed-output"></div>
+      </div>
+
+      <!-- Message Builder Tab -->
+      <div class="tab-content" id="builder-tab">
+        <div class="builder-form" id="builder-form">
+          <h3>Build a FIX Message</h3>
+
+          <div class="form-group">
+            <label for="builder-template">Template</label>
+            <select id="builder-template">
+              <option value="">Custom Message</option>
+              <option value="logon">Logon (A)</option>
+              <option value="heartbeat">Heartbeat (0)</option>
+              <option value="test-request">Test Request (1)</option>
+              <option value="new-order">New Order - Single (D)</option>
+              <option value="execution-report">Execution Report (8)</option>
+              <option value="order-cancel">Order Cancel Request (F)</option>
+              <option value="order-cancel-replace">Order Cancel/Replace (G)</option>
+              <option value="market-data-request">Market Data Request (V)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="builder-version">FIX Version (Tag 8)</label>
+            <select id="builder-version">
+              <option value="FIX.4.0">FIX 4.0</option>
+              <option value="FIX.4.1">FIX 4.1</option>
+              <option value="FIX.4.2" selected>FIX 4.2</option>
+              <option value="FIX.4.3">FIX 4.3</option>
+              <option value="FIX.4.4">FIX 4.4</option>
+              <option value="FIXT.1.1">FIXT 1.1</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="builder-msgtype">Message Type (Tag 35)</label>
+            <select id="builder-msgtype">
+              <option value="0">0 - Heartbeat</option>
+              <option value="1">1 - Test Request</option>
+              <option value="2">2 - Resend Request</option>
+              <option value="3">3 - Reject</option>
+              <option value="4">4 - Sequence Reset</option>
+              <option value="5">5 - Logout</option>
+              <option value="8">8 - Execution Report</option>
+              <option value="9">9 - Order Cancel Reject</option>
+              <option value="A">A - Logon</option>
+              <option value="D" selected>D - New Order - Single</option>
+              <option value="F">F - Order Cancel Request</option>
+              <option value="G">G - Order Cancel/Replace Request</option>
+              <option value="V">V - Market Data Request</option>
+              <option value="W">W - Market Data Snapshot</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="builder-sender">SenderCompID (Tag 49)</label>
+            <input type="text" id="builder-sender" value="SENDER" placeholder="Sender Company ID">
+          </div>
+
+          <div class="form-group">
+            <label for="builder-target">TargetCompID (Tag 56)</label>
+            <input type="text" id="builder-target" value="TARGET" placeholder="Target Company ID">
+          </div>
+
+          <div class="form-group">
+            <label for="builder-seqnum">MsgSeqNum (Tag 34)</label>
+            <input type="number" id="builder-seqnum" value="1" min="1">
+          </div>
+
+          <div id="builder-fields-container"></div>
+
+          <div class="form-group">
+            <button id="builder-generate-btn" class="btn btn-success">Generate Message</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Session Log Tab -->
+      <div class="tab-content" id="session-tab">
+        <div class="raw-controls">
+          <button id="parse-session-btn" class="btn btn-primary">Parse Session Log</button>
+          <button id="export-session-btn" class="btn btn-secondary">Export Session</button>
+          <span id="session-stats" style="margin-left: auto; color: var(--text-color-secondary, #6c757d);"></span>
+        </div>
+        <div class="session-log-container" id="session-log-container">
+          <p style="color: var(--text-color-secondary, #6c757d); text-align: center;">
+            Parse multiple FIX messages from a session log. Each message should be on a separate line or separated by clear delimiters.
+          </p>
+        </div>
+      </div>
+
+      <!-- Raw View Tab -->
+      <div class="tab-content" id="raw-tab">
+        <div class="raw-controls">
+          <button id="copy-raw-btn" class="btn btn-secondary">Copy</button>
+          <button id="format-raw-btn" class="btn btn-secondary">Format with Comments</button>
+          <button id="compact-raw-btn" class="btn btn-secondary">Compact</button>
+        </div>
+        <textarea id="raw-output" class="raw-output" readonly></textarea>
+      </div>
+
+      <!-- JSON Tab -->
+      <div class="tab-content" id="json-tab">
+        <div class="json-controls">
+          <button id="copy-json-btn" class="btn btn-secondary">Copy</button>
+          <button id="download-json-btn" class="btn btn-secondary">Download</button>
+        </div>
+        <pre id="json-output" class="json-output"></pre>
+      </div>
+
+      <!-- Export Tab -->
+      <div class="tab-content" id="export-tab">
+        <div class="builder-form">
+          <h3>Export Options</h3>
+          <div class="form-group">
+            <label>Export Format</label>
+            <button id="export-csv-btn" class="btn btn-primary">Export as CSV</button>
+            <small>Export parsed fields as comma-separated values</small>
+          </div>
+          <div class="form-group">
+            <label>Export as XML</label>
+            <button id="export-xml-btn" class="btn btn-primary">Export as XML (FIXML)</button>
+            <small>Export message in FIXML format</small>
+          </div>
+          <div class="form-group">
+            <label>Export as HTML Report</label>
+            <button id="export-html-btn" class="btn btn-primary">Export as HTML Report</button>
+            <small>Generate a formatted HTML report of the message</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Module -->
+<script type="module" src="fix-parser.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Pipeline Studio - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "data-pipeline-studio",
+  "name": "Data Pipeline Studio",
+  "category": "Data",
+  "description": "Visual ETL/data transformation tool with multi-format support, filtering, aggregations, and code generation",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">Data Pipeline Studio</h2>
+      <p class="tool-description">Transform, filter, aggregate, and convert data between formats with visual pipeline builder</p>
+    </div>
+
+    <div class="pipeline-workspace">
+      <div class="source-panel">
+        <div class="panel-header">
+          <h3>📥 Data Source</h3>
+          <select id="input-format" class="format-select">
+            <option value="json">JSON</option>
+            <option value="csv">CSV</option>
+            <option value="tsv">TSV</option>
+            <option value="xml">XML</option>
+            <option value="yaml">YAML</option>
+            <option value="sql">SQL Result</option>
+          </select>
+        </div>
+        <textarea id="source-data" placeholder='Paste your data here...&#10;&#10;Example JSON:&#10;[&#10;  {"name": "Alice", "age": 30, "city": "NYC"},&#10;  {"name": "Bob", "age": 25, "city": "LA"}&#10;]'></textarea>
+        <div class="data-info" id="source-info">
+          <span class="info-badge">Records: 0</span>
+          <span class="info-badge">Fields: 0</span>
+        </div>
+      </div>
+
+      <div class="transform-panel">
+        <div class="panel-header">
+          <h3>⚡ Transformations</h3>
+          <button id="add-transform-btn" class="add-btn">+ Add Step</button>
+        </div>
+
+        <div id="transform-pipeline" class="pipeline-steps">
+          <div class="empty-state">
+            <div class="empty-icon">🔧</div>
+            <p>No transformations yet</p>
+            <p class="hint">Click "+ Add Step" to build your pipeline</p>
+          </div>
+        </div>
+
+        <div class="transform-library" id="transform-library" style="display: none;">
+          <div class="library-header">
+            <h4>Available Transformations</h4>
+            <button id="close-library-btn" class="close-btn">✕</button>
+          </div>
+          <div class="transform-categories">
+            <div class="category">
+              <h5>🔍 Filter & Select</h5>
+              <button class="transform-card" data-type="filter">
+                <strong>Filter Rows</strong>
+                <span>Keep/remove rows by condition</span>
+              </button>
+              <button class="transform-card" data-type="select">
+                <strong>Select Columns</strong>
+                <span>Choose specific fields</span>
+              </button>
+              <button class="transform-card" data-type="limit">
+                <strong>Limit Rows</strong>
+                <span>Take first N records</span>
+              </button>
+            </div>
+            <div class="category">
+              <h5>🔄 Transform Data</h5>
+              <button class="transform-card" data-type="map">
+                <strong>Map/Rename</strong>
+                <span>Rename or compute fields</span>
+              </button>
+              <button class="transform-card" data-type="split">
+                <strong>Split Column</strong>
+                <span>Split by delimiter</span>
+              </button>
+              <button class="transform-card" data-type="merge">
+                <strong>Merge Columns</strong>
+                <span>Combine multiple fields</span>
+              </button>
+            </div>
+            <div class="category">
+              <h5>📊 Aggregate</h5>
+              <button class="transform-card" data-type="groupby">
+                <strong>Group By</strong>
+                <span>Aggregate by field</span>
+              </button>
+              <button class="transform-card" data-type="sort">
+                <strong>Sort</strong>
+                <span>Order by field(s)</span>
+              </button>
+              <button class="transform-card" data-type="distinct">
+                <strong>Distinct</strong>
+                <span>Remove duplicates</span>
+              </button>
+            </div>
+            <div class="category">
+              <h5>🛠️ Advanced</h5>
+              <button class="transform-card" data-type="pivot">
+                <strong>Pivot Table</strong>
+                <span>Reshape data</span>
+              </button>
+              <button class="transform-card" data-type="join">
+                <strong>Join</strong>
+                <span>Merge with another dataset</span>
+              </button>
+              <button class="transform-card" data-type="custom">
+                <strong>Custom Transform</strong>
+                <span>JavaScript expression</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="output-panel">
+        <div class="panel-header">
+          <h3>📤 Output</h3>
+          <select id="output-format" class="format-select">
+            <option value="json">JSON</option>
+            <option value="csv">CSV</option>
+            <option value="tsv">TSV</option>
+            <option value="xml">XML</option>
+            <option value="yaml">YAML</option>
+            <option value="sql">SQL INSERT</option>
+            <option value="html">HTML Table</option>
+            <option value="markdown">Markdown Table</option>
+          </select>
+        </div>
+        <div id="output-data" class="output-viewer"></div>
+        <div class="data-info" id="output-info">
+          <span class="info-badge">Records: 0</span>
+          <span class="info-badge">Fields: 0</span>
+        </div>
+        <div class="output-actions">
+          <button id="execute-btn" class="execute-btn">▶ Execute Pipeline</button>
+          <button id="copy-output-btn" class="action-btn">📋 Copy</button>
+          <button id="download-output-btn" class="action-btn">💾 Download</button>
+          <button id="generate-code-btn" class="action-btn">⚙️ Generate Code</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="examples-section">
+      <label class="section-label">Quick Start Examples</label>
+      <div class="examples-grid">
+        <button class="example-btn" data-example="csv-to-json">
+          <strong>CSV → JSON</strong>
+          <span>Convert CSV to JSON array</span>
+        </button>
+        <button class="example-btn" data-example="filter-aggregate">
+          <strong>Filter & Aggregate</strong>
+          <span>Filter and group data</span>
+        </button>
+        <button class="example-btn" data-example="pivot-table">
+          <strong>Pivot Table</strong>
+          <span>Reshape sales data</span>
+        </button>
+        <button class="example-btn" data-example="sql-generator">
+          <strong>SQL Generator</strong>
+          <span>Generate INSERT statements</span>
+        </button>
+        <button class="example-btn" data-example="data-cleaning">
+          <strong>Data Cleaning</strong>
+          <span>Remove nulls, trim, format</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .pipeline-workspace {
+    display: grid;
+    grid-template-columns: 1fr 400px 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .source-panel,
+  .transform-panel,
+  .output-panel {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .panel-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .format-select {
+    padding: 6px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  #source-data {
+    flex: 1;
+    min-height: 500px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--text-primary);
+    resize: vertical;
+  }
+
+  .data-info {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .info-badge {
+    padding: 4px 10px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .add-btn {
+    padding: 6px 12px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .add-btn:hover {
+    opacity: 0.9;
+  }
+
+  .pipeline-steps {
+    flex: 1;
+    min-height: 400px;
+    overflow-y: auto;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  .empty-state .hint {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .pipeline-step {
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+
+  .pipeline-step.active {
+    border-color: var(--accent);
+  }
+
+  .step-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .step-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .step-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .step-btn {
+    padding: 4px 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+
+  .step-btn:hover {
+    color: var(--text-primary);
+  }
+
+  .step-config {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .step-config input,
+  .step-config select {
+    width: 100%;
+    padding: 6px;
+    margin-top: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .transform-library {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    padding: 16px;
+    z-index: 10;
+    overflow-y: auto;
+  }
+
+  .library-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .library-header h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .close-btn {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--text-secondary);
+  }
+
+  .transform-categories {
+    display: grid;
+    gap: 16px;
+  }
+
+  .category h5 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .transform-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    margin-bottom: 6px;
+  }
+
+  .transform-card:hover {
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+  }
+
+  .transform-card strong {
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+
+  .transform-card span {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .output-viewer {
+    flex: 1;
+    min-height: 500px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    overflow: auto;
+    white-space: pre-wrap;
+    color: var(--text-primary);
+  }
+
+  .output-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .execute-btn {
+    flex: 1;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .execute-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+  }
+
+  .action-btn {
+    padding: 12px 16px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .action-btn:hover {
+    background: var(--border-color);
+  }
+
+  .examples-section {
+    padding-top: 24px;
+    border-top: 2px solid var(--border-color);
+  }
+
+  .examples-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .example-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+
+  .example-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .example-btn strong {
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+
+  .example-btn span {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 1400px) {
+    .pipeline-workspace {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 36px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  button {
+    font-family: var(--font-sans);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+  sourceData: [],
+  pipeline: [],
+  outputData: [],
+
+  examples: {
+    'csv-to-json': {
+      format: 'csv',
+      data: `name,age,city,salary
+Alice,30,New York,75000
+Bob,25,Los Angeles,65000
+Charlie,35,Chicago,80000
+Diana,28,Houston,70000`,
+      steps: [],
+      outputFormat: 'json'
+    },
+    'filter-aggregate': {
+      format: 'json',
+      data: JSON.stringify([
+        { name: 'Alice', department: 'Engineering', salary: 75000 },
+        { name: 'Bob', department: 'Sales', salary: 65000 },
+        { name: 'Charlie', department: 'Engineering', salary: 80000 },
+        { name: 'Diana', department: 'Sales', salary: 70000 },
+        { name: 'Eve', department: 'Engineering', salary: 85000 }
+      ], null, 2),
+      steps: [
+        { type: 'filter', config: { condition: 'item.salary > 70000' } },
+        { type: 'groupby', config: { field: 'department', aggregation: 'count' } }
+      ],
+      outputFormat: 'json'
+    },
+    'pivot-table': {
+      format: 'json',
+      data: JSON.stringify([
+        { product: 'Laptop', region: 'North', quarter: 'Q1', sales: 15000 },
+        { product: 'Laptop', region: 'South', quarter: 'Q1', sales: 12000 },
+        { product: 'Phone', region: 'North', quarter: 'Q1', sales: 8000 },
+        { product: 'Phone', region: 'South', quarter: 'Q1', sales: 9500 },
+        { product: 'Tablet', region: 'North', quarter: 'Q1', sales: 6000 },
+        { product: 'Tablet', region: 'South', quarter: 'Q1', sales: 7200 }
+      ], null, 2),
+      steps: [
+        { type: 'groupby', config: { field: 'product', aggregation: 'count' } },
+        { type: 'sort', config: { field: 'product', order: 'asc' } }
+      ],
+      outputFormat: 'json'
+    },
+    'sql-generator': {
+      format: 'json',
+      data: JSON.stringify([
+        { id: 1, username: 'alice', email: 'alice@example.com', active: true },
+        { id: 2, username: 'bob', email: 'bob@example.com', active: true },
+        { id: 3, username: 'charlie', email: 'charlie@example.com', active: false }
+      ], null, 2),
+      steps: [
+        { type: 'filter', config: { condition: 'item.active === true' } }
+      ],
+      outputFormat: 'sql'
+    },
+    'data-cleaning': {
+      format: 'csv',
+      data: `name,email,age,city
+Alice,alice@example.com,30,New York
+Bob,bob@example.com,25,Los Angeles
+Charlie,charlie@example.com,35,Chicago
+Diana,diana@example.com,28,Houston
+Eve,eve@example.com,32,Miami
+Frank,frank@example.com,45,Seattle`,
+      steps: [
+        { type: 'filter', config: { condition: 'item.age && item.age < 40' } },
+        { type: 'select', config: { fields: 'name,email,city' } },
+        { type: 'sort', config: { field: 'name', order: 'asc' } }
+      ],
+      outputFormat: 'json'
+    }
+  },
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    // Source data input
+    container.querySelector('#source-data')?.addEventListener('input', (e) => {
+      this.parseSourceData();
+    });
+
+    // Format selectors
+    container.querySelector('#input-format')?.addEventListener('change', () => this.parseSourceData());
+    container.querySelector('#output-format')?.addEventListener('change', () => this.executePipeline());
+
+    // Transform library
+    container.querySelector('#add-transform-btn')?.addEventListener('click', () => this.showTransformLibrary());
+    container.querySelector('#close-library-btn')?.addEventListener('click', () => this.hideTransformLibrary());
+
+    container.querySelectorAll('.transform-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        const type = e.currentTarget.dataset.type;
+        this.addTransformStep(type);
+        this.hideTransformLibrary();
+      });
+    });
+
+    // Execute pipeline
+    container.querySelector('#execute-btn')?.addEventListener('click', () => this.executePipeline());
+
+    // Output actions
+    container.querySelector('#copy-output-btn')?.addEventListener('click', () => this.copyOutput());
+    container.querySelector('#download-output-btn')?.addEventListener('click', () => this.downloadOutput());
+    container.querySelector('#generate-code-btn')?.addEventListener('click', () => this.generateCode());
+
+    // Examples
+    container.querySelectorAll('.example-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const exampleId = e.currentTarget.dataset.example;
+        this.loadExample(exampleId);
+      });
+    });
+
+    // Load default example
+    this.loadExample('csv-to-json');
+  },
+
+  parseSourceData() {
+    const sourceInput = this.container.querySelector('#source-data').value;
+    const format = this.container.querySelector('#input-format').value;
+
+    try {
+      if (format === 'json') {
+        this.sourceData = JSON.parse(sourceInput);
+      } else if (format === 'csv' || format === 'tsv') {
+        const delimiter = format === 'csv' ? ',' : '\t';
+        this.sourceData = this.parseCSV(sourceInput, delimiter);
+      } else if (format === 'yaml') {
+        // Simplified YAML parsing
+        this.sourceData = JSON.parse(sourceInput); // Would need proper YAML parser
+      } else {
+        this.sourceData = [];
+      }
+
+      this.updateSourceInfo();
+    } catch (error) {
+      console.error('Parse error:', error);
+      this.sourceData = [];
+    }
+  },
+
+  parseCSV(text, delimiter) {
+    const lines = text.trim().split('\n');
+    if (lines.length === 0) return [];
+
+    const headers = lines[0].split(delimiter).map(h => h.trim());
+    const result = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(delimiter);
+      const row = {};
+      headers.forEach((header, index) => {
+        row[header] = values[index]?.trim() || '';
+      });
+      result.push(row);
+    }
+
+    return result;
+  },
+
+  updateSourceInfo() {
+    const info = this.container.querySelector('#source-info');
+    const records = Array.isArray(this.sourceData) ? this.sourceData.length : 0;
+    const fields = records > 0 ? Object.keys(this.sourceData[0]).length : 0;
+
+    info.innerHTML = `
+      <span class="info-badge">Records: ${records}</span>
+      <span class="info-badge">Fields: ${fields}</span>
+    `;
+  },
+
+  showTransformLibrary() {
+    this.container.querySelector('#transform-library').style.display = 'block';
+  },
+
+  hideTransformLibrary() {
+    this.container.querySelector('#transform-library').style.display = 'none';
+  },
+
+  addTransformStep(type) {
+    const step = { type, config: this.getDefaultConfig(type) };
+    this.pipeline.push(step);
+    this.renderPipeline();
+  },
+
+  getDefaultConfig(type) {
+    const configs = {
+      filter: { condition: 'value > 0' },
+      select: { fields: '' },
+      limit: { count: 10 },
+      map: { from: '', to: '' },
+      split: { field: '', delimiter: ',' },
+      merge: { fields: '', separator: ' ', newField: '' },
+      groupby: { field: '', aggregation: 'count' },
+      sort: { field: '', order: 'asc' },
+      distinct: { field: '' },
+      pivot: { index: '', columns: '', values: '' },
+      join: { type: 'inner', key: '' },
+      custom: { expression: 'return item;' }
+    };
+    return configs[type] || {};
+  },
+
+  renderPipeline() {
+    const container = this.container.querySelector('#transform-pipeline');
+
+    if (this.pipeline.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔧</div>
+          <p>No transformations yet</p>
+          <p class="hint">Click "+ Add Step" to build your pipeline</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = this.pipeline.map((step, index) => `
+      <div class="pipeline-step" data-index="${index}">
+        <div class="step-header">
+          <div class="step-title">${this.getStepTitle(step.type)}</div>
+          <div class="step-actions">
+            <button class="step-btn" onclick="DevChefTool.moveStep(${index}, -1)">↑</button>
+            <button class="step-btn" onclick="DevChefTool.moveStep(${index}, 1)">↓</button>
+            <button class="step-btn" onclick="DevChefTool.removeStep(${index})">✕</button>
+          </div>
+        </div>
+        <div class="step-config">
+          ${this.renderStepConfig(step, index)}
+        </div>
+      </div>
+    `).join('');
+  },
+
+  getStepTitle(type) {
+    const titles = {
+      filter: '🔍 Filter Rows',
+      select: '📋 Select Columns',
+      limit: '✂️ Limit Rows',
+      map: '🔄 Map/Rename',
+      split: '✂️ Split Column',
+      merge: '🔗 Merge Columns',
+      groupby: '📊 Group By',
+      sort: '↕️ Sort',
+      distinct: '🎯 Distinct',
+      pivot: '🔄 Pivot',
+      join: '🔗 Join',
+      custom: '⚙️ Custom'
+    };
+    return titles[type] || type;
+  },
+
+  renderStepConfig(step, index) {
+    // Simplified config rendering
+    return Object.entries(step.config).map(([key, value]) => `
+      <div>
+        <label>${key}:</label>
+        <input type="text" value="${value}" onchange="DevChefTool.updateStepConfig(${index}, '${key}', this.value)">
+      </div>
+    `).join('');
+  },
+
+  updateStepConfig(index, key, value) {
+    if (this.pipeline[index]) {
+      this.pipeline[index].config[key] = value;
+    }
+  },
+
+  moveStep(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= this.pipeline.length) return;
+
+    [this.pipeline[index], this.pipeline[newIndex]] = [this.pipeline[newIndex], this.pipeline[index]];
+    this.renderPipeline();
+  },
+
+  removeStep(index) {
+    this.pipeline.splice(index, 1);
+    this.renderPipeline();
+  },
+
+  executePipeline() {
+    let data = [...this.sourceData];
+
+    // Execute each step
+    for (const step of this.pipeline) {
+      data = this.executeStep(data, step);
+    }
+
+    this.outputData = data;
+    this.renderOutput();
+  },
+
+  executeStep(data, step) {
+    switch (step.type) {
+      case 'filter':
+        return data.filter(item => {
+          try {
+            return eval(step.config.condition.replace(/value/g, 'item'));
+          } catch {
+            return true;
+          }
+        });
+
+      case 'select':
+        const fields = step.config.fields.split(',').map(f => f.trim());
+        return data.map(item => {
+          const newItem = {};
+          fields.forEach(field => {
+            if (item.hasOwnProperty(field)) {
+              newItem[field] = item[field];
+            }
+          });
+          return newItem;
+        });
+
+      case 'limit':
+        return data.slice(0, parseInt(step.config.count) || 10);
+
+      case 'sort':
+        const field = step.config.field;
+        const order = step.config.order;
+        return [...data].sort((a, b) => {
+          if (order === 'asc') {
+            return a[field] > b[field] ? 1 : -1;
+          } else {
+            return a[field] < b[field] ? 1 : -1;
+          }
+        });
+
+      case 'groupby':
+        const groupField = step.config.field;
+        const aggregation = step.config.aggregation;
+        const groups = {};
+
+        data.forEach(item => {
+          const key = item[groupField];
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(item);
+        });
+
+        return Object.entries(groups).map(([key, items]) => ({
+          [groupField]: key,
+          count: items.length
+        }));
+
+      case 'distinct':
+        const distinctField = step.config.field;
+        if (!distinctField) {
+          // Remove duplicate rows entirely
+          return Array.from(new Set(data.map(JSON.stringify))).map(JSON.parse);
+        }
+        // Remove duplicates based on specific field
+        const seen = new Set();
+        return data.filter(item => {
+          const value = item[distinctField];
+          if (seen.has(value)) return false;
+          seen.add(value);
+          return true;
+        });
+
+      case 'map':
+        const fromField = step.config.from;
+        const toField = step.config.to;
+        if (!fromField || !toField) return data;
+        return data.map(item => {
+          const newItem = { ...item };
+          newItem[toField] = newItem[fromField];
+          if (fromField !== toField) {
+            delete newItem[fromField];
+          }
+          return newItem;
+        });
+
+      case 'split':
+        const splitField = step.config.field;
+        const delimiter = step.config.delimiter || ',';
+        if (!splitField) return data;
+        return data.map(item => {
+          const newItem = { ...item };
+          const value = String(item[splitField] || '');
+          const parts = value.split(delimiter);
+          parts.forEach((part, index) => {
+            newItem[`${splitField}_${index + 1}`] = part.trim();
+          });
+          return newItem;
+        });
+
+      case 'merge':
+        const mergeFields = step.config.fields?.split(',').map(f => f.trim()) || [];
+        const separator = step.config.separator || ' ';
+        const newField = step.config.newField || 'merged';
+        if (mergeFields.length === 0) return data;
+        return data.map(item => {
+          const newItem = { ...item };
+          newItem[newField] = mergeFields.map(f => item[f] || '').join(separator);
+          return newItem;
+        });
+
+      case 'custom':
+        try {
+          const transformFn = new Function('item', step.config.expression);
+          return data.map(item => transformFn(item) || item);
+        } catch (error) {
+          console.error('Custom transform error:', error);
+          return data;
+        }
+
+      default:
+        return data;
+    }
+  },
+
+  renderOutput() {
+    const format = this.container.querySelector('#output-format').value;
+    const viewer = this.container.querySelector('#output-data');
+    let output = '';
+
+    try {
+      if (format === 'json') {
+        output = JSON.stringify(this.outputData, null, 2);
+      } else if (format === 'csv' || format === 'tsv') {
+        const delimiter = format === 'csv' ? ',' : '\t';
+        output = this.toCSV(this.outputData, delimiter);
+      } else if (format === 'sql') {
+        output = this.toSQL(this.outputData);
+      } else if (format === 'html') {
+        output = this.toHTMLTable(this.outputData);
+      } else if (format === 'markdown') {
+        output = this.toMarkdownTable(this.outputData);
+      }
+
+      viewer.textContent = output;
+      this.context.setOutput(output);
+      this.updateOutputInfo();
+    } catch (error) {
+      viewer.textContent = `Error: ${error.message}`;
+    }
+  },
+
+  toCSV(data, delimiter) {
+    if (data.length === 0) return '';
+
+    const headers = Object.keys(data[0]);
+    const rows = data.map(item =>
+      headers.map(h => `"${item[h] || ''}"`).join(delimiter)
+    );
+
+    return [headers.join(delimiter), ...rows].join('\n');
+  },
+
+  toSQL(data, tableName = 'data') {
+    if (data.length === 0) return '';
+
+    const headers = Object.keys(data[0]);
+    const inserts = data.map(item => {
+      const values = headers.map(h => `'${item[h]}'`).join(', ');
+      return `INSERT INTO ${tableName} (${headers.join(', ')}) VALUES (${values});`;
+    });
+
+    return inserts.join('\n');
+  },
+
+  toHTMLTable(data) {
+    if (data.length === 0) return '';
+
+    const headers = Object.keys(data[0]);
+    const headerRow = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+    const dataRows = data.map(item =>
+      '<tr>' + headers.map(h => `<td>${item[h]}</td>`).join('') + '</tr>'
+    ).join('\n');
+
+    return `<table>\n  <thead>\n    ${headerRow}\n  </thead>\n  <tbody>\n    ${dataRows}\n  </tbody>\n</table>`;
+  },
+
+  toMarkdownTable(data) {
+    if (data.length === 0) return '';
+
+    const headers = Object.keys(data[0]);
+    const headerRow = '| ' + headers.join(' | ') + ' |';
+    const separator = '| ' + headers.map(() => '---').join(' | ') + ' |';
+    const dataRows = data.map(item =>
+      '| ' + headers.map(h => item[h]).join(' | ') + ' |'
+    ).join('\n');
+
+    return [headerRow, separator, dataRows].join('\n');
+  },
+
+  updateOutputInfo() {
+    const info = this.container.querySelector('#output-info');
+    const records = Array.isArray(this.outputData) ? this.outputData.length : 0;
+    const fields = records > 0 ? Object.keys(this.outputData[0]).length : 0;
+
+    info.innerHTML = `
+      <span class="info-badge">Records: ${records}</span>
+      <span class="info-badge">Fields: ${fields}</span>
+    `;
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (output) {
+      navigator.clipboard.writeText(output).then(() => {
+        const btn = this.container.querySelector('#copy-output-btn');
+        const original = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = original, 2000);
+      });
+    }
+  },
+
+  downloadOutput() {
+    const output = this.context.getOutput();
+    const format = this.container.querySelector('#output-format').value;
+
+    const extensions = {
+      json: 'json',
+      csv: 'csv',
+      tsv: 'tsv',
+      xml: 'xml',
+      yaml: 'yaml',
+      sql: 'sql',
+      html: 'html',
+      markdown: 'md'
+    };
+
+    const ext = extensions[format] || 'txt';
+    const filename = `transformed-data.${ext}`;
+
+    const blob = new Blob([output], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  generateCode() {
+    alert('Code generation feature: Generate Python/JavaScript/SQL code for your pipeline. Coming in next update!');
+  },
+
+  loadExample(exampleId) {
+    const example = this.examples[exampleId];
+    if (!example) return;
+
+    const sourceData = this.container.querySelector('#source-data');
+    const inputFormat = this.container.querySelector('#input-format');
+    const outputFormat = this.container.querySelector('#output-format');
+
+    sourceData.value = example.data;
+    inputFormat.value = example.format;
+    outputFormat.value = example.outputFormat;
+
+    this.pipeline = example.steps || [];
+    this.parseSourceData();
+    this.renderPipeline();
+    this.executePipeline();
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+
+// Make functions globally accessible for inline event handlers
+if (typeof window !== 'undefined') {
+  window.DevChefTool = DevChefTool;
+}
+</script>
+
+</body>
+</html>

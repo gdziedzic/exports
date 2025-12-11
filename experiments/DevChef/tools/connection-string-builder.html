@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connection String Builder - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "connection-string-builder",
+  "name": "Connection String",
+  "category": "Database",
+  "description": "Build and test SQL Server connection strings",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">SQL Server Connection String Builder</h2>
+      <p class="tool-description">Build and validate connection strings for SQL Server</p>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Authentication Type</label>
+      <div class="auth-type-toggle">
+        <button id="sql-auth-btn" class="auth-btn active">SQL Authentication</button>
+        <button id="windows-auth-btn" class="auth-btn">Windows Authentication</button>
+        <button id="azure-auth-btn" class="auth-btn">Azure AD</button>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Server Settings</label>
+      <div class="settings-grid">
+        <div class="setting-item">
+          <label for="server">Server</label>
+          <input type="text" id="server" value="localhost" placeholder="localhost or server\\instance">
+        </div>
+        <div class="setting-item">
+          <label for="port">Port (optional)</label>
+          <input type="number" id="port" placeholder="1433">
+        </div>
+        <div class="setting-item">
+          <label for="database">Database</label>
+          <input type="text" id="database" placeholder="DatabaseName">
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-section" id="sql-auth-section">
+      <label class="section-label">SQL Authentication</label>
+      <div class="settings-grid">
+        <div class="setting-item">
+          <label for="username">User ID</label>
+          <input type="text" id="username" placeholder="sa">
+        </div>
+        <div class="setting-item">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Password">
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Advanced Options</label>
+      <div class="advanced-options">
+        <label>
+          <input type="checkbox" id="encrypt">
+          <span>Encrypt</span>
+        </label>
+        <label>
+          <input type="checkbox" id="trust-server-certificate">
+          <span>Trust Server Certificate</span>
+        </label>
+        <label>
+          <input type="checkbox" id="multiple-active-result-sets">
+          <span>MultipleActiveResultSets</span>
+        </label>
+        <label>
+          <input type="checkbox" id="persist-security-info">
+          <span>Persist Security Info</span>
+        </label>
+      </div>
+      <div class="settings-grid" style="margin-top: 12px;">
+        <div class="setting-item">
+          <label for="connection-timeout">Connection Timeout (sec)</label>
+          <input type="number" id="connection-timeout" value="30">
+        </div>
+        <div class="setting-item">
+          <label for="application-name">Application Name</label>
+          <input type="text" id="application-name" placeholder="MyApp">
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <button id="build-btn">Build Connection String</button>
+      <button id="copy-btn" class="secondary">Copy</button>
+      <button id="test-btn" class="secondary">Test Format</button>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Connection String</label>
+      <textarea id="connection-string" readonly></textarea>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Common Templates</label>
+      <div class="templates-grid">
+        <div class="template-card" data-template="local">
+          <h4>Local Development</h4>
+          <p>localhost with SQL auth</p>
+          <button class="template-btn">Load</button>
+        </div>
+        <div class="template-card" data-template="production">
+          <h4>Production</h4>
+          <p>Encrypted, trusted cert</p>
+          <button class="template-btn">Load</button>
+        </div>
+        <div class="template-card" data-template="azure">
+          <h4>Azure SQL</h4>
+          <p>Azure SQL Database</p>
+          <button class="template-btn">Load</button>
+        </div>
+        <div class="template-card" data-template="localdb">
+          <h4>LocalDB</h4>
+          <p>SQL Server LocalDB</p>
+          <button class="template-btn">Load</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Format Examples</label>
+      <div class="examples-list">
+        <div class="example-item">
+          <div class="example-title">Standard SQL Auth</div>
+          <code>Server=myserver;Database=mydb;User Id=sa;Password=pass123;</code>
+        </div>
+        <div class="example-item">
+          <div class="example-title">Windows Authentication</div>
+          <code>Server=myserver;Database=mydb;Integrated Security=true;</code>
+        </div>
+        <div class="example-item">
+          <div class="example-title">Azure SQL with Encryption</div>
+          <code>Server=myserver.database.windows.net;Database=mydb;User Id=user@myserver;Password=pass;Encrypt=true;</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .auth-type-toggle {
+    display: flex;
+    gap: 8px;
+  }
+
+  .auth-btn {
+    flex: 1;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    margin: 0;
+  }
+
+  .auth-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .setting-item label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  .advanced-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .advanced-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .advanced-options input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+  }
+
+  #connection-string {
+    min-height: 120px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  .templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .template-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s;
+  }
+
+  .template-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .template-card h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    color: var(--text-primary);
+  }
+
+  .template-card p {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .template-btn {
+    width: 100%;
+    margin: 0;
+    padding: 8px;
+    font-size: 13px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .template-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  .examples-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .example-item {
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+  }
+
+  .example-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+
+  .example-item code {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-primary);
+    word-break: break-all;
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input, textarea {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    margin-right: 8px;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+  }
+
+  button.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  button.secondary:hover {
+    background: var(--border-color);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+  authType: 'sql',
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const buildBtn = container.querySelector("#build-btn");
+    const copyBtn = container.querySelector("#copy-btn");
+    const testBtn = container.querySelector("#test-btn");
+
+    buildBtn?.addEventListener("click", () => this.buildConnectionString());
+    copyBtn?.addEventListener("click", () => this.copyConnectionString());
+    testBtn?.addEventListener("click", () => this.testFormat());
+
+    // Auth type buttons
+    const sqlAuthBtn = container.querySelector("#sql-auth-btn");
+    const windowsAuthBtn = container.querySelector("#windows-auth-btn");
+    const azureAuthBtn = container.querySelector("#azure-auth-btn");
+
+    sqlAuthBtn?.addEventListener("click", () => this.setAuthType('sql'));
+    windowsAuthBtn?.addEventListener("click", () => this.setAuthType('windows'));
+    azureAuthBtn?.addEventListener("click", () => this.setAuthType('azure'));
+
+    // Template buttons
+    const templateBtns = container.querySelectorAll(".template-btn");
+    templateBtns.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const card = e.target.closest(".template-card");
+        const template = card?.dataset.template;
+        if (template) this.loadTemplate(template);
+      });
+    });
+
+    // Initial build
+    this.buildConnectionString();
+  },
+
+  setAuthType(type) {
+    this.authType = type;
+
+    const sqlAuthBtn = this.container.querySelector("#sql-auth-btn");
+    const windowsAuthBtn = this.container.querySelector("#windows-auth-btn");
+    const azureAuthBtn = this.container.querySelector("#azure-auth-btn");
+    const sqlAuthSection = this.container.querySelector("#sql-auth-section");
+
+    sqlAuthBtn?.classList.remove('active');
+    windowsAuthBtn?.classList.remove('active');
+    azureAuthBtn?.classList.remove('active');
+
+    if (type === 'sql') {
+      sqlAuthBtn?.classList.add('active');
+      sqlAuthSection.style.display = 'block';
+    } else if (type === 'windows') {
+      windowsAuthBtn?.classList.add('active');
+      sqlAuthSection.style.display = 'none';
+    } else if (type === 'azure') {
+      azureAuthBtn?.classList.add('active');
+      sqlAuthSection.style.display = 'block';
+    }
+  },
+
+  buildConnectionString() {
+    const server = this.container.querySelector("#server")?.value || 'localhost';
+    const port = this.container.querySelector("#port")?.value;
+    const database = this.container.querySelector("#database")?.value || '';
+    const username = this.container.querySelector("#username")?.value || '';
+    const password = this.container.querySelector("#password")?.value || '';
+    const encrypt = this.container.querySelector("#encrypt")?.checked || false;
+    const trustCert = this.container.querySelector("#trust-server-certificate")?.checked || false;
+    const mars = this.container.querySelector("#multiple-active-result-sets")?.checked || false;
+    const persistSecurity = this.container.querySelector("#persist-security-info")?.checked || false;
+    const timeout = this.container.querySelector("#connection-timeout")?.value || '30';
+    const appName = this.container.querySelector("#application-name")?.value || '';
+
+    let connStr = '';
+
+    // Server
+    let serverPart = server;
+    if (port) {
+      serverPart += `,${port}`;
+    }
+    connStr += `Server=${serverPart};`;
+
+    // Database
+    if (database) {
+      connStr += `Database=${database};`;
+    }
+
+    // Authentication
+    if (this.authType === 'windows') {
+      connStr += `Integrated Security=true;`;
+    } else {
+      if (username) {
+        connStr += `User Id=${username};`;
+      }
+      if (password) {
+        connStr += `Password=${password};`;
+      }
+    }
+
+    // Advanced options
+    if (encrypt) {
+      connStr += `Encrypt=true;`;
+    }
+
+    if (trustCert) {
+      connStr += `TrustServerCertificate=true;`;
+    }
+
+    if (mars) {
+      connStr += `MultipleActiveResultSets=true;`;
+    }
+
+    if (persistSecurity) {
+      connStr += `Persist Security Info=true;`;
+    }
+
+    if (timeout) {
+      connStr += `Connection Timeout=${timeout};`;
+    }
+
+    if (appName) {
+      connStr += `Application Name=${appName};`;
+    }
+
+    const connStrEl = this.container.querySelector("#connection-string");
+    if (connStrEl) {
+      connStrEl.value = connStr;
+    }
+  },
+
+  loadTemplate(template) {
+    const templates = {
+      'local': {
+        server: 'localhost',
+        database: 'MyDatabase',
+        username: 'sa',
+        authType: 'sql',
+        encrypt: false,
+        trustCert: false
+      },
+      'production': {
+        server: 'prod-server',
+        database: 'ProductionDB',
+        authType: 'windows',
+        encrypt: true,
+        trustCert: true,
+        mars: true
+      },
+      'azure': {
+        server: 'myserver.database.windows.net',
+        database: 'MyAzureDB',
+        username: 'azureuser@myserver',
+        authType: 'sql',
+        encrypt: true,
+        trustCert: false
+      },
+      'localdb': {
+        server: '(localdb)\\MSSQLLocalDB',
+        database: 'MyLocalDB',
+        authType: 'windows',
+        encrypt: false,
+        trustCert: true
+      }
+    };
+
+    const config = templates[template];
+    if (!config) return;
+
+    this.container.querySelector("#server").value = config.server || '';
+    this.container.querySelector("#database").value = config.database || '';
+    this.container.querySelector("#username").value = config.username || '';
+    this.container.querySelector("#encrypt").checked = config.encrypt || false;
+    this.container.querySelector("#trust-server-certificate").checked = config.trustCert || false;
+    this.container.querySelector("#multiple-active-result-sets").checked = config.mars || false;
+
+    this.setAuthType(config.authType);
+    this.buildConnectionString();
+  },
+
+  testFormat() {
+    const connStr = this.container.querySelector("#connection-string")?.value;
+    if (!connStr) {
+      alert('Please build a connection string first');
+      return;
+    }
+
+    try {
+      const parts = connStr.split(';').filter(p => p.trim());
+      const parsed = {};
+
+      parts.forEach(part => {
+        const [key, value] = part.split('=').map(s => s.trim());
+        if (key && value) {
+          parsed[key] = value;
+        }
+      });
+
+      alert(`Connection string is valid!\n\nParsed ${Object.keys(parsed).length} parameters:\n${Object.keys(parsed).join(', ')}`);
+    } catch (error) {
+      alert(`Invalid format: ${error.message}`);
+    }
+  },
+
+  copyConnectionString() {
+    const connStr = this.container.querySelector("#connection-string")?.value;
+    if (connStr) {
+      navigator.clipboard.writeText(connStr).then(() => {
+        const copyBtn = this.container.querySelector("#copy-btn");
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = "✓ Copied!";
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      });
+    }
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

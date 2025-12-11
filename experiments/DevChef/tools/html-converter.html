@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML Converter - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "html-converter",
+  "name": "HTML Converter",
+  "category": "DevChef",
+  "description": "Convert external single-page HTML tools to DevChef format",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">HTML to DevChef Converter</h2>
+      <p class="tool-description">Convert external single-page HTML tools to DevChef format</p>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Input Method</label>
+      <div class="input-method-toggle">
+        <button id="method-paste" class="method-btn active">Paste HTML</button>
+        <button id="method-upload" class="method-btn">Upload File</button>
+      </div>
+    </div>
+
+    <div class="tool-section" id="paste-section">
+      <label class="section-label" for="html-input">HTML Source Code</label>
+      <textarea id="html-input" placeholder="Paste your HTML code here..."></textarea>
+    </div>
+
+    <div class="tool-section" id="upload-section" style="display: none;">
+      <label class="section-label">Upload HTML File</label>
+      <div class="upload-area" id="upload-area">
+        <input type="file" id="file-upload" accept=".html,.htm" style="display: none;">
+        <div class="upload-content">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <p>Click to upload or drag and drop</p>
+          <p class="upload-hint">HTML files only</p>
+        </div>
+      </div>
+      <div id="file-name" class="file-name"></div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Tool Configuration</label>
+      <div class="config-grid">
+        <div class="config-item">
+          <label for="tool-id">Tool ID</label>
+          <input type="text" id="tool-id" placeholder="my-tool" />
+        </div>
+        <div class="config-item">
+          <label for="tool-name">Tool Name</label>
+          <input type="text" id="tool-name" placeholder="My Tool" />
+        </div>
+        <div class="config-item">
+          <label for="tool-category">Category</label>
+          <select id="tool-category">
+            <option value="Text">Text</option>
+            <option value="Encoding">Encoding</option>
+            <option value="Crypto">Crypto</option>
+            <option value="Time">Time</option>
+            <option value="Data">Data</option>
+            <option value="DevChef">DevChef</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="config-item">
+          <label for="tool-description">Description</label>
+          <input type="text" id="tool-description" placeholder="What does this tool do?" />
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <button id="convert-btn">Convert to DevChef Format</button>
+      <button id="preview-btn" class="secondary">Preview Result</button>
+    </div>
+
+    <div class="tool-section" id="output-section" style="display: none;">
+      <label class="section-label" for="devchef-output">DevChef-Formatted HTML</label>
+      <textarea id="devchef-output" readonly></textarea>
+      <div class="output-actions">
+        <button id="copy-output-btn">Copy to Clipboard</button>
+        <button id="download-btn" class="secondary">Download File</button>
+      </div>
+    </div>
+
+    <div id="status-message" class="status-message"></div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .input-method-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .method-btn {
+    flex: 1;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 10px 20px;
+    margin: 0;
+  }
+
+  .method-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg-secondary);
+  }
+
+  .upload-area:hover {
+    border-color: var(--accent);
+    background: var(--bg-primary);
+  }
+
+  .upload-area.drag-over {
+    border-color: var(--accent);
+    background: rgba(52, 152, 219, 0.1);
+  }
+
+  .upload-content svg {
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+
+  .upload-content p {
+    margin: 8px 0;
+    color: var(--text-primary);
+  }
+
+  .upload-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .file-name {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    display: none;
+  }
+
+  .file-name.visible {
+    display: block;
+  }
+
+  .config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .config-item label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  .config-item input,
+  .config-item select {
+    width: 100%;
+    font-family: var(--font-sans);
+  }
+
+  #html-input,
+  #devchef-output {
+    min-height: 300px;
+    font-size: 12px;
+  }
+
+  .output-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .status-message {
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-top: 16px;
+    display: none;
+  }
+
+  .status-message.success {
+    display: block;
+    background: rgba(39, 174, 96, 0.1);
+    border: 1px solid var(--success);
+    color: var(--success);
+  }
+
+  .status-message.error {
+    display: block;
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid var(--error);
+    color: var(--error);
+  }
+
+  .status-message.info {
+    display: block;
+    background: rgba(52, 152, 219, 0.1);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --success: #27ae60;
+    --error: #e74c3c;
+    --warning: #f39c12;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  textarea,
+  input[type="text"],
+  select {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    resize: vertical;
+    transition: all 0.2s;
+  }
+
+  textarea:focus,
+  input:focus,
+  select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+
+  textarea {
+    min-height: 150px;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    margin-right: 8px;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  button.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  button.secondary:hover {
+    background: var(--border-color);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+  currentHTML: "",
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+    this.setupEventHandlers();
+  },
+
+  setupEventHandlers() {
+    // Method toggle
+    const pasteBtn = this.container.querySelector("#method-paste");
+    const uploadBtn = this.container.querySelector("#method-upload");
+    const pasteSection = this.container.querySelector("#paste-section");
+    const uploadSection = this.container.querySelector("#upload-section");
+
+    pasteBtn?.addEventListener("click", () => {
+      pasteBtn.classList.add("active");
+      uploadBtn.classList.remove("active");
+      pasteSection.style.display = "block";
+      uploadSection.style.display = "none";
+    });
+
+    uploadBtn?.addEventListener("click", () => {
+      uploadBtn.classList.add("active");
+      pasteBtn.classList.remove("active");
+      uploadSection.style.display = "block";
+      pasteSection.style.display = "none";
+    });
+
+    // File upload
+    const uploadArea = this.container.querySelector("#upload-area");
+    const fileInput = this.container.querySelector("#file-upload");
+
+    uploadArea?.addEventListener("click", () => {
+      fileInput?.click();
+    });
+
+    uploadArea?.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadArea.classList.add("drag-over");
+    });
+
+    uploadArea?.addEventListener("dragleave", () => {
+      uploadArea.classList.remove("drag-over");
+    });
+
+    uploadArea?.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove("drag-over");
+      const file = e.dataTransfer?.files?.[0];
+      if (file) {
+        this.handleFileUpload(file);
+      }
+    });
+
+    fileInput?.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        this.handleFileUpload(file);
+      }
+    });
+
+    // Convert button
+    const convertBtn = this.container.querySelector("#convert-btn");
+    convertBtn?.addEventListener("click", () => {
+      this.convertToDevChef();
+    });
+
+    // Preview button
+    const previewBtn = this.container.querySelector("#preview-btn");
+    previewBtn?.addEventListener("click", () => {
+      this.previewResult();
+    });
+
+    // Copy button
+    const copyBtn = this.container.querySelector("#copy-output-btn");
+    copyBtn?.addEventListener("click", () => {
+      this.copyOutput();
+    });
+
+    // Download button
+    const downloadBtn = this.container.querySelector("#download-btn");
+    downloadBtn?.addEventListener("click", () => {
+      this.downloadResult();
+    });
+
+    // Auto-fill tool info from HTML input
+    const htmlInput = this.container.querySelector("#html-input");
+    htmlInput?.addEventListener("blur", () => {
+      this.autoFillToolInfo(htmlInput.value);
+    });
+  },
+
+  handleFileUpload(file) {
+    if (!file.name.match(/\.(html|htm)$/i)) {
+      this.showStatus("Please upload an HTML file", "error");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.currentHTML = e.target.result;
+      const fileNameEl = this.container.querySelector("#file-name");
+      if (fileNameEl) {
+        fileNameEl.textContent = `Loaded: ${file.name}`;
+        fileNameEl.classList.add("visible");
+      }
+      this.autoFillToolInfo(this.currentHTML);
+      this.showStatus(`File "${file.name}" loaded successfully`, "success");
+    };
+    reader.readAsText(file);
+  },
+
+  autoFillToolInfo(html) {
+    if (!html) return;
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Extract title
+    const title = doc.querySelector('title')?.textContent || '';
+    const h1 = doc.querySelector('h1')?.textContent || '';
+    const toolName = title || h1 || 'Converted Tool';
+
+    // Auto-fill fields if empty
+    const nameInput = this.container.querySelector("#tool-name");
+    const idInput = this.container.querySelector("#tool-id");
+    const descInput = this.container.querySelector("#tool-description");
+
+    if (nameInput && !nameInput.value) {
+      nameInput.value = toolName.replace(' - DevChef Tool', '').trim();
+    }
+
+    if (idInput && !idInput.value) {
+      const id = toolName.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      idInput.value = id;
+    }
+
+    if (descInput && !descInput.value) {
+      const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute('content');
+      if (metaDesc) {
+        descInput.value = metaDesc;
+      }
+    }
+  },
+
+  convertToDevChef() {
+    // Get input HTML
+    const htmlInput = this.container.querySelector("#html-input");
+    const html = this.currentHTML || htmlInput?.value || "";
+
+    if (!html.trim()) {
+      this.showStatus("Please provide HTML source code", "error");
+      return;
+    }
+
+    // Get configuration
+    const toolId = this.container.querySelector("#tool-id")?.value || "converted-tool";
+    const toolName = this.container.querySelector("#tool-name")?.value || "Converted Tool";
+    const category = this.container.querySelector("#tool-category")?.value || "Other";
+    const description = this.container.querySelector("#tool-description")?.value || "Converted from external HTML";
+
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      // Extract components
+      const bodyContent = doc.body?.innerHTML || "";
+      const styles = Array.from(doc.querySelectorAll('style')).map(s => s.innerHTML).join('\n\n');
+      const scripts = Array.from(doc.querySelectorAll('script:not([src])')).map(s => s.innerHTML).join('\n\n');
+
+      // Generate DevChef HTML
+      const devChefHTML = this.generateDevChefHTML({
+        toolId,
+        toolName,
+        category,
+        description,
+        bodyContent,
+        styles,
+        scripts
+      });
+
+      // Display result
+      const outputEl = this.container.querySelector("#devchef-output");
+      const outputSection = this.container.querySelector("#output-section");
+
+      if (outputEl) {
+        outputEl.value = devChefHTML;
+      }
+
+      if (outputSection) {
+        outputSection.style.display = "block";
+      }
+
+      this.showStatus("Conversion successful! Review and customize the output.", "success");
+    } catch (error) {
+      this.showStatus(`Conversion error: ${error.message}`, "error");
+    }
+  },
+
+  generateDevChefHTML(config) {
+    // Escape special characters in JSON strings
+    const escapeJSON = (str) => {
+      return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
+    };
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${config.toolName} - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "${config.toolId}",
+  "name": "${escapeJSON(config.toolName)}",
+  "category": "${config.category}",
+  "description": "${escapeJSON(config.description)}",
+  "version": "1.0.0"
+}
+<\/script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">${config.toolName}</h2>
+      <p class="tool-description">${config.description}</p>
+    </div>
+    ${config.bodyContent}
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .tool-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+${config.styles || '  /* Add tool-specific styles here */'}
+</style>
+
+<!-- Standalone Styles (used when opened directly) -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --success: #27ae60;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  textarea, input, select {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    resize: vertical;
+    transition: all 0.2s;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<${''}script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    // TODO: Initialize your tool here
+    // Set up event listeners, load data, etc.
+
+    ${config.scripts ? '// Original scripts:\\n    ' + config.scripts.replace(/\n/g, '\\n    ') : ''}
+  },
+
+  onInput(input, context) {
+    // TODO: Process input and return output
+    // This is called whenever the input changes
+
+    return { output: input };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) {
+          this.input = val;
+          if (this.onInputChanged) this.onInputChanged(val);
+        },
+        setOutput(val) {
+          this.output = val;
+          const outputEl = document.querySelector("#output");
+          if (outputEl) outputEl.value = val;
+        },
+        getInput() { return this.input; },
+        getOutput() { return this.output; },
+        onInputChanged: null
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+
+        standaloneContext.onInputChanged = (input) => {
+          const result = DevChefTool.onInput(input, standaloneContext);
+          if (result?.output !== undefined) {
+            standaloneContext.setOutput(result.output);
+          }
+        };
+      }
+    }
+  });
+}
+<${''}/script>
+
+</body>
+</html>`;
+  },
+
+  previewResult() {
+    const outputEl = this.container.querySelector("#devchef-output");
+    const html = outputEl?.value;
+
+    if (!html) {
+      this.showStatus("Nothing to preview. Convert first.", "error");
+      return;
+    }
+
+    const previewWindow = window.open("", "_blank");
+    previewWindow.document.write(html);
+    previewWindow.document.close();
+  },
+
+  copyOutput() {
+    const outputEl = this.container.querySelector("#devchef-output");
+    if (outputEl?.value) {
+      navigator.clipboard.writeText(outputEl.value).then(() => {
+        this.showStatus("Copied to clipboard!", "success");
+      }).catch(err => {
+        this.showStatus("Failed to copy", "error");
+      });
+    }
+  },
+
+  downloadResult() {
+    const outputEl = this.container.querySelector("#devchef-output");
+    const toolId = this.container.querySelector("#tool-id")?.value || "converted-tool";
+
+    if (!outputEl?.value) {
+      this.showStatus("Nothing to download. Convert first.", "error");
+      return;
+    }
+
+    const blob = new Blob([outputEl.value], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${toolId}.html`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    this.showStatus("File downloaded!", "success");
+  },
+
+  showStatus(message, type = 'info') {
+    const statusEl = this.container.querySelector("#status-message");
+    if (statusEl) {
+      statusEl.textContent = message;
+      statusEl.className = `status-message ${type}`;
+      setTimeout(() => {
+        statusEl.className = 'status-message';
+      }, 5000);
+    }
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

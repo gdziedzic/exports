@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JWT Decoder - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "jwt-decoder",
+  "name": "JWT Decoder",
+  "category": "Crypto",
+  "description": "Decode and inspect JSON Web Tokens",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">JWT Decoder</h2>
+      <p class="tool-description">Decode and inspect JSON Web Tokens (JWT)</p>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="input">JWT Token</label>
+      <textarea id="input" placeholder="Paste your JWT token here..."></textarea>
+      <div id="error-message" class="error-message"></div>
+    </div>
+
+    <div class="tool-section">
+      <button id="decode-btn">Decode JWT</button>
+      <button id="clear-btn" class="secondary">Clear</button>
+    </div>
+
+    <div id="decoded-section" class="tool-section" style="display: none;">
+      <label class="section-label">Decoded Header</label>
+      <textarea id="header-output" readonly></textarea>
+    </div>
+
+    <div id="payload-section" class="tool-section" style="display: none;">
+      <label class="section-label">Decoded Payload</label>
+      <textarea id="payload-output" readonly></textarea>
+    </div>
+
+    <div id="claims-section" class="tool-section" style="display: none;">
+      <label class="section-label">Token Claims</label>
+      <div id="claims-info" class="claims-info"></div>
+    </div>
+
+    <div id="signature-section" class="tool-section" style="display: none;">
+      <label class="section-label">Signature</label>
+      <div class="signature-info">
+        <div class="info-row">
+          <span class="info-label">Algorithm:</span>
+          <span id="algorithm" class="info-value">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Signature:</span>
+          <span id="signature" class="info-value signature-hash">-</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .error-message {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--error);
+    border-radius: 6px;
+    color: var(--error);
+    font-size: 13px;
+    display: none;
+  }
+
+  .error-message.visible {
+    display: block;
+  }
+
+  #header-output,
+  #payload-output {
+    min-height: 150px;
+  }
+
+  .claims-info {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+  }
+
+  .claim-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 16px;
+    padding: 10px;
+    background: var(--bg-primary);
+    border-radius: 6px;
+  }
+
+  .claim-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+
+  .claim-value {
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    word-break: break-all;
+  }
+
+  .signature-info {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+  }
+
+  .info-row {
+    display: flex;
+    gap: 12px;
+    padding: 10px;
+    background: var(--bg-primary);
+    border-radius: 6px;
+  }
+
+  .info-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 12px;
+    min-width: 100px;
+  }
+
+  .info-value {
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    word-break: break-all;
+  }
+
+  .signature-hash {
+    color: var(--accent);
+  }
+
+  .expired {
+    color: var(--error);
+    font-weight: 600;
+  }
+
+  .valid {
+    color: var(--success);
+    font-weight: 600;
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --success: #27ae60;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    resize: vertical;
+    transition: all 0.2s;
+    min-height: 150px;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    margin-right: 8px;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+  }
+
+  button.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  button.secondary:hover {
+    background: var(--border-color);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const inputEl = container.querySelector("#input");
+    const decodeBtn = container.querySelector("#decode-btn");
+    const clearBtn = container.querySelector("#clear-btn");
+
+    inputEl?.addEventListener("input", (e) => {
+      context.setInput(e.target.value);
+    });
+
+    decodeBtn?.addEventListener("click", () => {
+      this.decodeJWT(context.getInput());
+    });
+
+    clearBtn?.addEventListener("click", () => {
+      this.clearAll();
+    });
+  },
+
+  onInput(input, context) {
+    if (!input.trim()) {
+      this.hideError();
+      this.hideSections();
+      return { output: "" };
+    }
+
+    this.decodeJWT(input);
+    return { output: "" };
+  },
+
+  decodeJWT(token) {
+    token = token.trim();
+
+    if (!token) {
+      this.showError("Please enter a JWT token");
+      this.hideSections();
+      return;
+    }
+
+    try {
+      const parts = token.split('.');
+
+      if (parts.length !== 3) {
+        throw new Error("Invalid JWT format. JWT must have 3 parts separated by dots.");
+      }
+
+      // Decode header
+      const header = JSON.parse(this.base64UrlDecode(parts[0]));
+      const headerOutput = this.container.querySelector("#header-output");
+      if (headerOutput) {
+        headerOutput.value = JSON.stringify(header, null, 2);
+      }
+
+      // Decode payload
+      const payload = JSON.parse(this.base64UrlDecode(parts[1]));
+      const payloadOutput = this.container.querySelector("#payload-output");
+      if (payloadOutput) {
+        payloadOutput.value = JSON.stringify(payload, null, 2);
+      }
+
+      // Display signature
+      const algorithmEl = this.container.querySelector("#algorithm");
+      const signatureEl = this.container.querySelector("#signature");
+      if (algorithmEl) algorithmEl.textContent = header.alg || "Unknown";
+      if (signatureEl) signatureEl.textContent = parts[2];
+
+      // Display claims
+      this.displayClaims(payload);
+
+      // Show sections
+      this.showSections();
+      this.hideError();
+
+    } catch (error) {
+      this.showError(error.message);
+      this.hideSections();
+    }
+  },
+
+  base64UrlDecode(str) {
+    // Replace URL-safe characters
+    str = str.replace(/-/g, '+').replace(/_/g, '/');
+
+    // Add padding if needed
+    const pad = str.length % 4;
+    if (pad) {
+      if (pad === 1) {
+        throw new Error('Invalid base64url string');
+      }
+      str += new Array(5 - pad).join('=');
+    }
+
+    // Decode
+    return decodeURIComponent(escape(atob(str)));
+  },
+
+  displayClaims(payload) {
+    const claimsInfo = this.container.querySelector("#claims-info");
+    if (!claimsInfo) return;
+
+    const claims = [];
+    const now = Math.floor(Date.now() / 1000);
+
+    // Standard claims
+    if (payload.iss) {
+      claims.push({ label: "Issuer (iss)", value: payload.iss });
+    }
+    if (payload.sub) {
+      claims.push({ label: "Subject (sub)", value: payload.sub });
+    }
+    if (payload.aud) {
+      claims.push({ label: "Audience (aud)", value: JSON.stringify(payload.aud) });
+    }
+    if (payload.exp) {
+      const expDate = new Date(payload.exp * 1000);
+      const isExpired = payload.exp < now;
+      const expClass = isExpired ? 'expired' : 'valid';
+      const expStatus = isExpired ? ' (EXPIRED)' : ' (Valid)';
+      claims.push({
+        label: "Expires (exp)",
+        value: `<span class="${expClass}">${expDate.toLocaleString()}${expStatus}</span>`
+      });
+    }
+    if (payload.nbf) {
+      const nbfDate = new Date(payload.nbf * 1000);
+      claims.push({ label: "Not Before (nbf)", value: nbfDate.toLocaleString() });
+    }
+    if (payload.iat) {
+      const iatDate = new Date(payload.iat * 1000);
+      claims.push({ label: "Issued At (iat)", value: iatDate.toLocaleString() });
+    }
+    if (payload.jti) {
+      claims.push({ label: "JWT ID (jti)", value: payload.jti });
+    }
+
+    claimsInfo.innerHTML = claims.map(claim => `
+      <div class="claim-row">
+        <div class="claim-label">${claim.label}</div>
+        <div class="claim-value">${claim.value}</div>
+      </div>
+    `).join('');
+  },
+
+  showSections() {
+    ['decoded-section', 'payload-section', 'claims-section', 'signature-section'].forEach(id => {
+      const section = this.container.querySelector(`#${id}`);
+      if (section) section.style.display = 'block';
+    });
+  },
+
+  hideSections() {
+    ['decoded-section', 'payload-section', 'claims-section', 'signature-section'].forEach(id => {
+      const section = this.container.querySelector(`#${id}`);
+      if (section) section.style.display = 'none';
+    });
+  },
+
+  clearAll() {
+    this.context.setInput("");
+    this.hideSections();
+    this.hideError();
+
+    const inputEl = this.container.querySelector("#input");
+    if (inputEl) inputEl.value = "";
+  },
+
+  showError(message) {
+    const errorEl = this.container.querySelector("#error-message");
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.classList.add("visible");
+    }
+  },
+
+  hideError() {
+    const errorEl = this.container.querySelector("#error-message");
+    if (errorEl) {
+      errorEl.classList.remove("visible");
+    }
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) {
+          this.input = val;
+          if (this.onInputChanged) this.onInputChanged(val);
+        },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; },
+        onInputChanged: null
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+
+        standaloneContext.onInputChanged = (input) => {
+          DevChefTool.onInput(input, standaloneContext);
+        };
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

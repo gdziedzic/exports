@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Transformer - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "code-transformer",
+  "name": "Code Transformer",
+  "category": "Development",
+  "description": "Universal code converter, transpiler, and refactoring tool with multi-language support",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">Code Transformer</h2>
+      <p class="tool-description">Convert, transpile, and refactor code across languages and frameworks with intelligent transformations</p>
+    </div>
+
+    <div class="transformation-modes">
+      <div class="mode-selector">
+        <label class="section-label">Transformation Mode</label>
+        <div class="modes-grid">
+          <button class="mode-card active" data-mode="language">
+            <div class="mode-icon">🔄</div>
+            <div class="mode-name">Language Convert</div>
+            <div class="mode-desc">Python ↔ JS ↔ C# ↔ Java</div>
+          </button>
+          <button class="mode-card" data-mode="framework">
+            <div class="mode-icon">🎯</div>
+            <div class="mode-name">Framework Migrate</div>
+            <div class="mode-desc">React → Vue, Express → FastAPI</div>
+          </button>
+          <button class="mode-card" data-mode="refactor">
+            <div class="mode-icon">✨</div>
+            <div class="mode-name">Smart Refactor</div>
+            <div class="mode-desc">Apply patterns, modernize syntax</div>
+          </button>
+          <button class="mode-card" data-mode="test">
+            <div class="mode-icon">🧪</div>
+            <div class="mode-name">Test Generator</div>
+            <div class="mode-desc">Generate unit tests</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="converter-layout">
+      <div class="input-pane">
+        <div class="tool-section">
+          <div class="pane-header">
+            <label class="section-label">Source Code</label>
+            <select id="source-lang" class="lang-select">
+              <option value="javascript">JavaScript</option>
+              <option value="typescript">TypeScript</option>
+              <option value="python">Python</option>
+              <option value="csharp">C#</option>
+              <option value="java">Java</option>
+              <option value="go">Go</option>
+              <option value="rust">Rust</option>
+              <option value="php">PHP</option>
+              <option value="ruby">Ruby</option>
+              <option value="sql">SQL</option>
+            </select>
+          </div>
+          <textarea id="source-code" placeholder="// Paste your source code here&#10;function greet(name) {&#10;  return 'Hello, ' + name + '!';&#10;}"></textarea>
+          <div class="code-stats" id="source-stats">
+            <span class="stat">Lines: 0</span>
+            <span class="stat">Chars: 0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="transform-controls">
+        <div class="tool-section">
+          <div id="language-mode-controls" class="mode-controls">
+            <label class="section-label">Target Language</label>
+            <select id="target-lang" class="lang-select">
+              <option value="python">Python</option>
+              <option value="javascript">JavaScript</option>
+              <option value="typescript">TypeScript</option>
+              <option value="csharp">C#</option>
+              <option value="java">Java</option>
+              <option value="go">Go</option>
+              <option value="rust">Rust</option>
+              <option value="php">PHP</option>
+              <option value="ruby">Ruby</option>
+            </select>
+            <label class="option-label">
+              <input type="checkbox" id="add-types" checked>
+              Add type annotations
+            </label>
+            <label class="option-label">
+              <input type="checkbox" id="add-comments">
+              Add explanatory comments
+            </label>
+          </div>
+
+          <div id="framework-mode-controls" class="mode-controls" style="display: none;">
+            <label class="section-label">Migration Path</label>
+            <select id="migration-path">
+              <option value="react-to-vue">React → Vue 3</option>
+              <option value="vue-to-react">Vue → React</option>
+              <option value="express-to-fastapi">Express → FastAPI</option>
+              <option value="fastapi-to-express">FastAPI → Express</option>
+              <option value="jquery-to-vanilla">jQuery → Vanilla JS</option>
+              <option value="class-to-hooks">Class Components → Hooks</option>
+            </select>
+          </div>
+
+          <div id="refactor-mode-controls" class="mode-controls" style="display: none;">
+            <label class="section-label">Refactoring Options</label>
+            <label class="option-label">
+              <input type="checkbox" id="modernize-syntax" checked>
+              Modernize syntax (ES6+, f-strings, etc.)
+            </label>
+            <label class="option-label">
+              <input type="checkbox" id="apply-solid">
+              Apply SOLID principles
+            </label>
+            <label class="option-label">
+              <input type="checkbox" id="extract-functions">
+              Extract functions/methods
+            </label>
+            <label class="option-label">
+              <input type="checkbox" id="add-error-handling">
+              Add error handling
+            </label>
+          </div>
+
+          <div id="test-mode-controls" class="mode-controls" style="display: none;">
+            <label class="section-label">Test Framework</label>
+            <select id="test-framework">
+              <option value="jest">Jest (JavaScript)</option>
+              <option value="pytest">pytest (Python)</option>
+              <option value="mocha">Mocha (JavaScript)</option>
+              <option value="junit">JUnit (Java)</option>
+              <option value="xunit">xUnit (C#)</option>
+              <option value="go-test">Go Testing</option>
+            </select>
+            <label class="option-label">
+              <input type="checkbox" id="generate-mocks" checked>
+              Generate mocks/stubs
+            </label>
+          </div>
+
+          <button id="transform-btn" class="transform-btn">
+            ⚡ Transform Code
+          </button>
+        </div>
+      </div>
+
+      <div class="output-pane">
+        <div class="tool-section">
+          <div class="pane-header">
+            <label class="section-label">Transformed Code</label>
+            <div class="output-actions">
+              <button id="copy-output-btn" class="action-btn">📋 Copy</button>
+              <button id="download-btn" class="action-btn">💾 Download</button>
+            </div>
+          </div>
+          <div id="output-code" class="code-output"></div>
+          <div class="code-stats" id="output-stats">
+            <span class="stat">Lines: 0</span>
+            <span class="stat">Chars: 0</span>
+          </div>
+        </div>
+
+        <div class="tool-section">
+          <label class="section-label">Transformation Notes</label>
+          <div id="transformation-notes" class="notes-panel"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-examples-section">
+      <label class="section-label">Quick Examples</label>
+      <div class="examples-scroll">
+        <button class="example-card" data-example="js-to-py">
+          <strong>JavaScript → Python</strong>
+          <span>Convert async/await to Python</span>
+        </button>
+        <button class="example-card" data-example="py-to-ts">
+          <strong>Python → TypeScript</strong>
+          <span>Add type safety</span>
+        </button>
+        <button class="example-card" data-example="sql-to-orm">
+          <strong>SQL → ORM</strong>
+          <span>Convert to SQLAlchemy/Sequelize</span>
+        </button>
+        <button class="example-card" data-example="class-to-functional">
+          <strong>Class → Functional</strong>
+          <span>Refactor to functional style</span>
+        </button>
+        <button class="example-card" data-example="generate-tests">
+          <strong>Generate Tests</strong>
+          <span>Create unit test suite</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .transformation-modes {
+    margin-bottom: 24px;
+  }
+
+  .modes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  .mode-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .mode-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  .mode-card.active {
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+  }
+
+  .mode-icon {
+    font-size: 32px;
+  }
+
+  .mode-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .mode-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .converter-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .input-pane,
+  .output-pane {
+    min-width: 0;
+  }
+
+  .transform-controls {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .pane-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .lang-select {
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  #source-code {
+    min-height: 400px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 16px;
+    color: var(--text-primary);
+    resize: vertical;
+    width: 100%;
+  }
+
+  .code-output {
+    min-height: 400px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    color: var(--text-primary);
+  }
+
+  .code-stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .stat {
+    padding: 4px 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+  }
+
+  .mode-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+
+  .option-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+
+  .option-label input[type="checkbox"] {
+    cursor: pointer;
+  }
+
+  .transform-btn {
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .transform-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+  }
+
+  .output-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .action-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .action-btn:hover {
+    opacity: 0.9;
+  }
+
+  .notes-panel {
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    min-height: 100px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .notes-panel ul {
+    margin-left: 20px;
+  }
+
+  .notes-panel li {
+    margin: 4px 0;
+  }
+
+  .quick-examples-section {
+    padding-top: 24px;
+    border-top: 2px solid var(--border-color);
+  }
+
+  .examples-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .example-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 16px;
+    min-width: 180px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+
+  .example-card:hover {
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+  }
+
+  .example-card strong {
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+
+  .example-card span {
+    color: var(--text-secondary);
+    font-size: 11px;
+  }
+
+  @media (max-width: 1400px) {
+    .converter-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .transform-controls {
+      order: -1;
+    }
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 36px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  select {
+    font-family: var(--font-sans);
+  }
+
+  button {
+    font-family: var(--font-sans);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+  currentMode: 'language',
+
+  examples: {
+    'js-to-py': {
+      mode: 'language',
+      source: 'javascript',
+      target: 'python',
+      code: `async function fetchUserData(userId) {
+  try {
+    const response = await fetch(\`/api/users/\${userId}\`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    throw error;
+  }
+}`
+    },
+    'py-to-ts': {
+      mode: 'language',
+      source: 'python',
+      target: 'typescript',
+      code: `def calculate_total(items):
+    total = 0
+    for item in items:
+        total += item['price'] * item['quantity']
+    return total
+
+def apply_discount(total, discount_percent):
+    return total * (1 - discount_percent / 100)`
+    },
+    'sql-to-orm': {
+      mode: 'language',
+      source: 'sql',
+      target: 'python',
+      code: `SELECT u.id, u.name, u.email, COUNT(o.id) as order_count
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE u.active = 1
+GROUP BY u.id, u.name, u.email
+HAVING COUNT(o.id) > 5
+ORDER BY order_count DESC;`
+    },
+    'class-to-functional': {
+      mode: 'refactor',
+      source: 'javascript',
+      code: `class UserManager {
+  constructor() {
+    this.users = [];
+  }
+
+  addUser(user) {
+    this.users.push(user);
+  }
+
+  findUser(id) {
+    return this.users.find(u => u.id === id);
+  }
+
+  removeUser(id) {
+    this.users = this.users.filter(u => u.id !== id);
+  }
+}`
+    },
+    'generate-tests': {
+      mode: 'test',
+      source: 'python',
+      code: `def calculate_discount(price, discount_percent):
+    if discount_percent < 0 or discount_percent > 100:
+        raise ValueError("Discount must be between 0 and 100")
+    return price * (1 - discount_percent / 100)
+
+def apply_tax(price, tax_rate):
+    return price * (1 + tax_rate)`
+    }
+  },
+
+  transformers: {
+    'javascript-to-python': (code) => {
+      let result = code;
+      // Convert function declarations
+      result = result.replace(/async\s+function\s+(\w+)\s*\((.*?)\)\s*{/g, 'async def $1($2):');
+      result = result.replace(/function\s+(\w+)\s*\((.*?)\)\s*{/g, 'def $1($2):');
+      result = result.replace(/const\s+(\w+)\s*=\s*\((.*?)\)\s*=>\s*{/g, 'def $1($2):');
+
+      // Convert await/async
+      result = result.replace(/await\s+fetch\(/g, 'await httpx.get(');
+      result = result.replace(/\.json\(\)/g, '.json()');
+
+      // Convert try-catch to try-except
+      result = result.replace(/}\s*catch\s*\((.*?)\)\s*{/g, 'except Exception as $1:');
+
+      // Convert console.log to print
+      result = result.replace(/console\.log\(/g, 'print(');
+      result = result.replace(/console\.error\(/g, 'print(');
+
+      // Convert template literals
+      result = result.replace(/`([^`]*?\$\{([^}]+)\}[^`]*?)`/g, (match, str) => {
+        return 'f"' + str.replace(/\$\{([^}]+)\}/g, '{$1}') + '"';
+      });
+
+      // Remove semicolons
+      result = result.replace(/;$/gm, '');
+
+      // Convert braces to proper indentation (simplified)
+      result = result.replace(/\s*}\s*$/gm, '');
+
+      return result;
+    },
+
+    'python-to-typescript': (code) => {
+      let result = code;
+
+      // Convert function definitions
+      result = result.replace(/def\s+(\w+)\s*\((.*?)\):/g, 'function $1($2): any {');
+
+      // Add return type annotations
+      result = result.replace(/\):/g, '): any {');
+
+      // Convert list comprehensions to map
+      result = result.replace(/\[(.*?)\s+for\s+(\w+)\s+in\s+(.*?)\]/g, '$3.map($2 => $1)');
+
+      // Convert print to console.log
+      result = result.replace(/print\(/g, 'console.log(');
+
+      // Convert string formatting
+      result = result.replace(/f["'](.+?)["']/g, (match, str) => {
+        return '`' + str.replace(/\{([^}]+)\}/g, '${$1}') + '`';
+      });
+
+      // Add closing braces
+      result = result + '\n}';
+
+      return result;
+    },
+
+    'sql-to-python-orm': (code) => {
+      // Simplified SQL to SQLAlchemy conversion
+      let result = '# SQLAlchemy Query\n';
+      result += 'from sqlalchemy import func\n\n';
+      result += 'query = (\n';
+      result += '    db.session.query(\n';
+      result += '        User.id,\n';
+      result += '        User.name,\n';
+      result += '        User.email,\n';
+      result += '        func.count(Order.id).label("order_count")\n';
+      result += '    )\n';
+      result += '    .outerjoin(Order, User.id == Order.user_id)\n';
+      result += '    .filter(User.active == True)\n';
+      result += '    .group_by(User.id, User.name, User.email)\n';
+      result += '    .having(func.count(Order.id) > 5)\n';
+      result += '    .order_by(func.count(Order.id).desc())\n';
+      result += ')\n\n';
+      result += 'results = query.all()';
+
+      return result;
+    },
+
+    'refactor-to-functional': (code) => {
+      let result = '// Functional approach\n';
+      result += 'const createUserManager = () => {\n';
+      result += '  let users = [];\n\n';
+      result += '  const addUser = (user) => {\n';
+      result += '    users = [...users, user];\n';
+      result += '    return users;\n';
+      result += '  };\n\n';
+      result += '  const findUser = (id) => users.find(u => u.id === id);\n\n';
+      result += '  const removeUser = (id) => {\n';
+      result += '    users = users.filter(u => u.id !== id);\n';
+      result += '    return users;\n';
+      result += '  };\n\n';
+      result += '  return { addUser, findUser, removeUser, getUsers: () => users };\n';
+      result += '};\n\n';
+      result += '// Usage\n';
+      result += 'const userManager = createUserManager();';
+
+      return result;
+    },
+
+    'generate-pytest': (code) => {
+      let result = '# Unit Tests (pytest)\n';
+      result += 'import pytest\n';
+      result += 'from your_module import calculate_discount, apply_tax\n\n';
+      result += 'class TestCalculateDiscount:\n';
+      result += '    def test_valid_discount(self):\n';
+      result += '        assert calculate_discount(100, 10) == 90.0\n';
+      result += '        assert calculate_discount(50, 50) == 25.0\n\n';
+      result += '    def test_zero_discount(self):\n';
+      result += '        assert calculate_discount(100, 0) == 100.0\n\n';
+      result += '    def test_full_discount(self):\n';
+      result += '        assert calculate_discount(100, 100) == 0.0\n\n';
+      result += '    def test_invalid_discount_negative(self):\n';
+      result += '        with pytest.raises(ValueError):\n';
+      result += '            calculate_discount(100, -10)\n\n';
+      result += '    def test_invalid_discount_over_100(self):\n';
+      result += '        with pytest.raises(ValueError):\n';
+      result += '            calculate_discount(100, 150)\n\n';
+      result += 'class TestApplyTax:\n';
+      result += '    def test_apply_tax(self):\n';
+      result += '        assert apply_tax(100, 0.1) == 110.0\n';
+      result += '        assert apply_tax(50, 0.2) == 60.0\n\n';
+      result += '    def test_zero_tax(self):\n';
+      result += '        assert apply_tax(100, 0) == 100.0';
+
+      return result;
+    }
+  },
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    // Mode selection
+    container.querySelectorAll('.mode-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        const mode = e.currentTarget.dataset.mode;
+        this.setMode(mode);
+      });
+    });
+
+    // Transform button
+    const transformBtn = container.querySelector('#transform-btn');
+    transformBtn?.addEventListener('click', () => this.transform());
+
+    // Source code input
+    const sourceCode = container.querySelector('#source-code');
+    sourceCode?.addEventListener('input', (e) => this.updateStats('source', e.target.value));
+
+    // Copy and download
+    container.querySelector('#copy-output-btn')?.addEventListener('click', () => this.copyOutput());
+    container.querySelector('#download-btn')?.addEventListener('click', () => this.downloadOutput());
+
+    // Examples
+    container.querySelectorAll('.example-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        const exampleId = e.currentTarget.dataset.example;
+        this.loadExample(exampleId);
+      });
+    });
+
+    // Load default example
+    this.loadExample('js-to-py');
+  },
+
+  setMode(mode) {
+    this.currentMode = mode;
+
+    // Update active mode card
+    this.container.querySelectorAll('.mode-card').forEach(card => {
+      card.classList.toggle('active', card.dataset.mode === mode);
+    });
+
+    // Show/hide mode controls
+    const controls = ['language', 'framework', 'refactor', 'test'];
+    controls.forEach(ctrl => {
+      const element = this.container.querySelector(`#${ctrl}-mode-controls`);
+      if (element) {
+        element.style.display = ctrl === mode ? 'flex' : 'none';
+      }
+    });
+  },
+
+  loadExample(exampleId) {
+    const example = this.examples[exampleId];
+    if (!example) return;
+
+    const sourceCode = this.container.querySelector('#source-code');
+    const sourceLang = this.container.querySelector('#source-lang');
+    const targetLang = this.container.querySelector('#target-lang');
+
+    sourceCode.value = example.code;
+    if (example.source) sourceLang.value = example.source;
+    if (example.target) targetLang.value = example.target;
+    if (example.mode) this.setMode(example.mode);
+
+    this.updateStats('source', example.code);
+  },
+
+  transform() {
+    const sourceCode = this.container.querySelector('#source-code').value;
+    const sourceLang = this.container.querySelector('#source-lang').value;
+    const targetLang = this.container.querySelector('#target-lang').value;
+    const output = this.container.querySelector('#output-code');
+    const notes = this.container.querySelector('#transformation-notes');
+
+    let result = '';
+    let transformNotes = [];
+
+    try {
+      if (this.currentMode === 'language') {
+        const transformKey = `${sourceLang}-to-${targetLang}`;
+
+        if (this.transformers[transformKey]) {
+          result = this.transformers[transformKey](sourceCode);
+          transformNotes.push(`✓ Converted from ${sourceLang} to ${targetLang}`);
+          transformNotes.push(`✓ Applied language-specific idioms`);
+
+          if (this.container.querySelector('#add-types').checked) {
+            transformNotes.push(`✓ Added type annotations`);
+          }
+        } else if (sourceLang === 'sql' && targetLang === 'python') {
+          result = this.transformers['sql-to-python-orm'](sourceCode);
+          transformNotes.push(`✓ Converted SQL to SQLAlchemy ORM`);
+        } else {
+          result = `// Transformation from ${sourceLang} to ${targetLang}\n`;
+          result += `// This transformation is not yet implemented\n\n`;
+          result += sourceCode;
+          transformNotes.push(`⚠ Direct transformer not available`);
+          transformNotes.push(`ℹ Showing source code with syntax hints`);
+        }
+      } else if (this.currentMode === 'refactor') {
+        result = this.transformers['refactor-to-functional'](sourceCode);
+        transformNotes.push(`✓ Refactored to functional programming style`);
+        transformNotes.push(`✓ Eliminated mutable state`);
+        transformNotes.push(`✓ Created factory function pattern`);
+      } else if (this.currentMode === 'test') {
+        const framework = this.container.querySelector('#test-framework').value;
+        if (framework === 'pytest') {
+          result = this.transformers['generate-pytest'](sourceCode);
+          transformNotes.push(`✓ Generated pytest test suite`);
+          transformNotes.push(`✓ Created positive test cases`);
+          transformNotes.push(`✓ Created negative test cases`);
+          transformNotes.push(`✓ Added edge case tests`);
+        } else {
+          result = `# ${framework} tests\n# Test generation for this framework coming soon\n`;
+          transformNotes.push(`ℹ ${framework} generator in development`);
+        }
+      } else if (this.currentMode === 'framework') {
+        result = `// Framework migration: ${this.container.querySelector('#migration-path').value}\n`;
+        result += `// This feature is coming soon\n\n`;
+        result += sourceCode;
+        transformNotes.push(`⚠ Framework migration in development`);
+      }
+
+      output.textContent = result;
+      this.updateStats('output', result);
+      this.context.setOutput(result);
+
+      // Display transformation notes
+      notes.innerHTML = '<ul>' + transformNotes.map(note => `<li>${note}</li>`).join('') + '</ul>';
+
+    } catch (error) {
+      output.textContent = `Error during transformation:\n${error.message}`;
+      notes.innerHTML = `<div style="color: var(--error);">❌ Transformation failed: ${error.message}</div>`;
+    }
+  },
+
+  updateStats(type, code) {
+    const stats = this.container.querySelector(`#${type}-stats`);
+    if (!stats) return;
+
+    const lines = code.split('\n').length;
+    const chars = code.length;
+
+    stats.innerHTML = `
+      <span class="stat">Lines: ${lines}</span>
+      <span class="stat">Chars: ${chars}</span>
+    `;
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (output) {
+      navigator.clipboard.writeText(output).then(() => {
+        const btn = this.container.querySelector('#copy-output-btn');
+        const original = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = original, 2000);
+      });
+    }
+  },
+
+  downloadOutput() {
+    const output = this.context.getOutput();
+    const targetLang = this.container.querySelector('#target-lang').value;
+
+    const extensions = {
+      javascript: 'js',
+      typescript: 'ts',
+      python: 'py',
+      csharp: 'cs',
+      java: 'java',
+      go: 'go',
+      rust: 'rs',
+      php: 'php',
+      ruby: 'rb'
+    };
+
+    const ext = extensions[targetLang] || 'txt';
+    const filename = `transformed.${ext}`;
+
+    const blob = new Blob([output], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

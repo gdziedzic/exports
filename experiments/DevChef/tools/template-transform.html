@@ -1,0 +1,2168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Template Transform - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "template-transform",
+  "name": "Template Transform",
+  "category": "Development",
+  "description": "Transform data using Jinja2-style templates with live preview",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">Template Transform Tool</h2>
+      <p class="tool-description">Transform JSON data using Jinja2-style templating with live preview</p>
+      <div class="mode-toggle">
+        <button id="simplified-mode-btn" class="mode-btn active">Simplified</button>
+        <button id="advanced-mode-btn" class="mode-btn">Advanced</button>
+      </div>
+    </div>
+
+    <div id="simplified-section">
+      <div class="tool-section">
+        <label class="section-label">Quick Templates</label>
+        <div class="templates-grid">
+          <button class="template-card" data-template="sql-insert">
+            <div class="template-icon">💾</div>
+            <div class="template-name">SQL Insert</div>
+          </button>
+          <button class="template-card" data-template="sql-update">
+            <div class="template-icon">📝</div>
+            <div class="template-name">SQL Update</div>
+          </button>
+          <button class="template-card" data-template="sql-merge">
+            <div class="template-icon">🔀</div>
+            <div class="template-name">SQL Merge</div>
+          </button>
+          <button class="template-card" data-template="html">
+            <div class="template-icon">🌐</div>
+            <div class="template-name">HTML Template</div>
+          </button>
+          <button class="template-card" data-template="config">
+            <div class="template-icon">⚙️</div>
+            <div class="template-name">Config File</div>
+          </button>
+          <button class="template-card" data-template="email">
+            <div class="template-icon">📧</div>
+            <div class="template-name">Email Template</div>
+          </button>
+          <button class="template-card" data-template="xml">
+            <div class="template-icon">📄</div>
+            <div class="template-name">XML/SOAP</div>
+          </button>
+          <button class="template-card" data-template="csv">
+            <div class="template-icon">📊</div>
+            <div class="template-name">CSV Export</div>
+          </button>
+          <button class="template-card" data-template="markdown">
+            <div class="template-icon">📖</div>
+            <div class="template-name">Markdown Docs</div>
+          </button>
+          <button class="template-card" data-template="api-doc">
+            <div class="template-icon">🔌</div>
+            <div class="template-name">API Docs</div>
+          </button>
+          <button class="template-card" data-template="typescript">
+            <div class="template-icon">🔷</div>
+            <div class="template-name">TypeScript</div>
+          </button>
+          <button class="template-card" data-template="docker">
+            <div class="template-icon">🐳</div>
+            <div class="template-name">Docker Compose</div>
+          </button>
+          <button class="template-card" data-template="json-api">
+            <div class="template-icon">🔗</div>
+            <div class="template-name">JSON API</div>
+          </button>
+          <button class="template-card" data-template="csharp-class">
+            <div class="template-icon">🔧</div>
+            <div class="template-name">C# Class</div>
+          </button>
+          <button class="template-card" data-template="python-class">
+            <div class="template-icon">🐍</div>
+            <div class="template-name">Python Class</div>
+          </button>
+          <button class="template-card" data-template="java-class">
+            <div class="template-icon">☕</div>
+            <div class="template-name">Java Class</div>
+          </button>
+          <button class="template-card" data-template="kubernetes">
+            <div class="template-icon">⎈</div>
+            <div class="template-name">Kubernetes</div>
+          </button>
+          <button class="template-card" data-template="terraform">
+            <div class="template-icon">🏗️</div>
+            <div class="template-name">Terraform</div>
+          </button>
+          <button class="template-card" data-template="react-component">
+            <div class="template-icon">⚛️</div>
+            <div class="template-name">React Component</div>
+          </button>
+          <button class="template-card" data-template="graphql">
+            <div class="template-icon">📊</div>
+            <div class="template-name">GraphQL Schema</div>
+          </button>
+          <button class="template-card" data-template="sql-table">
+            <div class="template-icon">🗄️</div>
+            <div class="template-name">CREATE TABLE</div>
+          </button>
+          <button class="template-card" data-template="rest-test">
+            <div class="template-icon">🧪</div>
+            <div class="template-name">REST API Test</div>
+          </button>
+          <button class="template-card" data-template="csv-sql-insert">
+            <div class="template-icon">💾</div>
+            <div class="template-name">CSV to SQL INSERT</div>
+          </button>
+          <button class="template-card" data-template="csv-sql-update">
+            <div class="template-icon">📝</div>
+            <div class="template-name">CSV to SQL UPDATE</div>
+          </button>
+          <button class="template-card" data-template="csv-html-table">
+            <div class="template-icon">📊</div>
+            <div class="template-name">CSV to HTML Table</div>
+          </button>
+          <button class="template-card" data-template="csv-markdown-table">
+            <div class="template-icon">📋</div>
+            <div class="template-name">CSV to MD Table</div>
+          </button>
+          <button class="template-card" data-template="kv-env-file">
+            <div class="template-icon">🔐</div>
+            <div class="template-name">Env File</div>
+          </button>
+          <button class="template-card" data-template="kv-properties">
+            <div class="template-icon">⚙️</div>
+            <div class="template-name">Properties File</div>
+          </button>
+          <button class="template-card" data-template="kv-email">
+            <div class="template-icon">✉️</div>
+            <div class="template-name">Simple Email</div>
+          </button>
+          <button class="template-card" data-template="kv-config-yaml">
+            <div class="template-icon">📄</div>
+            <div class="template-name">YAML Config</div>
+          </button>
+          <button class="template-card" data-template="csv-to-json">
+            <div class="template-icon">🔄</div>
+            <div class="template-name">CSV to JSON</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-layout">
+      <div class="editor-pane">
+        <div class="tool-section">
+          <label class="section-label">
+            Data Input
+            <span class="hint">Choose your data format</span>
+          </label>
+          <div class="data-format-toggle">
+            <button id="json-format-btn" class="format-btn active">JSON</button>
+            <button id="text-format-btn" class="format-btn">Key-Value</button>
+            <button id="csv-format-btn" class="format-btn">CSV</button>
+            <button id="snippets-format-btn" class="format-btn">Templates/Snippets</button>
+          </div>
+
+          <div id="json-input-section" class="data-input-section">
+            <textarea id="json-input" placeholder='{\n  "name": "John Doe",\n  "items": [1, 2, 3]\n}'></textarea>
+          </div>
+
+          <div id="text-input-section" class="data-input-section" style="display: none;">
+            <textarea id="text-input" placeholder='name=John Doe\nemail=john@example.com\nage=30\ncity=New York'></textarea>
+            <div class="format-hint">Format: key=value (one per line) or key: value</div>
+          </div>
+
+          <div id="csv-input-section" class="data-input-section" style="display: none;">
+            <textarea id="csv-input" placeholder='name,email,age\nJohn Doe,john@example.com,30\nJane Smith,jane@example.com,25'></textarea>
+            <div class="format-hint">Format: First line = headers, following lines = data rows</div>
+          </div>
+
+          <div id="snippets-input-section" class="data-input-section" style="display: none;">
+            <div class="snippets-toolbar">
+              <button class="snippet-btn" data-snippet="sql-insert-basic">SQL INSERT (Basic)</button>
+              <button class="snippet-btn" data-snippet="sql-insert-multi">SQL INSERT (Multi-row)</button>
+              <button class="snippet-btn" data-snippet="sql-update-basic">SQL UPDATE (Basic)</button>
+              <button class="snippet-btn" data-snippet="sql-update-where">SQL UPDATE (WHERE)</button>
+              <button class="snippet-btn" data-snippet="sql-upsert">SQL UPSERT (MERGE)</button>
+              <button class="snippet-btn" data-snippet="sql-insert-select">INSERT INTO SELECT</button>
+            </div>
+            <textarea id="snippets-input" placeholder='Select a template above or define your own data in JSON format'></textarea>
+            <div class="format-hint">Click a template button to load pre-configured SQL snippets, or enter custom JSON data</div>
+          </div>
+
+          <div id="json-error" class="error-message"></div>
+        </div>
+
+        <div class="tool-section">
+          <label class="section-label" for="template-input">
+            Template
+            <span class="hint">Use {{ variable }}, {% for %}, {% if %}</span>
+          </label>
+          <div class="template-toolbar">
+            <button class="toolbar-btn" data-insert="{{ }}">{{ var }}</button>
+            <button class="toolbar-btn" data-insert="{% for item in items %}\n  \n{% endfor %}">for loop</button>
+            <button class="toolbar-btn" data-insert="{% if condition %}\n  \n{% endif %}">if</button>
+            <button class="toolbar-btn" data-insert=" | upper">| upper</button>
+            <button class="toolbar-btn" data-insert=" | lower">| lower</button>
+          </div>
+          <textarea id="template-input" placeholder="Hello {{ name }}!"></textarea>
+          <div id="template-error" class="error-message"></div>
+          <div id="autocomplete-popup" class="autocomplete-popup"></div>
+        </div>
+      </div>
+
+      <div class="preview-pane">
+        <div class="tool-section">
+          <label class="section-label">
+            Live Preview
+            <button id="copy-output-btn" class="inline-btn">Copy Output</button>
+          </label>
+          <div id="preview-output"></div>
+        </div>
+
+        <div class="tool-section" id="advanced-options">
+          <label class="section-label">Syntax Reference</label>
+          <div class="syntax-reference">
+            <div class="syntax-item">
+              <code>{{ variable }}</code>
+              <span>Insert variable value</span>
+            </div>
+            <div class="syntax-item">
+              <code>{% for item in array %} ... {% endfor %}</code>
+              <span>Loop through array</span>
+            </div>
+            <div class="syntax-item">
+              <code>{% if condition %} ... {% endif %}</code>
+              <span>Conditional rendering</span>
+            </div>
+            <div class="syntax-item">
+              <code>{% if condition %} ... {% else %} ... {% endif %}</code>
+              <span>Conditional with else</span>
+            </div>
+            <div class="syntax-item">
+              <code>{{ value | upper }}</code>
+              <span>Apply uppercase filter</span>
+            </div>
+            <div class="syntax-item">
+              <code>{{ value | lower }}</code>
+              <span>Apply lowercase filter</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .mode-toggle {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .mode-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .mode-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .data-format-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .format-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .format-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .format-btn:hover:not(.active) {
+    background: var(--bg-tertiary);
+  }
+
+  .data-input-section {
+    margin-bottom: 8px;
+  }
+
+  .data-input-section textarea {
+    min-height: 250px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  .format-hint {
+    margin-top: 6px;
+    padding: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .snippets-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+  }
+
+  .snippet-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-mono);
+  }
+
+  .snippet-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .snippet-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .template-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .template-card:hover {
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+  }
+
+  .template-icon {
+    font-size: 32px;
+  }
+
+  .template-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .editor-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .editor-pane,
+  .preview-pane {
+    min-width: 0;
+  }
+
+  .hint {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-left: 8px;
+  }
+
+  .template-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .toolbar-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .toolbar-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .inline-btn {
+    padding: 4px 12px;
+    font-size: 11px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: auto;
+  }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+  }
+
+  #json-input,
+  #text-input,
+  #csv-input,
+  #snippets-input,
+  #template-input {
+    min-height: 250px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  #preview-output {
+    min-height: 520px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
+
+  .error-message {
+    display: none;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 4px;
+    color: #c33;
+    font-size: 12px;
+  }
+
+  .error-message.show {
+    display: block;
+  }
+
+  .autocomplete-popup {
+    display: none;
+    position: absolute;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+
+  .autocomplete-popup.show {
+    display: block;
+  }
+
+  .autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .autocomplete-item:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  .syntax-reference {
+    display: grid;
+    gap: 12px;
+  }
+
+  .syntax-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .syntax-item code {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .syntax-item span {
+    color: var(--text-secondary);
+  }
+
+  #simplified-section {
+    display: block;
+  }
+
+  #advanced-options {
+    display: none;
+  }
+
+  .mode-advanced #simplified-section {
+    display: none;
+  }
+
+  .mode-advanced #advanced-options {
+    display: block;
+  }
+
+  @media (max-width: 1024px) {
+    .editor-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --error: #e74c3c;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input[type="text"],
+  select,
+  textarea {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  textarea {
+    min-height: 150px;
+    resize: vertical;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    margin-right: 8px;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+  }
+
+  button.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  button.secondary:hover {
+    background: var(--border-color);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+  currentMode: 'simplified',
+  currentDataFormat: 'json',
+  autocompleteKeys: [],
+  currentSnippet: null,
+
+  snippets: {
+    'sql-insert-basic': {
+      name: 'SQL INSERT (Basic)',
+      json: JSON.stringify({
+        table: 'Users',
+        data: {
+          FirstName: 'John',
+          LastName: 'Doe',
+          Email: 'john@example.com',
+          Age: 30,
+          City: 'New York'
+        }
+      }, null, 2),
+      template: `-- INSERT INTO {{ table }}
+INSERT INTO [{{ table }}] ([FirstName], [LastName], [Email], [Age], [City])
+VALUES ('{{ data.FirstName }}', '{{ data.LastName }}', '{{ data.Email }}', {{ data.Age }}, '{{ data.City }}');`
+    },
+    'sql-insert-multi': {
+      name: 'SQL INSERT (Multi-row)',
+      json: JSON.stringify({
+        table: 'Products',
+        columns: ['ProductName', 'Category', 'Price', 'Stock'],
+        rows: [
+          { ProductName: 'Laptop', Category: 'Electronics', Price: 999.99, Stock: 50 },
+          { ProductName: 'Mouse', Category: 'Electronics', Price: 29.99, Stock: 200 },
+          { ProductName: 'Keyboard', Category: 'Electronics', Price: 79.99, Stock: 150 },
+          { ProductName: 'Monitor', Category: 'Electronics', Price: 299.99, Stock: 75 }
+        ]
+      }, null, 2),
+      template: `-- Multi-row INSERT INTO {{ table }}
+{% for row in rows %}
+INSERT INTO [{{ table }}] ([ProductName], [Category], [Price], [Stock])
+VALUES ('{{ row.ProductName }}', '{{ row.Category }}', {{ row.Price }}, {{ row.Stock }});
+{% endfor %}`
+    },
+    'sql-update-basic': {
+      name: 'SQL UPDATE (Basic)',
+      json: JSON.stringify({
+        table: 'Customers',
+        id: 101,
+        data: {
+          Email: 'newemail@example.com',
+          Phone: '555-0123',
+          Address: '123 Main St',
+          City: 'Boston',
+          Status: 'Active'
+        }
+      }, null, 2),
+      template: `-- UPDATE {{ table }}
+UPDATE [{{ table }}]
+SET [Email] = '{{ data.Email }}',
+    [Phone] = '{{ data.Phone }}',
+    [Address] = '{{ data.Address }}',
+    [City] = '{{ data.City }}',
+    [Status] = '{{ data.Status }}'
+WHERE [Id] = {{ id }};`
+    },
+    'sql-update-where': {
+      name: 'SQL UPDATE with WHERE conditions',
+      json: JSON.stringify({
+        table: 'Orders',
+        updates: [
+          {
+            setClause: { Status: 'Shipped', ShippedDate: '2024-01-15', Carrier: 'FedEx' },
+            whereClause: { OrderId: 1001 }
+          },
+          {
+            setClause: { Status: 'Delivered', DeliveredDate: '2024-01-20' },
+            whereClause: { OrderId: 1002 }
+          },
+          {
+            setClause: { Status: 'Cancelled', CancelledDate: '2024-01-18', Reason: 'Customer Request' },
+            whereClause: { OrderId: 1003 }
+          }
+        ]
+      }, null, 2),
+      template: `-- UPDATE {{ table }} with WHERE conditions
+{% for update in updates %}
+UPDATE [{{ table }}]
+SET {% for key in update.setClause %}[{{ key }}] = '{{ update.setClause[key] }}'{% if not loop.last %},
+    {% endif %}{% endfor %}
+WHERE [OrderId] = {{ update.whereClause.OrderId }};
+{% endfor %}`
+    },
+    'sql-upsert': {
+      name: 'SQL UPSERT (MERGE)',
+      json: JSON.stringify({
+        table: 'Inventory',
+        keyColumn: 'ProductId',
+        data: [
+          { ProductId: 1, ProductName: 'Widget A', Quantity: 100, Price: 19.99 },
+          { ProductId: 2, ProductName: 'Widget B', Quantity: 50, Price: 29.99 },
+          { ProductId: 3, ProductName: 'Widget C', Quantity: 75, Price: 24.99 }
+        ]
+      }, null, 2),
+      template: `-- UPSERT (MERGE) for {{ table }}
+{% for row in data %}
+MERGE INTO [{{ table }}] AS target
+USING (SELECT {{ row.ProductId }} AS ProductId) AS source
+ON target.{{ keyColumn }} = source.{{ keyColumn }}
+WHEN MATCHED THEN
+  UPDATE SET
+    [ProductName] = '{{ row.ProductName }}',
+    [Quantity] = {{ row.Quantity }},
+    [Price] = {{ row.Price }}
+WHEN NOT MATCHED THEN
+  INSERT ([ProductId], [ProductName], [Quantity], [Price])
+  VALUES ({{ row.ProductId }}, '{{ row.ProductName }}', {{ row.Quantity }}, {{ row.Price }});
+{% endfor %}`
+    },
+    'sql-insert-select': {
+      name: 'INSERT INTO SELECT',
+      json: JSON.stringify({
+        targetTable: 'ActiveUsers',
+        sourceTable: 'Users',
+        columns: ['UserId', 'Username', 'Email', 'CreatedDate'],
+        whereCondition: 'Status = \'Active\' AND LastLoginDate >= DATEADD(month, -6, GETDATE())'
+      }, null, 2),
+      template: `-- INSERT INTO {{ targetTable }} from {{ sourceTable }}
+INSERT INTO [{{ targetTable }}] ({% for col in columns %}[{{ col }}]{% if not loop.last %}, {% endif %}{% endfor %})
+SELECT {% for col in columns %}[{{ col }}]{% if not loop.last %}, {% endif %}{% endfor %}
+FROM [{{ sourceTable }}]
+WHERE {{ whereCondition }};`
+    }
+  },
+
+  templates: {
+    'sql-insert': {
+      json: JSON.stringify({
+        table: 'Users',
+        columns: ['FirstName', 'LastName', 'Email'],
+        data: [
+          { FirstName: 'John', LastName: 'Doe', Email: 'john@example.com' },
+          { FirstName: 'Jane', LastName: 'Smith', Email: 'jane@example.com' }
+        ]
+      }, null, 2),
+      template: `-- Insert statements for {{ table }}
+{% for row in data %}
+INSERT INTO [{{ table }}] ({% for col in columns %}[{{ col }}]{% if not loop.last %}, {% endif %}{% endfor %})
+VALUES ({% for col in columns %}'{{ row[col] }}'{% if not loop.last %}, {% endif %}{% endfor %});
+{% endfor %}`
+    },
+    'sql-update': {
+      json: JSON.stringify({
+        table: 'Users',
+        keyColumn: 'Id',
+        data: [
+          { Id: 1, FirstName: 'John', LastName: 'Doe', Email: 'john.updated@example.com' },
+          { Id: 2, FirstName: 'Jane', LastName: 'Smith', Email: 'jane.updated@example.com' }
+        ]
+      }, null, 2),
+      template: `-- Update statements for {{ table }}
+{% for row in data %}
+UPDATE [{{ table }}]
+SET FirstName = '{{ row.FirstName }}',
+    LastName = '{{ row.LastName }}',
+    Email = '{{ row.Email }}'
+WHERE {{ keyColumn }} = {{ row.Id }};
+{% endfor %}`
+    },
+    'sql-merge': {
+      json: JSON.stringify({
+        targetTable: 'Users',
+        sourceTable: 'StagingUsers',
+        keyColumn: 'Id',
+        columns: ['FirstName', 'LastName', 'Email']
+      }, null, 2),
+      template: `MERGE INTO [{{ targetTable }}] AS target
+USING [{{ sourceTable }}] AS source
+ON target.{{ keyColumn }} = source.{{ keyColumn }}
+WHEN MATCHED THEN
+  UPDATE SET
+{% for col in columns %}
+    target.{{ col }} = source.{{ col }}{% if not loop.last %},{% endif %}
+{% endfor %}
+WHEN NOT MATCHED BY TARGET THEN
+  INSERT ({{ keyColumn }}{% for col in columns %}, {{ col }}{% endfor %})
+  VALUES (source.{{ keyColumn }}{% for col in columns %}, source.{{ col }}{% endfor %})
+WHEN NOT MATCHED BY SOURCE THEN
+  DELETE;`
+    },
+    'html': {
+      json: JSON.stringify({
+        title: 'My Page',
+        heading: 'Welcome',
+        items: ['Feature 1', 'Feature 2', 'Feature 3']
+      }, null, 2),
+      template: `<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ title }}</title>
+</head>
+<body>
+  <h1>{{ heading }}</h1>
+  <ul>
+{% for item in items %}
+    <li>{{ item }}</li>
+{% endfor %}
+  </ul>
+</body>
+</html>`
+    },
+    'config': {
+      json: JSON.stringify({
+        app: {
+          name: 'MyApp',
+          version: '1.0.0',
+          debug: true
+        },
+        database: {
+          host: 'localhost',
+          port: 5432
+        }
+      }, null, 2),
+      template: `# {{ app.name }} Configuration
+
+[application]
+name = "{{ app.name }}"
+version = "{{ app.version }}"
+debug = {% if app.debug %}true{% else %}false{% endif %}
+
+[database]
+host = "{{ database.host }}"
+port = {{ database.port }}`
+    },
+    'email': {
+      json: JSON.stringify({
+        recipient: 'John Doe',
+        product: 'Premium Plan',
+        price: 99.99,
+        features: ['Unlimited access', '24/7 support', 'Premium features']
+      }, null, 2),
+      template: `Dear {{ recipient }},
+
+Thank you for your interest in {{ product }}!
+
+Price: \${{ price }}
+
+This plan includes:
+{% for feature in features %}
+  ✓ {{ feature }}
+{% endfor %}
+
+Best regards,
+The Team`
+    },
+    'xml': {
+      json: JSON.stringify({
+        requestId: '12345',
+        items: [
+          { id: 1, name: 'Product A', quantity: 5 },
+          { id: 2, name: 'Product B', quantity: 3 }
+        ]
+      }, null, 2),
+      template: `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <OrderRequest xmlns="http://example.com/orders">
+      <RequestId>{{ requestId }}</RequestId>
+      <Items>
+{% for item in items %}
+        <Item>
+          <Id>{{ item.id }}</Id>
+          <Name>{{ item.name }}</Name>
+          <Quantity>{{ item.quantity }}</Quantity>
+        </Item>
+{% endfor %}
+      </Items>
+    </OrderRequest>
+  </soap:Body>
+</soap:Envelope>`
+    },
+    'csv': {
+      json: JSON.stringify({
+        headers: ['ID', 'Name', 'Email', 'Status'],
+        rows: [
+          { ID: 1, Name: 'John Doe', Email: 'john@example.com', Status: 'Active' },
+          { ID: 2, Name: 'Jane Smith', Email: 'jane@example.com', Status: 'Inactive' }
+        ]
+      }, null, 2),
+      template: `{% for header in headers %}{{ header }}{% if not loop.last %},{% endif %}{% endfor %}
+{% for row in rows %}
+{{ row.ID }},"{{ row.Name }}","{{ row.Email }}",{{ row.Status }}
+{% endfor %}`
+    },
+    'markdown': {
+      json: JSON.stringify({
+        title: 'API Documentation',
+        sections: [
+          {
+            heading: 'Authentication',
+            content: 'Use Bearer token authentication',
+            methods: ['POST /auth/login', 'POST /auth/refresh']
+          },
+          {
+            heading: 'Users',
+            content: 'User management endpoints',
+            methods: ['GET /users', 'POST /users', 'PUT /users/:id']
+          }
+        ]
+      }, null, 2),
+      template: `# {{ title }}
+
+{% for section in sections %}
+## {{ section.heading }}
+
+{{ section.content }}
+
+**Endpoints:**
+{% for method in section.methods %}
+- \`{{ method }}\`
+{% endfor %}
+
+{% endfor %}`
+    },
+    'api-doc': {
+      json: JSON.stringify({
+        endpoints: [
+          {
+            method: 'GET',
+            path: '/api/users',
+            description: 'Get all users',
+            params: [{ name: 'page', type: 'number', required: false }],
+            response: { type: 'User[]' }
+          },
+          {
+            method: 'POST',
+            path: '/api/users',
+            description: 'Create a new user',
+            params: [{ name: 'name', type: 'string', required: true }],
+            response: { type: 'User' }
+          }
+        ]
+      }, null, 2),
+      template: `# API Endpoints
+
+{% for endpoint in endpoints %}
+## {{ endpoint.method }} {{ endpoint.path }}
+
+**Description:** {{ endpoint.description }}
+
+**Parameters:**
+{% for param in endpoint.params %}
+- \`{{ param.name }}\` ({{ param.type }}){% if param.required %} - **Required**{% endif %}
+{% endfor %}
+
+**Response:** \`{{ endpoint.response.type }}\`
+
+---
+
+{% endfor %}`
+    },
+    'typescript': {
+      json: JSON.stringify({
+        interfaceName: 'User',
+        properties: [
+          { name: 'id', type: 'number', optional: false },
+          { name: 'name', type: 'string', optional: false },
+          { name: 'email', type: 'string', optional: false },
+          { name: 'age', type: 'number', optional: true }
+        ]
+      }, null, 2),
+      template: `interface {{ interfaceName }} {
+{% for prop in properties %}
+  {{ prop.name }}{% if prop.optional %}?{% endif %}: {{ prop.type }};
+{% endfor %}
+}
+
+export type {{ interfaceName }}DTO = Partial<{{ interfaceName }}>;
+
+export const create{{ interfaceName }} = (data: {{ interfaceName }}): {{ interfaceName }} => {
+  return {
+{% for prop in properties %}
+    {{ prop.name }}: data.{{ prop.name }},
+{% endfor %}
+  };
+};`
+    },
+    'docker': {
+      json: JSON.stringify({
+        services: [
+          {
+            name: 'web',
+            image: 'node:18',
+            ports: ['3000:3000'],
+            environment: ['NODE_ENV=production']
+          },
+          {
+            name: 'db',
+            image: 'postgres:15',
+            ports: ['5432:5432'],
+            environment: ['POSTGRES_PASSWORD=secret']
+          }
+        ]
+      }, null, 2),
+      template: `version: '3.8'
+
+services:
+{% for service in services %}
+  {{ service.name }}:
+    image: {{ service.image }}
+    ports:
+{% for port in service.ports %}
+      - "{{ port }}"
+{% endfor %}
+    environment:
+{% for env in service.environment %}
+      - {{ env }}
+{% endfor %}
+{% if not loop.last %}
+
+{% endif %}
+{% endfor %}`
+    },
+    'json-api': {
+      json: JSON.stringify({
+        users: [
+          { id: 1, name: 'John Doe', email: 'john@example.com', active: true },
+          { id: 2, name: 'Jane Smith', email: 'jane@example.com', active: false }
+        ]
+      }, null, 2),
+      template: `{
+  "data": [
+{% for user in users %}
+    {
+      "type": "user",
+      "id": "{{ user.id }}",
+      "attributes": {
+        "name": "{{ user.name }}",
+        "email": "{{ user.email }}",
+        "active": {{ user.active }}
+      }
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+  ]
+}`
+    },
+    'csharp-class': {
+      json: JSON.stringify({
+        namespace: 'MyApp.Models',
+        className: 'User',
+        properties: [
+          { name: 'Id', type: 'int', hasGetter: true, hasSetter: true },
+          { name: 'FirstName', type: 'string', hasGetter: true, hasSetter: true },
+          { name: 'Email', type: 'string', hasGetter: true, hasSetter: true }
+        ]
+      }, null, 2),
+      template: `namespace {{ namespace }}
+{
+    public class {{ className }}
+    {
+{% for prop in properties %}
+        public {{ prop.type }} {{ prop.name }} { {% if prop.hasGetter %}get;{% endif %} {% if prop.hasSetter %}set;{% endif %} }
+{% endfor %}
+
+        public {{ className }}()
+        {
+        }
+
+        public {{ className }}({% for prop in properties %}{{ prop.type }} {{ prop.name | lower }}{% if not loop.last %}, {% endif %}{% endfor %})
+        {
+{% for prop in properties %}
+            {{ prop.name }} = {{ prop.name | lower }};
+{% endfor %}
+        }
+    }
+}`
+    },
+    'python-class': {
+      json: JSON.stringify({
+        className: 'User',
+        properties: [
+          { name: 'id', type: 'int', default: '0' },
+          { name: 'name', type: 'str', default: '""' },
+          { name: 'email', type: 'str', default: '""' },
+          { name: 'active', type: 'bool', default: 'False' }
+        ],
+        methods: [
+          { name: 'get_display_name', returnType: 'str' },
+          { name: 'activate', returnType: 'None' }
+        ]
+      }, null, 2),
+      template: `class {{ className }}:
+    """{{ className }} model class"""
+
+    def __init__(self{% for prop in properties %}, {{ prop.name }}: {{ prop.type }} = {{ prop.default }}{% endfor %}):
+{% for prop in properties %}
+        self.{{ prop.name }} = {{ prop.name }}
+{% endfor %}
+{% for method in methods %}
+
+    def {{ method.name }}(self) -> {{ method.returnType }}:
+        """{{ method.name | upper }} method"""
+        pass
+{% endfor %}
+
+    def __repr__(self):
+        return f"{{ className }}({% for prop in properties %}{{ prop.name }}={self.{{ prop.name }}!r}{% if not loop.last %}, {% endif %}{% endfor %})"
+
+    def __str__(self):
+        return f"{{ className }}: {self.name}"`
+    },
+    'java-class': {
+      json: JSON.stringify({
+        package: 'com.example.models',
+        className: 'User',
+        properties: [
+          { name: 'id', type: 'Long', description: 'User ID' },
+          { name: 'username', type: 'String', description: 'Username' },
+          { name: 'email', type: 'String', description: 'Email address' },
+          { name: 'active', type: 'boolean', description: 'Active status' }
+        ]
+      }, null, 2),
+      template: `package {{ package }};
+
+import java.io.Serializable;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+/**
+ * {{ className }} entity class
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class {{ className }} implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+{% for prop in properties %}
+
+    /** {{ prop.description }} */
+    private {{ prop.type }} {{ prop.name }};
+{% endfor %}
+}`
+    },
+    'kubernetes': {
+      json: JSON.stringify({
+        appName: 'my-app',
+        namespace: 'production',
+        replicas: 3,
+        image: 'myapp:latest',
+        port: 8080,
+        env: [
+          { name: 'NODE_ENV', value: 'production' },
+          { name: 'DB_HOST', value: 'postgres-service' }
+        ]
+      }, null, 2),
+      template: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ appName }}-deployment
+  namespace: {{ namespace }}
+  labels:
+    app: {{ appName }}
+spec:
+  replicas: {{ replicas }}
+  selector:
+    matchLabels:
+      app: {{ appName }}
+  template:
+    metadata:
+      labels:
+        app: {{ appName }}
+    spec:
+      containers:
+      - name: {{ appName }}
+        image: {{ image }}
+        ports:
+        - containerPort: {{ port }}
+        env:
+{% for var in env %}
+        - name: {{ var.name }}
+          value: "{{ var.value }}"
+{% endfor %}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ appName }}-service
+  namespace: {{ namespace }}
+spec:
+  selector:
+    app: {{ appName }}
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: {{ port }}
+  type: LoadBalancer`
+    },
+    'terraform': {
+      json: JSON.stringify({
+        resources: [
+          {
+            type: 'aws_instance',
+            name: 'web_server',
+            ami: 'ami-0c55b159cbfafe1f0',
+            instance_type: 't2.micro',
+            tags: [
+              { key: 'Name', value: 'WebServer' },
+              { key: 'Environment', value: 'Production' }
+            ]
+          },
+          {
+            type: 'aws_s3_bucket',
+            name: 'data_bucket',
+            bucket_name: 'my-data-bucket',
+            tags: [
+              { key: 'Name', value: 'DataBucket' },
+              { key: 'Environment', value: 'Production' }
+            ]
+          }
+        ]
+      }, null, 2),
+      template: `{% for resource in resources %}
+resource "{{ resource.type }}" "{{ resource.name }}" {
+{% if resource.ami %}
+  ami           = "{{ resource.ami }}"
+{% endif %}
+{% if resource.instance_type %}
+  instance_type = "{{ resource.instance_type }}"
+{% endif %}
+{% if resource.bucket_name %}
+  bucket = "{{ resource.bucket_name }}"
+{% endif %}
+
+  tags = {
+{% for tag in resource.tags %}
+    {{ tag.key }} = "{{ tag.value }}"
+{% endfor %}
+  }
+}
+
+{% endfor %}`
+    },
+    'react-component': {
+      json: JSON.stringify({
+        componentName: 'UserCard',
+        props: [
+          { name: 'user', type: 'User', required: true },
+          { name: 'onEdit', type: '() => void', required: false },
+          { name: 'showDetails', type: 'boolean', required: false }
+        ],
+        hasState: true,
+        stateVars: [
+          { name: 'expanded', type: 'boolean', initial: 'false' }
+        ]
+      }, null, 2),
+      template: `import React, { {% if hasState %}useState, {% endif %}FC } from 'react';
+
+interface {{ componentName }}Props {
+{% for prop in props %}
+  {{ prop.name }}{% if not prop.required %}?{% endif %}: {{ prop.type }};
+{% endfor %}
+}
+
+export const {{ componentName }}: FC<{{ componentName }}Props> = ({ {% for prop in props %}{{ prop.name }}{% if not loop.last %}, {% endif %}{% endfor %} }) => {
+{% if hasState %}
+{% for state in stateVars %}
+  const [{{ state.name }}, set{{ state.name | upper }}] = useState<{{ state.type }}>({{ state.initial }});
+{% endfor %}
+{% endif %}
+
+  return (
+    <div className="{{ componentName | lower }}">
+      {/* Component content */}
+    </div>
+  );
+};`
+    },
+    'graphql': {
+      json: JSON.stringify({
+        types: [
+          {
+            name: 'User',
+            fields: [
+              { name: 'id', type: 'ID!', description: 'User ID' },
+              { name: 'username', type: 'String!', description: 'Username' },
+              { name: 'email', type: 'String!', description: 'Email address' },
+              { name: 'posts', type: '[Post!]!', description: 'User posts' }
+            ]
+          },
+          {
+            name: 'Post',
+            fields: [
+              { name: 'id', type: 'ID!', description: 'Post ID' },
+              { name: 'title', type: 'String!', description: 'Post title' },
+              { name: 'content', type: 'String!', description: 'Post content' },
+              { name: 'author', type: 'User!', description: 'Post author' }
+            ]
+          }
+        ],
+        queries: [
+          { name: 'user', args: 'id: ID!', returns: 'User' },
+          { name: 'posts', args: 'limit: Int', returns: '[Post!]!' }
+        ]
+      }, null, 2),
+      template: `{% for type in types %}
+"""{{ type.name }} type"""
+type {{ type.name }} {
+{% for field in type.fields %}
+  """{{ field.description }}"""
+  {{ field.name }}: {{ field.type }}
+{% endfor %}
+}
+
+{% endfor %}
+type Query {
+{% for query in queries %}
+  {{ query.name }}({{ query.args }}): {{ query.returns }}
+{% endfor %}
+}`
+    },
+    'sql-table': {
+      json: JSON.stringify({
+        schema: 'dbo',
+        tableName: 'Users',
+        columns: [
+          { name: 'Id', type: 'INT', primaryKey: true, identity: true },
+          { name: 'Username', type: 'NVARCHAR(50)', nullable: false, unique: true },
+          { name: 'Email', type: 'NVARCHAR(255)', nullable: false },
+          { name: 'CreatedAt', type: 'DATETIME2', nullable: false, default: 'GETUTCDATE()' },
+          { name: 'IsActive', type: 'BIT', nullable: false, default: '1' }
+        ],
+        indexes: [
+          { name: 'IX_Users_Email', columns: ['Email'] },
+          { name: 'IX_Users_Username', columns: ['Username'], unique: true }
+        ]
+      }, null, 2),
+      template: `CREATE TABLE [{{ schema }}].[{{ tableName }}] (
+{% for col in columns %}
+    [{{ col.name }}] {{ col.type }}{% if col.identity %} IDENTITY(1,1){% endif %}{% if col.primaryKey %} PRIMARY KEY{% endif %}{% if not col.nullable %} NOT NULL{% endif %}{% if col.default %} DEFAULT {{ col.default }}{% endif %}{% if col.unique and not col.primaryKey %} UNIQUE{% endif %}{% if not loop.last %},{% endif %}
+{% endfor %}
+);
+
+{% for index in indexes %}
+CREATE {% if index.unique %}UNIQUE {% endif %}INDEX [{{ index.name }}]
+ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{% if not loop.last %}, {% endif %}{% endfor %});
+
+{% endfor %}`
+    },
+    'rest-test': {
+      json: JSON.stringify({
+        apiName: 'User API',
+        baseUrl: 'https://api.example.com',
+        tests: [
+          {
+            name: 'Get all users',
+            method: 'GET',
+            endpoint: '/users',
+            expectedStatus: 200,
+            assertions: ['response.data.length > 0', 'response.data[0].id']
+          },
+          {
+            name: 'Create user',
+            method: 'POST',
+            endpoint: '/users',
+            body: { username: 'testuser', email: 'test@example.com' },
+            expectedStatus: 201,
+            assertions: ['response.data.id', 'response.data.username === "testuser"']
+          }
+        ]
+      }, null, 2),
+      template: `describe('{{ apiName }}', () => {
+  const baseUrl = '{{ baseUrl }}';
+{% for test in tests %}
+
+  test('{{ test.name }}', async () => {
+    const response = await fetch(\`\${baseUrl}{{ test.endpoint }}\`, {
+      method: '{{ test.method }}',
+{% if test.body %}
+      headers: { 'Content-Type': 'application/json' },
+      body: {{ test.body | tojson }},
+{% endif %}
+    });
+
+    expect(response.status).toBe({{ test.expectedStatus }});
+    const data = await response.json();
+{% for assertion in test.assertions %}
+    expect({{ assertion }}).toBeTruthy();
+{% endfor %}
+  });
+{% endfor %}
+});`
+    },
+    'csv-sql-insert': {
+      dataFormat: 'csv',
+      csv: `tableName,firstName,lastName,email,age\nUsers,John,Doe,john@example.com,30\nUsers,Jane,Smith,jane@example.com,25\nUsers,Bob,Johnson,bob@example.com,35`,
+      template: `-- SQL INSERT statements generated from CSV
+{% for row in rows %}
+INSERT INTO [{{ row.tableName }}] ([firstName], [lastName], [email], [age])
+VALUES ('{{ row.firstName }}', '{{ row.lastName }}', '{{ row.email }}', {{ row.age }});
+{% endfor %}`
+    },
+    'csv-sql-update': {
+      dataFormat: 'csv',
+      csv: `id,firstName,lastName,email,status\n1,John,Doe,john.updated@example.com,Active\n2,Jane,Smith,jane.updated@example.com,Inactive\n3,Bob,Johnson,bob.updated@example.com,Active`,
+      template: `-- SQL UPDATE statements generated from CSV
+{% for row in rows %}
+UPDATE [Users]
+SET [firstName] = '{{ row.firstName }}',
+    [lastName] = '{{ row.lastName }}',
+    [email] = '{{ row.email }}',
+    [status] = '{{ row.status }}'
+WHERE [id] = {{ row.id }};
+{% endfor %}`
+    },
+    'csv-html-table': {
+      dataFormat: 'csv',
+      csv: `name,email,department,salary\nJohn Doe,john@example.com,Engineering,75000\nJane Smith,jane@example.com,Marketing,65000\nBob Johnson,bob@example.com,Sales,70000`,
+      template: `<table>
+  <thead>
+    <tr>
+{% for header in headers %}
+      <th>{{ header }}</th>
+{% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+{% for row in rows %}
+    <tr>
+{% for header in headers %}
+      <td>{{ row[header] }}</td>
+{% endfor %}
+    </tr>
+{% endfor %}
+  </tbody>
+</table>`
+    },
+    'csv-markdown-table': {
+      dataFormat: 'csv',
+      csv: `feature,status,assignee,priority\nUser Authentication,In Progress,John Doe,High\nDashboard UI,Completed,Jane Smith,Medium\nAPI Integration,Not Started,Bob Johnson,High\nReporting Module,In Progress,Alice Brown,Low`,
+      template: `| {% for header in headers %}{{ header }} | {% endfor %}
+| {% for header in headers %}--- | {% endfor %}
+{% for row in rows %}
+| {% for header in headers %}{{ row[header] }} | {% endfor %}
+{% endfor %}`
+    },
+    'kv-env-file': {
+      dataFormat: 'text',
+      text: `APP_NAME=MyApplication\nAPP_ENV=production\nAPP_DEBUG=false\nAPP_URL=https://example.com\nDB_HOST=localhost\nDB_PORT=5432\nDB_DATABASE=myapp\nDB_USERNAME=dbuser\nDB_PASSWORD=secret123\nMAIL_HOST=smtp.mailtrap.io\nMAIL_PORT=2525`,
+      template: `# Environment Configuration
+# Generated on {{ APP_NAME }}
+
+# Application Settings
+APP_NAME={{ APP_NAME }}
+APP_ENV={{ APP_ENV }}
+APP_DEBUG={{ APP_DEBUG }}
+APP_URL={{ APP_URL }}
+
+# Database Configuration
+DB_HOST={{ DB_HOST }}
+DB_PORT={{ DB_PORT }}
+DB_DATABASE={{ DB_DATABASE }}
+DB_USERNAME={{ DB_USERNAME }}
+DB_PASSWORD={{ DB_PASSWORD }}
+
+# Mail Configuration
+MAIL_HOST={{ MAIL_HOST }}
+MAIL_PORT={{ MAIL_PORT }}`
+    },
+    'kv-properties': {
+      dataFormat: 'text',
+      text: `application.name=MyApp\napplication.version=1.0.0\nserver.port=8080\nserver.host=localhost\ndatabase.url=jdbc:postgresql://localhost:5432/mydb\ndatabase.username=admin\ndatabase.password=secret\nlogging.level=INFO\nlogging.file=/var/log/app.log`,
+      template: `# Application Properties
+# Generated configuration file
+
+application.name={{ application.name }}
+application.version={{ application.version }}
+
+server.port={{ server.port }}
+server.host={{ server.host }}
+
+database.url={{ database.url }}
+database.username={{ database.username }}
+database.password={{ database.password }}
+
+logging.level={{ logging.level }}
+logging.file={{ logging.file }}`
+    },
+    'kv-email': {
+      dataFormat: 'text',
+      text: `recipient=John Doe\nemail=john@example.com\nsubject=Welcome to Our Service\ncompany=Acme Corporation\nplan=Premium Plan\nprice=99.99\nsupport_email=support@acme.com`,
+      template: `Dear {{ recipient }},
+
+Welcome to {{ company }}! We're excited to have you on board.
+
+You have successfully subscribed to our {{ plan }}.
+Your subscription details:
+- Plan: {{ plan }}
+- Price: \${{ price }}/month
+- Email: {{ email }}
+
+If you have any questions, please don't hesitate to reach out to us at {{ support_email }}.
+
+Best regards,
+The {{ company }} Team`
+    },
+    'kv-config-yaml': {
+      dataFormat: 'text',
+      text: `app_name=MyApplication\nversion=1.0.0\nport=3000\nhost=localhost\ndb_host=localhost\ndb_port=5432\ndb_name=myapp\nlog_level=debug\nmax_connections=100`,
+      template: `# Application Configuration (YAML)
+app:
+  name: "{{ app_name }}"
+  version: "{{ version }}"
+
+server:
+  port: {{ port }}
+  host: "{{ host }}"
+
+database:
+  host: "{{ db_host }}"
+  port: {{ db_port }}
+  name: "{{ db_name }}"
+
+logging:
+  level: "{{ log_level }}"
+
+performance:
+  max_connections: {{ max_connections }}`
+    }
+  },
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const simplifiedModeBtn = container.querySelector("#simplified-mode-btn");
+    const advancedModeBtn = container.querySelector("#advanced-mode-btn");
+    const jsonFormatBtn = container.querySelector("#json-format-btn");
+    const textFormatBtn = container.querySelector("#text-format-btn");
+    const csvFormatBtn = container.querySelector("#csv-format-btn");
+    const snippetsFormatBtn = container.querySelector("#snippets-format-btn");
+    const jsonInput = container.querySelector("#json-input");
+    const textInput = container.querySelector("#text-input");
+    const csvInput = container.querySelector("#csv-input");
+    const snippetsInput = container.querySelector("#snippets-input");
+    const templateInput = container.querySelector("#template-input");
+    const copyOutputBtn = container.querySelector("#copy-output-btn");
+
+    simplifiedModeBtn?.addEventListener("click", () => this.setMode('simplified'));
+    advancedModeBtn?.addEventListener("click", () => this.setMode('advanced'));
+
+    jsonFormatBtn?.addEventListener("click", () => this.setDataFormat('json'));
+    textFormatBtn?.addEventListener("click", () => this.setDataFormat('text'));
+    csvFormatBtn?.addEventListener("click", () => this.setDataFormat('csv'));
+    snippetsFormatBtn?.addEventListener("click", () => this.setDataFormat('snippets'));
+
+    jsonInput?.addEventListener("input", () => this.render());
+    textInput?.addEventListener("input", () => this.render());
+    csvInput?.addEventListener("input", () => this.render());
+    snippetsInput?.addEventListener("input", () => this.render());
+    templateInput?.addEventListener("input", () => this.render());
+    templateInput?.addEventListener("keyup", (e) => this.handleAutocomplete(e));
+
+    copyOutputBtn?.addEventListener("click", () => this.copyOutput());
+
+    // Template card listeners
+    container.querySelectorAll('.template-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        const templateId = e.currentTarget.dataset.template;
+        this.loadTemplate(templateId);
+      });
+    });
+
+    // Toolbar button listeners
+    container.querySelectorAll('.toolbar-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const insert = e.target.dataset.insert;
+        this.insertAtCursor(templateInput, insert);
+      });
+    });
+
+    // Snippet button listeners
+    container.querySelectorAll('.snippet-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const snippetId = e.currentTarget.dataset.snippet;
+        this.loadSnippet(snippetId);
+      });
+    });
+
+    // Load default template
+    this.loadTemplate('sql-insert');
+  },
+
+  loadSnippet(snippetId) {
+    const snippet = this.snippets[snippetId];
+    if (!snippet) return;
+
+    this.currentSnippet = snippetId;
+
+    const snippetsInput = this.container.querySelector("#snippets-input");
+    const templateInput = this.container.querySelector("#template-input");
+
+    // Update active state
+    this.container.querySelectorAll('.snippet-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.dataset.snippet === snippetId) {
+        btn.classList.add('active');
+      }
+    });
+
+    // Load snippet data and template
+    snippetsInput.value = snippet.json;
+    templateInput.value = snippet.template;
+
+    this.render();
+  },
+
+  setMode(mode) {
+    this.currentMode = mode;
+    const simplifiedBtn = this.container.querySelector("#simplified-mode-btn");
+    const advancedBtn = this.container.querySelector("#advanced-mode-btn");
+
+    if (mode === 'simplified') {
+      simplifiedBtn.classList.add('active');
+      advancedBtn.classList.remove('active');
+      this.container.querySelector('.tool-container').classList.remove('mode-advanced');
+    } else {
+      advancedBtn.classList.add('active');
+      simplifiedBtn.classList.remove('active');
+      this.container.querySelector('.tool-container').classList.add('mode-advanced');
+    }
+  },
+
+  setDataFormat(format) {
+    this.currentDataFormat = format;
+    const jsonBtn = this.container.querySelector("#json-format-btn");
+    const textBtn = this.container.querySelector("#text-format-btn");
+    const csvBtn = this.container.querySelector("#csv-format-btn");
+    const snippetsBtn = this.container.querySelector("#snippets-format-btn");
+    const jsonSection = this.container.querySelector("#json-input-section");
+    const textSection = this.container.querySelector("#text-input-section");
+    const csvSection = this.container.querySelector("#csv-input-section");
+    const snippetsSection = this.container.querySelector("#snippets-input-section");
+
+    // Update button states
+    jsonBtn.classList.remove('active');
+    textBtn.classList.remove('active');
+    csvBtn.classList.remove('active');
+    snippetsBtn.classList.remove('active');
+
+    // Hide all sections
+    jsonSection.style.display = 'none';
+    textSection.style.display = 'none';
+    csvSection.style.display = 'none';
+    snippetsSection.style.display = 'none';
+
+    // Show selected section and activate button
+    if (format === 'json') {
+      jsonBtn.classList.add('active');
+      jsonSection.style.display = 'block';
+    } else if (format === 'text') {
+      textBtn.classList.add('active');
+      textSection.style.display = 'block';
+    } else if (format === 'csv') {
+      csvBtn.classList.add('active');
+      csvSection.style.display = 'block';
+    } else if (format === 'snippets') {
+      snippetsBtn.classList.add('active');
+      snippetsSection.style.display = 'block';
+      // Load first snippet by default if none selected
+      if (!this.currentSnippet) {
+        this.loadSnippet('sql-insert-basic');
+      }
+    }
+
+    this.render();
+  },
+
+  loadTemplate(templateId) {
+    const template = this.templates[templateId];
+    if (!template) return;
+
+    const jsonInput = this.container.querySelector("#json-input");
+    const textInput = this.container.querySelector("#text-input");
+    const csvInput = this.container.querySelector("#csv-input");
+    const templateInput = this.container.querySelector("#template-input");
+
+    // Determine which data format to use
+    const dataFormat = template.dataFormat || 'json';
+
+    // Switch to the appropriate data format
+    if (dataFormat !== this.currentDataFormat) {
+      this.setDataFormat(dataFormat);
+    }
+
+    // Load the data based on format
+    if (dataFormat === 'json') {
+      jsonInput.value = template.json;
+    } else if (dataFormat === 'text') {
+      textInput.value = template.text;
+    } else if (dataFormat === 'csv') {
+      csvInput.value = template.csv;
+    }
+
+    // Load the template
+    templateInput.value = template.template;
+
+    this.render();
+  },
+
+  insertAtCursor(textarea, text) {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const value = textarea.value;
+
+    textarea.value = value.substring(0, start) + text + value.substring(end);
+    textarea.selectionStart = textarea.selectionEnd = start + text.length;
+    textarea.focus();
+
+    this.render();
+  },
+
+  handleAutocomplete(e) {
+    const textarea = e.target;
+    const cursorPos = textarea.selectionStart;
+    const textBefore = textarea.value.substring(0, cursorPos);
+
+    // Check if we're typing inside {{ }}
+    const match = textBefore.match(/\{\{\s*(\w*)$/);
+
+    if (match && this.autocompleteKeys.length > 0) {
+      const partial = match[1].toLowerCase();
+      const suggestions = this.autocompleteKeys.filter(key =>
+        key.toLowerCase().startsWith(partial)
+      );
+
+      if (suggestions.length > 0) {
+        this.showAutocomplete(suggestions, textarea);
+        return;
+      }
+    }
+
+    this.hideAutocomplete();
+  },
+
+  showAutocomplete(suggestions, textarea) {
+    const popup = this.container.querySelector("#autocomplete-popup");
+    popup.innerHTML = suggestions.map(key =>
+      `<div class="autocomplete-item" data-key="${key}">${key}</div>`
+    ).join('');
+
+    // Position popup
+    const rect = textarea.getBoundingClientRect();
+    popup.style.left = rect.left + 'px';
+    popup.style.top = (rect.top + 100) + 'px';
+    popup.classList.add('show');
+
+    // Add click listeners
+    popup.querySelectorAll('.autocomplete-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const key = item.dataset.key;
+        this.insertAutocomplete(textarea, key);
+      });
+    });
+  },
+
+  insertAutocomplete(textarea, key) {
+    const cursorPos = textarea.selectionStart;
+    const textBefore = textarea.value.substring(0, cursorPos);
+    const textAfter = textarea.value.substring(cursorPos);
+
+    const match = textBefore.match(/\{\{\s*(\w*)$/);
+    if (match) {
+      const newTextBefore = textBefore.substring(0, textBefore.length - match[1].length);
+      textarea.value = newTextBefore + key + ' }}' + textAfter;
+      textarea.selectionStart = textarea.selectionEnd = newTextBefore.length + key.length + 3;
+    }
+
+    this.hideAutocomplete();
+    this.render();
+  },
+
+  hideAutocomplete() {
+    const popup = this.container.querySelector("#autocomplete-popup");
+    popup.classList.remove('show');
+  },
+
+  render() {
+    const templateInput = this.container.querySelector("#template-input");
+    const jsonError = this.container.querySelector("#json-error");
+    const templateError = this.container.querySelector("#template-error");
+    const preview = this.container.querySelector("#preview-output");
+
+    // Clear errors
+    jsonError.classList.remove('show');
+    templateError.classList.remove('show');
+
+    // Parse data based on current format
+    let data;
+    try {
+      if (this.currentDataFormat === 'json') {
+        const jsonInput = this.container.querySelector("#json-input");
+        data = JSON.parse(jsonInput.value || '{}');
+      } else if (this.currentDataFormat === 'text') {
+        const textInput = this.container.querySelector("#text-input");
+        data = this.parseKeyValueText(textInput.value);
+      } else if (this.currentDataFormat === 'csv') {
+        const csvInput = this.container.querySelector("#csv-input");
+        data = this.parseCSV(csvInput.value);
+      } else if (this.currentDataFormat === 'snippets') {
+        const snippetsInput = this.container.querySelector("#snippets-input");
+        data = JSON.parse(snippetsInput.value || '{}');
+      }
+      this.autocompleteKeys = this.extractKeys(data);
+    } catch (e) {
+      jsonError.textContent = 'Invalid data: ' + e.message;
+      jsonError.classList.add('show');
+      preview.textContent = '';
+      return;
+    }
+
+    // Render template
+    try {
+      const result = this.renderTemplate(templateInput.value, data);
+      preview.textContent = result;
+      this.context.setOutput(result);
+    } catch (e) {
+      templateError.textContent = 'Template error: ' + e.message;
+      templateError.classList.add('show');
+      preview.textContent = '';
+    }
+  },
+
+  parseKeyValueText(text) {
+    const lines = text.trim().split('\n');
+    const data = {};
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (!trimmedLine || trimmedLine.startsWith('#')) continue; // Skip empty lines and comments
+
+      // Support both = and : as separators
+      const separatorIndex = trimmedLine.search(/[=:]/);
+      if (separatorIndex === -1) continue;
+
+      const key = trimmedLine.substring(0, separatorIndex).trim();
+      const value = trimmedLine.substring(separatorIndex + 1).trim();
+
+      // Try to parse as number or boolean
+      if (value === 'true') {
+        data[key] = true;
+      } else if (value === 'false') {
+        data[key] = false;
+      } else if (!isNaN(value) && value !== '') {
+        data[key] = Number(value);
+      } else {
+        // Remove quotes if present
+        data[key] = value.replace(/^["']|["']$/g, '');
+      }
+    }
+
+    return data;
+  },
+
+  parseCSV(text) {
+    const lines = text.trim().split('\n');
+    if (lines.length === 0) return { rows: [] };
+
+    // Parse header
+    const headers = lines[0].split(',').map(h => h.trim());
+
+    // Parse rows
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      const row = {};
+      headers.forEach((header, index) => {
+        const value = values[index] || '';
+        // Try to parse as number
+        if (!isNaN(value) && value !== '') {
+          row[header] = Number(value);
+        } else {
+          // Remove quotes if present
+          row[header] = value.replace(/^["']|["']$/g, '');
+        }
+      });
+      rows.push(row);
+    }
+
+    return { headers, rows };
+  },
+
+  extractKeys(obj, prefix = '') {
+    let keys = [];
+    for (const key in obj) {
+      const fullKey = prefix ? `${prefix}.${key}` : key;
+      keys.push(fullKey);
+      if (typeof obj[key] === 'object' && !Array.isArray(obj[key]) && obj[key] !== null) {
+        keys = keys.concat(this.extractKeys(obj[key], fullKey));
+      }
+    }
+    return keys;
+  },
+
+  renderTemplate(template, data) {
+    let result = template;
+
+    // Process for loops
+    result = this.processForLoops(result, data);
+
+    // Process if statements
+    result = this.processIfStatements(result, data);
+
+    // Process variables with filters
+    result = this.processVariables(result, data);
+
+    return result;
+  },
+
+  processForLoops(template, data) {
+    const forRegex = /\{%\s*for\s+(\w+)\s+in\s+([\w.]+)\s*%\}([\s\S]*?)\{%\s*endfor\s*%\}/g;
+
+    return template.replace(forRegex, (match, itemVar, arrayPath, loopContent) => {
+      const array = this.getNestedValue(data, arrayPath);
+
+      if (!Array.isArray(array)) {
+        throw new Error(`'${arrayPath}' is not an array`);
+      }
+
+      return array.map((item, index) => {
+        const loopData = {
+          ...data,
+          [itemVar]: item,
+          loop: {
+            index: index,
+            index0: index,
+            index1: index + 1,
+            first: index === 0,
+            last: index === array.length - 1,
+            length: array.length
+          }
+        };
+        return this.processTemplate(loopContent, loopData);
+      }).join('');
+    });
+  },
+
+  processIfStatements(template, data) {
+    const ifRegex = /\{%\s*if\s+([\w.]+)\s*%\}([\s\S]*?)(?:\{%\s*else\s*%\}([\s\S]*?))?\{%\s*endif\s*%\}/g;
+
+    return template.replace(ifRegex, (match, condition, trueContent, falseContent) => {
+      const value = this.getNestedValue(data, condition);
+      const isTruthy = value && value !== 'false' && value !== '0';
+
+      if (isTruthy) {
+        return this.processTemplate(trueContent, data);
+      } else if (falseContent) {
+        return this.processTemplate(falseContent, data);
+      }
+      return '';
+    });
+  },
+
+  processVariables(template, data) {
+    const varRegex = /\{\{\s*([\w.]+(?:\[[\w.]+\])?)\s*(\|\s*(\w+))?\s*\}\}/g;
+
+    return template.replace(varRegex, (match, varPath, filterPart, filterName) => {
+      let value = this.getNestedValue(data, varPath);
+
+      if (value === undefined || value === null) {
+        return '';
+      }
+
+      // Apply filter if specified
+      if (filterName) {
+        value = this.applyFilter(value, filterName);
+      }
+
+      return String(value);
+    });
+  },
+
+  processTemplate(template, data) {
+    // Recursively process nested structures
+    let result = template;
+    result = this.processForLoops(result, data);
+    result = this.processIfStatements(result, data);
+    result = this.processVariables(result, data);
+    return result;
+  },
+
+  getNestedValue(obj, path) {
+    // Handle array access like row[col]
+    const arrayAccessMatch = path.match(/^(\w+)\[(\w+)\]$/);
+    if (arrayAccessMatch) {
+      const arrayName = arrayAccessMatch[1];
+      const keyName = arrayAccessMatch[2];
+      const array = this.getNestedValue(obj, arrayName);
+      const key = this.getNestedValue(obj, keyName);
+      return array ? array[key] : undefined;
+    }
+
+    return path.split('.').reduce((current, key) => {
+      return current ? current[key] : undefined;
+    }, obj);
+  },
+
+  applyFilter(value, filterName) {
+    switch (filterName) {
+      case 'upper':
+        return String(value).toUpperCase();
+      case 'lower':
+        return String(value).toLowerCase();
+      case 'length':
+        return Array.isArray(value) ? value.length : String(value).length;
+      case 'tojson':
+        return JSON.stringify(value);
+      default:
+        return value;
+    }
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (output) {
+      navigator.clipboard.writeText(output).then(() => {
+        const copyBtn = this.container.querySelector("#copy-output-btn");
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = "✓ Copied!";
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      });
+    }
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) {
+          this.output = val;
+        },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

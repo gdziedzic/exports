@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Config Manager - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "config-manager",
+  "name": "Config Manager",
+  "category": "DevChef",
+  "description": "Manage DevChef configuration and settings",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">DevChef Configuration Manager</h2>
+      <p class="tool-description">Manage application settings and configuration</p>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Current Configuration</label>
+      <div class="config-info">
+        <div class="info-item">
+          <span class="info-label">Theme:</span>
+          <span id="current-theme" class="info-value">-</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Loaded Tools:</span>
+          <span id="loaded-tools" class="info-value">-</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Last Tool:</span>
+          <span id="last-tool" class="info-value">-</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Configuration Editor</label>
+      <div class="editor-controls">
+        <button id="load-config-btn" class="secondary">Load Current Config</button>
+        <button id="apply-config-btn">Apply Configuration</button>
+      </div>
+      <textarea id="config-editor" placeholder="Edit configuration in JSON format..."></textarea>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">File Operations</label>
+      <div class="file-operations">
+        <button id="export-btn">Export to JSON File</button>
+        <button id="import-btn" class="secondary">Import from JSON File</button>
+        <input type="file" id="file-input" accept=".json" style="display: none;">
+        <button id="reset-btn" class="secondary">Reset to Defaults</button>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Configuration Templates</label>
+      <div class="template-grid">
+        <div class="template-card" data-template="minimal">
+          <h4>Minimal</h4>
+          <p>Essential settings only</p>
+          <button class="template-btn secondary">Load</button>
+        </div>
+        <div class="template-card" data-template="developer">
+          <h4>Developer</h4>
+          <p>Development-friendly setup</p>
+          <button class="template-btn secondary">Load</button>
+        </div>
+        <div class="template-card" data-template="full">
+          <h4>Full Featured</h4>
+          <p>All tools and features enabled</p>
+          <button class="template-btn secondary">Load</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="status-message" class="status-message"></div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .config-info {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+  }
+
+  .info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .info-item:last-child {
+    border-bottom: none;
+  }
+
+  .info-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .info-value {
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  .editor-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  #config-editor {
+    min-height: 300px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  .file-operations {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .template-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s;
+  }
+
+  .template-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .template-card h4 {
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+    font-size: 16px;
+  }
+
+  .template-card p {
+    margin: 0 0 12px 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .template-btn {
+    width: 100%;
+    margin: 0;
+  }
+
+  .status-message {
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-top: 16px;
+    display: none;
+  }
+
+  .status-message.success {
+    display: block;
+    background: rgba(39, 174, 96, 0.1);
+    border: 1px solid var(--success);
+    color: var(--success);
+  }
+
+  .status-message.error {
+    display: block;
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid var(--error);
+    color: var(--error);
+  }
+
+  .status-message.info {
+    display: block;
+    background: rgba(52, 152, 219, 0.1);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+  }
+</style>
+
+<!-- Standalone Styles (used when opened directly) -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --success: #27ae60;
+    --error: #e74c3c;
+    --warning: #f39c12;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  textarea,
+  input[type="text"],
+  select {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    resize: vertical;
+    transition: all 0.2s;
+  }
+
+  textarea:focus,
+  input:focus,
+  select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+
+  textarea {
+    min-height: 150px;
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    margin-right: 8px;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  button.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  button.secondary:hover {
+    background: var(--border-color);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+  config: null,
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    // Load current config
+    this.loadCurrentConfig();
+    this.updateConfigInfo();
+
+    // Set up event handlers
+    this.setupEventHandlers();
+  },
+
+  setupEventHandlers() {
+    // Load config button
+    const loadBtn = this.container.querySelector("#load-config-btn");
+    loadBtn?.addEventListener("click", () => {
+      this.loadConfigToEditor();
+    });
+
+    // Apply config button
+    const applyBtn = this.container.querySelector("#apply-config-btn");
+    applyBtn?.addEventListener("click", () => {
+      this.applyConfiguration();
+    });
+
+    // Export button
+    const exportBtn = this.container.querySelector("#export-btn");
+    exportBtn?.addEventListener("click", () => {
+      this.exportToFile();
+    });
+
+    // Import button
+    const importBtn = this.container.querySelector("#import-btn");
+    importBtn?.addEventListener("click", () => {
+      const fileInput = this.container.querySelector("#file-input");
+      fileInput?.click();
+    });
+
+    // File input
+    const fileInput = this.container.querySelector("#file-input");
+    fileInput?.addEventListener("change", (e) => {
+      this.importFromFile(e);
+    });
+
+    // Reset button
+    const resetBtn = this.container.querySelector("#reset-btn");
+    resetBtn?.addEventListener("click", () => {
+      this.resetToDefaults();
+    });
+
+    // Template buttons
+    const templateBtns = this.container.querySelectorAll(".template-btn");
+    templateBtns.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const card = e.target.closest(".template-card");
+        const template = card?.dataset.template;
+        if (template) {
+          this.loadTemplate(template);
+        }
+      });
+    });
+  },
+
+  loadCurrentConfig() {
+    // Gather current configuration from localStorage and DevChef
+    this.config = {
+      theme: localStorage.getItem('devchef-theme') || 'light',
+      lastTool: localStorage.getItem('devchef-last-tool') || null,
+      enabledTools: this.getEnabledTools(),
+      customSettings: this.getCustomSettings(),
+      version: '1.0.0',
+      timestamp: new Date().toISOString()
+    };
+  },
+
+  getEnabledTools() {
+    // Get list of enabled tools from ToolRegistry if available
+    if (window.DevChef?.ToolRegistry) {
+      return window.DevChef.ToolRegistry.all().map(t => t.id);
+    }
+    return [];
+  },
+
+  getCustomSettings() {
+    // Get any custom settings from localStorage
+    const settings = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('devchef-') && !['devchef-theme', 'devchef-last-tool'].includes(key)) {
+        settings[key] = localStorage.getItem(key);
+      }
+    }
+    return settings;
+  },
+
+  updateConfigInfo() {
+    const themeEl = this.container.querySelector("#current-theme");
+    const toolsEl = this.container.querySelector("#loaded-tools");
+    const lastToolEl = this.container.querySelector("#last-tool");
+
+    if (themeEl) themeEl.textContent = this.config.theme || 'light';
+    if (toolsEl) toolsEl.textContent = this.config.enabledTools?.length || 0;
+    if (lastToolEl) lastToolEl.textContent = this.config.lastTool || 'None';
+  },
+
+  loadConfigToEditor() {
+    this.loadCurrentConfig();
+    const editor = this.container.querySelector("#config-editor");
+    if (editor) {
+      editor.value = JSON.stringify(this.config, null, 2);
+    }
+    this.showStatus('Configuration loaded into editor', 'info');
+  },
+
+  applyConfiguration() {
+    const editor = this.container.querySelector("#config-editor");
+    if (!editor) return;
+
+    try {
+      const newConfig = JSON.parse(editor.value);
+
+      // Validate configuration
+      if (!this.validateConfig(newConfig)) {
+        this.showStatus('Invalid configuration format', 'error');
+        return;
+      }
+
+      // Apply theme
+      if (newConfig.theme) {
+        localStorage.setItem('devchef-theme', newConfig.theme);
+        document.documentElement?.setAttribute('data-theme', newConfig.theme);
+      }
+
+      // Apply last tool
+      if (newConfig.lastTool) {
+        localStorage.setItem('devchef-last-tool', newConfig.lastTool);
+      }
+
+      // Apply custom settings
+      if (newConfig.customSettings) {
+        Object.entries(newConfig.customSettings).forEach(([key, value]) => {
+          localStorage.setItem(key, value);
+        });
+      }
+
+      this.config = newConfig;
+      this.updateConfigInfo();
+      this.showStatus('Configuration applied successfully', 'success');
+    } catch (error) {
+      this.showStatus(`Error: ${error.message}`, 'error');
+    }
+  },
+
+  validateConfig(config) {
+    // Basic validation
+    if (typeof config !== 'object') return false;
+    if (config.theme && !['light', 'dark'].includes(config.theme)) return false;
+    return true;
+  },
+
+  exportToFile() {
+    this.loadCurrentConfig();
+
+    const dataStr = JSON.stringify(this.config, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `devchef-config-${new Date().getTime()}.json`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+    this.showStatus('Configuration exported successfully', 'success');
+  },
+
+  importFromFile(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const config = JSON.parse(e.target.result);
+        const editor = this.container.querySelector("#config-editor");
+        if (editor) {
+          editor.value = JSON.stringify(config, null, 2);
+        }
+        this.showStatus('Configuration imported to editor. Click "Apply" to use it.', 'info');
+      } catch (error) {
+        this.showStatus(`Import error: ${error.message}`, 'error');
+      }
+    };
+    reader.readAsText(file);
+
+    // Reset file input
+    event.target.value = '';
+  },
+
+  resetToDefaults() {
+    const defaultConfig = {
+      theme: 'light',
+      lastTool: null,
+      enabledTools: [],
+      customSettings: {},
+      version: '1.0.0',
+      timestamp: new Date().toISOString()
+    };
+
+    const editor = this.container.querySelector("#config-editor");
+    if (editor) {
+      editor.value = JSON.stringify(defaultConfig, null, 2);
+    }
+    this.showStatus('Default configuration loaded. Click "Apply" to use it.', 'info');
+  },
+
+  loadTemplate(templateName) {
+    let template;
+
+    switch (templateName) {
+      case 'minimal':
+        template = {
+          theme: 'light',
+          lastTool: null,
+          enabledTools: ['string-cleaner'],
+          customSettings: {},
+          version: '1.0.0'
+        };
+        break;
+
+      case 'developer':
+        template = {
+          theme: 'dark',
+          lastTool: null,
+          enabledTools: ['string-cleaner', 'base64-tool', 'hash-generator', 'regex-tester'],
+          customSettings: {
+            'devchef-developer-mode': 'true'
+          },
+          version: '1.0.0'
+        };
+        break;
+
+      case 'full':
+        template = {
+          theme: 'dark',
+          lastTool: null,
+          enabledTools: this.getEnabledTools(),
+          customSettings: {
+            'devchef-all-features': 'true'
+          },
+          version: '1.0.0'
+        };
+        break;
+    }
+
+    if (template) {
+      const editor = this.container.querySelector("#config-editor");
+      if (editor) {
+        editor.value = JSON.stringify(template, null, 2);
+      }
+      this.showStatus(`${templateName} template loaded. Click "Apply" to use it.`, 'info');
+    }
+  },
+
+  showStatus(message, type = 'info') {
+    const statusEl = this.container.querySelector("#status-message");
+    if (statusEl) {
+      statusEl.textContent = message;
+      statusEl.className = `status-message ${type}`;
+
+      setTimeout(() => {
+        statusEl.className = 'status-message';
+      }, 5000);
+    }
+  },
+
+  onInput(input, context) {
+    // This tool doesn't process input/output
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) { this.output = val; },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>

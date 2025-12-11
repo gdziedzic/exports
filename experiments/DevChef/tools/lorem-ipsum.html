@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lorem Ipsum Generator - DevChef Tool</title>
+</head>
+<body>
+
+<!-- DevChef Manifest -->
+<script type="devchef-manifest">
+{
+  "id": "lorem-ipsum",
+  "name": "Lorem Ipsum",
+  "category": "Text",
+  "description": "Generate placeholder text for designs and mockups",
+  "version": "1.0.0"
+}
+</script>
+
+<!-- Tool UI Template -->
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">Lorem Ipsum Generator</h2>
+      <p class="tool-description">Generate placeholder text for designs and mockups</p>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Generation Options</label>
+      <div class="options-grid">
+        <div class="option-item">
+          <label for="count">Count</label>
+          <input type="number" id="count" value="5" min="1" max="100">
+        </div>
+        <div class="option-item">
+          <label for="unit">Unit</label>
+          <select id="unit">
+            <option value="paragraphs">Paragraphs</option>
+            <option value="sentences">Sentences</option>
+            <option value="words">Words</option>
+          </select>
+        </div>
+        <div class="option-item checkbox-item">
+          <label>
+            <input type="checkbox" id="start-with-lorem" checked>
+            <span>Start with "Lorem ipsum"</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <button id="generate-btn">Generate</button>
+      <button id="copy-btn" class="secondary">Copy to Clipboard</button>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label" for="output">Generated Text</label>
+      <textarea id="output" readonly></textarea>
+    </div>
+  </div>
+</template>
+
+<!-- Tool Styles -->
+<style>
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .option-item label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .option-item input,
+  .option-item select {
+    width: 100%;
+  }
+
+  .checkbox-item label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: none;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .checkbox-item input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+  }
+
+  #output {
+    min-height: 300px;
+    line-height: 1.8;
+  }
+</style>
+
+<!-- Standalone Styles -->
+<style id="standalone-styles">
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --border-color: #d0d0d0;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent: #3498db;
+    --accent-hover: #2980b9;
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .tool-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  .tool-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .tool-description {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  textarea, input, select {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    border-radius: 6px;
+    resize: vertical;
+    transition: all 0.2s;
+  }
+
+  textarea {
+    min-height: 150px;
+    font-family: var(--font-sans);
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    margin-right: 8px;
+  }
+
+  button:hover {
+    background: var(--accent-hover);
+  }
+
+  button.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  button.secondary:hover {
+    background: var(--border-color);
+  }
+</style>
+
+<!-- Tool Module Logic -->
+<script type="module">
+export const DevChefTool = {
+  container: null,
+  context: null,
+
+  words: [
+    "lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing", "elit",
+    "sed", "do", "eiusmod", "tempor", "incididunt", "ut", "labore", "et", "dolore",
+    "magna", "aliqua", "enim", "ad", "minim", "veniam", "quis", "nostrud", "exercitation",
+    "ullamco", "laboris", "nisi", "aliquip", "ex", "ea", "commodo", "consequat",
+    "duis", "aute", "irure", "in", "reprehenderit", "voluptate", "velit", "esse",
+    "cillum", "fugiat", "nulla", "pariatur", "excepteur", "sint", "occaecat",
+    "cupidatat", "non", "proident", "sunt", "culpa", "qui", "officia", "deserunt",
+    "mollit", "anim", "id", "est", "laborum"
+  ],
+
+  init(container, context) {
+    this.container = container;
+    this.context = context;
+
+    const generateBtn = container.querySelector("#generate-btn");
+    const copyBtn = container.querySelector("#copy-btn");
+
+    generateBtn?.addEventListener("click", () => this.generate());
+    copyBtn?.addEventListener("click", () => this.copyOutput());
+
+    // Generate on load
+    this.generate();
+  },
+
+  generate() {
+    const count = parseInt(this.container.querySelector("#count")?.value) || 5;
+    const unit = this.container.querySelector("#unit")?.value || "paragraphs";
+    const startWithLorem = this.container.querySelector("#start-with-lorem")?.checked || false;
+
+    let result = "";
+
+    switch (unit) {
+      case "paragraphs":
+        result = this.generateParagraphs(count, startWithLorem);
+        break;
+      case "sentences":
+        result = this.generateSentences(count, startWithLorem);
+        break;
+      case "words":
+        result = this.generateWords(count, startWithLorem);
+        break;
+    }
+
+    this.context.setOutput(result);
+  },
+
+  generateParagraphs(count, startWithLorem) {
+    const paragraphs = [];
+
+    for (let i = 0; i < count; i++) {
+      const sentenceCount = Math.floor(Math.random() * 5) + 4;
+      const sentences = [];
+
+      for (let j = 0; j < sentenceCount; j++) {
+        const isFirst = i === 0 && j === 0 && startWithLorem;
+        sentences.push(this.generateSentence(isFirst));
+      }
+
+      paragraphs.push(sentences.join(" "));
+    }
+
+    return paragraphs.join("\n\n");
+  },
+
+  generateSentences(count, startWithLorem) {
+    const sentences = [];
+
+    for (let i = 0; i < count; i++) {
+      const isFirst = i === 0 && startWithLorem;
+      sentences.push(this.generateSentence(isFirst));
+    }
+
+    return sentences.join(" ");
+  },
+
+  generateWords(count, startWithLorem) {
+    const words = [];
+
+    if (startWithLorem && count >= 2) {
+      words.push("Lorem", "ipsum");
+      count -= 2;
+    }
+
+    for (let i = 0; i < count; i++) {
+      words.push(this.words[Math.floor(Math.random() * this.words.length)]);
+    }
+
+    return words.join(" ");
+  },
+
+  generateSentence(startWithLorem) {
+    const wordCount = Math.floor(Math.random() * 10) + 5;
+    const words = [];
+
+    if (startWithLorem) {
+      words.push("Lorem", "ipsum", "dolor", "sit", "amet");
+      for (let i = 5; i < wordCount; i++) {
+        words.push(this.words[Math.floor(Math.random() * this.words.length)]);
+      }
+    } else {
+      for (let i = 0; i < wordCount; i++) {
+        words.push(this.words[Math.floor(Math.random() * this.words.length)]);
+      }
+    }
+
+    const sentence = words.join(" ");
+    return sentence.charAt(0).toUpperCase() + sentence.slice(1) + ".";
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (output) {
+      navigator.clipboard.writeText(output).then(() => {
+        const copyBtn = this.container.querySelector("#copy-btn");
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = "✓ Copied!";
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      });
+    }
+  },
+
+  onInput(input, context) {
+    return { output: "" };
+  }
+};
+
+// Standalone mode initialization
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const isStandalone = !document.querySelector('#workspace');
+
+    if (isStandalone) {
+      const standaloneContext = {
+        input: "",
+        output: "",
+        setInput(val) { this.input = val; },
+        setOutput(val) {
+          this.output = val;
+          const outputEl = document.querySelector("#output");
+          if (outputEl) outputEl.value = val;
+        },
+        getInput() { return this.input; },
+        getOutput() { return this.output; }
+      };
+
+      const template = document.querySelector('#tool-ui');
+      if (template) {
+        document.body.innerHTML = template.innerHTML;
+        DevChefTool.init(document.body, standaloneContext);
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
