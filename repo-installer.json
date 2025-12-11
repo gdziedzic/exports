@@ -1,0 +1,123 @@
+{
+  "version": "2",
+  "description": "Exports - Developer tools, configurations, and productivity apps installer",
+  "vars": {
+    "TOOLS_DIR": {
+      "windows": "%USERPROFILE%/tools",
+      "linux": "~/tools",
+      "darwin": "~/tools"
+    },
+    "CONFIG_DIR": {
+      "windows": "%USERPROFILE%",
+      "linux": "~",
+      "darwin": "~"
+    },
+    "POWERSHELL_DIR": {
+      "windows": "%USERPROFILE%/Documents/WindowsPowerShell",
+      "linux": "~/.config/powershell",
+      "darwin": "~/.config/powershell"
+    },
+    "AHK_DIR": {
+      "windows": "%USERPROFILE%/Documents/AutoHotkey",
+      "linux": "~/.local/share/autohotkey",
+      "darwin": "~/.local/share/autohotkey"
+    }
+  },
+  "groups": {
+    "all": ["devchef", "dao", "taskfile-extensions", "gitconfig", "powershell-profile", "sql-speed-pack"],
+    "apps": ["devchef", "dao"],
+    "configs": ["gitconfig", "powershell-profile"],
+    "dev": ["devchef", "dao", "taskfile-extensions"],
+    "windows": ["devchef", "dao", "taskfile-extensions", "gitconfig", "powershell-profile", "sql-speed-pack"],
+    "minimal": ["devchef", "gitconfig"]
+  },
+  "items": {
+    "devchef": {
+      "type": "symlink",
+      "description": "DevChef v2.6.0 - Developer productivity platform with 36+ built-in tools",
+      "source": "experiments/DevChef",
+      "target": "${TOOLS_DIR}/DevChef",
+      "hooks": {
+        "post_install": "echo 'DevChef installed! Open index.html in browser or serve with: python -m http.server 8000 -d ${TOOLS_DIR}/DevChef'"
+      }
+    },
+    "dao": {
+      "type": "app",
+      "description": "DAO - Database Analysis & Ontology tool for SQL Server schema mapping",
+      "source": "experiments/dao",
+      "platforms": ["linux", "darwin", "windows"],
+      "install": {
+        "steps": [
+          { "run": "pip install -r requirements.txt --quiet", "cwd": "experiments/dao", "if": "which pip" },
+          { "run": "pip3 install -r requirements.txt --quiet", "cwd": "experiments/dao", "if": "which pip3" }
+        ]
+      },
+      "uninstall": {
+        "steps": [
+          { "run": "pip uninstall pyodbc -y --quiet", "if": "which pip" }
+        ]
+      },
+      "hooks": {
+        "post_install": "echo 'DAO installed! Run: python -m dao --help (from experiments/dao directory)'"
+      }
+    },
+    "taskfile-extensions": {
+      "type": "symlink",
+      "description": "TaskFile PowerShell extensions - User-friendly wrapper for Taskfile CLI",
+      "source": "xg/dev/task_file_extensions/task_file_extensions",
+      "target": "${POWERSHELL_DIR}/Modules/TaskFileExtensions",
+      "platforms": ["windows"],
+      "hooks": {
+        "post_install": "echo 'TaskFile Extensions installed! Import in PowerShell: Import-Module TaskFileExtensions'"
+      }
+    },
+    "gitconfig": {
+      "type": "copy",
+      "description": "Git configuration with useful aliases and settings",
+      "source": "dotnotfiles/Git/.gitconfig",
+      "target": "${CONFIG_DIR}/.gitconfig",
+      "backup": true,
+      "hooks": {
+        "post_install": "echo 'Git config installed! Remember to update user.name and user.email if needed'"
+      }
+    },
+    "powershell-profile": {
+      "type": "symlink",
+      "description": "PowerShell profile with custom functions and configuration",
+      "source": "dotnotfiles/powershell/Microsoft.PowerShell_profile.ps1",
+      "target": "${POWERSHELL_DIR}/Microsoft.PowerShell_profile.ps1",
+      "platforms": ["windows"],
+      "hooks": {
+        "pre_install": "echo 'Installing PowerShell profile...'",
+        "post_install": "echo 'PowerShell profile linked! Restart PowerShell to apply changes'"
+      }
+    },
+    "powershell-config": {
+      "type": "symlink",
+      "description": "PowerShell JSON configuration",
+      "source": "dotnotfiles/powershell/powershell.config.json",
+      "target": "${POWERSHELL_DIR}/powershell.config.json",
+      "platforms": ["windows"],
+      "depends_on": ["powershell-profile"]
+    },
+    "sql-speed-pack": {
+      "type": "copy",
+      "description": "AutoHotkey v2.0 script for SQL automation and productivity",
+      "source": "_manual/SQL Speed Pack.ahk",
+      "target": "${AHK_DIR}/SQL Speed Pack.ahk",
+      "platforms": ["windows"],
+      "backup": true,
+      "hooks": {
+        "post_install": "echo 'SQL Speed Pack installed! Run the .ahk file to activate AutoHotkey shortcuts'"
+      }
+    },
+    "shortcuts": {
+      "type": "copy",
+      "description": "PowerShell shortcuts configuration for StreamDeck or similar tools",
+      "source": "_manual/shortcuts.json",
+      "target": "${CONFIG_DIR}/.shortcuts.json",
+      "platforms": ["windows"],
+      "backup": true
+    }
+  }
+}
