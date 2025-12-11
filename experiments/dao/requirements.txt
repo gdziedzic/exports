@@ -1,0 +1,14 @@
+# DAO - Database Analysis & Ontology
+# Required dependencies
+
+# For SQL Server connection (required for extraction)
+pyodbc>=4.0.0
+
+# Note: All other dependencies are from Python standard library:
+# - sqlite3 (graph storage)
+# - json (serialization)
+# - argparse (CLI)
+# - http.server (HTTP API)
+# - dataclasses (data models)
+# - heapq (path finding)
+# - pathlib (file paths)

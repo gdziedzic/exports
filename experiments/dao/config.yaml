@@ -1,0 +1,42 @@
+# DAO Configuration
+# Database Analysis & Ontology
+
+# Database connection settings
+connection:
+  # Connection string (takes precedence if set)
+  # connection_string: "Driver={ODBC Driver 17 for SQL Server};Server=.;Database=MyDb;Trusted_Connection=yes;"
+
+  # Or specify individual connection parameters
+  server: "."
+  database: ""
+  driver: "ODBC Driver 17 for SQL Server"
+
+  # Authentication (leave empty for Windows auth)
+  username: ""
+  password: ""
+
+# Graph storage settings
+storage:
+  # Path to SQLite database for graph storage
+  db_path: "dao_graph.sqlite"
+
+# HTTP server settings
+http:
+  host: "127.0.0.1"
+  port: 9000
+
+# Graph builder settings
+graph:
+  # Weight for FK relationships (lower = stronger)
+  fk_weight: 1
+
+  # Enable semantic tagging based on naming conventions
+  enable_semantic_tags: true
+
+# Future v2 settings (not implemented)
+# inference:
+#   enabled: false
+#   min_confidence: 0.8
+#
+# ontology:
+#   entities_file: "entities.yaml"
