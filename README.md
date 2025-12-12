@@ -209,6 +209,17 @@ exports/
 - Check execution policy: `Get-ExecutionPolicy`
 - Set if needed: `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
+## Generating Config for New Repositories
+
+This repo includes a prompt for generating `repo-installer.json` configs for other repositories:
+
+```bash
+# The prompt is located at:
+prompts/generate-repo-installer-config.md
+```
+
+Use this prompt with an AI assistant to analyze a new repository and generate a valid Repo Installer Manager configuration.
+
 ## License
 
 See individual component directories for licensing information.
