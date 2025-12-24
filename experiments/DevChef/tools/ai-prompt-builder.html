@@ -1261,6 +1261,26 @@
         id: 'meeting-context',
         name: 'Meeting Recap Context',
         content: 'Meeting type: {{meeting_type}}\nDate: {{date}}\nAttendees: {{attendees}}\nGoal: {{goal}}\nNotes: {{notes}}'
+      },
+      {
+        id: 'codebase-context',
+        name: 'Codebase / Repository Context',
+        content: 'Repository: {{repo_name}}\nLanguages/frameworks: {{tech_stack}}\nArchitecture: {{architecture_pattern}}\nCode standards: {{standards}}\nRelated files: {{related_files}}'
+      },
+      {
+        id: 'user-story-context',
+        name: 'User Story Context',
+        content: 'As a {{user_role}}\nI want {{user_goal}}\nSo that {{user_benefit}}\nAcceptance criteria: {{acceptance_criteria}}'
+      },
+      {
+        id: 'api-integration-context',
+        name: 'API Integration Context',
+        content: 'API: {{api_name}}\nVersion: {{api_version}}\nAuthentication: {{auth_method}}\nEndpoints: {{endpoints}}\nRate limits: {{rate_limits}}\nDocumentation: {{docs_link}}'
+      },
+      {
+        id: 'performance-context',
+        name: 'Performance / Optimization Context',
+        content: 'Current metrics: {{current_metrics}}\nTarget metrics: {{target_metrics}}\nBottlenecks: {{bottlenecks}}\nConstraints: {{constraints}}\nMonitoring: {{monitoring_tools}}'
       }
     ],
     'task': [
@@ -1278,6 +1298,31 @@
         id: 'analysis-task',
         name: 'Analysis / Research Objective',
         content: 'Dataset or subject: {{subject}}\nQuestions to answer: {{questions}}\nConstraints: {{analysis_constraints}}\nSuccess looks like: {{success_definition}}'
+      },
+      {
+        id: 'refactoring-task',
+        name: 'Code Refactoring',
+        content: 'Code to refactor: {{code_location}}\nCurrent issues: {{issues}}\nRefactoring goals: {{goals}}\nMust preserve: {{preserve}}\nTest coverage: {{test_coverage}}'
+      },
+      {
+        id: 'documentation-task',
+        name: 'Documentation Writing',
+        content: 'What to document: {{subject}}\nTarget audience: {{audience}}\nDocumentation type: {{doc_type}}\nExisting docs: {{existing_docs}}\nKey points to cover: {{key_points}}'
+      },
+      {
+        id: 'review-task',
+        name: 'Code / PR Review',
+        content: 'PR/Code: {{pr_number}}\nChanges summary: {{changes_summary}}\nFiles changed: {{files}}\nReview focus: {{review_focus}}\nContext: {{context}}'
+      },
+      {
+        id: 'migration-task',
+        name: 'Migration / Upgrade',
+        content: 'Migrate from: {{from_version}}\nMigrate to: {{to_version}}\nScope: {{scope}}\nBreaking changes: {{breaking_changes}}\nRollback plan: {{rollback}}'
+      },
+      {
+        id: 'testing-task',
+        name: 'Test Writing',
+        content: 'Code to test: {{code_location}}\nTest type: {{test_type}}\nCoverage goal: {{coverage_goal}}\nEdge cases: {{edge_cases}}\nTest data: {{test_data}}'
       }
     ],
     'rules': [
@@ -1295,6 +1340,26 @@
         id: 'analysis-steps',
         name: 'Analytical Thinking Rules',
         content: `When reasoning:\n- Separate observations, inferences, and recommendations\n- Quantify impact whenever possible\n- Surface assumptions or missing data\n- Offer at least two solution paths\n- Note monitoring or follow-up signals`
+      },
+      {
+        id: 'security-first',
+        name: 'Security-First Approach',
+        content: `Security guidelines:\n- Follow OWASP Top 10 best practices\n- Never expose sensitive data in logs or errors\n- Validate and sanitize all inputs\n- Use parameterized queries to prevent SQL injection\n- Implement proper authentication and authorization\n- Follow principle of least privilege`
+      },
+      {
+        id: 'accessibility-standards',
+        name: 'Accessibility Standards',
+        content: `Accessibility rules:\n- Follow WCAG 2.1 AA standards\n- Ensure keyboard navigation support\n- Provide ARIA labels for screen readers\n- Maintain sufficient color contrast ratios\n- Include alt text for images\n- Test with assistive technologies`
+      },
+      {
+        id: 'performance-optimization',
+        name: 'Performance Optimization',
+        content: `Performance rules:\n- Minimize network requests and payload sizes\n- Implement lazy loading for resources\n- Use caching strategies appropriately\n- Optimize database queries with indexes\n- Profile before optimizing\n- Set performance budgets and monitor`
+      },
+      {
+        id: 'clean-code',
+        name: 'Clean Code Principles',
+        content: `Code quality rules:\n- Write self-documenting code with clear naming\n- Keep functions small and focused (single responsibility)\n- Avoid duplication (DRY principle)\n- Prefer composition over inheritance\n- Write tests alongside code\n- Refactor continuously`
       }
     ],
     'output-format': [
@@ -1312,6 +1377,36 @@
         id: 'ticket-ready-output',
         name: 'Ticket-Ready Deliverable',
         content: `Format response for ticketing system:\n**Title:** ...\n**Problem Statement:** ...\n**Steps/Plan:** (numbered list)\n**Dependencies:** ...\n**Validation:** tests or acceptance criteria\n**Attachments:** code refs, diagrams, links`
+      },
+      {
+        id: 'step-by-step',
+        name: 'Step-by-Step Guide',
+        content: `Provide a step-by-step guide:\n1. Prerequisites and setup\n2. Step 1: [Action] - [Expected result]\n3. Step 2: [Action] - [Expected result]\n...\nN. Verification steps\nTroubleshooting common issues`
+      },
+      {
+        id: 'code-only',
+        name: 'Code-Focused (Minimal Explanation)',
+        content: `Provide:\n- Working code solution\n- Inline comments explaining key logic\n- Usage example\n- Brief notes on edge cases or gotchas`
+      },
+      {
+        id: 'comparison-table',
+        name: 'Comparison / Trade-offs Table',
+        content: `Present as comparison table:\n| Approach | Pros | Cons | Best For | Complexity |\n|----------|------|------|----------|------------|\n| Option 1 | ... | ... | ... | ... |\n| Option 2 | ... | ... | ... | ... |\n\nRecommendation: [Your pick with reasoning]`
+      },
+      {
+        id: 'eli5-format',
+        name: 'ELI5 (Explain Like I\'m 5)',
+        content: `Explain in simple terms:\n1. Simple analogy or metaphor\n2. Basic explanation without jargon\n3. Visual description or diagram in ASCII/markdown\n4. Simple example everyone can relate to\n5. Key takeaway in one sentence`
+      },
+      {
+        id: 'markdown-documentation',
+        name: 'Markdown Documentation',
+        content: `Format as markdown documentation:\n# Title\n## Overview\n## Installation\n## Usage\n### Basic Example\n### Advanced Example\n## API Reference\n## FAQ\n## Contributing`
+      },
+      {
+        id: 'json-structured',
+        name: 'JSON Structured Output',
+        content: `Return response as JSON:\n{\n  "summary": "...",\n  "solution": {...},\n  "examples": [...],\n  "alternatives": [...],\n  "resources": [...]\n}`
       }
     ],
     'constraints': [
@@ -1329,6 +1424,21 @@
         id: 'resource-constraints',
         name: 'Resource Constraints',
         content: 'Team availability: {{team_availability}}\nTooling limitations: {{tooling_limits}}\nEnvironments: {{environments}}\nOperational support window: {{support_window}}'
+      },
+      {
+        id: 'technical-constraints',
+        name: 'Technical Constraints',
+        content: 'Technology limitations: {{tech_limits}}\nBrowser/platform support: {{platform_support}}\nPerformance requirements: {{performance_reqs}}\nBackward compatibility: {{compatibility}}\nThird-party dependencies: {{third_party}}'
+      },
+      {
+        id: 'scope-constraints',
+        name: 'Scope Constraints',
+        content: 'In scope: {{in_scope}}\nOut of scope: {{out_of_scope}}\nPhase 1 requirements: {{phase1}}\nFuture enhancements: {{future}}\nNon-goals: {{non_goals}}'
+      },
+      {
+        id: 'quality-constraints',
+        name: 'Quality Constraints',
+        content: 'Code coverage minimum: {{coverage_min}}\nPerformance benchmarks: {{benchmarks}}\nAccessibility level: {{accessibility}}\nBrowser support: {{browsers}}\nUptime requirement: {{uptime}}'
       }
     ],
     'examples': [
@@ -1346,6 +1456,21 @@
         id: 'anti-patterns',
         name: 'Anti-pattern Watchlist',
         content: 'Anti-pattern: {{anti_pattern}}\nWhy it hurts: {{impact}}\nPreferred alternative: {{alternative}}\nDetection tips: {{detection}}'
+      },
+      {
+        id: 'real-world-example',
+        name: 'Real-world Example',
+        content: 'Company/project: {{example_source}}\nChallenge: {{challenge}}\nSolution: {{solution}}\nResults: {{results}}\nSource: {{source_link}}'
+      },
+      {
+        id: 'code-comparison',
+        name: 'Code Comparison',
+        content: 'Bad approach:\n```{{language}}\n{{bad_code}}\n```\n\nGood approach:\n```{{language}}\n{{good_code}}\n```\n\nWhy it\'s better: {{explanation}}'
+      },
+      {
+        id: 'multiple-scenarios',
+        name: 'Multiple Scenarios',
+        content: 'Scenario A: {{scenario_a}} → Solution: {{solution_a}}\nScenario B: {{scenario_b}} → Solution: {{solution_b}}\nScenario C: {{scenario_c}} → Solution: {{solution_c}}'
       }
     ]
   };
