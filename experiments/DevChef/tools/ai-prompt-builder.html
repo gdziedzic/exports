@@ -487,6 +487,43 @@
     background: var(--primary-hover);
   }
 
+  .component-option-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .component-option-group .component-select-btn {
+    width: auto;
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+
+  .component-select-label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .component-preset-select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+
+  .component-preset-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+
   .component-meta {
     display: flex;
     gap: 12px;
@@ -1208,6 +1245,111 @@
     'Data': ['Pandas', 'NumPy', 'TensorFlow', 'PyTorch', 'Scikit-learn', 'Apache Spark', 'Airflow', 'Jupyter']
   };
 
+  const COMPONENT_PRESETS = {
+    'context': [
+      {
+        id: 'project-brief',
+        name: 'Project Brief',
+        content: 'Project: {{project_name}}\nDomain: {{domain}}\nKey requirements: {{requirements}}\nPrimary users: {{primary_users}}\nSuccess metric: {{success_metric}}'
+      },
+      {
+        id: 'incident-summary',
+        name: 'Incident / Bug Context',
+        content: 'Issue: {{issue_summary}}\nSeverity: {{severity}}\nAffected components: {{components}}\nUser impact: {{impact}}\nLogs/links: {{references}}'
+      },
+      {
+        id: 'meeting-context',
+        name: 'Meeting Recap Context',
+        content: 'Meeting type: {{meeting_type}}\nDate: {{date}}\nAttendees: {{attendees}}\nGoal: {{goal}}\nNotes: {{notes}}'
+      }
+    ],
+    'task': [
+      {
+        id: 'feature-task',
+        name: 'Feature Implementation',
+        content: 'Objective: {{feature_summary}}\nCurrent behavior: {{current_behavior}}\nDesired behavior: {{desired_behavior}}\nAcceptance criteria: {{acceptance_criteria}}'
+      },
+      {
+        id: 'bugfix-task',
+        name: 'Bug Fix / Investigation',
+        content: 'Bug: {{bug_summary}}\nSteps to reproduce: {{steps}}\nExpected vs actual: {{expected_vs_actual}}\nDiagnostics collected: {{diagnostics}}'
+      },
+      {
+        id: 'analysis-task',
+        name: 'Analysis / Research Objective',
+        content: 'Dataset or subject: {{subject}}\nQuestions to answer: {{questions}}\nConstraints: {{analysis_constraints}}\nSuccess looks like: {{success_definition}}'
+      }
+    ],
+    'rules': [
+      {
+        id: 'engineering-best-practices',
+        name: 'Engineering Best Practices',
+        content: `Follow these rules:\n- Cite relevant standards or RFCs when possible\n- Highlight risks, edge cases, and trade-offs\n- Prefer deterministic steps with measurable outcomes\n- Offer testing guidance for every recommendation\n- Keep explanations concise but technically rigorous`
+      },
+      {
+        id: 'writing-voice',
+        name: 'Writing Voice Guidelines',
+        content: `Writing guidelines:\n- Maintain {{tone}} tone throughout\n- Favor short paragraphs and scannable bullets\n- Include concrete examples and analogies\n- Reference the target audience directly\n- Close with a clear call-to-action or summary`
+      },
+      {
+        id: 'analysis-steps',
+        name: 'Analytical Thinking Rules',
+        content: `When reasoning:\n- Separate observations, inferences, and recommendations\n- Quantify impact whenever possible\n- Surface assumptions or missing data\n- Offer at least two solution paths\n- Note monitoring or follow-up signals`
+      }
+    ],
+    'output-format': [
+      {
+        id: 'detailed-solution',
+        name: 'Detailed Solution Outline',
+        content: `Structure your response as:\n1. Brief summary (1-2 sentences)\n2. Detailed explanation with step-by-step breakdown\n3. Code examples with inline comments\n4. Testing approach and edge cases\n5. Best practices and recommendations`
+      },
+      {
+        id: 'summary-output',
+        name: 'Executive Summary + Table',
+        content: `Provide:\n- Executive summary (3 bullets max)\n- Table with columns: Section | Details | Owner | ETA\n- Risks & mitigations\n- Follow-up questions for stakeholders\n- Resources or references for more depth`
+      },
+      {
+        id: 'ticket-ready-output',
+        name: 'Ticket-Ready Deliverable',
+        content: `Format response for ticketing system:\n**Title:** ...\n**Problem Statement:** ...\n**Steps/Plan:** (numbered list)\n**Dependencies:** ...\n**Validation:** tests or acceptance criteria\n**Attachments:** code refs, diagrams, links`
+      }
+    ],
+    'constraints': [
+      {
+        id: 'delivery-constraints',
+        name: 'Delivery Constraints',
+        content: 'Timeline: {{deadline}}\nBudget: {{budget}}\nCritical dependencies: {{dependencies}}\nCompliance requirements: {{compliance}}'
+      },
+      {
+        id: 'compliance-constraints',
+        name: 'Compliance & Policy Constraints',
+        content: 'Regulation: {{regulation}}\nData classification: {{data_level}}\nSecurity posture: {{security_requirements}}\nApproval needed from: {{approvers}}'
+      },
+      {
+        id: 'resource-constraints',
+        name: 'Resource Constraints',
+        content: 'Team availability: {{team_availability}}\nTooling limitations: {{tooling_limits}}\nEnvironments: {{environments}}\nOperational support window: {{support_window}}'
+      }
+    ],
+    'examples': [
+      {
+        id: 'before-after',
+        name: 'Before vs After',
+        content: 'Before: {{before_state}}\nAfter: {{after_state}}\nKey improvements: {{improvements}}'
+      },
+      {
+        id: 'case-study',
+        name: 'Case Study',
+        content: 'Scenario: {{scenario}}\nActions taken: {{actions}}\nOutcome: {{outcome}}\nLessons learned: {{lessons}}'
+      },
+      {
+        id: 'anti-patterns',
+        name: 'Anti-pattern Watchlist',
+        content: 'Anti-pattern: {{anti_pattern}}\nWhy it hurts: {{impact}}\nPreferred alternative: {{alternative}}\nDetection tips: {{detection}}'
+      }
+    ]
+  };
+
   // Default configuration with enhanced components
   const DEFAULT_CONFIG = {
     components: [
@@ -1234,33 +1376,47 @@
         name: 'Context / Background',
         enabled: true,
         order: 3,
-        content: 'Project: {{project_name}}\nDomain: {{domain}}\nKey requirements: {{requirements}}'
+        hasOptions: true,
+        selectedPreset: 'project-brief',
+        content: 'Project: {{project_name}}
+Domain: {{domain}}
+Key requirements: {{requirements}}
+Primary users: {{primary_users}}
+Success metric: {{success_metric}}'
       },
       {
         id: 'task',
         name: 'Task / Objective',
         enabled: true,
         order: 4,
-        content: '{{task_description}}'
+        hasOptions: true,
+        selectedPreset: 'feature-task',
+        content: 'Objective: {{feature_summary}}
+Current behavior: {{current_behavior}}
+Desired behavior: {{desired_behavior}}
+Acceptance criteria: {{acceptance_criteria}}'
       },
       {
         id: 'rules',
         name: 'Processing Rules',
         enabled: true,
         order: 5,
+        hasOptions: true,
+        selectedPreset: 'engineering-best-practices',
         content: `Follow these rules:
-- Provide clear, actionable guidance
-- Include code examples when relevant
-- Explain your reasoning step-by-step
-- Consider edge cases and error handling
-- Follow industry best practices
-- Be specific and avoid vague recommendations`
+- Cite relevant standards or RFCs when possible
+- Highlight risks, edge cases, and trade-offs
+- Prefer deterministic steps with measurable outcomes
+- Offer testing guidance for every recommendation
+- Keep explanations concise but technically rigorous`
       },
       {
         id: 'output-format',
         name: 'Output Format',
         enabled: true,
         order: 6,
+        hasOptions: true,
+        selectedPreset: 'detailed-solution',
         content: `Structure your response as:
 1. Brief summary (1-2 sentences)
 2. Detailed explanation with step-by-step breakdown
@@ -1273,14 +1429,23 @@
         name: 'Constraints / Limitations',
         enabled: false,
         order: 7,
-        content: 'Technical constraints:\n- {{constraint_1}}\n- {{constraint_2}}\n- {{constraint_3}}'
+        hasOptions: true,
+        selectedPreset: 'delivery-constraints',
+        content: 'Timeline: {{deadline}}
+Budget: {{budget}}
+Critical dependencies: {{dependencies}}
+Compliance requirements: {{compliance}}'
       },
       {
         id: 'examples',
         name: 'Examples / References',
         enabled: false,
         order: 8,
-        content: 'Reference examples:\n{{examples}}'
+        hasOptions: true,
+        selectedPreset: 'before-after',
+        content: 'Before: {{before_state}}
+After: {{after_state}}
+Key improvements: {{improvements}}'
       }
     ]
   };
@@ -1910,12 +2075,39 @@ So that [benefit/value]
     customTemplates: []
   };
 
+  function normalizeComponents() {
+    if (!state.config || !Array.isArray(state.config.components)) {
+      state.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+    }
+
+    state.config.components.forEach((component, index) => {
+      if (typeof component.order !== 'number') {
+        component.order = index + 1;
+      }
+
+      if (component.id === 'role') {
+        component.hasOptions = true;
+        component.selectedPersona = resolvePersonaSelection(component);
+      } else if (component.id === 'tech-stack') {
+        component.hasOptions = true;
+        component.selectedStacks = component.selectedStacks || [];
+      } else {
+        const presets = COMPONENT_PRESETS[component.id] || [];
+        if (presets.length) {
+          component.hasOptions = true;
+          component.selectedPreset = resolvePresetSelection(component, presets);
+        }
+      }
+    });
+  }
+
   export function init(context) {
     console.log('AI Prompt Builder v3.0 initialized');
 
     // Load saved configuration and custom templates
     loadConfig();
     loadCustomTemplates();
+    normalizeComponents();
 
     // Check for shared config in URL
     loadFromURL();
@@ -1924,7 +2116,6 @@ So that [benefit/value]
     renderComponents();
     renderTemplates();
     updatePreview();
-    updatePlaceholders();
 
     // Event listeners
     setupEventListeners();
@@ -1974,6 +2165,7 @@ So that [benefit/value]
     // Component list delegation
     document.getElementById('components-list').addEventListener('click', handleComponentClick);
     document.getElementById('components-list').addEventListener('input', handleComponentInput);
+    document.getElementById('components-list').addEventListener('change', handleComponentPresetChange);
   }
 
   function setupDropZone() {
@@ -2273,21 +2465,24 @@ So that [benefit/value]
         badge = `<span class="component-badge">${comp.selectedStacks.length} selected</span>`;
       }
 
+      const optionsHtml = renderComponentOptions(comp);
+      const hasOptions = optionsHtml.trim().length > 0;
+
       return `
-        <div class="component-item ${comp.enabled ? 'active' : ''} ${comp.hasOptions ? 'has-options' : ''}" data-id="${comp.id}">
+        <div class="component-item ${comp.enabled ? 'active' : ''} ${hasOptions ? 'has-options' : ''}" data-id="${comp.id}">
           <div class="component-header">
             <div class="component-toggle ${comp.enabled ? 'checked' : ''}" data-action="toggle"></div>
             <div class="component-name">${comp.name}</div>
             ${badge}
             <div class="component-actions">
-              <button class="component-action" data-action="edit" title="Edit">✏️</button>
-              <button class="component-action" data-action="move-up" title="Move Up">↑</button>
-              <button class="component-action" data-action="move-down" title="Move Down">↓</button>
-              <button class="component-action" data-action="delete" title="Delete">🗑️</button>
+              <button class="component-action" data-action="edit" title="Edit">??</button>
+              <button class="component-action" data-action="move-up" title="Move Up"></button>
+              <button class="component-action" data-action="move-down" title="Move Down"></button>
+              <button class="component-action" data-action="delete" title="Delete">???</button>
             </div>
           </div>
           <div class="component-body">
-            ${comp.hasOptions ? renderComponentOptions(comp) : ''}
+            ${optionsHtml}
             <textarea data-id="${comp.id}" placeholder="Enter content for ${comp.name}...">${comp.content || ''}</textarea>
             <div class="component-meta">
               <span>${(comp.content || '').length} characters</span>
@@ -2300,11 +2495,85 @@ So that [benefit/value]
   }
 
   function renderComponentOptions(comp) {
-    if (comp.id === 'role') {
-      return '<button class="component-select-btn" data-action="select-persona">📝 Select Persona</button>';
-    } else if (comp.id === 'tech-stack') {
-      return '<button class="component-select-btn" data-action="select-techstack">🔧 Select Technologies</button>';
+    const parts = [];
+
+    if (comp.id === 'tech-stack') {
+      parts.push('<button class="component-select-btn" data-action="select-techstack">?? Select Technologies</button>');
     }
+
+    if (comp.id === 'role') {
+      const selectedPersona = resolvePersonaSelection(comp);
+      const personaOptions = PERSONAS.map(persona => `<option value="${persona.id}" ${persona.id === selectedPersona ? 'selected' : ''}>${persona.name}</option>`).join('');
+      parts.push(`
+        <div class="component-option-group">
+          <label class="component-select-label">
+            <span>Persona preset</span>
+            <select class="component-preset-select" data-component-id="${comp.id}">
+              <option value="custom" ${selectedPersona === 'custom' ? 'selected' : ''}>Custom persona</option>
+              ${personaOptions}
+            </select>
+          </label>
+          <button class="component-select-btn" data-action="select-persona">?? Persona Library</button>
+        </div>
+      `);
+    }
+
+    const presets = COMPONENT_PRESETS[comp.id] || [];
+    if (presets.length && comp.id !== 'role') {
+      const selectedPreset = resolvePresetSelection(comp, presets);
+      const presetOptions = presets.map(p => `<option value="${p.id}" ${p.id === selectedPreset ? 'selected' : ''}>${p.name}</option>`).join('');
+      parts.push(`
+        <div class="component-option-group">
+          <label class="component-select-label">
+            <span>Select ${comp.name}</span>
+            <select class="component-preset-select" data-component-id="${comp.id}">
+              <option value="custom" ${selectedPreset === 'custom' ? 'selected' : ''}>Custom</option>
+              ${presetOptions}
+            </select>
+          </label>
+        </div>
+      `);
+    }
+
+    return parts.join('');
+  }
+
+  function resolvePersonaSelection(component) {
+    const personaExists = PERSONAS.some(p => p.id === component.selectedPersona);
+    if (component.selectedPersona && personaExists) {
+      return component.selectedPersona;
+    }
+
+    const match = PERSONAS.find(p => (p.content || '').trim() === (component.content || '').trim());
+    if (match) {
+      component.selectedPersona = match.id;
+      return match.id;
+    }
+
+    return 'custom';
+  }
+
+  function resolvePresetSelection(component, presets) {
+    if (!presets.length) {
+      return 'custom';
+    }
+
+    if (component.selectedPreset && component.selectedPreset !== 'custom') {
+      const exists = presets.some(p => p.id === component.selectedPreset);
+      if (exists) {
+        return component.selectedPreset;
+      }
+    }
+
+    const normalizedContent = (component.content || '').trim();
+    const match = presets.find(p => (p.content || '').trim() === normalizedContent);
+    if (match) {
+      component.selectedPreset = match.id;
+      return match.id;
+    }
+
+    return 'custom';
+  }
     return '';
   }
 
@@ -2358,12 +2627,70 @@ So that [benefit/value]
     }
   }
 
+  function handleComponentPresetChange(e) {
+    const select = e.target.closest('.component-preset-select');
+    if (!select) return;
+
+    const componentId = select.dataset.componentId;
+    const component = state.config.components.find(c => c.id === componentId);
+    if (!component) return;
+
+    if (componentId === 'role') {
+      if (select.value === 'custom') {
+        component.selectedPersona = 'custom';
+        renderComponents();
+        updatePreview();
+        saveConfig();
+        return;
+      }
+      selectPersona(componentId, select.value);
+      return;
+    }
+
+    if (select.value === 'custom') {
+      component.selectedPreset = 'custom';
+      saveConfig();
+      return;
+    }
+
+    const presets = COMPONENT_PRESETS[componentId] || [];
+    const preset = presets.find(p => p.id === select.value);
+    if (!preset) return;
+
+    component.selectedPreset = preset.id;
+    component.content = preset.content;
+    renderComponents();
+    updatePreview();
+    saveConfig();
+    showStatus(`${component.name} preset applied: ${preset.name}`, 'success');
+  }
+
   function handleComponentInput(e) {
     if (e.target.tagName === 'TEXTAREA') {
       const id = e.target.dataset.id;
       const component = state.config.components.find(c => c.id === id);
       if (component) {
         component.content = e.target.value;
+
+        if (component.id === 'role') {
+          if (component.selectedPersona && component.selectedPersona !== 'custom') {
+            const persona = PERSONAS.find(p => p.id === component.selectedPersona);
+            if (!persona || persona.content !== component.content) {
+              component.selectedPersona = 'custom';
+              syncComponentPresetSelect(component.id, 'custom', e.target);
+            }
+          }
+        } else {
+          const presets = COMPONENT_PRESETS[component.id] || [];
+          if (component.selectedPreset && component.selectedPreset !== 'custom') {
+            const preset = presets.find(p => p.id === component.selectedPreset);
+            if (!preset || preset.content !== component.content) {
+              component.selectedPreset = 'custom';
+              syncComponentPresetSelect(component.id, 'custom', e.target);
+            }
+          }
+        }
+
         updatePreview();
         saveConfig();
 
@@ -2378,6 +2705,15 @@ So that [benefit/value]
           `;
         }
       }
+    }
+  }
+
+  function syncComponentPresetSelect(componentId, value, inputElement) {
+    const container = inputElement.closest('.component-item');
+    if (!container) return;
+    const select = container.querySelector(`.component-preset-select[data-component-id="${componentId}"]`);
+    if (select) {
+      select.value = value;
     }
   }
 
@@ -2472,6 +2808,9 @@ So that [benefit/value]
     document.getElementById('word-count').textContent = `${words} words`;
     document.getElementById('line-count').textContent = `${lines} lines`;
     document.getElementById('placeholder-count').textContent = `${placeholders} placeholders`;
+
+    // Refresh placeholder panel whenever preview content changes
+    updatePlaceholders();
   }
 
   function handleCopyPrompt() {
@@ -2519,6 +2858,7 @@ So that [benefit/value]
             throw new Error('Invalid configuration format');
           }
           state.config = config;
+          normalizeComponents();
           renderComponents();
           updatePreview();
           saveConfig();
@@ -2548,6 +2888,7 @@ So that [benefit/value]
   function handleResetConfig() {
     if (confirm('Reset to default configuration? This will discard all changes.')) {
       state.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      normalizeComponents();
       renderComponents();
       updatePreview();
       saveConfig();
@@ -2561,6 +2902,7 @@ So that [benefit/value]
 
     if (confirm(`Load "${template.name}" template? This will replace your current configuration.`)) {
       state.config.components = JSON.parse(JSON.stringify(template.components));
+      normalizeComponents();
       renderComponents();
       updatePreview();
       saveConfig();
@@ -2692,7 +3034,6 @@ So that [benefit/value]
     if (replacedCount > 0) {
       renderComponents();
       updatePreview();
-      updatePlaceholders();
       saveConfig();
       showStatus(`Replaced ${replacedCount} placeholder(s)`, 'success');
     } else {
@@ -2904,9 +3245,9 @@ So that [benefit/value]
         if (config.components && Array.isArray(config.components)) {
           if (confirm('Load shared configuration? This will replace your current configuration.')) {
             state.config.components = config.components;
+            normalizeComponents();
             renderComponents();
             updatePreview();
-            updatePlaceholders();
             saveConfig();
             showStatus('Configuration loaded from shared link', 'success');
             window.location.hash = '';
@@ -2998,13 +3339,6 @@ So that [benefit/value]
         }
       }
     });
-  }
-
-  // Override updatePreview to also update placeholders
-  const originalUpdatePreview = updatePreview;
-  function updatePreview() {
-    originalUpdatePreview();
-    updatePlaceholders();
   }
 
   // Load placeholders on init
