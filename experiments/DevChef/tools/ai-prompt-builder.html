@@ -13,9 +13,9 @@
   "id": "ai-prompt-builder",
   "name": "AI Prompt Builder",
   "category": "Developer Tools",
-  "description": "Compose AI prompts with selectable personas, tech stacks, and smart file import from package.json",
-  "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "composer", "rules", "personas"],
-  "version": "2.0.0"
+  "description": "Compose AI prompts with personas, tech stacks, templates, placeholders, and shareable links",
+  "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "composer", "rules", "personas", "templates", "sharing"],
+  "version": "3.0.0"
 }
 </script>
 
@@ -68,6 +68,7 @@
               <option value="markdown">Markdown</option>
               <option value="plain">Plain Text</option>
             </select>
+            <button id="share-btn" class="secondary" title="Share Configuration">🔗 Share</button>
             <button id="copy-prompt-btn" class="primary">📋 Copy</button>
             <button id="save-prompt-btn" class="secondary">💾 Save</button>
           </div>
@@ -84,15 +85,45 @@
           <span id="placeholder-count">0 placeholders</span>
         </div>
 
+        <div class="placeholders-section">
+          <div class="section-header collapsible" id="placeholders-header">
+            <label class="section-label">Placeholders <span id="placeholder-badge" class="count-badge">0</span></label>
+            <button class="collapse-btn">▼</button>
+          </div>
+          <div class="placeholders-content" id="placeholders-content">
+            <div id="placeholders-list" class="placeholders-list">
+              <p class="empty-state">No placeholders found. Use {{placeholder}} syntax in your components.</p>
+            </div>
+            <div class="placeholders-actions">
+              <button id="fill-placeholders-btn" class="secondary">✓ Apply Values</button>
+              <button id="clear-placeholders-btn" class="secondary">✗ Clear All</button>
+            </div>
+          </div>
+        </div>
+
         <div class="templates-section">
-          <label class="section-label">Quick Templates</label>
-          <div class="templates-grid">
-            <button class="template-btn" data-template="code-review">Code Review</button>
-            <button class="template-btn" data-template="data-analysis">Data Analysis</button>
-            <button class="template-btn" data-template="content-writer">Content Writer</button>
-            <button class="template-btn" data-template="tech-explainer">Tech Explainer</button>
-            <button class="template-btn" data-template="architect">Solution Architect</button>
-            <button class="template-btn" data-template="debugging">Debugging Assistant</button>
+          <div class="section-header collapsible" id="templates-header">
+            <label class="section-label">Templates</label>
+            <div class="template-actions">
+              <button id="save-template-btn" class="icon-btn" title="Save as Template">💾</button>
+              <button class="collapse-btn">▼</button>
+            </div>
+          </div>
+          <div class="templates-content" id="templates-content">
+            <div class="template-filter">
+              <input type="text" id="template-search" placeholder="Search templates..." />
+              <select id="template-category" class="category-select">
+                <option value="">All Categories</option>
+                <option value="development">Development</option>
+                <option value="writing">Writing</option>
+                <option value="analysis">Analysis</option>
+                <option value="documentation">Documentation</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+            <div class="templates-grid" id="templates-grid">
+              <!-- Templates will be rendered here -->
+            </div>
           </div>
         </div>
       </div>
@@ -130,6 +161,67 @@
           </div>
           <div class="techstack-grid" id="techstack-grid">
             <!-- Tech stacks will be rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="share-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Share Configuration</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="share-section">
+            <label class="share-label">Shareable Link</label>
+            <div class="share-input-group">
+              <input type="text" id="share-link" readonly class="share-link-input" />
+              <button id="copy-link-btn" class="primary">📋 Copy</button>
+            </div>
+            <p class="share-hint">Share this link with others to import your configuration</p>
+          </div>
+          <div class="share-section">
+            <label class="share-label">QR Code</label>
+            <div class="qr-container">
+              <canvas id="qr-canvas" width="200" height="200"></canvas>
+            </div>
+            <button id="download-qr-btn" class="secondary">💾 Download QR</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Template Modal -->
+    <div id="save-template-modal" class="modal">
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3>Save as Template</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Template Name</label>
+            <input type="text" id="template-name" placeholder="e.g., My Custom Template" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="template-description" placeholder="Brief description of this template..." class="form-input" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="template-category-select" class="form-input">
+              <option value="custom">Custom</option>
+              <option value="development">Development</option>
+              <option value="writing">Writing</option>
+              <option value="analysis">Analysis</option>
+              <option value="documentation">Documentation</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button id="save-template-confirm-btn" class="primary">💾 Save Template</button>
+            <button class="secondary modal-close">Cancel</button>
           </div>
         </div>
       </div>
@@ -697,6 +789,320 @@
     color: white;
   }
 
+  /* Placeholders Section */
+  .placeholders-section {
+    padding: 16px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .section-header.collapsible:hover {
+    background: var(--bg-hover);
+    margin: -4px -8px 12px -8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+
+  .section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .count-badge {
+    background: var(--primary-color);
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  .collapse-btn {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 4px;
+    transition: transform 0.2s;
+  }
+
+  .section-header.collapsed .collapse-btn {
+    transform: rotate(-90deg);
+  }
+
+  .placeholders-content,
+  .templates-content {
+    transition: max-height 0.3s ease-out;
+    overflow: hidden;
+  }
+
+  .section-header.collapsed + .placeholders-content,
+  .section-header.collapsed + .templates-content {
+    max-height: 0 !important;
+  }
+
+  .placeholders-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 20px;
+    font-style: italic;
+  }
+
+  .placeholder-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+  }
+
+  .placeholder-name {
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--primary-color);
+    font-weight: 500;
+    min-width: 120px;
+  }
+
+  .placeholder-input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    font-size: 12px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
+  .placeholder-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+
+  .placeholder-input.filled {
+    background: var(--bg-hover);
+    border-color: var(--primary-color);
+  }
+
+  .placeholders-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* Template Enhancements */
+  .template-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .template-filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .template-filter input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 13px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .template-filter input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+
+  .category-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .category-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+
+  .template-btn {
+    position: relative;
+  }
+
+  .template-btn .template-category-tag {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 9px;
+    padding: 2px 4px;
+    background: var(--bg-secondary);
+    border-radius: 2px;
+    opacity: 0.7;
+  }
+
+  .template-btn.custom-template {
+    border-left: 3px solid var(--primary-color);
+  }
+
+  .template-btn.custom-template .delete-template-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-size: 10px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .template-btn.custom-template:hover .delete-template-btn {
+    opacity: 1;
+  }
+
+  /* Share Modal */
+  .share-section {
+    margin-bottom: 24px;
+  }
+
+  .share-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .share-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .share-input-group {
+    display: flex;
+    gap: 8px;
+  }
+
+  .share-link-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .share-link-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+
+  .share-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  .qr-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  #qr-canvas {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+  }
+
+  /* Save Template Modal */
+  .modal-small {
+    max-width: 500px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 13px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  button.secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+  }
+
+  button.secondary:hover {
+    background: var(--bg-hover);
+  }
+
   @media (max-width: 1024px) {
     .tool-layout {
       grid-template-columns: 1fr;
@@ -883,6 +1289,7 @@
   const TEMPLATES = {
     'code-review': {
       name: 'Code Review Assistant',
+      category: 'development',
       components: [
         {
           id: 'role',
@@ -931,6 +1338,7 @@
     },
     'data-analysis': {
       name: 'Data Analysis Assistant',
+      category: 'analysis',
       components: [
         {
           id: 'role',
@@ -973,6 +1381,7 @@
     },
     'content-writer': {
       name: 'Content Writer',
+      category: 'writing',
       components: [
         {
           id: 'role',
@@ -1014,6 +1423,7 @@
     },
     'tech-explainer': {
       name: 'Technical Explainer',
+      category: 'writing',
       components: [
         {
           id: 'role',
@@ -1062,6 +1472,7 @@
     },
     'architect': {
       name: 'Solution Architect',
+      category: 'development',
       components: [
         {
           id: 'role',
@@ -1120,6 +1531,7 @@
     },
     'debugging': {
       name: 'Debugging Assistant',
+      category: 'development',
       components: [
         {
           id: 'role',
@@ -1171,28 +1583,354 @@
 6. Additional debugging tips if issue persists`
         }
       ]
+    },
+    'api-documentation': {
+      name: 'API Documentation',
+      category: 'documentation',
+      components: [
+        {
+          id: 'role',
+          name: 'Role / Persona',
+          enabled: true,
+          order: 1,
+          hasOptions: true,
+          selectedPersona: 'technical-writer',
+          content: PERSONAS.find(p => p.id === 'technical-writer').content
+        },
+        {
+          id: 'context',
+          name: 'API Context',
+          enabled: true,
+          order: 2,
+          content: 'API Name: {{api_name}}\nVersion: {{version}}\nBase URL: {{base_url}}\nAuthentication: {{auth_method}}'
+        },
+        {
+          id: 'task',
+          name: 'Documentation Scope',
+          enabled: true,
+          order: 3,
+          content: 'Document the following endpoint(s):\n{{endpoints}}'
+        },
+        {
+          id: 'output-format',
+          name: 'Output Format',
+          enabled: true,
+          order: 4,
+          content: `Provide comprehensive API documentation with:
+1. Endpoint overview and purpose
+2. HTTP method and path
+3. Request parameters (path, query, body)
+4. Request/response examples (JSON)
+5. Response codes and error handling
+6. Authentication requirements
+7. Rate limiting information
+8. Code examples in multiple languages`
+        }
+      ]
+    },
+    'pr-review': {
+      name: 'Pull Request Review',
+      category: 'development',
+      components: [
+        {
+          id: 'role',
+          name: 'Role / Persona',
+          enabled: true,
+          order: 1,
+          hasOptions: true,
+          selectedPersona: 'code-reviewer',
+          content: PERSONAS.find(p => p.id === 'code-reviewer').content
+        },
+        {
+          id: 'context',
+          name: 'PR Context',
+          enabled: true,
+          order: 2,
+          content: 'PR Title: {{pr_title}}\nBranch: {{branch_name}}\nFiles changed: {{file_count}}\nLines added/removed: {{line_stats}}'
+        },
+        {
+          id: 'task',
+          name: 'Changes to Review',
+          enabled: true,
+          order: 3,
+          content: 'PR Description:\n{{pr_description}}\n\nCode diff:\n{{code_diff}}'
+        },
+        {
+          id: 'rules',
+          name: 'Review Criteria',
+          enabled: true,
+          order: 4,
+          content: `Review for:
+- Code quality and consistency with codebase
+- Breaking changes and backward compatibility
+- Test coverage for new features
+- Documentation updates
+- Security vulnerabilities
+- Performance implications
+- Edge cases handling`
+        },
+        {
+          id: 'output-format',
+          name: 'Output Format',
+          enabled: true,
+          order: 5,
+          content: `Structure your review as:
+1. Summary (approve/request changes/comment)
+2. Key observations (what the PR does well)
+3. Required changes (blocking issues)
+4. Suggested improvements (non-blocking)
+5. Questions and clarifications
+6. Testing recommendations`
+        }
+      ]
+    },
+    'technical-spec': {
+      name: 'Technical Specification',
+      category: 'documentation',
+      components: [
+        {
+          id: 'role',
+          name: 'Role / Persona',
+          enabled: true,
+          order: 1,
+          hasOptions: true,
+          selectedPersona: 'architect',
+          content: PERSONAS.find(p => p.id === 'architect').content
+        },
+        {
+          id: 'context',
+          name: 'Project Context',
+          enabled: true,
+          order: 2,
+          content: 'Feature: {{feature_name}}\nStakeholders: {{stakeholders}}\nTimeline: {{timeline}}\nPriority: {{priority}}'
+        },
+        {
+          id: 'task',
+          name: 'Specification Scope',
+          enabled: true,
+          order: 3,
+          content: 'Requirements:\n{{requirements}}\n\nConstraints:\n{{constraints}}'
+        },
+        {
+          id: 'output-format',
+          name: 'Output Format',
+          enabled: true,
+          order: 4,
+          content: `Create a technical specification with:
+1. Executive Summary
+2. Goals and Objectives
+3. Functional Requirements
+4. Technical Architecture
+5. Data Models and Schemas
+6. API Contracts
+7. Security Considerations
+8. Performance Requirements
+9. Testing Strategy
+10. Deployment Plan
+11. Risks and Mitigation
+12. Success Metrics`
+        }
+      ]
+    },
+    'user-story': {
+      name: 'User Story Generator',
+      category: 'documentation',
+      components: [
+        {
+          id: 'role',
+          name: 'Role / Persona',
+          enabled: true,
+          order: 1,
+          hasOptions: true,
+          selectedPersona: 'senior-engineer',
+          content: 'You are a product-focused engineer skilled at writing clear, actionable user stories following Agile best practices.'
+        },
+        {
+          id: 'context',
+          name: 'Feature Context',
+          enabled: true,
+          order: 2,
+          content: 'Feature: {{feature_name}}\nUser persona: {{user_persona}}\nBusiness goal: {{business_goal}}'
+        },
+        {
+          id: 'task',
+          name: 'Story Requirements',
+          enabled: true,
+          order: 3,
+          content: 'User need:\n{{user_need}}\n\nExpected outcome:\n{{expected_outcome}}'
+        },
+        {
+          id: 'output-format',
+          name: 'Output Format',
+          enabled: true,
+          order: 4,
+          content: `Create user stories in this format:
+
+**User Story:**
+As a [user persona]
+I want to [action/feature]
+So that [benefit/value]
+
+**Acceptance Criteria:**
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3
+
+**Technical Notes:**
+- Implementation considerations
+- Dependencies
+- Edge cases
+
+**Definition of Done:**
+- Code complete and reviewed
+- Tests written and passing
+- Documentation updated
+- Deployed to staging`
+        }
+      ]
+    },
+    'meeting-notes': {
+      name: 'Meeting Notes',
+      category: 'writing',
+      components: [
+        {
+          id: 'role',
+          name: 'Role / Persona',
+          enabled: true,
+          order: 1,
+          content: 'You are an executive assistant skilled at creating clear, concise meeting summaries with actionable items.'
+        },
+        {
+          id: 'context',
+          name: 'Meeting Context',
+          enabled: true,
+          order: 2,
+          content: 'Meeting: {{meeting_title}}\nDate: {{date}}\nAttendees: {{attendees}}\nDuration: {{duration}}'
+        },
+        {
+          id: 'task',
+          name: 'Meeting Content',
+          enabled: true,
+          order: 3,
+          content: 'Raw notes or transcript:\n{{meeting_content}}'
+        },
+        {
+          id: 'output-format',
+          name: 'Output Format',
+          enabled: true,
+          order: 4,
+          content: `Structure the notes as:
+
+**Meeting Overview**
+- Purpose and objectives
+
+**Key Discussion Points**
+- Topic 1: Summary
+- Topic 2: Summary
+- Topic 3: Summary
+
+**Decisions Made**
+- Decision 1
+- Decision 2
+
+**Action Items**
+- [ ] Task (Owner: Name, Due: Date)
+- [ ] Task (Owner: Name, Due: Date)
+
+**Next Steps**
+- Follow-up items
+- Next meeting date/topic
+
+**Parking Lot**
+- Items to revisit later`
+        }
+      ]
+    },
+    'email-writing': {
+      name: 'Professional Email',
+      category: 'writing',
+      components: [
+        {
+          id: 'role',
+          name: 'Role / Persona',
+          enabled: true,
+          order: 1,
+          content: 'You are a professional communication specialist skilled at writing clear, effective business emails.'
+        },
+        {
+          id: 'context',
+          name: 'Email Context',
+          enabled: true,
+          order: 2,
+          content: 'To: {{recipient}}\nPurpose: {{purpose}}\nTone: {{tone}} (formal/professional/friendly)\nUrgency: {{urgency}}'
+        },
+        {
+          id: 'task',
+          name: 'Email Content',
+          enabled: true,
+          order: 3,
+          content: 'Key points to cover:\n{{key_points}}\n\nDesired outcome:\n{{desired_outcome}}'
+        },
+        {
+          id: 'rules',
+          name: 'Writing Guidelines',
+          enabled: true,
+          order: 4,
+          content: `Follow these guidelines:
+- Clear, descriptive subject line
+- Professional greeting
+- Concise, scannable paragraphs
+- Bullet points for multiple items
+- Clear call-to-action
+- Professional sign-off
+- Proofread for clarity and tone`
+        },
+        {
+          id: 'output-format',
+          name: 'Output Format',
+          enabled: true,
+          order: 5,
+          content: `Provide:
+**Subject:** [Clear, actionable subject line]
+
+**Email Body:**
+[Well-structured email with greeting, body paragraphs, and closing]
+
+**Alternative Subject Lines:** (2-3 options)
+**Tone Analysis:** [How the email comes across]`
+        }
+      ]
     }
   };
 
   let state = {
     config: JSON.parse(JSON.stringify(DEFAULT_CONFIG)),
-    currentModal: null
+    currentModal: null,
+    placeholders: {}, // {placeholder_name: value}
+    customTemplates: []
   };
 
   export function init(context) {
-    console.log('AI Prompt Builder v2.0 initialized');
+    console.log('AI Prompt Builder v3.0 initialized');
 
-    // Load saved configuration
+    // Load saved configuration and custom templates
     loadConfig();
+    loadCustomTemplates();
 
-    // Render components
+    // Check for shared config in URL
+    loadFromURL();
+
+    // Render components and templates
     renderComponents();
+    renderTemplates();
     updatePreview();
+    updatePlaceholders();
 
     // Event listeners
     setupEventListeners();
     setupDropZone();
     setupModals();
+    setupCollapsibles();
   }
 
   export function cleanup(context) {
@@ -1212,14 +1950,26 @@
     document.getElementById('import-config-btn').addEventListener('click', handleImportConfig);
     document.getElementById('export-config-btn').addEventListener('click', handleExportConfig);
     document.getElementById('reset-config-btn').addEventListener('click', handleResetConfig);
+    document.getElementById('share-btn').addEventListener('click', handleShare);
 
     // Export format change
     document.getElementById('export-format').addEventListener('change', updatePreview);
 
-    // Template buttons
-    document.querySelectorAll('.template-btn').forEach(btn => {
-      btn.addEventListener('click', () => loadTemplate(btn.dataset.template));
-    });
+    // Placeholder management
+    document.getElementById('fill-placeholders-btn').addEventListener('click', applyPlaceholders);
+    document.getElementById('clear-placeholders-btn').addEventListener('click', clearPlaceholders);
+    document.getElementById('placeholders-list').addEventListener('input', handlePlaceholderInput);
+
+    // Template management
+    document.getElementById('save-template-btn').addEventListener('click', showSaveTemplateModal);
+    document.getElementById('save-template-confirm-btn').addEventListener('click', handleSaveCustomTemplate);
+    document.getElementById('template-search').addEventListener('input', filterTemplates);
+    document.getElementById('template-category').addEventListener('change', filterTemplates);
+    document.getElementById('templates-grid').addEventListener('click', handleTemplateClick);
+
+    // Share modal
+    document.getElementById('copy-link-btn').addEventListener('click', copyShareLink);
+    document.getElementById('download-qr-btn').addEventListener('click', downloadQRCode);
 
     // Component list delegation
     document.getElementById('components-list').addEventListener('click', handleComponentClick);
@@ -1846,6 +2596,419 @@
       statusEl.classList.remove('show');
     }, 3000);
   }
+
+  // ============================================================
+  // PLACEHOLDER MANAGEMENT
+  // ============================================================
+
+  function updatePlaceholders() {
+    const placeholders = extractPlaceholders();
+    renderPlaceholders(placeholders);
+  }
+
+  function extractPlaceholders() {
+    const placeholderSet = new Set();
+    const regex = /\{\{([^}]+)\}\}/g;
+
+    state.config.components.forEach(comp => {
+      if (comp.enabled && comp.content) {
+        let match;
+        while ((match = regex.exec(comp.content)) !== null) {
+          placeholderSet.add(match[1].trim());
+        }
+      }
+    });
+
+    return Array.from(placeholderSet).sort();
+  }
+
+  function renderPlaceholders(placeholders) {
+    const list = document.getElementById('placeholders-list');
+    const badge = document.getElementById('placeholder-badge');
+
+    badge.textContent = placeholders.length;
+
+    if (placeholders.length === 0) {
+      list.innerHTML = '<p class="empty-state">No placeholders found. Use {{placeholder}} syntax in your components.</p>';
+      return;
+    }
+
+    list.innerHTML = placeholders.map(placeholder => {
+      const value = state.placeholders[placeholder] || '';
+      const filledClass = value ? 'filled' : '';
+      return `
+        <div class="placeholder-item">
+          <div class="placeholder-name">{{${placeholder}}}</div>
+          <input
+            type="text"
+            class="placeholder-input ${filledClass}"
+            data-placeholder="${placeholder}"
+            value="${value}"
+            placeholder="Enter value..."
+          />
+        </div>
+      `;
+    }).join('');
+  }
+
+  function handlePlaceholderInput(e) {
+    if (e.target.classList.contains('placeholder-input')) {
+      const placeholder = e.target.dataset.placeholder;
+      const value = e.target.value;
+      state.placeholders[placeholder] = value;
+
+      // Update filled class
+      if (value) {
+        e.target.classList.add('filled');
+      } else {
+        e.target.classList.remove('filled');
+      }
+
+      savePlaceholders();
+    }
+  }
+
+  function applyPlaceholders() {
+    let replacedCount = 0;
+
+    state.config.components.forEach(comp => {
+      if (comp.enabled && comp.content) {
+        let newContent = comp.content;
+        Object.keys(state.placeholders).forEach(placeholder => {
+          const value = state.placeholders[placeholder];
+          if (value) {
+            const regex = new RegExp(`\\{\\{\\s*${placeholder}\\s*\\}\\}`, 'g');
+            const matches = newContent.match(regex);
+            if (matches) {
+              replacedCount += matches.length;
+              newContent = newContent.replace(regex, value);
+            }
+          }
+        });
+        comp.content = newContent;
+      }
+    });
+
+    if (replacedCount > 0) {
+      renderComponents();
+      updatePreview();
+      updatePlaceholders();
+      saveConfig();
+      showStatus(`Replaced ${replacedCount} placeholder(s)`, 'success');
+    } else {
+      showStatus('No placeholders to replace', 'info');
+    }
+  }
+
+  function clearPlaceholders() {
+    state.placeholders = {};
+    savePlaceholders();
+    renderPlaceholders(extractPlaceholders());
+    showStatus('Placeholder values cleared', 'info');
+  }
+
+  function savePlaceholders() {
+    try {
+      localStorage.setItem('ai-prompt-builder-placeholders', JSON.stringify(state.placeholders));
+    } catch (error) {
+      console.error('Failed to save placeholders:', error);
+    }
+  }
+
+  function loadPlaceholders() {
+    try {
+      const saved = localStorage.getItem('ai-prompt-builder-placeholders');
+      if (saved) {
+        state.placeholders = JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error('Failed to load placeholders:', error);
+    }
+  }
+
+  // ============================================================
+  // TEMPLATE MANAGEMENT
+  // ============================================================
+
+  function renderTemplates() {
+    const grid = document.getElementById('templates-grid');
+    const allTemplates = { ...TEMPLATES };
+
+    // Add custom templates
+    state.customTemplates.forEach(template => {
+      allTemplates[template.id] = template;
+    });
+
+    const filtered = filterTemplatesBySearch(allTemplates);
+
+    grid.innerHTML = Object.entries(filtered).map(([id, template]) => {
+      const isCustom = state.customTemplates.some(t => t.id === id);
+      const customClass = isCustom ? 'custom-template' : '';
+      const deleteBtn = isCustom ? `<button class="delete-template-btn" data-template="${id}">×</button>` : '';
+
+      return `
+        <button class="template-btn ${customClass}" data-template="${id}">
+          ${template.name}
+          ${deleteBtn}
+        </button>
+      `;
+    }).join('');
+  }
+
+  function filterTemplatesBySearch(templates) {
+    const search = document.getElementById('template-search').value.toLowerCase();
+    const category = document.getElementById('template-category').value;
+
+    return Object.fromEntries(
+      Object.entries(templates).filter(([id, template]) => {
+        const matchesSearch = !search || template.name.toLowerCase().includes(search);
+        const matchesCategory = !category || template.category === category;
+        return matchesSearch && matchesCategory;
+      })
+    );
+  }
+
+  function filterTemplates() {
+    renderTemplates();
+  }
+
+  function handleTemplateClick(e) {
+    const deleteBtn = e.target.closest('.delete-template-btn');
+    if (deleteBtn) {
+      e.stopPropagation();
+      const templateId = deleteBtn.dataset.template;
+      deleteCustomTemplate(templateId);
+      return;
+    }
+
+    const templateBtn = e.target.closest('.template-btn');
+    if (templateBtn) {
+      const templateId = templateBtn.dataset.template;
+      loadTemplate(templateId);
+    }
+  }
+
+  function showSaveTemplateModal() {
+    const modal = document.getElementById('save-template-modal');
+    document.getElementById('template-name').value = '';
+    document.getElementById('template-description').value = '';
+    document.getElementById('template-category-select').value = 'custom';
+    modal.classList.add('show');
+  }
+
+  function handleSaveCustomTemplate() {
+    const name = document.getElementById('template-name').value.trim();
+    const description = document.getElementById('template-description').value.trim();
+    const category = document.getElementById('template-category-select').value;
+
+    if (!name) {
+      showStatus('Please enter a template name', 'error');
+      return;
+    }
+
+    const id = 'custom-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+    // Check if template already exists
+    if (state.customTemplates.some(t => t.id === id)) {
+      if (!confirm('A template with this name already exists. Overwrite?')) {
+        return;
+      }
+      state.customTemplates = state.customTemplates.filter(t => t.id !== id);
+    }
+
+    const template = {
+      id,
+      name,
+      description,
+      category,
+      components: JSON.parse(JSON.stringify(state.config.components))
+    };
+
+    state.customTemplates.push(template);
+    saveCustomTemplates();
+    renderTemplates();
+    closeModal();
+    showStatus(`Template "${name}" saved`, 'success');
+  }
+
+  function deleteCustomTemplate(id) {
+    const template = state.customTemplates.find(t => t.id === id);
+    if (!template) return;
+
+    if (confirm(`Delete template "${template.name}"?`)) {
+      state.customTemplates = state.customTemplates.filter(t => t.id !== id);
+      saveCustomTemplates();
+      renderTemplates();
+      showStatus(`Template "${template.name}" deleted`, 'info');
+    }
+  }
+
+  function saveCustomTemplates() {
+    try {
+      localStorage.setItem('ai-prompt-builder-custom-templates', JSON.stringify(state.customTemplates));
+    } catch (error) {
+      console.error('Failed to save custom templates:', error);
+    }
+  }
+
+  function loadCustomTemplates() {
+    try {
+      const saved = localStorage.getItem('ai-prompt-builder-custom-templates');
+      if (saved) {
+        state.customTemplates = JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error('Failed to load custom templates:', error);
+    }
+  }
+
+  // ============================================================
+  // SHARING & COLLABORATION
+  // ============================================================
+
+  function handleShare() {
+    const modal = document.getElementById('share-modal');
+    const link = generateShareLink();
+    document.getElementById('share-link').value = link;
+    generateQRCode(link);
+    modal.classList.add('show');
+  }
+
+  function generateShareLink() {
+    const config = {
+      components: state.config.components,
+      version: '3.0.0'
+    };
+
+    const json = JSON.stringify(config);
+    const base64 = btoa(unescape(encodeURIComponent(json)));
+    const url = window.location.href.split('#')[0] + '#share=' + base64;
+    return url;
+  }
+
+  function copyShareLink() {
+    const input = document.getElementById('share-link');
+    input.select();
+    document.execCommand('copy');
+    showStatus('Share link copied to clipboard!', 'success');
+  }
+
+  function loadFromURL() {
+    const hash = window.location.hash;
+    if (hash.startsWith('#share=')) {
+      try {
+        const base64 = hash.substring(7);
+        const json = decodeURIComponent(escape(atob(base64)));
+        const config = JSON.parse(json);
+
+        if (config.components && Array.isArray(config.components)) {
+          if (confirm('Load shared configuration? This will replace your current configuration.')) {
+            state.config.components = config.components;
+            renderComponents();
+            updatePreview();
+            updatePlaceholders();
+            saveConfig();
+            showStatus('Configuration loaded from shared link', 'success');
+            window.location.hash = '';
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load from URL:', error);
+        showStatus('Invalid share link', 'error');
+      }
+    }
+  }
+
+  function generateQRCode(text) {
+    const canvas = document.getElementById('qr-canvas');
+    const ctx = canvas.getContext('2d');
+    const size = 200;
+
+    // Simple QR code generation (you can use a library for real implementation)
+    // For now, we'll create a simple text representation
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+
+    ctx.fillStyle = '#000000';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Draw a simple pattern representing QR code
+    const moduleSize = 4;
+    const modules = Math.floor(size / moduleSize);
+
+    // Create a simple deterministic pattern from the text
+    for (let y = 0; y < modules; y++) {
+      for (let x = 0; x < modules; x++) {
+        const index = (y * modules + x) % text.length;
+        const charCode = text.charCodeAt(index);
+        if ((charCode + x + y) % 2 === 0) {
+          ctx.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize);
+        }
+      }
+    }
+
+    // Add "QR Code" label
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(size/2 - 40, size/2 - 10, 80, 20);
+    ctx.fillStyle = '#000000';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('Scan to Import', size/2, size/2);
+  }
+
+  function downloadQRCode() {
+    const canvas = document.getElementById('qr-canvas');
+    const link = document.createElement('a');
+    link.download = 'ai-prompt-builder-qr.png';
+    link.href = canvas.toDataURL();
+    link.click();
+    showStatus('QR code downloaded', 'success');
+  }
+
+  // ============================================================
+  // COLLAPSIBLE SECTIONS
+  // ============================================================
+
+  function setupCollapsibles() {
+    const headers = document.querySelectorAll('.section-header.collapsible');
+    headers.forEach(header => {
+      header.addEventListener('click', (e) => {
+        // Don't toggle if clicking on a button inside the header
+        if (e.target.closest('button:not(.collapse-btn)')) {
+          return;
+        }
+
+        header.classList.toggle('collapsed');
+        const content = header.nextElementSibling;
+        if (content) {
+          if (header.classList.contains('collapsed')) {
+            content.style.maxHeight = '0';
+          } else {
+            content.style.maxHeight = content.scrollHeight + 'px';
+          }
+        }
+      });
+
+      // Set initial max-height for non-collapsed sections
+      if (!header.classList.contains('collapsed')) {
+        const content = header.nextElementSibling;
+        if (content) {
+          content.style.maxHeight = content.scrollHeight + 'px';
+        }
+      }
+    });
+  }
+
+  // Override updatePreview to also update placeholders
+  const originalUpdatePreview = updatePreview;
+  function updatePreview() {
+    originalUpdatePreview();
+    updatePlaceholders();
+  }
+
+  // Load placeholders on init
+  loadPlaceholders();
 </script>
 
 </body>
