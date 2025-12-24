@@ -17,8 +17,9 @@ let workspaceStyleElement = null;
  * @param {string} id - Tool ID
  * @param {Object} context - Global context object
  * @param {string} workspace - Workspace selector (default: "#workspace")
+ * @param {boolean} updateUrl - Whether to update URL query parameter (default: true)
  */
-export function openTool(id, context, workspace = "#workspace") {
+export function openTool(id, context, workspace = "#workspace", updateUrl = true) {
   const tool = ToolRegistry.get(id);
 
   if (!tool) {
@@ -28,6 +29,13 @@ export function openTool(id, context, workspace = "#workspace") {
   }
 
   currentToolId = id;
+
+  // Update URL query parameter to enable direct linking
+  if (updateUrl) {
+    const url = new URL(window.location);
+    url.searchParams.set('tool', id);
+    window.history.pushState({ toolId: id }, '', url);
+  }
 
   // Add to history
   storage.addToHistory(id, tool.manifest.name);

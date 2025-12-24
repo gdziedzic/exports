@@ -53,6 +53,16 @@ import { productivityEngine } from './core/productivityengine.js';
 import { quickPanel } from './core/quickpanel.js';
 
 /**
+ * Get URL query parameter value
+ * @param {string} name - Parameter name
+ * @returns {string|null} Parameter value or null
+ */
+function getQueryParam(name) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(name);
+}
+
+/**
  * Initialize the DevChef application
  */
 async function init() {
@@ -134,11 +144,18 @@ async function init() {
   // Set up settings menu
   setupSettingsMenu(context);
 
-  // Open last used tool or first tool
+  // Set up browser history navigation
+  setupHistoryNavigation();
+
+  // Open tool based on URL parameter, last used tool, or first tool
+  const toolFromUrl = getQueryParam('tool');
   const lastTool = getLastUsedTool();
   const tools = ToolRegistry.all();
 
-  if (lastTool && ToolRegistry.get(lastTool)) {
+  if (toolFromUrl && ToolRegistry.get(toolFromUrl)) {
+    console.log(`Opening tool from URL: ${toolFromUrl}`);
+    openTool(toolFromUrl, context);
+  } else if (lastTool && ToolRegistry.get(lastTool)) {
     openTool(lastTool, context);
   } else if (tools.length > 0) {
     openTool(tools[0].id, context);
@@ -157,6 +174,33 @@ async function init() {
   console.log(`   🔍 Search: Ctrl+K / Ctrl+Shift+F  |  📝 Snippets: Ctrl+B  |  🛠️ DevTools: F12`);
   console.log(``);
   console.log(`🚀 PRODUCTIVITY TO THE MOON! 🌙`);
+}
+
+/**
+ * Set up browser history navigation (back/forward buttons)
+ */
+function setupHistoryNavigation() {
+  window.addEventListener('popstate', (e) => {
+    if (e.state && e.state.toolId) {
+      const toolId = e.state.toolId;
+      if (ToolRegistry.get(toolId)) {
+        // Open tool without updating URL (to avoid pushing another history state)
+        openTool(toolId, context, "#workspace", false);
+      }
+    } else {
+      // No state, check URL parameter
+      const toolFromUrl = getQueryParam('tool');
+      if (toolFromUrl && ToolRegistry.get(toolFromUrl)) {
+        openTool(toolFromUrl, context, "#workspace", false);
+      }
+    }
+  });
+
+  // Set initial state
+  const currentToolId = getQueryParam('tool');
+  if (currentToolId) {
+    window.history.replaceState({ toolId: currentToolId }, '');
+  }
 }
 
 /**
