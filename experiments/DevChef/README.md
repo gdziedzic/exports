@@ -304,8 +304,10 @@ Professional developer tools built right into DevChef for comprehensive debuggin
 
 DevChef V6 includes comprehensive test suites:
 
+### Unit & Integration Tests
+
 ```bash
-# Run all tests (V2-V6)
+# Run all unit/integration tests (V2-V6)
 node test.js                    # V2-V5 tests (28 tests)
 node test-comprehensive.js      # V3.1-V5 tests (35 tests)
 node test-v6.js                 # V6 tests (34 tests)
@@ -316,12 +318,47 @@ node test-v6.js                 # V6 tests (34 tests)
 # - Comprehensive integration tests
 ```
 
-**Test Coverage:**
+**Unit Test Coverage:**
 - ✅ UI Engine: Animations, components, accessibility
 - ✅ State Manager: Get/set, subscriptions, undo/redo, snapshots
 - ✅ Tool Orchestrator: Loading, mounting, data bridge, lifecycle
 - ✅ Error Boundary: Error handling, recovery, sanitization
 - ✅ Integration: Cross-module functionality
+
+### E2E Tests (Playwright)
+
+DevChef includes end-to-end tests that verify the application works correctly in real browsers.
+
+```bash
+# Install dependencies (first time only)
+npm install
+npm run test:install
+
+# Run E2E tests
+npm test                        # Run all E2E tests (headless)
+npm run test:headed             # Run with browser visible
+npm run test:ui                 # Open Playwright UI for debugging
+npm run test:debug              # Run in debug mode
+
+# View test report
+npm run test:report             # Open HTML test report
+```
+
+**E2E Test Coverage:**
+- ✅ Application Loading: Verify app loads correctly
+- ✅ Tool Navigation: Test tool selection and switching
+- ✅ Theme Toggle: Verify light/dark theme switching
+- ✅ Command Palette: Test Ctrl+K shortcut and palette functionality
+- ✅ Search: Verify tool search and filtering
+- ✅ Keyboard Navigation: Test keyboard shortcuts
+- ✅ State Persistence: Verify settings persist across reloads
+- ✅ Error Handling: Check graceful error handling
+- ✅ Performance: Verify load times and responsiveness
+
+**Browsers Tested:**
+- ✅ Chromium (Chrome/Edge)
+- ✅ Firefox
+- ✅ WebKit (Safari)
 
 ---
 
