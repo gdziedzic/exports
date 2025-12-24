@@ -1503,11 +1503,11 @@
         order: 3,
         hasOptions: true,
         selectedPreset: 'project-brief',
-        content: 'Project: {{project_name}}
+        content: `Project: {{project_name}}
 Domain: {{domain}}
 Key requirements: {{requirements}}
 Primary users: {{primary_users}}
-Success metric: {{success_metric}}'
+Success metric: {{success_metric}}`
       },
       {
         id: 'task',
@@ -1516,10 +1516,10 @@ Success metric: {{success_metric}}'
         order: 4,
         hasOptions: true,
         selectedPreset: 'feature-task',
-        content: 'Objective: {{feature_summary}}
+        content: `Objective: {{feature_summary}}
 Current behavior: {{current_behavior}}
 Desired behavior: {{desired_behavior}}
-Acceptance criteria: {{acceptance_criteria}}'
+Acceptance criteria: {{acceptance_criteria}}`
       },
       {
         id: 'rules',
@@ -1556,10 +1556,10 @@ Acceptance criteria: {{acceptance_criteria}}'
         order: 7,
         hasOptions: true,
         selectedPreset: 'delivery-constraints',
-        content: 'Timeline: {{deadline}}
+        content: `Timeline: {{deadline}}
 Budget: {{budget}}
 Critical dependencies: {{dependencies}}
-Compliance requirements: {{compliance}}'
+Compliance requirements: {{compliance}}`
       },
       {
         id: 'examples',
@@ -1568,9 +1568,9 @@ Compliance requirements: {{compliance}}'
         order: 8,
         hasOptions: true,
         selectedPreset: 'before-after',
-        content: 'Before: {{before_state}}
+        content: `Before: {{before_state}}
 After: {{after_state}}
-Key improvements: {{improvements}}'
+Key improvements: {{improvements}}`
       }
     ]
   };
@@ -2600,10 +2600,10 @@ So that [benefit/value]
             <div class="component-name">${comp.name}</div>
             ${badge}
             <div class="component-actions">
-              <button class="component-action" data-action="edit" title="Edit">??</button>
-              <button class="component-action" data-action="move-up" title="Move Up"></button>
-              <button class="component-action" data-action="move-down" title="Move Down"></button>
-              <button class="component-action" data-action="delete" title="Delete">???</button>
+              <button class="component-action" data-action="edit" title="Edit">✏️</button>
+              <button class="component-action" data-action="move-up" title="Move Up">&uarr;</button>
+              <button class="component-action" data-action="move-down" title="Move Down">&darr;</button>
+              <button class="component-action" data-action="delete" title="Delete">🗑️</button>
             </div>
           </div>
           <div class="component-body">
@@ -2698,8 +2698,6 @@ So that [benefit/value]
     }
 
     return 'custom';
-  }
-    return '';
   }
 
   function handleComponentClick(e) {
