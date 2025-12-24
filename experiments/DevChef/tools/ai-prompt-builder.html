@@ -13,9 +13,9 @@
   "id": "ai-prompt-builder",
   "name": "AI Prompt Builder",
   "category": "Developer Tools",
-  "description": "Compose AI prompts from configurable components - role, context, input, rules, output format",
-  "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "composer"],
-  "version": "1.0.0"
+  "description": "Compose AI prompts with selectable personas, tech stacks, and smart file import from package.json",
+  "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "composer", "rules", "personas"],
+  "version": "2.0.0"
 }
 </script>
 
@@ -24,7 +24,7 @@
   <div class="tool-container">
     <div class="tool-header">
       <h2 class="tool-title">AI Prompt Builder</h2>
-      <p class="tool-description">Compose structured prompts from configurable components</p>
+      <p class="tool-description">Compose structured prompts with selectable personas and tech stack awareness</p>
     </div>
 
     <div class="tool-layout">
@@ -33,9 +33,18 @@
         <div class="panel-header">
           <h3>Prompt Components</h3>
           <div class="panel-actions">
+            <button id="import-file-btn" class="icon-btn" title="Import package.json / requirements.txt">📂</button>
             <button id="import-config-btn" class="icon-btn" title="Import Configuration">📥</button>
             <button id="export-config-btn" class="icon-btn" title="Export Configuration">📤</button>
             <button id="reset-config-btn" class="icon-btn" title="Reset to Default">🔄</button>
+          </div>
+        </div>
+
+        <div class="drop-zone" id="drop-zone">
+          <div class="drop-zone-content">
+            <div class="drop-icon">📁</div>
+            <div class="drop-text">Drop package.json or requirements.txt</div>
+            <div class="drop-subtext">to auto-generate tech stack context</div>
           </div>
         </div>
 
@@ -54,6 +63,11 @@
         <div class="panel-header">
           <h3>Final Prompt</h3>
           <div class="panel-actions">
+            <select id="export-format" class="format-select">
+              <option value="structured">Structured</option>
+              <option value="markdown">Markdown</option>
+              <option value="plain">Plain Text</option>
+            </select>
             <button id="copy-prompt-btn" class="primary">📋 Copy</button>
             <button id="save-prompt-btn" class="secondary">💾 Save</button>
           </div>
@@ -67,6 +81,7 @@
           <span id="char-count">0 characters</span>
           <span id="word-count">0 words</span>
           <span id="line-count">0 lines</span>
+          <span id="placeholder-count">0 placeholders</span>
         </div>
 
         <div class="templates-section">
@@ -76,14 +91,49 @@
             <button class="template-btn" data-template="data-analysis">Data Analysis</button>
             <button class="template-btn" data-template="content-writer">Content Writer</button>
             <button class="template-btn" data-template="tech-explainer">Tech Explainer</button>
-            <button class="template-btn" data-template="custom">Custom</button>
+            <button class="template-btn" data-template="architect">Solution Architect</button>
+            <button class="template-btn" data-template="debugging">Debugging Assistant</button>
           </div>
         </div>
       </div>
     </div>
 
     <input type="file" id="file-input" accept=".json" style="display: none;">
+    <input type="file" id="project-file-input" accept=".json,.txt" style="display: none;">
     <div id="status-message" class="status-message"></div>
+
+    <!-- Persona Selection Modal -->
+    <div id="persona-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Select a Persona</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="personas-grid" id="personas-grid">
+            <!-- Personas will be rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tech Stack Selection Modal -->
+    <div id="techstack-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Select Technology Stack</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="techstack-search">
+            <input type="text" id="techstack-search" placeholder="Search technologies..." />
+          </div>
+          <div class="techstack-grid" id="techstack-grid">
+            <!-- Tech stacks will be rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -126,6 +176,7 @@
   .panel-actions {
     display: flex;
     gap: 8px;
+    align-items: center;
   }
 
   .icon-btn {
@@ -141,6 +192,56 @@
   .icon-btn:hover {
     background: var(--bg-secondary);
     border-color: var(--primary-color);
+  }
+
+  .format-select {
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .format-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+
+  .drop-zone {
+    margin: 12px;
+    padding: 30px;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: var(--bg-primary);
+  }
+
+  .drop-zone:hover,
+  .drop-zone.dragover {
+    border-color: var(--primary-color);
+    background: var(--bg-hover);
+  }
+
+  .drop-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+  }
+
+  .drop-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .drop-subtext {
+    font-size: 12px;
+    color: var(--text-secondary);
   }
 
   .components-list {
@@ -161,6 +262,10 @@
   .component-item.active {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 1px var(--primary-color);
+  }
+
+  .component-item.has-options {
+    border-left: 3px solid var(--primary-color);
   }
 
   .component-header {
@@ -209,6 +314,15 @@
     font-weight: 500;
     font-size: 14px;
     color: var(--text-primary);
+  }
+
+  .component-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 10px;
+    font-weight: 500;
   }
 
   .component-actions {
@@ -261,6 +375,24 @@
   .component-body textarea:focus {
     outline: none;
     border-color: var(--primary-color);
+  }
+
+  .component-select-btn {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+
+  .component-select-btn:hover {
+    background: var(--primary-hover);
   }
 
   .component-meta {
@@ -344,6 +476,7 @@
     font-size: 12px;
     color: var(--text-secondary);
     background: var(--bg-primary);
+    flex-wrap: wrap;
   }
 
   .templates-section {
@@ -405,16 +538,271 @@
     border: 1px solid #bee5eb;
   }
 
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal.show {
+    display: flex;
+  }
+
+  .modal-content {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--text-primary);
+  }
+
+  .modal-close {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .modal-close:hover {
+    background: var(--bg-hover);
+  }
+
+  .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .personas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
+  }
+
+  .persona-card {
+    padding: 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg-secondary);
+  }
+
+  .persona-card:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-hover);
+  }
+
+  .persona-card.selected {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .persona-name {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .persona-description {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  .persona-card.selected .persona-description {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .techstack-search {
+    margin-bottom: 16px;
+  }
+
+  .techstack-search input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .techstack-search input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+
+  .techstack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+  }
+
+  .techstack-item {
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    background: var(--bg-secondary);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .techstack-item:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-hover);
+  }
+
+  .techstack-item.selected {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+  }
+
   @media (max-width: 1024px) {
     .tool-layout {
       grid-template-columns: 1fr;
+    }
+
+    .personas-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .techstack-grid {
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     }
   }
 </style>
 
 <!-- Tool Module -->
 <script type="module">
-  // Default configuration with common prompt components
+  // Persona library
+  const PERSONAS = [
+    {
+      id: 'senior-engineer',
+      name: 'Senior Software Engineer',
+      description: 'Expert in modern development practices, design patterns, and clean code principles.',
+      content: 'You are a senior software engineer with 10+ years of experience in modern development practices, design patterns, and clean code principles. You have deep expertise in software architecture, code quality, and best practices.'
+    },
+    {
+      id: 'code-reviewer',
+      name: 'Code Reviewer',
+      description: 'Focused on code quality, security, performance, and maintainability.',
+      content: 'You are a meticulous code reviewer with expertise in identifying code quality issues, security vulnerabilities, performance bottlenecks, and maintainability concerns. You provide constructive feedback focused on best practices.'
+    },
+    {
+      id: 'architect',
+      name: 'Solution Architect',
+      description: 'Designs scalable, maintainable systems with focus on architecture patterns.',
+      content: 'You are a solution architect specializing in designing scalable, maintainable, and robust systems. You have expertise in architectural patterns, system design, microservices, and cloud architecture.'
+    },
+    {
+      id: 'devops-engineer',
+      name: 'DevOps Engineer',
+      description: 'Expert in CI/CD, infrastructure, containers, and automation.',
+      content: 'You are a DevOps engineer with expertise in CI/CD pipelines, infrastructure as code, containerization (Docker, Kubernetes), cloud platforms (AWS, Azure, GCP), and automation.'
+    },
+    {
+      id: 'security-expert',
+      name: 'Security Expert',
+      description: 'Focuses on security best practices, vulnerabilities, and secure coding.',
+      content: 'You are a security expert specializing in application security, secure coding practices, vulnerability assessment, and security best practices. You focus on OWASP top 10, authentication, authorization, and data protection.'
+    },
+    {
+      id: 'data-analyst',
+      name: 'Data Analyst',
+      description: 'Expert in statistical analysis, data visualization, and insights.',
+      content: 'You are a data analyst with expertise in statistical analysis, data visualization, SQL, Python/R, and extracting actionable insights from data. You understand data cleaning, transformation, and storytelling.'
+    },
+    {
+      id: 'frontend-specialist',
+      name: 'Frontend Specialist',
+      description: 'Expert in modern frontend frameworks, UX, and web performance.',
+      content: 'You are a frontend specialist with deep knowledge of React, Vue, Angular, TypeScript, CSS, and modern web development. You understand UX principles, accessibility, and web performance optimization.'
+    },
+    {
+      id: 'backend-specialist',
+      name: 'Backend Specialist',
+      description: 'Expert in APIs, databases, server architecture, and scalability.',
+      content: 'You are a backend specialist with expertise in REST/GraphQL APIs, database design, server architecture, caching strategies, and building scalable backend systems. You know Node.js, Python, Java, Go, and database technologies.'
+    },
+    {
+      id: 'tech-educator',
+      name: 'Technical Educator',
+      description: 'Explains complex concepts in simple, understandable terms.',
+      content: 'You are a technical educator who excels at breaking down complex technical concepts into simple, understandable explanations. You use analogies, examples, and step-by-step breakdowns to teach effectively.'
+    },
+    {
+      id: 'qa-engineer',
+      name: 'QA Engineer',
+      description: 'Expert in testing strategies, test automation, and quality assurance.',
+      content: 'You are a QA engineer with expertise in testing strategies, test automation, unit/integration/e2e testing, and quality assurance best practices. You understand testing frameworks and ensure software reliability.'
+    },
+    {
+      id: 'technical-writer',
+      name: 'Technical Writer',
+      description: 'Creates clear documentation, API docs, and technical content.',
+      content: 'You are a technical writer specializing in creating clear, comprehensive documentation, API documentation, user guides, and technical content. You understand how to make complex technical information accessible.'
+    },
+    {
+      id: 'content-writer',
+      name: 'Content Writer',
+      description: 'Professional writer for blogs, marketing, and storytelling.',
+      content: 'You are a professional content writer with expertise in technical writing, copywriting, blog posts, marketing content, and storytelling. You adapt tone and style to the target audience.'
+    }
+  ];
+
+  // Technology stack library
+  const TECH_STACKS = {
+    'Frontend': ['React', 'Vue.js', 'Angular', 'Svelte', 'Next.js', 'Nuxt.js', 'TypeScript', 'JavaScript', 'HTML/CSS', 'Tailwind CSS', 'Bootstrap'],
+    'Backend': ['Node.js', 'Python', 'Java', 'Go', 'Rust', 'PHP', 'Ruby', 'C#/.NET', 'Elixir', 'Scala'],
+    'Frameworks': ['Express.js', 'Django', 'Flask', 'FastAPI', 'Spring Boot', 'Laravel', 'Ruby on Rails', 'ASP.NET Core'],
+    'Databases': ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Elasticsearch', 'SQLite', 'DynamoDB', 'Cassandra', 'Neo4j'],
+    'Cloud': ['AWS', 'Azure', 'Google Cloud', 'Vercel', 'Netlify', 'Heroku', 'DigitalOcean', 'Cloudflare'],
+    'DevOps': ['Docker', 'Kubernetes', 'Jenkins', 'GitHub Actions', 'GitLab CI', 'Terraform', 'Ansible', 'Prometheus', 'Grafana'],
+    'Mobile': ['React Native', 'Flutter', 'Swift', 'Kotlin', 'Ionic', 'Xamarin'],
+    'Data': ['Pandas', 'NumPy', 'TensorFlow', 'PyTorch', 'Scikit-learn', 'Apache Spark', 'Airflow', 'Jupyter']
+  };
+
+  // Default configuration with enhanced components
   const DEFAULT_CONFIG = {
     components: [
       {
@@ -422,70 +810,76 @@
         name: 'Role / Persona',
         enabled: true,
         order: 1,
-        content: 'You are an expert software engineer with deep knowledge of modern development practices, design patterns, and clean code principles.'
+        hasOptions: true,
+        selectedPersona: 'senior-engineer',
+        content: PERSONAS[0].content
+      },
+      {
+        id: 'tech-stack',
+        name: 'Technology Stack',
+        enabled: true,
+        order: 2,
+        hasOptions: true,
+        selectedStacks: [],
+        content: 'Technology stack: {{tech_stack}}\n\nPlease provide solutions and examples specific to these technologies.'
       },
       {
         id: 'context',
-        name: 'Context',
+        name: 'Context / Background',
         enabled: true,
-        order: 2,
-        content: 'The user is working on a TypeScript project using React and needs assistance with component architecture and state management.'
+        order: 3,
+        content: 'Project: {{project_name}}\nDomain: {{domain}}\nKey requirements: {{requirements}}'
       },
       {
         id: 'task',
-        name: 'Task / Input',
+        name: 'Task / Objective',
         enabled: true,
-        order: 3,
-        content: '[DESCRIBE YOUR SPECIFIC TASK OR QUESTION HERE]'
+        order: 4,
+        content: '{{task_description}}'
       },
       {
         id: 'rules',
         name: 'Processing Rules',
         enabled: true,
-        order: 4,
-        content: `Rules to follow:
-- Provide clear, concise explanations
+        order: 5,
+        content: `Follow these rules:
+- Provide clear, actionable guidance
 - Include code examples when relevant
-- Explain your reasoning
+- Explain your reasoning step-by-step
 - Consider edge cases and error handling
-- Follow industry best practices`
+- Follow industry best practices
+- Be specific and avoid vague recommendations`
       },
       {
         id: 'output-format',
         name: 'Output Format',
         enabled: true,
-        order: 5,
-        content: `Format your response as:
-1. Brief summary
-2. Detailed explanation
-3. Code example (if applicable)
-4. Testing considerations`
-      },
-      {
-        id: 'company',
-        name: 'Company Info',
-        enabled: false,
         order: 6,
-        content: 'Company: [Your Company Name]\nIndustry: [Industry]\nTech Stack: [Technologies]'
-      },
-      {
-        id: 'personal',
-        name: 'Personal Preferences',
-        enabled: false,
-        order: 7,
-        content: 'Preferences:\n- Code style: [e.g., functional, OOP]\n- Verbosity: [concise/detailed]\n- Examples: [always/when needed]'
+        content: `Structure your response as:
+1. Brief summary (1-2 sentences)
+2. Detailed explanation with step-by-step breakdown
+3. Code examples with inline comments
+4. Testing approach and edge cases
+5. Best practices and recommendations`
       },
       {
         id: 'constraints',
-        name: 'Constraints',
+        name: 'Constraints / Limitations',
+        enabled: false,
+        order: 7,
+        content: 'Technical constraints:\n- {{constraint_1}}\n- {{constraint_2}}\n- {{constraint_3}}'
+      },
+      {
+        id: 'examples',
+        name: 'Examples / References',
         enabled: false,
         order: 8,
-        content: 'Constraints:\n- Must be compatible with Node.js 18+\n- No external dependencies\n- Performance-critical'
+        content: 'Reference examples:\n{{examples}}'
       }
     ]
   };
 
-  // Predefined templates
+  // Enhanced templates
   const TEMPLATES = {
     'code-review': {
       name: 'Code Review Assistant',
@@ -495,14 +889,16 @@
           name: 'Role / Persona',
           enabled: true,
           order: 1,
-          content: 'You are a senior code reviewer with expertise in software architecture, security, and performance optimization.'
+          hasOptions: true,
+          selectedPersona: 'code-reviewer',
+          content: PERSONAS.find(p => p.id === 'code-reviewer').content
         },
         {
           id: 'task',
-          name: 'Task / Input',
+          name: 'Code to Review',
           enabled: true,
           order: 2,
-          content: '[PASTE CODE TO REVIEW HERE]'
+          content: '{{code_snippet}}'
         },
         {
           id: 'rules',
@@ -511,11 +907,12 @@
           order: 3,
           content: `Review the code for:
 - Code quality and readability
-- Performance issues
-- Security vulnerabilities
+- Performance issues and optimizations
+- Security vulnerabilities (OWASP top 10)
 - Best practices adherence
-- Potential bugs
-- Maintainability concerns`
+- Potential bugs and edge cases
+- Maintainability and scalability concerns
+- Test coverage gaps`
         },
         {
           id: 'output-format',
@@ -524,10 +921,11 @@
           order: 4,
           content: `Structure your review as:
 1. Overall assessment (1-2 sentences)
-2. Critical issues (must fix)
-3. Suggestions (should fix)
-4. Nitpicks (optional improvements)
-5. Positive highlights`
+2. Critical issues (MUST fix - security, bugs)
+3. Important suggestions (SHOULD fix - performance, best practices)
+4. Minor improvements (COULD fix - style, optimization)
+5. Positive highlights (what's done well)
+6. Refactored code example (if applicable)`
         }
       ]
     },
@@ -539,21 +937,23 @@
           name: 'Role / Persona',
           enabled: true,
           order: 1,
-          content: 'You are a data analyst with expertise in statistical analysis, data visualization, and insight extraction.'
+          hasOptions: true,
+          selectedPersona: 'data-analyst',
+          content: PERSONAS.find(p => p.id === 'data-analyst').content
         },
         {
           id: 'context',
-          name: 'Context',
+          name: 'Dataset Context',
           enabled: true,
           order: 2,
-          content: 'Dataset description:\n- Source: [data source]\n- Size: [number of records]\n- Fields: [list key fields]'
+          content: 'Dataset: {{dataset_name}}\nSource: {{data_source}}\nSize: {{record_count}} records\nKey fields: {{field_list}}\nTime period: {{time_period}}'
         },
         {
           id: 'task',
-          name: 'Analysis Task',
+          name: 'Analysis Objective',
           enabled: true,
           order: 3,
-          content: '[DESCRIBE WHAT YOU WANT TO ANALYZE OR DISCOVER]'
+          content: '{{analysis_objective}}'
         },
         {
           id: 'output-format',
@@ -561,11 +961,13 @@
           enabled: true,
           order: 4,
           content: `Provide:
-1. Key findings (bullet points)
-2. Statistical summary
-3. Visualization recommendations
-4. Actionable insights
-5. Next steps for deeper analysis`
+1. Executive summary (key findings in 3-5 bullet points)
+2. Statistical summary (mean, median, std dev, outliers)
+3. Data quality assessment (missing values, anomalies)
+4. Visualization recommendations (chart types, variables)
+5. Actionable insights with business impact
+6. Recommendations for next analysis steps
+7. Python/SQL code snippets for analysis`
         }
       ]
     },
@@ -577,14 +979,16 @@
           name: 'Role / Persona',
           enabled: true,
           order: 1,
-          content: 'You are a professional content writer with expertise in technical writing, copywriting, and storytelling.'
+          hasOptions: true,
+          selectedPersona: 'content-writer',
+          content: PERSONAS.find(p => p.id === 'content-writer').content
         },
         {
           id: 'task',
-          name: 'Writing Task',
+          name: 'Writing Brief',
           enabled: true,
           order: 2,
-          content: 'Topic: [YOUR TOPIC]\nTarget Audience: [AUDIENCE]\nTone: [professional/casual/technical]'
+          content: 'Topic: {{topic}}\nTarget audience: {{audience}}\nTone: {{tone}}\nKey message: {{key_message}}'
         },
         {
           id: 'rules',
@@ -592,18 +996,19 @@
           enabled: true,
           order: 3,
           content: `Guidelines:
-- Clear and engaging language
-- Active voice preferred
-- Include examples where relevant
-- Break up text with subheadings
-- Conclude with key takeaways`
+- Use clear, engaging language appropriate for {{audience}}
+- Maintain {{tone}} tone throughout
+- Include concrete examples and case studies
+- Break up text with subheadings and bullet points
+- Use active voice and strong verbs
+- End with clear call-to-action or key takeaways`
         },
         {
           id: 'constraints',
           name: 'Constraints',
           enabled: true,
           order: 4,
-          content: 'Length: [word count]\nSEO keywords: [keywords]\nStyle: [blog/documentation/marketing]'
+          content: 'Word count: {{word_count}}\nSEO keywords: {{keywords}}\nContent type: {{content_type}}'
         }
       ]
     },
@@ -615,26 +1020,29 @@
           name: 'Role / Persona',
           enabled: true,
           order: 1,
-          content: 'You are a technical educator who excels at explaining complex technical concepts in simple, understandable terms.'
+          hasOptions: true,
+          selectedPersona: 'tech-educator',
+          content: PERSONAS.find(p => p.id === 'tech-educator').content
         },
         {
           id: 'task',
           name: 'Concept to Explain',
           enabled: true,
           order: 2,
-          content: '[TECHNICAL CONCEPT OR TECHNOLOGY TO EXPLAIN]'
+          content: 'Explain: {{technical_concept}}\nAudience level: {{beginner/intermediate/advanced}}'
         },
         {
           id: 'rules',
-          name: 'Explanation Rules',
+          name: 'Explanation Principles',
           enabled: true,
           order: 3,
           content: `Follow these principles:
-- Start with a simple analogy
-- Build from basics to advanced
-- Use concrete examples
-- Avoid unnecessary jargon
-- Include practical applications`
+- Start with a simple real-world analogy
+- Build understanding from basics to advanced
+- Use concrete examples and diagrams
+- Avoid unnecessary jargon (or explain when needed)
+- Include practical applications and use cases
+- Address common misconceptions`
         },
         {
           id: 'output-format',
@@ -642,27 +1050,137 @@
           enabled: true,
           order: 4,
           content: `Structure:
-1. Simple analogy (ELI5)
-2. Core concept explanation
-3. How it works (step-by-step)
-4. Real-world examples
-5. Common misconceptions
-6. Further learning resources`
+1. Simple analogy (ELI5 - Explain Like I'm 5)
+2. Core concept explanation (what it is)
+3. How it works (step-by-step breakdown)
+4. Real-world examples and use cases
+5. Benefits and trade-offs
+6. Common misconceptions and FAQs
+7. Next steps for deeper learning`
         }
       ]
     },
-    'custom': {
-      name: 'Custom Template',
-      components: DEFAULT_CONFIG.components
+    'architect': {
+      name: 'Solution Architect',
+      components: [
+        {
+          id: 'role',
+          name: 'Role / Persona',
+          enabled: true,
+          order: 1,
+          hasOptions: true,
+          selectedPersona: 'architect',
+          content: PERSONAS.find(p => p.id === 'architect').content
+        },
+        {
+          id: 'tech-stack',
+          name: 'Technology Stack',
+          enabled: true,
+          order: 2,
+          hasOptions: true,
+          selectedStacks: [],
+          content: 'Technology stack: {{tech_stack}}'
+        },
+        {
+          id: 'task',
+          name: 'Architecture Challenge',
+          enabled: true,
+          order: 3,
+          content: 'System to design: {{system_description}}\nScale: {{user_count}} users, {{request_rate}} requests/sec\nKey requirements: {{requirements}}'
+        },
+        {
+          id: 'rules',
+          name: 'Design Principles',
+          enabled: true,
+          order: 4,
+          content: `Consider:
+- Scalability and performance requirements
+- Security and compliance needs
+- High availability and fault tolerance
+- Cost optimization
+- Maintainability and developer experience
+- Technology trade-offs and alternatives`
+        },
+        {
+          id: 'output-format',
+          name: 'Output Format',
+          enabled: true,
+          order: 5,
+          content: `Provide:
+1. High-level architecture overview
+2. Component breakdown with responsibilities
+3. Data flow and communication patterns
+4. Technology choices with justification
+5. Scalability strategy
+6. Security considerations
+7. Potential bottlenecks and mitigation
+8. Architecture diagram (ASCII or description)`
+        }
+      ]
+    },
+    'debugging': {
+      name: 'Debugging Assistant',
+      components: [
+        {
+          id: 'role',
+          name: 'Role / Persona',
+          enabled: true,
+          order: 1,
+          hasOptions: true,
+          selectedPersona: 'senior-engineer',
+          content: 'You are a senior debugging expert with deep experience in troubleshooting complex issues across different technologies. You follow systematic debugging approaches and help identify root causes.'
+        },
+        {
+          id: 'context',
+          name: 'Environment',
+          enabled: true,
+          order: 2,
+          content: 'Environment: {{environment}}\nTech stack: {{tech_stack}}\nError occurred: {{when_occurred}}'
+        },
+        {
+          id: 'task',
+          name: 'Issue Description',
+          enabled: true,
+          order: 3,
+          content: 'Error message: {{error_message}}\n\nCode snippet:\n{{code_snippet}}\n\nExpected behavior: {{expected}}\nActual behavior: {{actual}}'
+        },
+        {
+          id: 'rules',
+          name: 'Debugging Approach',
+          enabled: true,
+          order: 4,
+          content: `Follow systematic debugging:
+1. Reproduce the issue
+2. Isolate the root cause
+3. Verify assumptions with evidence
+4. Consider recent changes
+5. Check logs and stack traces
+6. Test hypotheses incrementally`
+        },
+        {
+          id: 'output-format',
+          name: 'Output Format',
+          enabled: true,
+          order: 5,
+          content: `Provide:
+1. Root cause analysis (what's causing the issue)
+2. Step-by-step fix with code examples
+3. Why this solution works (explanation)
+4. How to verify the fix
+5. How to prevent similar issues
+6. Additional debugging tips if issue persists`
+        }
+      ]
     }
   };
 
   let state = {
-    config: JSON.parse(JSON.stringify(DEFAULT_CONFIG))
+    config: JSON.parse(JSON.stringify(DEFAULT_CONFIG)),
+    currentModal: null
   };
 
   export function init(context) {
-    console.log('AI Prompt Builder initialized');
+    console.log('AI Prompt Builder v2.0 initialized');
 
     // Load saved configuration
     loadConfig();
@@ -672,6 +1190,17 @@
     updatePreview();
 
     // Event listeners
+    setupEventListeners();
+    setupDropZone();
+    setupModals();
+  }
+
+  export function cleanup(context) {
+    console.log('AI Prompt Builder cleanup');
+    saveConfig();
+  }
+
+  function setupEventListeners() {
     document.getElementById('add-component-btn').addEventListener('click', handleAddComponent);
     document.getElementById('new-component-name').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleAddComponent();
@@ -679,9 +1208,13 @@
 
     document.getElementById('copy-prompt-btn').addEventListener('click', handleCopyPrompt);
     document.getElementById('save-prompt-btn').addEventListener('click', handleSavePrompt);
+    document.getElementById('import-file-btn').addEventListener('click', handleImportProjectFile);
     document.getElementById('import-config-btn').addEventListener('click', handleImportConfig);
     document.getElementById('export-config-btn').addEventListener('click', handleExportConfig);
     document.getElementById('reset-config-btn').addEventListener('click', handleResetConfig);
+
+    // Export format change
+    document.getElementById('export-format').addEventListener('change', updatePreview);
 
     // Template buttons
     document.querySelectorAll('.template-btn').forEach(btn => {
@@ -693,36 +1226,336 @@
     document.getElementById('components-list').addEventListener('input', handleComponentInput);
   }
 
-  export function cleanup(context) {
-    console.log('AI Prompt Builder cleanup');
+  function setupDropZone() {
+    const dropZone = document.getElementById('drop-zone');
+
+    dropZone.addEventListener('click', () => {
+      document.getElementById('project-file-input').click();
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        processProjectFile(file);
+      }
+    });
+
+    document.getElementById('project-file-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        processProjectFile(file);
+      }
+    });
+  }
+
+  function setupModals() {
+    // Close modals on background click or close button
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target.classList.contains('modal-close')) {
+          closeModal();
+        }
+      });
+    });
+
+    // Tech stack search
+    document.getElementById('techstack-search').addEventListener('input', (e) => {
+      filterTechStacks(e.target.value);
+    });
+  }
+
+  function processProjectFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target.result;
+        let techInfo = { technologies: [], description: '' };
+
+        if (file.name === 'package.json') {
+          techInfo = parsePackageJson(content);
+        } else if (file.name === 'requirements.txt') {
+          techInfo = parseRequirementsTxt(content);
+        }
+
+        if (techInfo.technologies.length > 0) {
+          updateTechStackComponent(techInfo);
+          showStatus(`Detected ${techInfo.technologies.length} technologies from ${file.name}`, 'success');
+        } else {
+          showStatus('No technologies detected in file', 'info');
+        }
+      } catch (error) {
+        showStatus(`Error processing file: ${error.message}`, 'error');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function parsePackageJson(content) {
+    const data = JSON.parse(content);
+    const technologies = [];
+    const deps = { ...data.dependencies, ...data.devDependencies };
+
+    // Map common npm packages to technologies
+    const techMap = {
+      'react': 'React',
+      'vue': 'Vue.js',
+      'angular': 'Angular',
+      '@angular/core': 'Angular',
+      'svelte': 'Svelte',
+      'next': 'Next.js',
+      'nuxt': 'Nuxt.js',
+      'express': 'Express.js',
+      'typescript': 'TypeScript',
+      'webpack': 'Webpack',
+      'vite': 'Vite',
+      'tailwindcss': 'Tailwind CSS',
+      'bootstrap': 'Bootstrap',
+      'jest': 'Jest',
+      'vitest': 'Vitest',
+      'cypress': 'Cypress',
+      'playwright': 'Playwright'
+    };
+
+    Object.keys(deps).forEach(pkg => {
+      const tech = techMap[pkg] || techMap[pkg.split('/').pop()];
+      if (tech && !technologies.includes(tech)) {
+        technologies.push(tech);
+      }
+    });
+
+    // Add Node.js if package.json exists
+    if (!technologies.includes('Node.js')) {
+      technologies.unshift('Node.js');
+    }
+
+    return {
+      technologies,
+      description: data.description || ''
+    };
+  }
+
+  function parseRequirementsTxt(content) {
+    const technologies = ['Python'];
+    const lines = content.split('\n');
+
+    const techMap = {
+      'django': 'Django',
+      'flask': 'Flask',
+      'fastapi': 'FastAPI',
+      'pandas': 'Pandas',
+      'numpy': 'NumPy',
+      'tensorflow': 'TensorFlow',
+      'pytorch': 'PyTorch',
+      'scikit-learn': 'Scikit-learn',
+      'requests': 'Python Requests',
+      'sqlalchemy': 'SQLAlchemy'
+    };
+
+    lines.forEach(line => {
+      const pkg = line.split('==')[0].split('>=')[0].trim().toLowerCase();
+      const tech = techMap[pkg];
+      if (tech && !technologies.includes(tech)) {
+        technologies.push(tech);
+      }
+    });
+
+    return { technologies, description: '' };
+  }
+
+  function updateTechStackComponent(techInfo) {
+    const component = state.config.components.find(c => c.id === 'tech-stack');
+    if (component) {
+      component.selectedStacks = techInfo.technologies;
+      const stackList = techInfo.technologies.join(', ');
+      component.content = `Technology stack: ${stackList}\n\nPlease provide solutions and examples specific to these technologies.`;
+      component.enabled = true;
+      renderComponents();
+      updatePreview();
+      saveConfig();
+    }
+  }
+
+  function showPersonaModal(componentId) {
+    const modal = document.getElementById('persona-modal');
+    const grid = document.getElementById('personas-grid');
+
+    const component = state.config.components.find(c => c.id === componentId);
+    const selectedPersona = component?.selectedPersona || 'senior-engineer';
+
+    grid.innerHTML = PERSONAS.map(persona => `
+      <div class="persona-card ${persona.id === selectedPersona ? 'selected' : ''}" data-persona="${persona.id}">
+        <div class="persona-name">${persona.name}</div>
+        <div class="persona-description">${persona.description}</div>
+      </div>
+    `).join('');
+
+    grid.addEventListener('click', (e) => {
+      const card = e.target.closest('.persona-card');
+      if (card) {
+        const personaId = card.dataset.persona;
+        selectPersona(componentId, personaId);
+        closeModal();
+      }
+    });
+
+    state.currentModal = { type: 'persona', componentId };
+    modal.classList.add('show');
+  }
+
+  function showTechStackModal(componentId) {
+    const modal = document.getElementById('techstack-modal');
+    const grid = document.getElementById('techstack-grid');
+
+    const component = state.config.components.find(c => c.id === componentId);
+    const selectedStacks = component?.selectedStacks || [];
+
+    renderTechStackGrid(grid, selectedStacks);
+
+    grid.addEventListener('click', (e) => {
+      const item = e.target.closest('.techstack-item');
+      if (item) {
+        const tech = item.dataset.tech;
+        toggleTechStack(componentId, tech);
+      }
+    });
+
+    state.currentModal = { type: 'techstack', componentId };
+    modal.classList.add('show');
+  }
+
+  function renderTechStackGrid(grid, selectedStacks, filter = '') {
+    let html = '';
+
+    Object.entries(TECH_STACKS).forEach(([category, technologies]) => {
+      const filtered = technologies.filter(tech =>
+        tech.toLowerCase().includes(filter.toLowerCase())
+      );
+
+      if (filtered.length > 0) {
+        filtered.forEach(tech => {
+          const selected = selectedStacks.includes(tech) ? 'selected' : '';
+          html += `<div class="techstack-item ${selected}" data-tech="${tech}">${tech}</div>`;
+        });
+      }
+    });
+
+    grid.innerHTML = html || '<p style="text-align: center; color: var(--text-secondary);">No technologies found</p>';
+  }
+
+  function filterTechStacks(query) {
+    const component = state.config.components.find(c => c.id === state.currentModal?.componentId);
+    const selectedStacks = component?.selectedStacks || [];
+    const grid = document.getElementById('techstack-grid');
+    renderTechStackGrid(grid, selectedStacks, query);
+  }
+
+  function selectPersona(componentId, personaId) {
+    const component = state.config.components.find(c => c.id === componentId);
+    const persona = PERSONAS.find(p => p.id === personaId);
+
+    if (component && persona) {
+      component.selectedPersona = personaId;
+      component.content = persona.content;
+      renderComponents();
+      updatePreview();
+      saveConfig();
+      showStatus(`Persona changed to: ${persona.name}`, 'success');
+    }
+  }
+
+  function toggleTechStack(componentId, tech) {
+    const component = state.config.components.find(c => c.id === componentId);
+    if (!component) return;
+
+    if (!component.selectedStacks) {
+      component.selectedStacks = [];
+    }
+
+    const index = component.selectedStacks.indexOf(tech);
+    if (index > -1) {
+      component.selectedStacks.splice(index, 1);
+    } else {
+      component.selectedStacks.push(tech);
+    }
+
+    // Update content
+    const stackList = component.selectedStacks.join(', ') || '{{tech_stack}}';
+    component.content = `Technology stack: ${stackList}\n\nPlease provide solutions and examples specific to these technologies.`;
+
+    // Re-render grid
+    const grid = document.getElementById('techstack-grid');
+    renderTechStackGrid(grid, component.selectedStacks);
+
+    renderComponents();
+    updatePreview();
     saveConfig();
+  }
+
+  function closeModal() {
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.classList.remove('show');
+    });
+    state.currentModal = null;
   }
 
   function renderComponents() {
     const list = document.getElementById('components-list');
     const components = state.config.components.sort((a, b) => a.order - b.order);
 
-    list.innerHTML = components.map(comp => `
-      <div class="component-item ${comp.enabled ? 'active' : ''}" data-id="${comp.id}">
-        <div class="component-header">
-          <div class="component-toggle ${comp.enabled ? 'checked' : ''}" data-action="toggle"></div>
-          <div class="component-name">${comp.name}</div>
-          <div class="component-actions">
-            <button class="component-action" data-action="edit" title="Edit">✏️</button>
-            <button class="component-action" data-action="move-up" title="Move Up">↑</button>
-            <button class="component-action" data-action="move-down" title="Move Down">↓</button>
-            <button class="component-action" data-action="delete" title="Delete">🗑️</button>
+    list.innerHTML = components.map(comp => {
+      let badge = '';
+      if (comp.id === 'role' && comp.selectedPersona) {
+        const persona = PERSONAS.find(p => p.id === comp.selectedPersona);
+        badge = `<span class="component-badge">${persona?.name || 'Default'}</span>`;
+      } else if (comp.id === 'tech-stack' && comp.selectedStacks?.length > 0) {
+        badge = `<span class="component-badge">${comp.selectedStacks.length} selected</span>`;
+      }
+
+      return `
+        <div class="component-item ${comp.enabled ? 'active' : ''} ${comp.hasOptions ? 'has-options' : ''}" data-id="${comp.id}">
+          <div class="component-header">
+            <div class="component-toggle ${comp.enabled ? 'checked' : ''}" data-action="toggle"></div>
+            <div class="component-name">${comp.name}</div>
+            ${badge}
+            <div class="component-actions">
+              <button class="component-action" data-action="edit" title="Edit">✏️</button>
+              <button class="component-action" data-action="move-up" title="Move Up">↑</button>
+              <button class="component-action" data-action="move-down" title="Move Down">↓</button>
+              <button class="component-action" data-action="delete" title="Delete">🗑️</button>
+            </div>
+          </div>
+          <div class="component-body">
+            ${comp.hasOptions ? renderComponentOptions(comp) : ''}
+            <textarea data-id="${comp.id}" placeholder="Enter content for ${comp.name}...">${comp.content || ''}</textarea>
+            <div class="component-meta">
+              <span>${(comp.content || '').length} characters</span>
+              <span>${(comp.content || '').split(/\s+/).filter(w => w).length} words</span>
+            </div>
           </div>
         </div>
-        <div class="component-body">
-          <textarea data-id="${comp.id}" placeholder="Enter content for ${comp.name}...">${comp.content || ''}</textarea>
-          <div class="component-meta">
-            <span>${(comp.content || '').length} characters</span>
-            <span>${(comp.content || '').split(/\s+/).filter(w => w).length} words</span>
-          </div>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
+  }
+
+  function renderComponentOptions(comp) {
+    if (comp.id === 'role') {
+      return '<button class="component-select-btn" data-action="select-persona">📝 Select Persona</button>';
+    } else if (comp.id === 'tech-stack') {
+      return '<button class="component-select-btn" data-action="select-techstack">🔧 Select Technologies</button>';
+    }
+    return '';
   }
 
   function handleComponentClick(e) {
@@ -745,6 +1578,14 @@
 
       case 'edit':
         item.classList.toggle('expanded');
+        break;
+
+      case 'select-persona':
+        showPersonaModal(id);
+        break;
+
+      case 'select-techstack':
+        showTechStackModal(id);
         break;
 
       case 'move-up':
@@ -843,16 +1684,30 @@
   }
 
   function updatePreview() {
+    const format = document.getElementById('export-format').value;
     const enabledComponents = state.config.components
       .filter(c => c.enabled && c.content)
       .sort((a, b) => a.order - b.order);
 
-    const prompt = enabledComponents
-      .map(c => {
-        const separator = '='.repeat(c.name.length + 4);
-        return `${separator}\n# ${c.name}\n${separator}\n\n${c.content}`;
-      })
-      .join('\n\n');
+    let prompt = '';
+
+    if (format === 'markdown') {
+      prompt = enabledComponents
+        .map(c => `# ${c.name}\n\n${c.content}`)
+        .join('\n\n---\n\n');
+    } else if (format === 'plain') {
+      prompt = enabledComponents
+        .map(c => `${c.name}:\n${c.content}`)
+        .join('\n\n');
+    } else {
+      // Structured format (default)
+      prompt = enabledComponents
+        .map(c => {
+          const separator = '='.repeat(c.name.length + 4);
+          return `${separator}\n# ${c.name}\n${separator}\n\n${c.content}`;
+        })
+        .join('\n\n');
+    }
 
     const textarea = document.getElementById('final-prompt');
     textarea.value = prompt;
@@ -861,10 +1716,12 @@
     const chars = prompt.length;
     const words = prompt.split(/\s+/).filter(w => w).length;
     const lines = prompt.split('\n').length;
+    const placeholders = (prompt.match(/\{\{[^}]+\}\}/g) || []).length;
 
     document.getElementById('char-count').textContent = `${chars} characters`;
     document.getElementById('word-count').textContent = `${words} words`;
     document.getElementById('line-count').textContent = `${lines} lines`;
+    document.getElementById('placeholder-count').textContent = `${placeholders} placeholders`;
   }
 
   function handleCopyPrompt() {
@@ -881,14 +1738,21 @@
       return;
     }
 
+    const format = document.getElementById('export-format').value;
+    const extension = format === 'markdown' ? 'md' : 'txt';
+
     const blob = new Blob([prompt], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `prompt-${Date.now()}.txt`;
+    a.download = `ai-prompt-${Date.now()}.${extension}`;
     a.click();
     URL.revokeObjectURL(url);
     showStatus('Prompt saved to file', 'success');
+  }
+
+  function handleImportProjectFile() {
+    document.getElementById('project-file-input').click();
   }
 
   function handleImportConfig() {
