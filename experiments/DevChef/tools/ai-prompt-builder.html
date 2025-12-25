@@ -3048,6 +3048,7 @@ So that [benefit/value]
 
     const components = state.config.components.sort((a, b) => a.order - b.order);
     const list = document.getElementById('components-list');
+    if (!list) return;
     const items = Array.from(list.querySelectorAll('.component-item'));
     const focusedItem = items.find(item => item.classList.contains('focused'));
     const focusedIndex = focusedItem ? parseInt(focusedItem.dataset.index) : -1;
@@ -3207,6 +3208,7 @@ So that [benefit/value]
     contextMenuTarget = item;
 
     const menu = document.getElementById('context-menu');
+    if (!menu) return;
     menu.classList.add('show');
 
     // Position menu with boundary checking to prevent off-screen rendering
@@ -3249,6 +3251,10 @@ So that [benefit/value]
 
   function hideContextMenu(e) {
     const menu = document.getElementById('context-menu');
+    if (!menu) {
+      contextMenuTarget = null;
+      return;
+    }
     if (e && e.target.closest('#context-menu')) return;
     menu.classList.remove('show');
     contextMenuTarget = null;
