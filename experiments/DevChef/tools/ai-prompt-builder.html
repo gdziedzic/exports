@@ -3212,8 +3212,9 @@ So that [benefit/value]
     menu.classList.add('show');
 
     // Position menu with boundary checking to prevent off-screen rendering
-    let left = e.pageX;
-    let top = e.pageY;
+    // Use clientX/clientY for fixed positioning (viewport coordinates)
+    let left = e.clientX;
+    let top = e.clientY;
 
     // Wait for menu to be displayed to get its dimensions
     requestAnimationFrame(() => {
@@ -3222,18 +3223,18 @@ So that [benefit/value]
       const viewportHeight = window.innerHeight;
 
       // Adjust horizontal position if menu would go off right edge
-      if (left + menuRect.width > viewportWidth + window.pageXOffset) {
-        left = viewportWidth + window.pageXOffset - menuRect.width - 5;
+      if (left + menuRect.width > viewportWidth) {
+        left = viewportWidth - menuRect.width - 5;
       }
 
       // Adjust vertical position if menu would go off bottom edge
-      if (top + menuRect.height > viewportHeight + window.pageYOffset) {
-        top = viewportHeight + window.pageYOffset - menuRect.height - 5;
+      if (top + menuRect.height > viewportHeight) {
+        top = viewportHeight - menuRect.height - 5;
       }
 
       // Ensure menu stays within bounds (minimum 5px from edges)
-      left = Math.max(5 + window.pageXOffset, left);
-      top = Math.max(5 + window.pageYOffset, top);
+      left = Math.max(5, left);
+      top = Math.max(5, top);
 
       menu.style.left = `${left}px`;
       menu.style.top = `${top}px`;

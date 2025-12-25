@@ -24,6 +24,7 @@
       <h2>🌐 HTTP Mock API Builder</h2>
       <div class="mock-actions">
         <button id="add-endpoint-btn" class="btn-primary">+ Add Endpoint</button>
+        <button id="import-swagger-btn" class="btn-secondary">📄 Import Swagger/OpenAPI</button>
         <button id="export-config-btn" class="btn-secondary">Export Config</button>
         <button id="import-config-btn" class="btn-secondary">Import Config</button>
         <button id="generate-server-btn" class="btn-accent">Generate Server Code</button>
@@ -501,6 +502,7 @@ export function init(context) {
   const codeModal = container.querySelector('#code-modal');
 
   const addEndpointBtn = container.querySelector('#add-endpoint-btn');
+  const importSwaggerBtn = container.querySelector('#import-swagger-btn');
   const exportConfigBtn = container.querySelector('#export-config-btn');
   const importConfigBtn = container.querySelector('#import-config-btn');
   const generateServerBtn = container.querySelector('#generate-server-btn');
@@ -533,6 +535,7 @@ export function init(context) {
     showEditor();
   });
 
+  importSwaggerBtn.addEventListener('click', importSwagger);
   exportConfigBtn.addEventListener('click', exportConfig);
   importConfigBtn.addEventListener('click', importConfig);
   generateServerBtn.addEventListener('click', showGeneratedCode);
@@ -707,6 +710,239 @@ export function init(context) {
     a.download = `mock-api-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function importSwagger() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,application/yaml,application/x-yaml,.json,.yaml,.yml';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          let spec;
+          const content = event.target.result;
+
+          // Try to parse as JSON first
+          try {
+            spec = JSON.parse(content);
+          } catch (jsonError) {
+            // If JSON parse fails, try basic YAML parsing (limited support)
+            try {
+              spec = parseSimpleYAML(content);
+            } catch (yamlError) {
+              alert('Error: Could not parse file as JSON or YAML. Please use JSON format for best compatibility.');
+              return;
+            }
+          }
+
+          // Parse Swagger/OpenAPI spec
+          const parsedEndpoints = parseSwaggerSpec(spec);
+
+          if (parsedEndpoints.length === 0) {
+            alert('No endpoints found in the specification.');
+            return;
+          }
+
+          // Ask user if they want to merge or replace
+          const shouldMerge = confirm(
+            `Found ${parsedEndpoints.length} endpoint(s).\n\n` +
+            `Click OK to ADD to existing endpoints, or Cancel to REPLACE all endpoints.`
+          );
+
+          if (shouldMerge) {
+            endpoints = endpoints.concat(parsedEndpoints);
+          } else {
+            endpoints = parsedEndpoints;
+          }
+
+          renderEndpoints();
+          alert(`Successfully imported ${parsedEndpoints.length} endpoint(s)!`);
+        } catch (error) {
+          console.error('Import error:', error);
+          alert('Error importing Swagger/OpenAPI: ' + error.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  function parseSimpleYAML(yamlText) {
+    // Very basic YAML to JSON conversion for simple cases
+    // This is a simplified parser and may not work for complex YAML
+    alert('YAML support is limited. For best results, please convert your Swagger/OpenAPI file to JSON format.');
+    throw new Error('YAML parsing not fully supported. Please use JSON format.');
+  }
+
+  function parseSwaggerSpec(spec) {
+    const newEndpoints = [];
+
+    // Determine if it's Swagger 2.0 or OpenAPI 3.x
+    const isSwagger2 = spec.swagger && spec.swagger.startsWith('2');
+    const isOpenAPI3 = spec.openapi && spec.openapi.startsWith('3');
+
+    if (!isSwagger2 && !isOpenAPI3) {
+      throw new Error('Invalid specification. Must be Swagger 2.0 or OpenAPI 3.x');
+    }
+
+    // Get base path (Swagger 2.0 only)
+    const basePath = spec.basePath || '';
+
+    // Get server URL (OpenAPI 3.x)
+    let serverPath = '';
+    if (isOpenAPI3 && spec.servers && spec.servers.length > 0) {
+      try {
+        const url = new URL(spec.servers[0].url);
+        serverPath = url.pathname;
+      } catch {
+        serverPath = spec.servers[0].url;
+      }
+    }
+
+    const pathPrefix = basePath || serverPath || '';
+
+    // Parse paths
+    if (!spec.paths) {
+      throw new Error('No paths found in specification');
+    }
+
+    for (const [path, pathItem] of Object.entries(spec.paths)) {
+      // Common HTTP methods
+      const methods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'];
+
+      for (const method of methods) {
+        const operation = pathItem[method];
+        if (!operation) continue;
+
+        // Get response info (default to first 2xx response)
+        let status = 200;
+        let responseBody = {};
+        let responseHeaders = { 'Content-Type': 'application/json' };
+
+        if (operation.responses) {
+          // Find first successful response (2xx)
+          const successCode = Object.keys(operation.responses).find(code =>
+            code.startsWith('2') || code === 'default'
+          );
+
+          if (successCode && successCode !== 'default') {
+            status = parseInt(successCode);
+          }
+
+          const response = operation.responses[successCode] || operation.responses['default'];
+
+          if (response) {
+            // OpenAPI 3.x response structure
+            if (isOpenAPI3 && response.content) {
+              const contentType = Object.keys(response.content)[0];
+              if (contentType) {
+                responseHeaders['Content-Type'] = contentType;
+
+                // Try to generate example from schema
+                const schema = response.content[contentType].schema;
+                if (schema) {
+                  responseBody = generateExampleFromSchema(schema, spec);
+                }
+
+                // Use explicit example if provided
+                if (response.content[contentType].example) {
+                  responseBody = response.content[contentType].example;
+                } else if (response.content[contentType].examples) {
+                  const exampleKey = Object.keys(response.content[contentType].examples)[0];
+                  if (exampleKey) {
+                    responseBody = response.content[contentType].examples[exampleKey].value;
+                  }
+                }
+              }
+            }
+            // Swagger 2.0 response structure
+            else if (isSwagger2) {
+              if (response.schema) {
+                responseBody = generateExampleFromSchema(response.schema, spec);
+              }
+              if (response.examples && response.examples['application/json']) {
+                responseBody = response.examples['application/json'];
+              }
+            }
+          }
+        }
+
+        // Create endpoint
+        const fullPath = pathPrefix + path;
+        newEndpoints.push({
+          method: method.toUpperCase(),
+          path: fullPath,
+          status: status,
+          headers: responseHeaders,
+          body: responseBody,
+          delay: 0
+        });
+      }
+    }
+
+    return newEndpoints;
+  }
+
+  function generateExampleFromSchema(schema, spec) {
+    // Handle $ref
+    if (schema.$ref) {
+      const refPath = schema.$ref.split('/');
+      let refSchema = spec;
+      for (const part of refPath) {
+        if (part === '#') continue;
+        refSchema = refSchema[part];
+      }
+      if (refSchema) {
+        return generateExampleFromSchema(refSchema, spec);
+      }
+    }
+
+    // Generate example based on type
+    if (schema.example !== undefined) {
+      return schema.example;
+    }
+
+    if (schema.type === 'object' || schema.properties) {
+      const obj = {};
+      if (schema.properties) {
+        for (const [key, value] of Object.entries(schema.properties)) {
+          obj[key] = generateExampleFromSchema(value, spec);
+        }
+      }
+      return obj;
+    }
+
+    if (schema.type === 'array') {
+      if (schema.items) {
+        return [generateExampleFromSchema(schema.items, spec)];
+      }
+      return [];
+    }
+
+    if (schema.type === 'string') {
+      if (schema.enum) return schema.enum[0];
+      if (schema.format === 'date-time') return new Date().toISOString();
+      if (schema.format === 'date') return new Date().toISOString().split('T')[0];
+      if (schema.format === 'email') return 'user@example.com';
+      if (schema.format === 'uri') return 'https://example.com';
+      return schema.default || 'string';
+    }
+
+    if (schema.type === 'number' || schema.type === 'integer') {
+      if (schema.enum) return schema.enum[0];
+      return schema.default !== undefined ? schema.default : 0;
+    }
+
+    if (schema.type === 'boolean') {
+      return schema.default !== undefined ? schema.default : true;
+    }
+
+    // Default fallback
+    return schema.default !== undefined ? schema.default : null;
   }
 
   function importConfig() {
