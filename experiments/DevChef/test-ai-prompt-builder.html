@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Prompt Builder Tests</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .test-results {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .test-suite {
+      margin-bottom: 30px;
+    }
+
+    .test-suite h2 {
+      color: #2563eb;
+      border-bottom: 2px solid #2563eb;
+      padding-bottom: 8px;
+    }
+
+    .test-case {
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .test-case.pass {
+      background: #d1fae5;
+      border-left: 4px solid #10b981;
+    }
+
+    .test-case.fail {
+      background: #fee2e2;
+      border-left: 4px solid #ef4444;
+    }
+
+    .test-case.skip {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+    }
+
+    .test-icon {
+      font-size: 18px;
+      min-width: 24px;
+    }
+
+    .test-name {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .test-error {
+      color: #991b1b;
+      font-size: 12px;
+      margin-top: 4px;
+      font-family: monospace;
+    }
+
+    .summary {
+      background: #eff6ff;
+      border: 2px solid #2563eb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+    }
+
+    .summary-item {
+      flex: 1;
+    }
+
+    .summary-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #2563eb;
+    }
+
+    .summary-label {
+      font-size: 14px;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    #run-tests-btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    #run-tests-btn:hover {
+      background: #1d4ed8;
+    }
+
+    #run-tests-btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .test-iframe {
+      width: 1px;
+      height: 1px;
+      border: none;
+      position: absolute;
+      left: -9999px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 AI Prompt Builder Test Suite</h1>
+  <p>Comprehensive tests for the enhanced AI Prompt Builder</p>
+
+  <button id="run-tests-btn">Run All Tests</button>
+
+  <div class="test-results" id="test-results"></div>
+
+  <div class="summary" id="summary" style="display: none;">
+    <div class="summary-item">
+      <div class="summary-value" id="total-tests">0</div>
+      <div class="summary-label">Total</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value" id="passed-tests" style="color: #10b981;">0</div>
+      <div class="summary-label">Passed</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value" id="failed-tests" style="color: #ef4444;">0</div>
+      <div class="summary-label">Failed</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value" id="skipped-tests" style="color: #f59e0b;">0</div>
+      <div class="summary-label">Skipped</div>
+    </div>
+  </div>
+
+  <iframe id="test-iframe" class="test-iframe"></iframe>
+
+  <script type="module">
+    const results = {
+      passed: 0,
+      failed: 0,
+      skipped: 0,
+      tests: []
+    };
+
+    class TestRunner {
+      constructor() {
+        this.iframe = document.getElementById('test-iframe');
+        this.currentTest = null;
+      }
+
+      async loadTool() {
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Tool load timeout')), 10000);
+
+          this.iframe.onload = () => {
+            clearTimeout(timeout);
+            setTimeout(resolve, 100); // Wait for tool to initialize
+          };
+
+          this.iframe.src = '/tools/ai-prompt-builder.html';
+        });
+      }
+
+      getDoc() {
+        return this.iframe.contentDocument || this.iframe.contentWindow.document;
+      }
+
+      getWindow() {
+        return this.iframe.contentWindow;
+      }
+
+      $ (selector) {
+        return this.getDoc().querySelector(selector);
+      }
+
+      $$(selector) {
+        return this.getDoc().querySelectorAll(selector);
+      }
+
+      async wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      click(element) {
+        if (typeof element === 'string') {
+          element = this.$(element);
+        }
+        if (element) {
+          element.click();
+        }
+      }
+
+      async runTest(name, fn) {
+        try {
+          await fn.call(this);
+          this.pass(name);
+        } catch (error) {
+          this.fail(name, error.message);
+        }
+      }
+
+      pass(name) {
+        results.passed++;
+        results.tests.push({ name, status: 'pass' });
+      }
+
+      fail(name, error) {
+        results.failed++;
+        results.tests.push({ name, status: 'fail', error });
+      }
+
+      skip(name, reason) {
+        results.skipped++;
+        results.tests.push({ name, status: 'skip', error: reason });
+      }
+
+      assert(condition, message) {
+        if (!condition) {
+          throw new Error(message || 'Assertion failed');
+        }
+      }
+
+      assertEqual(actual, expected, message) {
+        if (actual !== expected) {
+          throw new Error(message || `Expected ${expected}, got ${actual}`);
+        }
+      }
+
+      assertGreaterThan(actual, expected, message) {
+        if (actual <= expected) {
+          throw new Error(message || `Expected ${actual} > ${expected}`);
+        }
+      }
+
+      assertExists(element, message) {
+        if (!element) {
+          throw new Error(message || 'Element does not exist');
+        }
+      }
+
+      assertVisible(element, message) {
+        if (typeof element === 'string') {
+          element = this.$(element);
+        }
+        this.assertExists(element, message);
+        const style = this.getWindow().getComputedStyle(element);
+        if (style.display === 'none' || style.visibility === 'hidden') {
+          throw new Error(message || 'Element is not visible');
+        }
+      }
+
+      assertHasClass(element, className, message) {
+        if (typeof element === 'string') {
+          element = this.$(element);
+        }
+        this.assertExists(element);
+        if (!element.classList.contains(className)) {
+          throw new Error(message || `Element does not have class: ${className}`);
+        }
+      }
+    }
+
+    async function runAllTests() {
+      const runner = new TestRunner();
+      const btn = document.getElementById('run-tests-btn');
+      btn.disabled = true;
+      btn.textContent = 'Running Tests...';
+
+      results.passed = 0;
+      results.failed = 0;
+      results.skipped = 0;
+      results.tests = [];
+
+      try {
+        await runner.loadTool();
+
+        // Core Functionality Tests
+        await testCoreLoading(runner);
+        await testComponentRendering(runner);
+        await testQuickActionsToolbar(runner);
+        await testInlinePreviews(runner);
+
+        // Component Toggling Tests
+        await testHeaderClickToggle(runner);
+        await testCheckboxToggle(runner);
+
+        // Bulk Operations Tests
+        await testEnableAll(runner);
+        await testDisableAll(runner);
+        await testInvertSelection(runner);
+
+        // Keyboard Shortcuts Tests
+        await testNumberKeyToggle(runner);
+        await testArrowNavigation(runner);
+
+        // Context Menu Tests
+        await testContextMenuShow(runner);
+        await testContextMenuHide(runner);
+
+        // State Management Tests
+        await testStatePreservation(runner);
+
+      } catch (error) {
+        console.error('Test suite error:', error);
+      }
+
+      displayResults();
+      btn.disabled = false;
+      btn.textContent = 'Run All Tests';
+    }
+
+    // Test implementations
+    async function testCoreLoading(runner) {
+      await runner.runTest('Should load AI Prompt Builder core elements', async function() {
+        this.assertExists(this.$('.components-panel'), 'Components panel missing');
+        this.assertExists(this.$('.preview-panel'), 'Preview panel missing');
+        this.assertExists(this.$('#components-list'), 'Components list missing');
+        this.assertExists(this.$('#final-prompt'), 'Final prompt textarea missing');
+      });
+    }
+
+    async function testComponentRendering(runner) {
+      await runner.runTest('Should render components with correct structure', async function() {
+        const components = this.$$('.component-item');
+        this.assertGreaterThan(components.length, 0, 'No components rendered');
+
+        const firstComponent = components[0];
+        this.assertExists(firstComponent.querySelector('.component-header'), 'Component header missing');
+        this.assertExists(firstComponent.querySelector('.component-toggle'), 'Component toggle missing');
+        this.assertExists(firstComponent.querySelector('.component-name'), 'Component name missing');
+      });
+
+      await runner.runTest('Should display numbered badges on first 9 components', async function() {
+        const components = this.$$('.component-item');
+        const maxToCheck = Math.min(components.length, 9);
+
+        for (let i = 0; i < maxToCheck; i++) {
+          const numberBadge = components[i].querySelector('.component-number');
+          this.assertExists(numberBadge, `Number badge missing on component ${i + 1}`);
+          this.assertEqual(numberBadge.textContent, (i + 1).toString(), `Wrong number on component ${i + 1}`);
+        }
+      });
+    }
+
+    async function testQuickActionsToolbar(runner) {
+      await runner.runTest('Should display quick actions toolbar', async function() {
+        this.assertVisible('.quick-actions-toolbar', 'Quick actions toolbar not visible');
+        this.assertExists(this.$('#enable-all-btn'), 'Enable all button missing');
+        this.assertExists(this.$('#disable-all-btn'), 'Disable all button missing');
+        this.assertExists(this.$('#invert-selection-btn'), 'Invert selection button missing');
+      });
+    }
+
+    async function testInlinePreviews(runner) {
+      await runner.runTest('Should display inline content previews', async function() {
+        const previews = this.$$('.component-preview');
+        // Some components should have previews
+        this.assertGreaterThan(previews.length, 0, 'No component previews found');
+
+        // Previews should be truncated
+        if (previews.length > 0) {
+          const previewText = previews[0].textContent;
+          this.assert(previewText.length < 100, 'Preview text not truncated');
+        }
+      });
+    }
+
+    async function testHeaderClickToggle(runner) {
+      await runner.runTest('Should toggle component by clicking header', async function() {
+        const firstComponent = this.$('.component-item');
+        const header = firstComponent.querySelector('.component-header');
+
+        const initialActive = firstComponent.classList.contains('active');
+
+        header.click();
+        await this.wait(200);
+
+        const newActive = firstComponent.classList.contains('active');
+        this.assert(newActive !== initialActive, 'Component state did not toggle');
+      });
+    }
+
+    async function testCheckboxToggle(runner) {
+      await runner.runTest('Should toggle component by clicking checkbox', async function() {
+        const firstComponent = this.$('.component-item');
+        const checkbox = firstComponent.querySelector('.component-toggle');
+
+        const initialChecked = checkbox.classList.contains('checked');
+
+        checkbox.click();
+        await this.wait(200);
+
+        const newChecked = checkbox.classList.contains('checked');
+        this.assert(newChecked !== initialChecked, 'Checkbox state did not toggle');
+      });
+    }
+
+    async function testEnableAll(runner) {
+      await runner.runTest('Should enable all components with Enable All button', async function() {
+        // First disable all to ensure we have disabled components
+        this.$('#disable-all-btn').click();
+        await this.wait(200);
+
+        // Now enable all
+        this.$('#enable-all-btn').click();
+        await this.wait(200);
+
+        const components = this.$$('.component-item');
+        for (let component of components) {
+          this.assertHasClass(component, 'active', 'Component should be active after enable all');
+        }
+      });
+    }
+
+    async function testDisableAll(runner) {
+      await runner.runTest('Should disable all components with Disable All button', async function() {
+        this.$('#disable-all-btn').click();
+        await this.wait(200);
+
+        const components = this.$$('.component-item');
+        for (let component of components) {
+          this.assert(!component.classList.contains('active'), 'Component should not be active after disable all');
+        }
+      });
+    }
+
+    async function testInvertSelection(runner) {
+      await runner.runTest('Should invert component selection', async function() {
+        // Get initial states
+        const components = this.$$('.component-item');
+        const initialStates = Array.from(components).map(c => c.classList.contains('active'));
+
+        // Invert
+        this.$('#invert-selection-btn').click();
+        await this.wait(200);
+
+        // Check all states are inverted
+        components.forEach((component, i) => {
+          const isActive = component.classList.contains('active');
+          this.assert(isActive === !initialStates[i], `Component ${i + 1} state not inverted correctly`);
+        });
+      });
+    }
+
+    async function testNumberKeyToggle(runner) {
+      await runner.runTest('Should toggle component with number keys', async function() {
+        const firstComponent = this.$('.component-item');
+        const initialActive = firstComponent.classList.contains('active');
+
+        // Simulate key press
+        const event = new KeyboardEvent('keydown', { key: '1', bubbles: true });
+        this.getDoc().dispatchEvent(event);
+        await this.wait(200);
+
+        const newActive = firstComponent.classList.contains('active');
+        this.assert(newActive !== initialActive, 'Component did not toggle with number key');
+      });
+    }
+
+    async function testArrowNavigation(runner) {
+      await runner.runTest('Should navigate components with arrow keys', async function() {
+        const firstComponent = this.$('.component-item');
+        firstComponent.click();
+        await this.wait(100);
+
+        // Press down arrow
+        const event = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true });
+        this.getDoc().dispatchEvent(event);
+        await this.wait(200);
+
+        // Check that focused class exists on some component
+        const focusedComponents = this.$$('.component-item.focused');
+        this.assertGreaterThan(focusedComponents.length, 0, 'No component has focus after arrow navigation');
+      });
+    }
+
+    async function testContextMenuShow(runner) {
+      await runner.runTest('Should show context menu on right-click', async function() {
+        const firstComponent = this.$('.component-item');
+
+        // Right-click
+        const event = new MouseEvent('contextmenu', {
+          bubbles: true,
+          cancelable: true,
+          view: this.getWindow(),
+          button: 2
+        });
+        firstComponent.dispatchEvent(event);
+        await this.wait(100);
+
+        const contextMenu = this.$('#context-menu');
+        this.assertExists(contextMenu, 'Context menu does not exist');
+        this.assertHasClass(contextMenu, 'show', 'Context menu is not visible');
+      });
+    }
+
+    async function testContextMenuHide(runner) {
+      await runner.runTest('Should hide context menu on click outside', async function() {
+        // First show context menu
+        const firstComponent = this.$('.component-item');
+        const contextMenuEvent = new MouseEvent('contextmenu', {
+          bubbles: true,
+          cancelable: true,
+          view: this.getWindow(),
+          button: 2
+        });
+        firstComponent.dispatchEvent(contextMenuEvent);
+        await this.wait(100);
+
+        // Click outside
+        const clickEvent = new MouseEvent('click', { bubbles: true });
+        this.getDoc().body.dispatchEvent(clickEvent);
+        await this.wait(100);
+
+        const contextMenu = this.$('#context-menu');
+        this.assert(!contextMenu.classList.contains('show'), 'Context menu should be hidden');
+      });
+    }
+
+    async function testStatePreservation(runner) {
+      await runner.runTest('Should preserve component state across updates', async function() {
+        const firstComponent = this.$('.component-item');
+        const initialActive = firstComponent.classList.contains('active');
+
+        // Toggle component
+        firstComponent.querySelector('.component-header').click();
+        await this.wait(200);
+
+        // Trigger a re-render by clicking invert twice
+        this.$('#invert-selection-btn').click();
+        await this.wait(100);
+        this.$('#invert-selection-btn').click();
+        await this.wait(100);
+
+        // State should be preserved (one toggle different from initial)
+        const finalActive = firstComponent.classList.contains('active');
+        this.assert(finalActive !== initialActive, 'Component state not preserved through updates');
+      });
+    }
+
+    function displayResults() {
+      const resultsDiv = document.getElementById('test-results');
+      const summaryDiv = document.getElementById('summary');
+
+      // Show summary
+      summaryDiv.style.display = 'flex';
+      document.getElementById('total-tests').textContent = results.tests.length;
+      document.getElementById('passed-tests').textContent = results.passed;
+      document.getElementById('failed-tests').textContent = results.failed;
+      document.getElementById('skipped-tests').textContent = results.skipped;
+
+      // Group tests by suite
+      const suites = {};
+      results.tests.forEach(test => {
+        const parts = test.name.split(' › ');
+        const suiteName = parts.length > 1 ? parts[0] : 'General Tests';
+        if (!suites[suiteName]) {
+          suites[suiteName] = [];
+        }
+        suites[suiteName].push(test);
+      });
+
+      // Display results
+      let html = '';
+      for (const [suiteName, tests] of Object.entries(suites)) {
+        html += `<div class="test-suite">`;
+        html += `<h2>${suiteName}</h2>`;
+
+        tests.forEach(test => {
+          const icon = test.status === 'pass' ? '✅' :
+                      test.status === 'fail' ? '❌' : '⚠️';
+          html += `<div class="test-case ${test.status}">`;
+          html += `<span class="test-icon">${icon}</span>`;
+          html += `<div class="test-name">${test.name}`;
+          if (test.error) {
+            html += `<div class="test-error">${test.error}</div>`;
+          }
+          html += `</div>`;
+          html += `</div>`;
+        });
+
+        html += `</div>`;
+      }
+
+      resultsDiv.innerHTML = html;
+    }
+
+    // Event listeners
+    document.getElementById('run-tests-btn').addEventListener('click', runAllTests);
+
+    // Auto-run on load
+    window.addEventListener('load', () => {
+      setTimeout(runAllTests, 500);
+    });
+  </script>
+</body>
+</html>
