@@ -24,7 +24,7 @@ class ClipboardDetector {
     };
 
     this.toolSuggestions = {
-      json: ['json-formatter', 'json-viewer'],
+      json: ['json-formatter'],
       jwt: ['jwt-decoder'],
       base64: ['base64-tool'],
       url: ['url-encoder', 'curl-builder'],

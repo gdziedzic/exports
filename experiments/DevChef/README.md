@@ -918,8 +918,7 @@ DevChef/
 │   ├── analytics.js    # V2.5: Productivity analytics ⚡
 │   ├── quickactions.js # V2.5: Quick actions system ⚡
 │   └── tools/          # Core tools
-│       ├── index.json  # Core tools index
-│       └── json-viewer.html
+│       └── index.json  # Core tools index
 └── tools/              # User/additional tools
     ├── index.json      # Tools index
     ├── base64-tool.html
