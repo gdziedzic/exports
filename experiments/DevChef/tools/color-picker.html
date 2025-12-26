@@ -11,10 +11,10 @@
 <script type="devchef-manifest">
 {
   "id": "color-picker",
-  "name": "Color Picker",
+  "name": "Color Picker & Themes",
   "category": "Design",
-  "description": "Convert and explore color formats (HEX, RGB, HSL)",
-  "version": "1.0.0"
+  "description": "Convert color formats, generate harmonious themes, and discover color palettes",
+  "version": "2.0.0"
 }
 </script>
 
@@ -64,6 +64,33 @@
     <div class="tool-section">
       <label class="section-label">Color Shades</label>
       <div id="color-shades" class="color-shades"></div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">🎨 Harmonious Themes</label>
+      <p class="section-hint">Generate color schemes based on color theory</p>
+      <div class="theme-tabs">
+        <button class="theme-tab active" data-scheme="complementary">Complementary</button>
+        <button class="theme-tab" data-scheme="analogous">Analogous</button>
+        <button class="theme-tab" data-scheme="triadic">Triadic</button>
+        <button class="theme-tab" data-scheme="tetradic">Tetradic</button>
+        <button class="theme-tab" data-scheme="monochromatic">Monochromatic</button>
+      </div>
+      <div id="harmony-palette" class="harmony-palette"></div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">✨ Popular Themes</label>
+      <p class="section-hint">Pre-curated color palettes for common designs</p>
+      <div id="popular-themes" class="popular-themes"></div>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">🔍 Theme Finder</label>
+      <p class="section-hint">Paste hex colors (one per line) to identify theme types</p>
+      <textarea id="theme-input" placeholder="#3498db&#10;#e74c3c&#10;#2ecc71&#10;#f39c12" rows="4"></textarea>
+      <button id="analyze-theme-btn">Analyze Theme</button>
+      <div id="theme-analysis" class="theme-analysis"></div>
     </div>
   </div>
 </template>
@@ -151,6 +178,176 @@
   .shade-item:hover {
     transform: scale(1.05);
     box-shadow: var(--shadow-md);
+  }
+
+  .section-hint {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+
+  .theme-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .theme-tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    min-width: auto;
+  }
+
+  .theme-tab.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .harmony-palette, .popular-themes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .palette-card {
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .palette-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .palette-colors {
+    display: flex;
+    height: 80px;
+  }
+
+  .palette-color {
+    flex: 1;
+    cursor: pointer;
+    position: relative;
+    transition: flex 0.2s;
+  }
+
+  .palette-color:hover {
+    flex: 1.5;
+  }
+
+  .palette-color-code {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .palette-color:hover .palette-color-code {
+    opacity: 1;
+  }
+
+  .palette-info {
+    padding: 12px;
+    background: var(--bg-secondary);
+  }
+
+  .palette-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .palette-description {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  #theme-input {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    resize: vertical;
+  }
+
+  .theme-analysis {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    display: none;
+  }
+
+  .theme-analysis.visible {
+    display: block;
+  }
+
+  .analysis-result {
+    margin-bottom: 12px;
+  }
+
+  .analysis-label {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+
+  .analysis-value {
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+
+  .color-chips {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .color-chip {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    position: relative;
+  }
+
+  .color-chip:hover::after {
+    content: attr(data-color);
+    position: absolute;
+    bottom: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    white-space: nowrap;
   }
 </style>
 
@@ -282,11 +479,32 @@ export const DevChefTool = {
       });
     });
 
+    // Theme tabs
+    const themeTabs = container.querySelectorAll(".theme-tab");
+    themeTabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        themeTabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        const scheme = tab.dataset.scheme;
+        this.generateHarmony(this.currentColor, scheme);
+      });
+    });
+
+    // Theme analyzer
+    const analyzeBtn = container.querySelector("#analyze-theme-btn");
+    analyzeBtn?.addEventListener("click", () => {
+      this.analyzeTheme();
+    });
+
     // Initialize with default color
-    this.updateColor("#3498db");
+    this.currentColor = "#3498db";
+    this.updateColor(this.currentColor);
+    this.generateHarmony(this.currentColor, "complementary");
+    this.loadPopularThemes();
   },
 
   updateColor(hex) {
+    this.currentColor = hex;
     const preview = this.container.querySelector("#color-preview");
     const hexValue = this.container.querySelector("#hex-value");
     const rgbValue = this.container.querySelector("#rgb-value");
@@ -306,6 +524,11 @@ export const DevChefTool = {
     }
 
     this.generateShades(hex);
+
+    // Update harmony with current scheme
+    const activeTab = this.container.querySelector(".theme-tab.active");
+    const scheme = activeTab?.dataset.scheme || "complementary";
+    this.generateHarmony(hex, scheme);
   },
 
   hexToRgb(hex) {
@@ -390,6 +613,227 @@ export const DevChefTool = {
         </div>
       `;
     }).join('');
+  },
+
+  hslToHex(h, s, l) {
+    s /= 100;
+    l /= 100;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l - c / 2;
+    let r = 0, g = 0, b = 0;
+
+    if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+    else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+    else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+    else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+    else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+    else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
+
+    r = Math.round((r + m) * 255);
+    g = Math.round((g + m) * 255);
+    b = Math.round((b + m) * 255);
+
+    return this.rgbToHex(r, g, b);
+  },
+
+  generateHarmony(hex, scheme) {
+    const hsl = this.hexToHsl(hex);
+    if (!hsl) return;
+
+    let colors = [];
+    const { h, s, l } = hsl;
+
+    switch (scheme) {
+      case "complementary":
+        colors = [
+          hex,
+          this.hslToHex((h + 180) % 360, s, l)
+        ];
+        break;
+      case "analogous":
+        colors = [
+          this.hslToHex((h - 30 + 360) % 360, s, l),
+          hex,
+          this.hslToHex((h + 30) % 360, s, l)
+        ];
+        break;
+      case "triadic":
+        colors = [
+          hex,
+          this.hslToHex((h + 120) % 360, s, l),
+          this.hslToHex((h + 240) % 360, s, l)
+        ];
+        break;
+      case "tetradic":
+        colors = [
+          hex,
+          this.hslToHex((h + 90) % 360, s, l),
+          this.hslToHex((h + 180) % 360, s, l),
+          this.hslToHex((h + 270) % 360, s, l)
+        ];
+        break;
+      case "monochromatic":
+        colors = [
+          this.hslToHex(h, s, Math.max(10, l - 20)),
+          this.hslToHex(h, s, Math.max(5, l - 10)),
+          hex,
+          this.hslToHex(h, s, Math.min(95, l + 10)),
+          this.hslToHex(h, s, Math.min(100, l + 20))
+        ];
+        break;
+    }
+
+    this.renderPalette(colors, scheme.charAt(0).toUpperCase() + scheme.slice(1), "harmony-palette");
+  },
+
+  loadPopularThemes() {
+    const themes = [
+      { name: "Ocean Breeze", colors: ["#006994", "#13a8bb", "#5bc8af", "#a1e8cc", "#e8f5e9"], description: "Calm and professional" },
+      { name: "Sunset Vibes", colors: ["#ff6b6b", "#ee5a6f", "#c44569", "#f7b731", "#fed330"], description: "Warm and energetic" },
+      { name: "Forest Dark", colors: ["#1b4332", "#2d6a4f", "#40916c", "#52b788", "#74c69d"], description: "Nature-inspired" },
+      { name: "Royal Purple", colors: ["#240046", "#3c096c", "#5a189a", "#7209b7", "#9d4edd"], description: "Luxury and elegance" },
+      { name: "Corporate Blue", colors: ["#03045e", "#023e8a", "#0077b6", "#0096c7", "#00b4d8"], description: "Professional and trustworthy" },
+      { name: "Cherry Blossom", colors: ["#ffcad4", "#f4acb7", "#9d8189", "#6d6875", "#4a4e69"], description: "Soft and romantic" },
+      { name: "Cyberpunk", colors: ["#ff006e", "#fb5607", "#ffbe0b", "#8338ec", "#3a86ff"], description: "Bold and futuristic" },
+      { name: "Earth Tones", colors: ["#774936", "#a0674b", "#c69b7b", "#e4c5af", "#f7dfd4"], description: "Warm and organic" },
+      { name: "Midnight Blues", colors: ["#0b132b", "#1c2541", "#3a506b", "#5bc0be", "#6fffe9"], description: "Deep and mysterious" },
+      { name: "Pastel Dream", colors: ["#f8b195", "#f67280", "#c06c84", "#6c5b7b", "#355c7d"], description: "Soft and playful" }
+    ];
+
+    const container = this.container.querySelector("#popular-themes");
+    if (!container) return;
+
+    container.innerHTML = themes.map(theme => `
+      <div class="palette-card">
+        <div class="palette-colors">
+          ${theme.colors.map(color => `
+            <div class="palette-color" style="background: ${color};" onclick="navigator.clipboard.writeText('${color}')">
+              <span class="palette-color-code">${color}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div class="palette-info">
+          <div class="palette-name">${theme.name}</div>
+          <div class="palette-description">${theme.description}</div>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  renderPalette(colors, name, containerId) {
+    const container = this.container.querySelector(`#${containerId}`);
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="palette-card">
+        <div class="palette-colors">
+          ${colors.map(color => `
+            <div class="palette-color" style="background: ${color};" onclick="navigator.clipboard.writeText('${color}')">
+              <span class="palette-color-code">${color}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div class="palette-info">
+          <div class="palette-name">${name} Harmony</div>
+          <div class="palette-description">Click any color to copy</div>
+        </div>
+      </div>
+    `;
+  },
+
+  analyzeTheme() {
+    const input = this.container.querySelector("#theme-input");
+    const analysisContainer = this.container.querySelector("#theme-analysis");
+    if (!input || !analysisContainer) return;
+
+    const lines = input.value.trim().split('\n').filter(line => line.trim());
+    const hexPattern = /^#?([a-f\d]{6})$/i;
+    const colors = [];
+
+    lines.forEach(line => {
+      const match = line.trim().match(hexPattern);
+      if (match) {
+        colors.push(match[0].startsWith('#') ? match[0] : '#' + match[0]);
+      }
+    });
+
+    if (colors.length === 0) {
+      analysisContainer.innerHTML = '<div class="analysis-value">No valid hex colors found. Please enter hex colors (e.g., #3498db)</div>';
+      analysisContainer.classList.add('visible');
+      return;
+    }
+
+    const hslColors = colors.map(c => this.hexToHsl(c)).filter(Boolean);
+    if (hslColors.length === 0) return;
+
+    // Analyze hue relationships
+    const hues = hslColors.map(c => c.h);
+    const avgSaturation = Math.round(hslColors.reduce((sum, c) => sum + c.s, 0) / hslColors.length);
+    const avgLightness = Math.round(hslColors.reduce((sum, c) => sum + c.l, 0) / hslColors.length);
+
+    let themeType = "Custom";
+    let description = "";
+
+    if (hslColors.length === 2) {
+      const hueDiff = Math.abs(hues[0] - hues[1]);
+      if (hueDiff > 150 && hueDiff < 210) {
+        themeType = "Complementary";
+        description = "Opposite colors on the color wheel - high contrast and vibrant";
+      }
+    } else if (hslColors.length === 3) {
+      const diffs = [
+        Math.abs(hues[1] - hues[0]),
+        Math.abs(hues[2] - hues[1])
+      ];
+      if (diffs.every(d => d > 100 && d < 140)) {
+        themeType = "Triadic";
+        description = "Evenly spaced colors - balanced and harmonious";
+      } else if (diffs.every(d => d < 60)) {
+        themeType = "Analogous";
+        description = "Adjacent colors - harmonious and pleasing";
+      }
+    } else if (hslColors.length >= 4) {
+      const satRange = Math.max(...hslColors.map(c => c.s)) - Math.min(...hslColors.map(c => c.s));
+      const lightRange = Math.max(...hslColors.map(c => c.l)) - Math.min(...hslColors.map(c => c.l));
+      const hueRange = Math.max(...hues) - Math.min(...hues);
+
+      if (hueRange < 30 && lightRange > 40) {
+        themeType = "Monochromatic";
+        description = "Single hue with varying brightness - cohesive and elegant";
+      } else if (satRange < 20 && lightRange < 30) {
+        themeType = "Neutral/Muted";
+        description = "Low saturation colors - subtle and sophisticated";
+      }
+    }
+
+    analysisContainer.innerHTML = `
+      <div class="analysis-result">
+        <div class="analysis-label">Theme Type</div>
+        <div class="analysis-value">${themeType}</div>
+      </div>
+      ${description ? `
+        <div class="analysis-result">
+          <div class="analysis-label">Description</div>
+          <div class="analysis-value">${description}</div>
+        </div>
+      ` : ''}
+      <div class="analysis-result">
+        <div class="analysis-label">Colors (${colors.length})</div>
+        <div class="color-chips">
+          ${colors.map(c => `<div class="color-chip" style="background: ${c};" data-color="${c}" onclick="navigator.clipboard.writeText('${c}')"></div>`).join('')}
+        </div>
+      </div>
+      <div class="analysis-result">
+        <div class="analysis-label">Average Saturation</div>
+        <div class="analysis-value">${avgSaturation}%</div>
+      </div>
+      <div class="analysis-result">
+        <div class="analysis-label">Average Lightness</div>
+        <div class="analysis-value">${avgLightness}%</div>
+      </div>
+    `;
+    analysisContainer.classList.add('visible');
   },
 
   onInput(input, context) {
