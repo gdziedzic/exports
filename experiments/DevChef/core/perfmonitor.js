@@ -196,19 +196,36 @@ class PerformanceMonitor {
 
   /**
    * Detect memory leak
+   * Uses more sophisticated heuristics to reduce false positives
    */
   detectMemoryLeak() {
     try {
-      if (this.metrics.memory.length < 10) return;
+      // Need at least 20 samples (100 seconds) for reliable detection
+      if (this.metrics.memory.length < 20) return;
 
-      const recent = this.metrics.memory.slice(-10);
-      const trend = recent.every((m, i) => {
-        if (i === 0) return true;
-        return m.used > recent[i - 1].used;
-      });
+      // Throttle this alert to prevent spam (once per 60 seconds)
+      const now = Date.now();
+      if (now - (this.lastAlertTime.memoryLeak || 0) < 60000) return;
 
-      if (trend) {
-        this.addAlert('Possible memory leak', 'Memory usage continuously increasing', 'error');
+      const recent = this.metrics.memory.slice(-20);
+      const oldest = recent[0].used;
+      const newest = recent[recent.length - 1].used;
+      const increase = newest - oldest;
+
+      // Only alert if there's a significant sustained increase (>50MB over 100 seconds)
+      const LEAK_THRESHOLD = 50 * 1024 * 1024; // 50MB
+
+      if (increase < LEAK_THRESHOLD) return;
+
+      // Check that memory is trending upward (at least 80% of samples are higher than median)
+      const sorted = [...recent].sort((a, b) => a.used - b.used);
+      const median = sorted[Math.floor(sorted.length / 2)].used;
+      const aboveMedian = recent.filter(m => m.used > median).length;
+      const trendingUp = (aboveMedian / recent.length) > 0.8;
+
+      if (trendingUp) {
+        this.addAlert('Possible memory leak', `Memory increased by ${(increase / 1024 / 1024).toFixed(1)}MB in 100s`, 'error');
+        this.lastAlertTime.memoryLeak = now;
       }
     } catch (error) {
       console.error('Error detecting memory leak:', error);
