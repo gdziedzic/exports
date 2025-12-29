@@ -5,9 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DevChef V6.5 ULTIMATE - Productivity to the Moon 🚀🌙</title>
   <meta name="description" content="DevChef V6.5 ULTIMATE - Snippets++, Universal Favorites, Macros, Batch Processing, Quick Panel - Developer productivity skyrocketed">
+
+  <!-- PWA Configuration -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#007bff">
+
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/icon-152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="/icon-192.png">
+
+  <!-- Apple PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="DevChef">
+
+  <!-- Microsoft Tiles -->
+  <meta name="msapplication-TileColor" content="#007bff">
+  <meta name="msapplication-TileImage" content="/icon-144.png">
+
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
+  <!-- PWA Install Banner -->
+  <div id="pwa-install-banner" class="pwa-install-banner" style="display: none;">
+    <div class="pwa-banner-content">
+      <div class="pwa-banner-icon">📱</div>
+      <div class="pwa-banner-text">
+        <strong>Install DevChef</strong>
+        <p>Add to your home screen for offline access and better performance</p>
+      </div>
+      <div class="pwa-banner-actions">
+        <button id="pwa-install-btn" class="pwa-btn-install">Install</button>
+        <button id="pwa-dismiss-btn" class="pwa-btn-dismiss">×</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PWA Update Notification -->
+  <div id="pwa-update-notification" class="pwa-update-notification" style="display: none;">
+    <div class="pwa-update-content">
+      <span class="pwa-update-icon">🔄</span>
+      <span class="pwa-update-text">A new version is available!</span>
+      <button id="pwa-update-btn" class="pwa-btn-update">Update</button>
+      <button id="pwa-update-dismiss-btn" class="pwa-btn-dismiss">×</button>
+    </div>
+  </div>
+
   <div id="app">
     <!-- Sidebar -->
     <div id="sidebar">

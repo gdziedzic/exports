@@ -53,6 +53,212 @@ import { productivityEngine } from './core/productivityengine.js';
 import { quickPanel } from './core/quickpanel.js';
 
 /**
+ * ============================================================================
+ * PWA (Progressive Web App) Module
+ * ============================================================================
+ * Handles service worker registration, install prompts, and update notifications
+ */
+
+let deferredInstallPrompt = null;
+let serviceWorkerRegistration = null;
+
+/**
+ * Initialize PWA functionality
+ */
+async function initializePWA() {
+  console.log('🔧 Initializing PWA...');
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    try {
+      serviceWorkerRegistration = await navigator.serviceWorker.register('/sw.js');
+      console.log('✅ Service Worker registered:', serviceWorkerRegistration.scope);
+
+      // Check for updates every 60 seconds
+      setInterval(() => {
+        serviceWorkerRegistration.update();
+      }, 60000);
+
+      // Handle service worker updates
+      serviceWorkerRegistration.addEventListener('updatefound', () => {
+        const newWorker = serviceWorkerRegistration.installing;
+        console.log('🔄 Service Worker update found');
+
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New service worker available
+            console.log('✅ New Service Worker installed');
+            showUpdateNotification();
+          }
+        });
+      });
+
+      // Handle controlled state changes
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        console.log('🔄 Service Worker controller changed - reloading page');
+        window.location.reload();
+      });
+
+    } catch (error) {
+      console.error('❌ Service Worker registration failed:', error);
+    }
+  } else {
+    console.warn('⚠️ Service Workers are not supported in this browser');
+  }
+
+  // Handle install prompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('💡 beforeinstallprompt event fired');
+
+    // Prevent the default mini-infobar
+    e.preventDefault();
+
+    // Store the event for later use
+    deferredInstallPrompt = e;
+
+    // Show custom install banner
+    showInstallBanner();
+  });
+
+  // Handle successful installation
+  window.addEventListener('appinstalled', () => {
+    console.log('✅ PWA installed successfully');
+    deferredInstallPrompt = null;
+    hideInstallBanner();
+
+    if (notifications) {
+      notifications.success('DevChef installed successfully! 🎉', { duration: 5000 });
+    }
+  });
+
+  // Check if already installed (standalone mode)
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    console.log('✅ Running in standalone mode (PWA installed)');
+  } else {
+    console.log('ℹ️ Running in browser mode');
+  }
+}
+
+/**
+ * Show install banner
+ */
+function showInstallBanner() {
+  const banner = document.getElementById('pwa-install-banner');
+  if (!banner) return;
+
+  // Check if user previously dismissed the banner
+  const dismissed = localStorage.getItem('pwa-install-dismissed');
+  if (dismissed === 'true') {
+    console.log('Install banner previously dismissed');
+    return;
+  }
+
+  banner.style.display = 'block';
+
+  // Install button handler
+  const installBtn = document.getElementById('pwa-install-btn');
+  const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+  if (installBtn) {
+    installBtn.onclick = async () => {
+      if (!deferredInstallPrompt) {
+        console.warn('No deferred install prompt available');
+        return;
+      }
+
+      // Show the install prompt
+      deferredInstallPrompt.prompt();
+
+      // Wait for the user's response
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      console.log(`User response to install prompt: ${outcome}`);
+
+      if (outcome === 'accepted') {
+        console.log('✅ User accepted the install prompt');
+      } else {
+        console.log('❌ User dismissed the install prompt');
+      }
+
+      // Clear the deferred prompt
+      deferredInstallPrompt = null;
+      hideInstallBanner();
+    };
+  }
+
+  if (dismissBtn) {
+    dismissBtn.onclick = () => {
+      hideInstallBanner();
+      localStorage.setItem('pwa-install-dismissed', 'true');
+      console.log('Install banner dismissed by user');
+    };
+  }
+}
+
+/**
+ * Hide install banner
+ */
+function hideInstallBanner() {
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) {
+    banner.style.display = 'none';
+  }
+}
+
+/**
+ * Show update notification
+ */
+function showUpdateNotification() {
+  const notification = document.getElementById('pwa-update-notification');
+  if (!notification) return;
+
+  notification.style.display = 'block';
+
+  // Update button handler
+  const updateBtn = document.getElementById('pwa-update-btn');
+  const dismissBtn = document.getElementById('pwa-update-dismiss-btn');
+
+  if (updateBtn) {
+    updateBtn.onclick = () => {
+      if (serviceWorkerRegistration && serviceWorkerRegistration.waiting) {
+        // Tell the service worker to skip waiting
+        serviceWorkerRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+      hideUpdateNotification();
+    };
+  }
+
+  if (dismissBtn) {
+    dismissBtn.onclick = () => {
+      hideUpdateNotification();
+    };
+  }
+}
+
+/**
+ * Hide update notification
+ */
+function hideUpdateNotification() {
+  const notification = document.getElementById('pwa-update-notification');
+  if (notification) {
+    notification.style.display = 'none';
+  }
+}
+
+/**
+ * Get PWA installation status
+ * @returns {Object} PWA status information
+ */
+function getPWAStatus() {
+  return {
+    isStandalone: window.matchMedia('(display-mode: standalone)').matches,
+    isInstalled: window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches,
+    serviceWorkerSupported: 'serviceWorker' in navigator,
+    serviceWorkerRegistered: serviceWorkerRegistration !== null,
+    installPromptAvailable: deferredInstallPrompt !== null
+  };
+}
+
+/**
  * Get URL query parameter value
  * @param {string} name - Parameter name
  * @returns {string|null} Parameter value or null
@@ -67,6 +273,9 @@ function getQueryParam(name) {
  */
 async function init() {
   console.log("🚀 DevChef V6: Ultimate Edition starting...");
+
+  // Initialize PWA (service worker, install prompt, updates)
+  await initializePWA();
 
   // Initialize V6 features FIRST (they provide infrastructure)
   initializeV6Features();
@@ -1355,5 +1564,15 @@ window.DevChef = {
   snippetsPlus,
   universalFavorites,
   productivityEngine,
-  quickPanel
+  quickPanel,
+
+  // PWA Features
+  pwa: {
+    status: getPWAStatus,
+    showInstallBanner,
+    hideInstallBanner,
+    showUpdateNotification,
+    hideUpdateNotification,
+    registration: () => serviceWorkerRegistration
+  }
 };
