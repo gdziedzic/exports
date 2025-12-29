@@ -8,7 +8,7 @@
  * - Result actions (open tool, copy, etc.)
  */
 
-import { deepSearch, RESULT_TYPES } from './deepsearch.js';
+import { unifiedSearch as deepSearch, RESULT_TYPES } from './search-unified.js';
 import { openTool } from './ui.js';
 import { storage } from './storage.js';
 

@@ -770,8 +770,19 @@ DevChef V2.5 uses a revolutionary modular architecture with the following compon
 
 ### V2 Core Modules
 - **core/storage.js**: LocalStorage management for persistence
-- **core/search.js**: Fuzzy search with relevance scoring
+- **core/search-unified.js**: Unified search system (fuzzy matching, favorites, deep search)
 - **core/notifications.js**: Toast notification and dialog system
+
+### Shared Utilities Library
+- **core/tool-utils.js**: 40+ shared utilities to eliminate code duplication
+  - Clipboard operations with callbacks
+  - UI feedback (status messages, errors)
+  - Text processing and validation
+  - DOM helpers and shortcuts
+  - Object and string utilities
+  - Performance optimizations (debounce, throttle)
+  - Storage helpers
+  - **IMPORTANT**: All new tools should use these utilities instead of duplicating code
 
 ### V2.5 Revolutionary Modules
 - **core/clipboard.js**: Smart clipboard detection with pattern matching
@@ -821,7 +832,9 @@ To create a new tool:
 
 1. Create a new HTML file in the `tools/` directory (e.g., `my-tool.html`)
 
-2. Follow this structure:
+2. **IMPORTANT**: Import shared utilities from `core/tool-utils.js` to avoid code duplication
+
+3. Follow this structure:
 
 ```html
 <!DOCTYPE html>
@@ -851,7 +864,11 @@ To create a new tool:
       <p class="tool-description">Description of what my tool does</p>
     </div>
     <div class="tool-content">
-      <!-- Your tool's UI here -->
+      <textarea id="input" placeholder="Enter input..."></textarea>
+      <button id="copy-btn">Copy Result</button>
+      <div id="status"></div>
+      <div id="error-message" class="error-message"></div>
+      <textarea id="output" readonly></textarea>
     </div>
   </div>
 </template>
@@ -859,18 +876,70 @@ To create a new tool:
 <!-- Styles -->
 <style>
   /* Tool-specific styles */
+  .error-message {
+    display: none;
+    color: var(--error);
+    padding: 8px;
+    margin-top: 8px;
+  }
+  .error-message.visible {
+    display: block;
+  }
 </style>
 
 <!-- Module -->
 <script type="module">
+  // IMPORTANT: Import shared utilities to avoid duplication
+  import { copyToClipboard, showStatus, showError, hideError } from '../core/tool-utils.js';
+
   export const DevChefTool = {
+    container: null,
+    context: null,
+
     init(container, context) {
-      // Initialize your tool
+      this.container = container;
+      this.context = context;
+
       console.log('My tool initialized');
+
+      // Setup input handler
+      const inputEl = container.querySelector("#input");
+      inputEl?.addEventListener("input", (e) => {
+        context.setInput(e.target.value);
+      });
+
+      // Setup copy button with shared utility
+      const copyBtn = container.querySelector("#copy-btn");
+      copyBtn?.addEventListener("click", () => {
+        const output = context.getOutput();
+        if (output) {
+          copyToClipboard(output, {
+            onSuccess: () => showStatus(this.container, "✓ Copied to clipboard", "success"),
+            onError: () => showStatus(this.container, "✗ Failed to copy", "error")
+          });
+        }
+      });
 
       // V2: Restore state if available
       if (context.restoredState) {
         console.log('Restored state:', context.restoredState);
+      }
+    },
+
+    onInput(input, context) {
+      if (!input) {
+        hideError(this.container);
+        return { output: "" };
+      }
+
+      try {
+        // Your tool logic here
+        const result = processInput(input);
+        hideError(this.container);
+        return { output: result };
+      } catch (error) {
+        showError(this.container, `Error: ${error.message}`);
+        return { output: "" };
       }
     },
 
@@ -887,13 +956,72 @@ To create a new tool:
 </html>
 ```
 
-3. Add your tool filename to `tools/index.json`:
+4. Add your tool filename to `tools/index.json`:
 
 ```json
 ["string-cleaner.html", "my-tool.html", ...]
 ```
 
-4. Reload DevChef and your tool will appear in the sidebar
+5. Reload DevChef and your tool will appear in the sidebar
+
+### Available Shared Utilities (core/tool-utils.js)
+
+**Clipboard:**
+- `copyToClipboard(text, { onSuccess, onError })` - Async clipboard with callbacks
+
+**UI Feedback:**
+- `showStatus(container, message, type)` - Show status message ('success', 'error', 'info')
+- `showError(container, message)` - Show error message
+- `hideError(container)` - Hide error message
+
+**Text Processing:**
+- `truncateText(text, maxLength)` - Truncate with ellipsis
+- `escapeHtml(text)` - Escape HTML for safe display
+- `unescapeHtml(html)` - Unescape HTML entities
+- `countWords(text)`, `countLines(text)` - Text metrics
+
+**Validation:**
+- `isValidJSON(jsonString)` - Returns `{ valid, parsed, error }`
+- `isValidURL(urlString)` - Validate URL
+- `isValidEmail(email)` - Validate email
+
+**Object Utilities:**
+- `sortObjectKeys(obj)` - Sort object keys alphabetically
+- `deepClone(obj)` - Deep clone object
+- `getValueByPath(obj, path, defaultValue)` - Access nested properties
+- `isEmpty(obj)` - Check if object/array/string is empty
+
+**String Utilities:**
+- `capitalize(str)` - Capitalize first letter
+- `toKebabCase(str)` - Convert to kebab-case
+- `toCamelCase(str)` - Convert to camelCase
+
+**DOM Helpers:**
+- `qs(selector, context)` - querySelector shorthand
+- `qsa(selector, context)` - querySelectorAll as Array
+
+**Performance:**
+- `debounce(func, wait)` - Debounce function
+- `throttle(func, limit)` - Throttle function
+
+**Storage:**
+- `saveToolState(toolId, state)` - Save to localStorage
+- `loadToolState(toolId)` - Load from localStorage
+
+**File Operations:**
+- `downloadAsFile(content, filename, mimeType)` - Download as file
+- `formatFileSize(bytes)` - Human-readable file size
+
+**Misc:**
+- `formatNumber(num)` - Format with thousands separator
+- `generateId(prefix)` - Generate unique ID
+- `showToast(message, options)` - Show toast notification
+- `sleep(ms)` - Async sleep
+
+**See working examples in:**
+- `tools/base64-tool.html` - Uses `copyToClipboard()`, `showStatus()`
+- `tools/json-formatter.html` - Uses `copyToClipboard()`, `showError()`, `hideError()`, `sortObjectKeys()`
+- `tools/hash-generator.html` - Uses `copyToClipboard()`
 
 ## Project Structure
 

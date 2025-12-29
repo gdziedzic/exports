@@ -43,7 +43,7 @@ import { errorBoundary } from './core/errorboundary.js';
 
 // V6.5 Enhancement Edition Features
 import { performanceMonitor } from './core/perfmonitor.js';
-import { advancedSearch } from './core/advancedsearch.js';
+import { unifiedSearch as advancedSearch } from './core/search-unified.js';
 import { devTools } from './core/devtools.js';
 
 // V6.5 ULTIMATE Productivity Features
@@ -52,8 +52,8 @@ import { universalFavorites } from './core/universalfavorites.js';
 import { productivityEngine } from './core/productivityengine.js';
 import { quickPanel } from './core/quickpanel.js';
 
-// Deep Search Feature
-import { deepSearch } from './core/deepsearch.js';
+// Unified Search Feature (consolidates search.js, advancedsearch.js, deepsearch.js)
+import { unifiedSearch as deepSearch } from './core/search-unified.js';
 import { showDeepSearch, toggleDeepSearch } from './core/deepsearch-ui.js';
 
 /**

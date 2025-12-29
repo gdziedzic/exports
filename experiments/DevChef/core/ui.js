@@ -5,7 +5,7 @@
 
 import { ToolRegistry } from './registry.js';
 import { storage } from './storage.js';
-import { searchTools, highlightMatches, groupByCategory } from './search.js';
+import { searchTools, highlightMatches, groupByCategory } from './search-unified.js';
 import { notifications } from './notifications.js';
 import { workflowSnapshots } from './workflowsnapshots.js';
 

@@ -203,6 +203,8 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -226,12 +228,20 @@ export const DevChefTool = {
         const target = btn.dataset.target;
         const input = container.querySelector(`#${target}`);
         if (input && input.value) {
-          navigator.clipboard.writeText(input.value).then(() => {
-            const originalText = btn.textContent;
-            btn.textContent = "✓";
-            setTimeout(() => {
-              btn.textContent = originalText;
-            }, 1500);
+          const originalText = btn.textContent;
+          copyToClipboard(input.value, {
+            onSuccess: () => {
+              btn.textContent = "✓";
+              setTimeout(() => {
+                btn.textContent = originalText;
+              }, 1500);
+            },
+            onError: () => {
+              btn.textContent = "✗";
+              setTimeout(() => {
+                btn.textContent = originalText;
+              }, 1500);
+            }
           });
         }
       });

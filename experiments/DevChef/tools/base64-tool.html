@@ -194,6 +194,8 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard, showStatus } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -225,10 +227,9 @@ export const DevChefTool = {
       copyBtn.addEventListener("click", () => {
         const output = context.getOutput();
         if (output) {
-          navigator.clipboard.writeText(output).then(() => {
-            this.setStatus("✓ Copied to clipboard", "success");
-          }).catch(() => {
-            this.setStatus("✗ Failed to copy", "error");
+          copyToClipboard(output, {
+            onSuccess: () => showStatus(this.container, "✓ Copied to clipboard", "success"),
+            onError: () => showStatus(this.container, "✗ Failed to copy", "error")
           });
         }
       });
@@ -239,14 +240,14 @@ export const DevChefTool = {
         context.setInput("");
         context.setOutput("");
         inputEl.value = "";
-        this.setStatus("", "");
+        showStatus(this.container, "", "");
       });
     }
   },
 
   onInput(input, context) {
     if (!input) {
-      this.setStatus("", "");
+      showStatus(this.container, "", "");
       return { output: "" };
     }
 
@@ -256,23 +257,15 @@ export const DevChefTool = {
       let output;
       if (mode === "encode") {
         output = btoa(unescape(encodeURIComponent(input)));
-        this.setStatus("✓ Encoded successfully", "success");
+        showStatus(this.container, "✓ Encoded successfully", "success");
       } else {
         output = decodeURIComponent(escape(atob(input)));
-        this.setStatus("✓ Decoded successfully", "success");
+        showStatus(this.container, "✓ Decoded successfully", "success");
       }
       return { output };
     } catch (error) {
-      this.setStatus(`✗ Error: ${error.message}`, "error");
+      showStatus(this.container, `✗ Error: ${error.message}`, "error");
       return { output: "", errors: [error.message] };
-    }
-  },
-
-  setStatus(message, type) {
-    const status = this.container.querySelector("#status");
-    if (status) {
-      status.textContent = message;
-      status.className = type;
     }
   }
 };
