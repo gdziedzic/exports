@@ -271,6 +271,47 @@
 
 <!-- Tool Styles -->
 <style>
+  /* ========================================
+     Global Performance Optimizations
+     ======================================== */
+
+  * {
+    /* Smooth scrolling for better UX */
+    scroll-behavior: smooth;
+  }
+
+  /* Use hardware acceleration for better performance */
+  .component-item,
+  .modal,
+  .context-menu,
+  .drop-zone,
+  .quick-action-btn,
+  .icon-btn {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Optimize text rendering */
+  .tool-container {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Subtle pulse animation for loading states */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .updating {
+    animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
   .tool-layout {
     display: grid;
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
@@ -326,12 +367,19 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-    transition: all 0.2s;
+    transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .icon-btn:hover {
     background: var(--bg-secondary);
     border-color: var(--primary-color);
+    transform: translateY(-1px);
+  }
+
+  .icon-btn:active {
+    transform: translateY(0);
   }
 
   .format-select {
@@ -356,7 +404,9 @@
     border-radius: 8px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     background: var(--bg-primary);
   }
 
@@ -364,6 +414,7 @@
   .drop-zone.dragover {
     border-color: var(--primary-color);
     background: var(--bg-hover);
+    transform: scale(1.01);
   }
 
   .drop-icon {
@@ -432,6 +483,10 @@
     flex: 1;
     overflow-y: auto;
     padding: 12px;
+    /* Enable smooth momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Better scroll performance */
+    scroll-behavior: smooth;
   }
 
   .component-item {
@@ -440,7 +495,9 @@
     border-radius: 6px;
     margin-bottom: 12px;
     overflow: hidden;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
   }
 
@@ -675,11 +732,14 @@
     resize: vertical;
     background: var(--bg-primary);
     color: var(--text-primary);
+    transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .component-body textarea:focus {
     outline: none;
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);
   }
 
   .component-select-btn {
@@ -804,11 +864,14 @@
     resize: vertical;
     background: var(--bg-primary);
     color: var(--text-primary);
+    transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   #final-prompt:focus {
     outline: none;
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);
   }
 
   .stats-bar {
@@ -1394,6 +1457,29 @@
     margin-top: 20px;
   }
 
+  /* Enhanced button styles for better feedback */
+  button {
+    transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  button.primary {
+    background: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+  }
+
+  button.primary:hover {
+    background: color-mix(in srgb, var(--primary-color) 90%, black);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb, 59, 130, 246), 0.3);
+  }
+
   button.secondary {
     background: var(--bg-secondary);
     color: var(--text-primary);
@@ -1402,6 +1488,7 @@
 
   button.secondary:hover {
     background: var(--bg-hover);
+    border-color: var(--primary-color);
   }
 
   @media (max-width: 1024px) {
@@ -2457,6 +2544,66 @@ So that [benefit/value]
     }
   };
 
+  // ============================================================================
+  // Performance Utilities
+  // ============================================================================
+
+  /**
+   * Debounce function - delays execution until after wait time has elapsed
+   * since the last time it was invoked
+   */
+  function debounce(func, wait = 300) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  /**
+   * Throttle function - ensures function is called at most once per wait period
+   */
+  function throttle(func, wait = 100) {
+    let inThrottle;
+    let lastTime = 0;
+    return function executedFunction(...args) {
+      if (!inThrottle) {
+        func(...args);
+        lastTime = Date.now();
+        inThrottle = true;
+        setTimeout(() => {
+          inThrottle = false;
+          // Call with latest args if there was a pending call
+          const now = Date.now();
+          if (now - lastTime >= wait) {
+            func(...args);
+            lastTime = now;
+          }
+        }, wait);
+      }
+    };
+  }
+
+  /**
+   * Request animation frame wrapper for smooth DOM updates
+   */
+  function rafDebounce(func) {
+    let rafId = null;
+    return function executedFunction(...args) {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+      rafId = requestAnimationFrame(() => {
+        func(...args);
+        rafId = null;
+      });
+    };
+  }
+
   let state = {
     config: JSON.parse(JSON.stringify(DEFAULT_CONFIG)),
     currentModal: null,
@@ -3449,10 +3596,7 @@ So that [benefit/value]
           }
         }
 
-        updatePreview();
-        saveConfig();
-
-        // Update meta info
+        // Update meta info immediately for instant feedback
         const meta = e.target.nextElementSibling;
         if (meta) {
           const chars = e.target.value.length;
@@ -3462,6 +3606,10 @@ So that [benefit/value]
             <span>${words} words</span>
           `;
         }
+
+        // Debounce expensive operations for smooth typing
+        debouncedUpdatePreview();
+        debouncedSaveConfig();
       }
     }
   }
@@ -3676,6 +3824,11 @@ So that [benefit/value]
     }
   }
 
+  // Debounced versions for better performance
+  const debouncedUpdatePreview = debounce(updatePreview, 150);
+  const debouncedSaveConfig = debounce(saveConfig, 500);
+  const rafUpdatePreview = rafDebounce(updatePreview);
+
   function loadConfig() {
     try {
       const saved = localStorage.getItem('ai-prompt-builder-config');
@@ -3757,14 +3910,15 @@ So that [benefit/value]
       const value = e.target.value;
       state.placeholders[placeholder] = value;
 
-      // Update filled class
+      // Update filled class immediately for instant feedback
       if (value) {
         e.target.classList.add('filled');
       } else {
         e.target.classList.remove('filled');
       }
 
-      savePlaceholders();
+      // Debounce the save operation
+      debouncedSavePlaceholders();
     }
   }
 
@@ -3825,6 +3979,10 @@ So that [benefit/value]
     }
   }
 
+  // Debounced versions for smooth interactions
+  const debouncedSavePlaceholders = debounce(savePlaceholders, 500);
+  const debouncedFilterTemplates = debounce(function() { renderTemplates(); }, 200);
+
   // ============================================================
   // TEMPLATE MANAGEMENT
   // ============================================================
@@ -3868,7 +4026,7 @@ So that [benefit/value]
   }
 
   function filterTemplates() {
-    renderTemplates();
+    debouncedFilterTemplates();
   }
 
   function handleTemplateClick(e) {
