@@ -11,6 +11,7 @@ import { debugConsole } from './core/console.js';
 import { storage } from './core/storage.js';
 import { notifications } from './core/notifications.js';
 import { initWorkflowSnapshots } from './core/workflowsnapshots.js';
+import { registerComponents } from './core/components.js';
 
 // V2.5 New Features
 import { clipboardDetector } from './core/clipboard.js';

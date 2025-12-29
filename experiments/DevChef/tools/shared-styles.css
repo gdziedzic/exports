@@ -1,0 +1,535 @@
+/**
+ * DevChef Shared Styles
+ *
+ * Common styles extracted from all tools to eliminate duplication.
+ * This file replaces the 132-line standalone-styles block that appears
+ * in every tool, saving ~130KB of duplicated CSS across 33+ tools.
+ *
+ * @version 1.0.0
+ * @author DevChef
+ */
+
+/* =============================================================================
+   CSS Reset
+   ============================================================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* =============================================================================
+   CSS Custom Properties (Theme Variables)
+   ============================================================================= */
+
+:root {
+  /* Colors - Light Theme */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #e0e0e0;
+  --border-color: #d0d0d0;
+  --text-primary: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --accent: #3498db;
+  --accent-hover: #2980b9;
+  --success: #27ae60;
+  --error: #e74c3c;
+  --warning: #f39c12;
+  --info: #3498db;
+
+  /* Fonts */
+  --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+}
+
+/* Dark theme support (optional - can be enabled via data-theme attribute) */
+[data-theme="dark"] {
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3d3d3d;
+  --border-color: #4d4d4d;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --accent: #4a9eff;
+  --accent-hover: #5cadff;
+}
+
+/* =============================================================================
+   Base Styles
+   ============================================================================= */
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: var(--spacing-lg);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* =============================================================================
+   Tool Container Structure
+   ============================================================================= */
+
+.tool-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tool-header {
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.tool-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.tool-description {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.tool-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* =============================================================================
+   Form Elements
+   ============================================================================= */
+
+/* Textareas */
+textarea,
+.tool-textarea {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  border-radius: var(--radius-md);
+  resize: vertical;
+  transition: all var(--transition-normal);
+  min-height: 150px;
+  line-height: 1.5;
+}
+
+textarea.monospace,
+.tool-textarea.monospace {
+  font-family: var(--font-mono);
+}
+
+textarea:focus,
+.tool-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+textarea:read-only,
+.tool-textarea:read-only {
+  background: var(--bg-tertiary);
+  cursor: not-allowed;
+}
+
+/* Text Inputs */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+.tool-input {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal);
+}
+
+input:focus,
+.tool-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+input:read-only,
+.tool-input:read-only {
+  background: var(--bg-tertiary);
+  cursor: not-allowed;
+}
+
+/* Select Dropdowns */
+select,
+.tool-select {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+}
+
+select:focus,
+.tool-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Checkboxes and Radio Buttons */
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* =============================================================================
+   Buttons
+   ============================================================================= */
+
+button,
+.tool-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  font-family: var(--font-sans);
+  margin-right: var(--spacing-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  white-space: nowrap;
+}
+
+button:hover,
+.tool-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button:active,
+.tool-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+button:disabled,
+.tool-btn:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Button Variants */
+button.secondary,
+.tool-btn.secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+button.secondary:hover,
+.tool-btn.secondary:hover {
+  background: var(--border-color);
+}
+
+button.danger,
+.tool-btn.danger {
+  background: var(--error);
+  color: white;
+}
+
+button.danger:hover,
+.tool-btn.danger:hover {
+  background: #c0392b;
+}
+
+button.success,
+.tool-btn.success {
+  background: var(--success);
+  color: white;
+}
+
+button.success:hover,
+.tool-btn.success:hover {
+  background: #229954;
+}
+
+/* Button with icon */
+.tool-btn .icon {
+  display: inline-block;
+}
+
+.tool-btn .spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* =============================================================================
+   Status Messages
+   ============================================================================= */
+
+.tool-status {
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  margin: var(--spacing-md) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 14px;
+  border-left: 4px solid currentColor;
+}
+
+.tool-status.success {
+  background: rgba(39, 174, 96, 0.1);
+  border-left-color: var(--success);
+  color: var(--success);
+}
+
+.tool-status.error {
+  background: rgba(231, 76, 60, 0.1);
+  border-left-color: var(--error);
+  color: var(--error);
+}
+
+.tool-status.warning {
+  background: rgba(243, 156, 18, 0.1);
+  border-left-color: var(--warning);
+  color: var(--warning);
+}
+
+.tool-status.info {
+  background: rgba(52, 152, 219, 0.1);
+  border-left-color: var(--info);
+  color: var(--info);
+}
+
+.status-icon {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.status-message {
+  flex: 1;
+}
+
+/* Legacy status support */
+#status {
+  font-size: 13px;
+  margin-top: var(--spacing-sm);
+}
+
+#status.success {
+  color: var(--success);
+}
+
+#status.error {
+  color: var(--error);
+}
+
+/* =============================================================================
+   Utility Classes
+   ============================================================================= */
+
+/* Spacing utilities */
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: var(--spacing-xs); }
+.mb-2 { margin-bottom: var(--spacing-sm); }
+.mb-3 { margin-bottom: var(--spacing-md); }
+.mb-4 { margin-bottom: var(--spacing-lg); }
+.mb-5 { margin-bottom: var(--spacing-xl); }
+
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: var(--spacing-xs); }
+.mt-2 { margin-top: var(--spacing-sm); }
+.mt-3 { margin-top: var(--spacing-md); }
+.mt-4 { margin-top: var(--spacing-lg); }
+.mt-5 { margin-top: var(--spacing-xl); }
+
+/* Display utilities */
+.hidden { display: none; }
+.block { display: block; }
+.inline-block { display: inline-block; }
+.flex { display: flex; }
+.grid { display: grid; }
+
+/* Text utilities */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-mono { font-family: var(--font-mono); }
+.text-sans { font-family: var(--font-sans); }
+
+/* Color utilities */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-success { color: var(--success); }
+.text-error { color: var(--error); }
+.text-warning { color: var(--warning); }
+.text-info { color: var(--info); }
+
+/* =============================================================================
+   Component Styles
+   ============================================================================= */
+
+/* File Input */
+.tool-file-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.file-input-label {
+  cursor: pointer;
+}
+
+.file-drop-zone {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--text-secondary);
+  transition: all var(--transition-normal);
+}
+
+.file-drop-zone:hover {
+  border-color: var(--accent);
+  background: var(--bg-secondary);
+}
+
+.file-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-sm);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.file-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.file-size {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+/* Layout Containers */
+.layout-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  body {
+    padding: var(--spacing-md);
+  }
+
+  .tool-title {
+    font-size: 24px;
+  }
+
+  .layout-split {
+    grid-template-columns: 1fr;
+  }
+
+  button,
+  .tool-btn {
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
+    margin-right: 0;
+  }
+}
+
+/* =============================================================================
+   Print Styles
+   ============================================================================= */
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  button,
+  .tool-btn {
+    display: none;
+  }
+
+  .tool-header {
+    border-bottom-color: black;
+  }
+}

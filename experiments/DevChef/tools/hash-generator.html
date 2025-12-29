@@ -27,8 +27,13 @@
     </div>
 
     <div class="tool-section">
-      <label class="section-label" for="input">Input Text</label>
-      <textarea id="input" placeholder="Enter text to hash..."></textarea>
+      <label class="section-label">Input Text</label>
+      <tool-textarea
+        id="input"
+        placeholder="Enter text to hash..."
+        monospace
+        rows="6">
+      </tool-textarea>
     </div>
 
     <div class="tool-section">
@@ -36,122 +41,37 @@
         <div class="hash-item">
           <label class="section-label">MD5</label>
           <div class="hash-result">
-            <input type="text" id="md5" readonly>
-            <button class="copy-hash-btn" data-target="md5">Copy</button>
+            <tool-input id="md5" readonly></tool-input>
+            <tool-button class="copy-hash-btn" data-target="md5" variant="secondary" label="Copy"></tool-button>
           </div>
         </div>
 
         <div class="hash-item">
           <label class="section-label">SHA-1</label>
           <div class="hash-result">
-            <input type="text" id="sha1" readonly>
-            <button class="copy-hash-btn" data-target="sha1">Copy</button>
+            <tool-input id="sha1" readonly></tool-input>
+            <tool-button class="copy-hash-btn" data-target="sha1" variant="secondary" label="Copy"></tool-button>
           </div>
         </div>
 
         <div class="hash-item">
           <label class="section-label">SHA-256</label>
           <div class="hash-result">
-            <input type="text" id="sha256" readonly>
-            <button class="copy-hash-btn" data-target="sha256">Copy</button>
+            <tool-input id="sha256" readonly></tool-input>
+            <tool-button class="copy-hash-btn" data-target="sha256" variant="secondary" label="Copy"></tool-button>
           </div>
         </div>
       </div>
     </div>
+
+    <div class="tool-section">
+      <tool-status id="status"></tool-status>
+    </div>
   </div>
 </template>
 
-<!-- Standalone Styles -->
-<style id="standalone-styles">
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --bg-tertiary: #e0e0e0;
-    --border-color: #d0d0d0;
-    --text-primary: #2c3e50;
-    --text-secondary: #7f8c8d;
-    --accent: #3498db;
-    --accent-hover: #2980b9;
-    --success: #27ae60;
-    --error: #e74c3c;
-    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
-
-  body {
-    font-family: var(--font-sans);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    padding: 24px;
-    line-height: 1.6;
-  }
-
-  .tool-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .tool-header {
-    margin-bottom: 32px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid var(--border-color);
-  }
-
-  .tool-title {
-    font-size: 32px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-  }
-
-  .tool-description {
-    font-size: 16px;
-    color: var(--text-secondary);
-  }
-
-  .tool-section {
-    margin-bottom: 24px;
-  }
-
-  .section-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  textarea, input[type="text"] {
-    width: 100%;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 12px;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    border-radius: 6px;
-    transition: all 0.2s;
-  }
-
-  textarea {
-    resize: vertical;
-    min-height: 120px;
-  }
-
-  textarea:focus, input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  }
-
+<!-- Tool Styles -->
+<style>
   .hash-output {
     display: flex;
     flex-direction: column;
@@ -170,34 +90,12 @@
     align-items: center;
   }
 
-  .hash-result input {
+  .hash-result tool-input {
     flex: 1;
-    background: white;
-    font-size: 13px;
   }
 
-  button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: var(--font-sans);
-    white-space: nowrap;
-  }
-
-  button:hover {
-    background: var(--accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  button:active {
-    transform: translateY(0);
+  .hash-result tool-button {
+    flex-shrink: 0;
   }
 </style>
 
@@ -214,45 +112,55 @@ export const DevChefTool = {
     this.context = context;
 
     const inputEl = container.querySelector("#input");
+    const statusEl = container.querySelector("#status");
 
     if (inputEl) {
       inputEl.addEventListener("input", (e) => {
-        context.setInput(e.target.value);
+        context.setInput(e.detail.value);
       });
     }
 
     // Set up copy buttons
     const copyButtons = container.querySelectorAll('.copy-hash-btn');
     copyButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        const target = btn.dataset.target;
+      btn.addEventListener("tool-click", () => {
+        const target = btn.getAttribute('data-target');
         const input = container.querySelector(`#${target}`);
-        if (input && input.value) {
-          const originalText = btn.textContent;
-          copyToClipboard(input.value, {
-            onSuccess: () => {
-              btn.textContent = "✓";
-              setTimeout(() => {
-                btn.textContent = originalText;
-              }, 1500);
-            },
-            onError: () => {
-              btn.textContent = "✗";
-              setTimeout(() => {
-                btn.textContent = originalText;
-              }, 1500);
-            }
-          });
+        if (input) {
+          const value = input.getValue();
+          if (value) {
+            const originalLabel = btn.getAttribute('label');
+            copyToClipboard(value, {
+              onSuccess: () => {
+                btn.setLabel("✓");
+                setTimeout(() => {
+                  btn.setLabel(originalLabel);
+                }, 1500);
+                statusEl.show(`✓ ${target.toUpperCase()} hash copied`, "success", 2000);
+              },
+              onError: () => {
+                btn.setLabel("✗");
+                setTimeout(() => {
+                  btn.setLabel(originalLabel);
+                }, 1500);
+                statusEl.show("✗ Failed to copy", "error", 2000);
+              }
+            });
+          }
         }
       });
     });
   },
 
   async onInput(input, context) {
+    const md5El = this.container.querySelector("#md5");
+    const sha1El = this.container.querySelector("#sha1");
+    const sha256El = this.container.querySelector("#sha256");
+
     if (!input) {
-      this.container.querySelector("#md5").value = "";
-      this.container.querySelector("#sha1").value = "";
-      this.container.querySelector("#sha256").value = "";
+      md5El.setValue("");
+      sha1El.setValue("");
+      sha256El.setValue("");
       return { output: "" };
     }
 
@@ -265,9 +173,9 @@ export const DevChefTool = {
       const sha1Hash = await this.sha(data, 'SHA-1');
       const sha256Hash = await this.sha(data, 'SHA-256');
 
-      this.container.querySelector("#md5").value = md5Hash;
-      this.container.querySelector("#sha1").value = sha1Hash;
-      this.container.querySelector("#sha256").value = sha256Hash;
+      md5El.setValue(md5Hash);
+      sha1El.setValue(sha1Hash);
+      sha256El.setValue(sha256Hash);
 
       return { output: `MD5: ${md5Hash}\nSHA-1: ${sha1Hash}\nSHA-256: ${sha256Hash}` };
     } catch (error) {

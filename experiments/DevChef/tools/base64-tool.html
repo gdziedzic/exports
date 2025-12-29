@@ -41,156 +41,35 @@
     </div>
 
     <div class="tool-section">
-      <label class="section-label" for="input">Input</label>
-      <textarea id="input" placeholder="Enter text to encode or Base64 to decode..."></textarea>
+      <label class="section-label">Input</label>
+      <tool-textarea
+        id="input"
+        placeholder="Enter text to encode or Base64 to decode..."
+        monospace
+        rows="8">
+      </tool-textarea>
     </div>
 
     <div class="tool-section">
-      <label class="section-label" for="output">Output</label>
-      <textarea id="output" readonly></textarea>
-      <div id="status" style="margin-top: 8px; font-size: 12px;"></div>
+      <label class="section-label">Output</label>
+      <tool-textarea
+        id="output"
+        readonly
+        monospace
+        rows="8">
+      </tool-textarea>
     </div>
 
     <div class="tool-section">
-      <button id="copy-btn">Copy Result</button>
-      <button id="clear-btn" class="secondary">Clear</button>
+      <tool-status id="status"></tool-status>
+    </div>
+
+    <div class="tool-section">
+      <tool-button id="copy-btn" variant="primary" label="Copy Result"></tool-button>
+      <tool-button id="clear-btn" variant="secondary" label="Clear"></tool-button>
     </div>
   </div>
 </template>
-
-<!-- Standalone Styles -->
-<style id="standalone-styles">
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --bg-tertiary: #e0e0e0;
-    --border-color: #d0d0d0;
-    --text-primary: #2c3e50;
-    --text-secondary: #7f8c8d;
-    --accent: #3498db;
-    --accent-hover: #2980b9;
-    --success: #27ae60;
-    --error: #e74c3c;
-    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
-
-  body {
-    font-family: var(--font-sans);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    padding: 24px;
-    line-height: 1.6;
-  }
-
-  .tool-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .tool-header {
-    margin-bottom: 32px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid var(--border-color);
-  }
-
-  .tool-title {
-    font-size: 32px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-  }
-
-  .tool-description {
-    font-size: 16px;
-    color: var(--text-secondary);
-  }
-
-  .tool-section {
-    margin-bottom: 24px;
-  }
-
-  .section-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  textarea {
-    width: 100%;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 12px;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    border-radius: 6px;
-    resize: vertical;
-    transition: all 0.2s;
-    min-height: 150px;
-  }
-
-  textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  }
-
-  button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: var(--font-sans);
-    margin-right: 8px;
-  }
-
-  button:hover {
-    background: var(--accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  button:active {
-    transform: translateY(0);
-  }
-
-  button.secondary {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-
-  button.secondary:hover {
-    background: var(--border-color);
-  }
-
-  #status.success {
-    color: var(--success);
-  }
-
-  #status.error {
-    color: var(--error);
-  }
-
-  input[type="radio"] {
-    cursor: pointer;
-  }
-</style>
 
 <!-- Tool Module Logic -->
 <script type="module">
@@ -205,16 +84,20 @@ export const DevChefTool = {
     this.context = context;
 
     const inputEl = container.querySelector("#input");
+    const outputEl = container.querySelector("#output");
     const modeRadios = container.querySelectorAll('input[name="mode"]');
     const copyBtn = container.querySelector("#copy-btn");
     const clearBtn = container.querySelector("#clear-btn");
+    const statusEl = container.querySelector("#status");
 
+    // Handle input changes
     if (inputEl) {
       inputEl.addEventListener("input", (e) => {
-        context.setInput(e.target.value);
+        context.setInput(e.detail.value);
       });
     }
 
+    // Handle mode changes
     modeRadios.forEach(radio => {
       radio.addEventListener("change", () => {
         if (context.input) {
@@ -223,31 +106,38 @@ export const DevChefTool = {
       });
     });
 
+    // Handle copy button
     if (copyBtn) {
-      copyBtn.addEventListener("click", () => {
-        const output = context.getOutput();
+      copyBtn.addEventListener("tool-click", () => {
+        const output = outputEl.getValue();
         if (output) {
           copyToClipboard(output, {
-            onSuccess: () => showStatus(this.container, "✓ Copied to clipboard", "success"),
-            onError: () => showStatus(this.container, "✗ Failed to copy", "error")
+            onSuccess: () => statusEl.show("✓ Copied to clipboard", "success", 2000),
+            onError: () => statusEl.show("✗ Failed to copy", "error", 2000)
           });
         }
       });
     }
 
+    // Handle clear button
     if (clearBtn) {
-      clearBtn.addEventListener("click", () => {
+      clearBtn.addEventListener("tool-click", () => {
+        inputEl.setValue("");
+        outputEl.setValue("");
         context.setInput("");
         context.setOutput("");
-        inputEl.value = "";
-        showStatus(this.container, "", "");
+        statusEl.hide();
       });
     }
   },
 
   onInput(input, context) {
+    const outputEl = this.container.querySelector("#output");
+    const statusEl = this.container.querySelector("#status");
+
     if (!input) {
-      showStatus(this.container, "", "");
+      statusEl.hide();
+      outputEl.setValue("");
       return { output: "" };
     }
 
@@ -257,14 +147,17 @@ export const DevChefTool = {
       let output;
       if (mode === "encode") {
         output = btoa(unescape(encodeURIComponent(input)));
-        showStatus(this.container, "✓ Encoded successfully", "success");
+        statusEl.show("✓ Encoded successfully", "success", 2000);
       } else {
         output = decodeURIComponent(escape(atob(input)));
-        showStatus(this.container, "✓ Decoded successfully", "success");
+        statusEl.show("✓ Decoded successfully", "success", 2000);
       }
+
+      outputEl.setValue(output);
       return { output };
     } catch (error) {
-      showStatus(this.container, `✗ Error: ${error.message}`, "error");
+      statusEl.show(`✗ Error: ${error.message}`, "error", 3000);
+      outputEl.setValue("");
       return { output: "", errors: [error.message] };
     }
   }
@@ -284,8 +177,6 @@ if (typeof window !== 'undefined' && !window.DevChef) {
         },
         setOutput(val) {
           this.output = val;
-          const outputEl = document.querySelector("#output");
-          if (outputEl) outputEl.value = val;
         },
         getInput() { return this.input; },
         getOutput() { return this.output; },

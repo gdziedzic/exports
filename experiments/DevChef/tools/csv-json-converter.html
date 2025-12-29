@@ -36,7 +36,12 @@
 
     <div class="tool-section">
       <label class="section-label" id="input-label">CSV Input</label>
-      <textarea id="input" placeholder="Paste CSV data here..."></textarea>
+      <tool-textarea
+        id="input"
+        placeholder="Paste CSV data here..."
+        monospace
+        rows="10">
+      </tool-textarea>
     </div>
 
     <div class="tool-section" id="csv-options">
@@ -48,12 +53,11 @@
         </label>
         <label>
           <span>Delimiter:</span>
-          <select id="delimiter">
-            <option value="," selected>Comma (,)</option>
-            <option value=";">Semicolon (;)</option>
-            <option value="\t">Tab</option>
-            <option value="|">Pipe (|)</option>
-          </select>
+          <tool-select
+            id="delimiter"
+            options='[{"value":",","label":"Comma (,)"},{"value":";","label":"Semicolon (;)"},{"value":"\\t","label":"Tab"},{"value":"|","label":"Pipe (|)"}]'
+            value=",">
+          </tool-select>
         </label>
       </div>
     </div>
@@ -67,23 +71,33 @@
         </label>
         <label>
           <span>Indentation:</span>
-          <select id="json-indent">
-            <option value="2" selected>2 spaces</option>
-            <option value="4">4 spaces</option>
-          </select>
+          <tool-select
+            id="json-indent"
+            options='[{"value":"2","label":"2 spaces"},{"value":"4","label":"4 spaces"}]'
+            value="2">
+          </tool-select>
         </label>
       </div>
     </div>
 
     <div class="tool-section">
-      <button id="convert-btn">Convert</button>
-      <button id="copy-btn" class="secondary">Copy Result</button>
-      <button id="download-btn" class="secondary">Download</button>
+      <tool-button id="convert-btn" variant="primary" label="Convert"></tool-button>
+      <tool-button id="copy-btn" variant="secondary" label="Copy Result"></tool-button>
+      <tool-button id="download-btn" variant="secondary" label="Download"></tool-button>
+    </div>
+
+    <div class="tool-section">
+      <tool-status id="status"></tool-status>
     </div>
 
     <div class="tool-section">
       <label class="section-label" id="output-label">JSON Output</label>
-      <textarea id="output" readonly></textarea>
+      <tool-textarea
+        id="output"
+        readonly
+        monospace
+        rows="12">
+      </tool-textarea>
       <div id="stats" class="stats"></div>
     </div>
   </div>
@@ -124,10 +138,8 @@
     font-size: 14px;
   }
 
-  .options-grid select {
-    width: auto;
-    padding: 6px 12px;
-    font-size: 13px;
+  .options-grid tool-select {
+    width: 150px;
   }
 
   .options-grid input[type="checkbox"] {
@@ -163,123 +175,6 @@
     font-weight: 600;
     font-family: var(--font-mono);
   }
-
-  #input,
-  #output {
-    min-height: 300px;
-    font-family: var(--font-mono);
-  }
-</style>
-
-<!-- Standalone Styles -->
-<style id="standalone-styles">
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --bg-tertiary: #e0e0e0;
-    --border-color: #d0d0d0;
-    --text-primary: #2c3e50;
-    --text-secondary: #7f8c8d;
-    --accent: #3498db;
-    --accent-hover: #2980b9;
-    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
-
-  body {
-    font-family: var(--font-sans);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    padding: 24px;
-    line-height: 1.6;
-  }
-
-  .tool-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .tool-header {
-    margin-bottom: 32px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid var(--border-color);
-  }
-
-  .tool-title {
-    font-size: 32px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-  }
-
-  .tool-description {
-    font-size: 16px;
-    color: var(--text-secondary);
-  }
-
-  .tool-section {
-    margin-bottom: 24px;
-  }
-
-  .section-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  textarea, select {
-    width: 100%;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 12px;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    border-radius: 6px;
-    resize: vertical;
-    transition: all 0.2s;
-  }
-
-  textarea {
-    min-height: 150px;
-  }
-
-  button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: var(--font-sans);
-    margin-right: 8px;
-  }
-
-  button:hover {
-    background: var(--accent-hover);
-  }
-
-  button.secondary {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-
-  button.secondary:hover {
-    background: var(--border-color);
-  }
 </style>
 
 <!-- Tool Module Logic -->
@@ -297,14 +192,16 @@ export const DevChefTool = {
     const convertBtn = container.querySelector("#convert-btn");
     const copyBtn = container.querySelector("#copy-btn");
     const downloadBtn = container.querySelector("#download-btn");
+    const statusEl = container.querySelector("#status");
+    const outputEl = container.querySelector("#output");
 
     inputEl?.addEventListener("input", (e) => {
-      context.setInput(e.target.value);
+      context.setInput(e.detail.value);
     });
 
-    convertBtn?.addEventListener("click", () => this.convert());
-    copyBtn?.addEventListener("click", () => this.copyOutput());
-    downloadBtn?.addEventListener("click", () => this.download());
+    convertBtn?.addEventListener("tool-click", () => this.convert());
+    copyBtn?.addEventListener("tool-click", () => this.copyOutput());
+    downloadBtn?.addEventListener("tool-click", () => this.download());
 
     // Direction buttons
     const csvToJsonBtn = container.querySelector("#csv-to-json-btn");
@@ -332,7 +229,7 @@ export const DevChefTool = {
       jsonOptions.style.display = 'none';
       inputLabel.textContent = 'CSV Input';
       outputLabel.textContent = 'JSON Output';
-      inputEl.placeholder = 'Paste CSV data here...';
+      inputEl.setAttribute('placeholder', 'Paste CSV data here...');
     } else {
       jsonToCsvBtn?.classList.add('active');
       csvToJsonBtn?.classList.remove('active');
@@ -340,35 +237,46 @@ export const DevChefTool = {
       jsonOptions.style.display = 'block';
       inputLabel.textContent = 'JSON Input';
       outputLabel.textContent = 'CSV Output';
-      inputEl.placeholder = 'Paste JSON data here...';
+      inputEl.setAttribute('placeholder', 'Paste JSON data here...');
     }
   },
 
   convert() {
-    const input = this.context.getInput();
-    if (!input.trim()) return;
+    const inputEl = this.container.querySelector("#input");
+    const outputEl = this.container.querySelector("#output");
+    const statusEl = this.container.querySelector("#status");
+    const input = inputEl.getValue();
+
+    if (!input.trim()) {
+      statusEl.show("Please enter data to convert", "warning", 3000);
+      return;
+    }
 
     try {
       let output;
       if (this.mode === 'csv-to-json') {
         output = this.csvToJson(input);
+        statusEl.show("✓ Converted to JSON successfully", "success", 2000);
       } else {
         output = this.jsonToCsv(input);
+        statusEl.show("✓ Converted to CSV successfully", "success", 2000);
       }
 
       this.context.setOutput(output);
+      outputEl.setValue(output);
       this.updateStats(input, output);
     } catch (error) {
       console.error('Conversion error:', error);
-      this.context.setOutput(`Error: ${error.message}`);
+      statusEl.show(`Error: ${error.message}`, "error", 5000);
+      outputEl.setValue("");
     }
   },
 
   csvToJson(csv) {
     const hasHeader = this.container.querySelector("#has-header")?.checked || false;
-    const delimiter = this.container.querySelector("#delimiter")?.value || ',';
+    const delimiter = this.container.querySelector("#delimiter")?.getValue() || ',';
     const prettyJson = this.container.querySelector("#pretty-json")?.checked || false;
-    const indent = parseInt(this.container.querySelector("#json-indent")?.value || '2');
+    const indent = parseInt(this.container.querySelector("#json-indent")?.getValue() || '2');
 
     const lines = csv.trim().split('\n');
     if (lines.length === 0) return '[]';
@@ -392,7 +300,7 @@ export const DevChefTool = {
 
   jsonToCsv(json) {
     const hasHeader = this.container.querySelector("#has-header")?.checked || false;
-    const delimiter = this.container.querySelector("#delimiter")?.value || ',';
+    const delimiter = this.container.querySelector("#delimiter")?.getValue() || ',';
 
     const data = JSON.parse(json);
     if (!Array.isArray(data) || data.length === 0) {
@@ -466,21 +374,23 @@ export const DevChefTool = {
   },
 
   copyOutput() {
-    const output = this.context.getOutput();
+    const outputEl = this.container.querySelector("#output");
+    const statusEl = this.container.querySelector("#status");
+    const output = outputEl.getValue();
+
     if (output) {
       navigator.clipboard.writeText(output).then(() => {
-        const copyBtn = this.container.querySelector("#copy-btn");
-        const originalText = copyBtn.textContent;
-        copyBtn.textContent = "✓ Copied!";
-        setTimeout(() => {
-          copyBtn.textContent = originalText;
-        }, 2000);
+        statusEl.show("✓ Copied to clipboard", "success", 2000);
+      }).catch(() => {
+        statusEl.show("✗ Failed to copy", "error", 2000);
       });
     }
   },
 
   download() {
-    const output = this.context.getOutput();
+    const outputEl = this.container.querySelector("#output");
+    const output = outputEl.getValue();
+
     if (!output) return;
 
     const extension = this.mode === 'csv-to-json' ? 'json' : 'csv';
@@ -512,8 +422,6 @@ if (typeof window !== 'undefined' && !window.DevChef) {
         setInput(val) { this.input = val; },
         setOutput(val) {
           this.output = val;
-          const outputEl = document.querySelector("#output");
-          if (outputEl) outputEl.value = val;
         },
         getInput() { return this.input; },
         getOutput() { return this.output; }

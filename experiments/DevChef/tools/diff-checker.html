@@ -30,11 +30,21 @@
       <div class="diff-inputs">
         <div class="diff-input-container">
           <label class="section-label">Original Text</label>
-          <textarea id="text1" placeholder="Paste original text here..."></textarea>
+          <tool-textarea
+            id="text1"
+            placeholder="Paste original text here..."
+            monospace
+            rows="10">
+          </tool-textarea>
         </div>
         <div class="diff-input-container">
           <label class="section-label">Modified Text</label>
-          <textarea id="text2" placeholder="Paste modified text here..."></textarea>
+          <tool-textarea
+            id="text2"
+            placeholder="Paste modified text here..."
+            monospace
+            rows="10">
+          </tool-textarea>
         </div>
       </div>
     </div>
@@ -58,9 +68,13 @@
     </div>
 
     <div class="tool-section">
-      <button id="compare-btn">Compare</button>
-      <button id="swap-btn" class="secondary">Swap Sides</button>
-      <button id="clear-btn" class="secondary">Clear All</button>
+      <tool-button id="compare-btn" variant="primary" label="Compare"></tool-button>
+      <tool-button id="swap-btn" variant="secondary" label="Swap Sides"></tool-button>
+      <tool-button id="clear-btn" variant="secondary" label="Clear All"></tool-button>
+    </div>
+
+    <div class="tool-section">
+      <tool-status id="status"></tool-status>
     </div>
 
     <div id="diff-stats" class="tool-section" style="display: none;">
@@ -86,11 +100,6 @@
   .diff-input-container {
     display: flex;
     flex-direction: column;
-  }
-
-  .diff-input-container textarea {
-    flex: 1;
-    min-height: 250px;
   }
 
   .diff-options {
@@ -204,121 +213,6 @@
   }
 </style>
 
-<!-- Standalone Styles -->
-<style id="standalone-styles">
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --bg-tertiary: #e0e0e0;
-    --border-color: #d0d0d0;
-    --text-primary: #2c3e50;
-    --text-secondary: #7f8c8d;
-    --accent: #3498db;
-    --accent-hover: #2980b9;
-    --success: #27ae60;
-    --error: #e74c3c;
-    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
-
-  body {
-    font-family: var(--font-sans);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    padding: 24px;
-    line-height: 1.6;
-  }
-
-  .tool-container {
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-
-  .tool-header {
-    margin-bottom: 32px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid var(--border-color);
-  }
-
-  .tool-title {
-    font-size: 32px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-  }
-
-  .tool-description {
-    font-size: 16px;
-    color: var(--text-secondary);
-  }
-
-  .tool-section {
-    margin-bottom: 24px;
-  }
-
-  .section-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  textarea {
-    width: 100%;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 12px;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    border-radius: 6px;
-    resize: vertical;
-    transition: all 0.2s;
-  }
-
-  textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  }
-
-  button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: var(--font-sans);
-    margin-right: 8px;
-  }
-
-  button:hover {
-    background: var(--accent-hover);
-  }
-
-  button.secondary {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-
-  button.secondary:hover {
-    background: var(--border-color);
-  }
-</style>
-
 <!-- Tool Module Logic -->
 <script type="module">
 export const DevChefTool = {
@@ -333,20 +227,26 @@ export const DevChefTool = {
     const swapBtn = container.querySelector("#swap-btn");
     const clearBtn = container.querySelector("#clear-btn");
 
-    compareBtn?.addEventListener("click", () => this.compare());
-    swapBtn?.addEventListener("click", () => this.swap());
-    clearBtn?.addEventListener("click", () => this.clear());
+    compareBtn?.addEventListener("tool-click", () => this.compare());
+    swapBtn?.addEventListener("tool-click", () => this.swap());
+    clearBtn?.addEventListener("tool-click", () => this.clear());
   },
 
   compare() {
     const text1El = this.container.querySelector("#text1");
     const text2El = this.container.querySelector("#text2");
+    const statusEl = this.container.querySelector("#status");
     const ignoreCase = this.container.querySelector("#ignore-case")?.checked || false;
     const ignoreWhitespace = this.container.querySelector("#ignore-whitespace")?.checked || false;
     const trimLines = this.container.querySelector("#trim-lines")?.checked || false;
 
-    let text1 = text1El?.value || '';
-    let text2 = text2El?.value || '';
+    let text1 = text1El?.getValue() || '';
+    let text2 = text2El?.getValue() || '';
+
+    if (!text1 && !text2) {
+      statusEl.show("Please enter text in both fields to compare", "warning", 3000);
+      return;
+    }
 
     // Apply options
     if (ignoreCase) {
@@ -370,6 +270,13 @@ export const DevChefTool = {
     const diff = this.calculateDiff(lines1, lines2);
     this.displayDiff(diff);
     this.updateStats(diff);
+
+    const hasChanges = diff.some(d => d.type !== 'unchanged');
+    if (hasChanges) {
+      statusEl.show("✓ Comparison complete - differences found", "info", 3000);
+    } else {
+      statusEl.show("✓ No differences found", "success", 3000);
+    }
   },
 
   calculateDiff(lines1, lines2) {
@@ -463,11 +370,13 @@ export const DevChefTool = {
   swap() {
     const text1El = this.container.querySelector("#text1");
     const text2El = this.container.querySelector("#text2");
+    const statusEl = this.container.querySelector("#status");
 
     if (text1El && text2El) {
-      const temp = text1El.value;
-      text1El.value = text2El.value;
-      text2El.value = temp;
+      const temp = text1El.getValue();
+      text1El.setValue(text2El.getValue());
+      text2El.setValue(temp);
+      statusEl.show("✓ Sides swapped", "success", 2000);
     }
   },
 
@@ -476,11 +385,13 @@ export const DevChefTool = {
     const text2El = this.container.querySelector("#text2");
     const diffOutput = this.container.querySelector("#diff-output");
     const statsSection = this.container.querySelector("#diff-stats");
+    const statusEl = this.container.querySelector("#status");
 
-    if (text1El) text1El.value = '';
-    if (text2El) text2El.value = '';
+    if (text1El) text1El.setValue('');
+    if (text2El) text2El.setValue('');
     if (diffOutput) diffOutput.style.display = 'none';
     if (statsSection) statsSection.style.display = 'none';
+    statusEl.show("✓ Cleared all", "success", 2000);
   },
 
   escapeHtml(text) {

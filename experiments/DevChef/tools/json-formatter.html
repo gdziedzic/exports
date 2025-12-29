@@ -27,20 +27,25 @@
     </div>
 
     <div class="tool-section">
-      <label class="section-label" for="input">JSON Input</label>
-      <textarea id="input" placeholder="Paste JSON here..."></textarea>
-      <div id="error-message" class="error-message"></div>
+      <label class="section-label">JSON Input</label>
+      <tool-textarea
+        id="input"
+        placeholder="Paste JSON here..."
+        monospace
+        rows="10">
+      </tool-textarea>
     </div>
 
     <div class="tool-section">
+      <label class="section-label">Options</label>
       <div class="format-controls">
         <label>
           <span>Indentation:</span>
-          <select id="indent-size">
-            <option value="2" selected>2 spaces</option>
-            <option value="4">4 spaces</option>
-            <option value="tab">Tab</option>
-          </select>
+          <tool-select
+            id="indent-size"
+            options='[{"value":"2","label":"2 spaces"},{"value":"4","label":"4 spaces"},{"value":"tab","label":"Tab"}]'
+            value="2">
+          </tool-select>
         </label>
         <label>
           <input type="checkbox" id="sort-keys">
@@ -50,15 +55,24 @@
     </div>
 
     <div class="tool-section">
-      <button id="format-btn">Format JSON</button>
-      <button id="minify-btn" class="secondary">Minify</button>
-      <button id="validate-btn" class="secondary">Validate</button>
-      <button id="copy-btn" class="secondary">Copy Result</button>
+      <tool-button id="format-btn" variant="primary" label="Format JSON"></tool-button>
+      <tool-button id="minify-btn" variant="secondary" label="Minify"></tool-button>
+      <tool-button id="validate-btn" variant="secondary" label="Validate"></tool-button>
+      <tool-button id="copy-btn" variant="secondary" label="Copy Result"></tool-button>
     </div>
 
     <div class="tool-section">
-      <label class="section-label" for="output">Formatted JSON</label>
-      <textarea id="output" readonly></textarea>
+      <tool-status id="status"></tool-status>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Formatted JSON</label>
+      <tool-textarea
+        id="output"
+        readonly
+        monospace
+        rows="12">
+      </tool-textarea>
       <div id="stats" class="stats"></div>
     </div>
   </div>
@@ -66,21 +80,6 @@
 
 <!-- Tool Styles -->
 <style>
-  .error-message {
-    margin-top: 8px;
-    padding: 8px 12px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid var(--error);
-    border-radius: 6px;
-    color: var(--error);
-    font-size: 13px;
-    display: none;
-  }
-
-  .error-message.visible {
-    display: block;
-  }
-
   .format-controls {
     display: flex;
     gap: 20px;
@@ -95,10 +94,8 @@
     font-size: 14px;
   }
 
-  .format-controls select {
-    width: auto;
-    padding: 6px 12px;
-    font-size: 13px;
+  .format-controls tool-select {
+    width: 150px;
   }
 
   .format-controls input[type="checkbox"] {
@@ -135,140 +132,11 @@
     font-weight: 600;
     font-family: var(--font-mono);
   }
-
-  #output {
-    min-height: 300px;
-  }
-</style>
-
-<!-- Standalone Styles -->
-<style id="standalone-styles">
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --bg-tertiary: #e0e0e0;
-    --border-color: #d0d0d0;
-    --text-primary: #2c3e50;
-    --text-secondary: #7f8c8d;
-    --accent: #3498db;
-    --accent-hover: #2980b9;
-    --success: #27ae60;
-    --error: #e74c3c;
-    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
-
-  body {
-    font-family: var(--font-sans);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    padding: 24px;
-    line-height: 1.6;
-  }
-
-  .tool-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .tool-header {
-    margin-bottom: 32px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid var(--border-color);
-  }
-
-  .tool-title {
-    font-size: 32px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-  }
-
-  .tool-description {
-    font-size: 16px;
-    color: var(--text-secondary);
-  }
-
-  .tool-section {
-    margin-bottom: 24px;
-  }
-
-  .section-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  textarea, select {
-    width: 100%;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 12px;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    border-radius: 6px;
-    resize: vertical;
-    transition: all 0.2s;
-  }
-
-  textarea:focus, select:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  }
-
-  textarea {
-    min-height: 150px;
-  }
-
-  button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: var(--font-sans);
-    margin-right: 8px;
-  }
-
-  button:hover {
-    background: var(--accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  button:active {
-    transform: translateY(0);
-  }
-
-  button.secondary {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-
-  button.secondary:hover {
-    background: var(--border-color);
-  }
 </style>
 
 <!-- Tool Module Logic -->
 <script type="module">
-import { copyToClipboard, showError, hideError, sortObjectKeys } from '../core/tool-utils.js';
+import { copyToClipboard, sortObjectKeys } from '../core/tool-utils.js';
 
 export const DevChefTool = {
   container: null,
@@ -278,76 +146,89 @@ export const DevChefTool = {
     this.container = container;
     this.context = context;
 
+    const inputEl = container.querySelector("#input");
     const formatBtn = container.querySelector("#format-btn");
     const minifyBtn = container.querySelector("#minify-btn");
     const validateBtn = container.querySelector("#validate-btn");
     const copyBtn = container.querySelector("#copy-btn");
+    const statusEl = container.querySelector("#status");
 
-    formatBtn?.addEventListener("click", () => this.formatJSON());
-    minifyBtn?.addEventListener("click", () => this.minifyJSON());
-    validateBtn?.addEventListener("click", () => this.validateJSON());
-    copyBtn?.addEventListener("click", () => this.copyOutput());
-
-    // Auto-format on input change
-    const inputEl = container.querySelector("#input");
     inputEl?.addEventListener("input", (e) => {
-      context.setInput(e.target.value);
+      context.setInput(e.detail.value);
     });
+
+    formatBtn?.addEventListener("tool-click", () => this.formatJSON());
+    minifyBtn?.addEventListener("tool-click", () => this.minifyJSON());
+    validateBtn?.addEventListener("tool-click", () => this.validateJSON());
+    copyBtn?.addEventListener("tool-click", () => this.copyOutput());
   },
 
   onInput(input, context) {
+    const statusEl = this.container.querySelector("#status");
+    const outputEl = this.container.querySelector("#output");
+
     if (!input.trim()) {
-      hideError(this.container);
+      statusEl.hide();
       this.updateStats(null);
+      outputEl.setValue("");
       return { output: "" };
     }
 
     try {
       const parsed = JSON.parse(input);
-      hideError(this.container);
+      statusEl.hide();
 
-      const indentSize = this.container.querySelector("#indent-size")?.value || "2";
+      const indentSize = this.container.querySelector("#indent-size")?.getValue() || "2";
       const sortKeys = this.container.querySelector("#sort-keys")?.checked || false;
 
       const indent = indentSize === "tab" ? "\t" : parseInt(indentSize);
       const formatted = JSON.stringify(sortKeys ? sortObjectKeys(parsed) : parsed, null, indent);
 
       this.updateStats(parsed);
+      outputEl.setValue(formatted);
 
       return { output: formatted };
     } catch (error) {
-      showError(this.container, `Error: ${error.message}`);
+      statusEl.show(`Error: ${error.message}`, "error", 5000);
+      outputEl.setValue("");
       return { output: "" };
     }
   },
 
   formatJSON() {
     const input = this.context.getInput();
+    const outputEl = this.container.querySelector("#output");
+    const statusEl = this.container.querySelector("#status");
+
     if (!input.trim()) {
-      showError(this.container, "Please enter JSON to format");
+      statusEl.show("Please enter JSON to format", "warning", 3000);
       return;
     }
 
     try {
       const parsed = JSON.parse(input);
-      const indentSize = this.container.querySelector("#indent-size")?.value || "2";
+      const indentSize = this.container.querySelector("#indent-size")?.getValue() || "2";
       const sortKeys = this.container.querySelector("#sort-keys")?.checked || false;
 
       const indent = indentSize === "tab" ? "\t" : parseInt(indentSize);
       const formatted = JSON.stringify(sortKeys ? sortObjectKeys(parsed) : parsed, null, indent);
 
       this.context.setOutput(formatted);
-      hideError(this.container);
+      outputEl.setValue(formatted);
+      statusEl.show("✓ Formatted successfully", "success", 2000);
       this.updateStats(parsed);
     } catch (error) {
-      showError(this.container, `Error: ${error.message}`);
+      statusEl.show(`Error: ${error.message}`, "error", 5000);
     }
   },
 
   minifyJSON() {
     const input = this.context.getInput();
+    const outputEl = this.container.querySelector("#output");
+    const statusEl = this.container.querySelector("#status");
+
     if (!input.trim()) {
-      showError(this.container, "Please enter JSON to minify");
+      statusEl.show("Please enter JSON to minify", "warning", 3000);
       return;
     }
 
@@ -356,28 +237,32 @@ export const DevChefTool = {
       const minified = JSON.stringify(parsed);
 
       this.context.setOutput(minified);
-      hideError(this.container);
+      outputEl.setValue(minified);
+      statusEl.show("✓ Minified successfully", "success", 2000);
       this.updateStats(parsed);
     } catch (error) {
-      showError(this.container, `Error: ${error.message}`);
+      statusEl.show(`Error: ${error.message}`, "error", 5000);
     }
   },
 
   validateJSON() {
     const input = this.context.getInput();
+    const outputEl = this.container.querySelector("#output");
+    const statusEl = this.container.querySelector("#status");
+
     if (!input.trim()) {
-      showError(this.container, "Please enter JSON to validate");
+      statusEl.show("Please enter JSON to validate", "warning", 3000);
       return;
     }
 
     try {
       const parsed = JSON.parse(input);
-      hideError(this.container);
+      statusEl.show("✓ Valid JSON", "success", 3000);
       this.updateStats(parsed);
-      this.context.setOutput("✓ Valid JSON");
+      outputEl.setValue("✓ Valid JSON - No errors found");
     } catch (error) {
-      showError(this.container, `Error: ${error.message}`);
-      this.context.setOutput("");
+      statusEl.show(`Error: ${error.message}`, "error", 5000);
+      outputEl.setValue("");
     }
   },
 
@@ -435,24 +320,14 @@ export const DevChefTool = {
   },
 
   copyOutput() {
-    const output = this.context.getOutput();
-    if (output) {
-      const copyBtn = this.container.querySelector("#copy-btn");
-      const originalText = copyBtn.textContent;
+    const outputEl = this.container.querySelector("#output");
+    const statusEl = this.container.querySelector("#status");
+    const output = outputEl.getValue();
 
+    if (output) {
       copyToClipboard(output, {
-        onSuccess: () => {
-          copyBtn.textContent = "✓ Copied!";
-          setTimeout(() => {
-            copyBtn.textContent = originalText;
-          }, 2000);
-        },
-        onError: () => {
-          copyBtn.textContent = "✗ Failed";
-          setTimeout(() => {
-            copyBtn.textContent = originalText;
-          }, 2000);
-        }
+        onSuccess: () => statusEl.show("✓ Copied to clipboard", "success", 2000),
+        onError: () => statusEl.show("✗ Failed to copy", "error", 2000)
       });
     }
   }
@@ -473,8 +348,6 @@ if (typeof window !== 'undefined' && !window.DevChef) {
         },
         setOutput(val) {
           this.output = val;
-          const outputEl = document.querySelector("#output");
-          if (outputEl) outputEl.value = val;
         },
         getInput() { return this.input; },
         getOutput() { return this.output; },
