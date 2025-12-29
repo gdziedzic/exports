@@ -9,7 +9,7 @@
  * @param {string} text - Text to search in
  * @returns {number} Score (0-100, higher is better match)
  */
-function fuzzyScore(query, text) {
+export function fuzzyScore(query, text) {
   if (!query || query.trim() === '') return 100;
   if (!text || typeof text !== 'string') return 0;
 
