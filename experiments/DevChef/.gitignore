@@ -20,3 +20,7 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Shipped PWA icons
+!icon-192.png
+!icon-512.png
