@@ -21,6 +21,8 @@ Thumbs.db
 *.swp
 *.swo
 
-# Shipped PWA icons
+# Shipped PWA assets
+!icon-144.png
 !icon-192.png
 !icon-512.png
+!screenshot-wide.png
