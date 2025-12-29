@@ -52,6 +52,10 @@ import { universalFavorites } from './core/universalfavorites.js';
 import { productivityEngine } from './core/productivityengine.js';
 import { quickPanel } from './core/quickpanel.js';
 
+// Deep Search Feature
+import { deepSearch } from './core/deepsearch.js';
+import { showDeepSearch, toggleDeepSearch } from './core/deepsearch-ui.js';
+
 /**
  * ============================================================================
  * PWA (Progressive Web App) Module
@@ -637,6 +641,13 @@ function initializeUltimateFeatures() {
   window.universalFavorites = universalFavorites;
   window.productivityEngine = productivityEngine;
   window.quickPanel = quickPanel;
+  window.deepSearch = deepSearch;
+
+  // Initialize deep search index in the background
+  setTimeout(() => {
+    deepSearch.initialize();
+    console.log('🔍 Deep Search: Index built and ready');
+  }, 1000);
 
   // All ULTIMATE modules are auto-initialized on import
   console.log('🚀 V6.5 ULTIMATE: Productivity Features initialized');
@@ -645,6 +656,7 @@ function initializeUltimateFeatures() {
   console.log('   - Universal Favorites: Unified favorites (Ctrl+Alt+F)');
   console.log('   - Productivity Engine: Macros (Ctrl+Shift+M), Batch (Ctrl+Shift+B)');
   console.log('   - Quick Panel: Floating action button (Ctrl+Shift+Q)');
+  console.log('   - Deep Search: Search all content (Ctrl+Shift+F)');
   console.log('   ⚡ ONE-CLICK EVERYTHING | 🎯 ZERO FRICTION | 🔥 MAX EFFICIENCY');
 }
 
@@ -903,6 +915,13 @@ function setupKeyboardShortcuts() {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "W") {
       e.preventDefault();
       showWorkflowSnapshotsManager(context);
+    }
+
+    // Ctrl+Shift+F - Deep Search (always active, even in inputs)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "F") {
+      e.preventDefault();
+      toggleDeepSearch(context);
+      return;
     }
   });
 }
