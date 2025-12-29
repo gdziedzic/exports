@@ -33,7 +33,53 @@
     <div id="simplified-section">
       <div class="tool-section">
         <label class="section-label">Quick Templates</label>
-        <div class="templates-grid">
+
+        <!-- Quick Actions Bar -->
+        <div class="quick-actions">
+          <button class="action-btn" id="clear-all-btn" title="Clear all inputs (Ctrl+L)">
+            <span class="btn-icon">🗑️</span>
+            <span class="btn-label">Clear All</span>
+          </button>
+          <button class="action-btn" id="save-template-btn" title="Save current template">
+            <span class="btn-icon">💾</span>
+            <span class="btn-label">Save</span>
+          </button>
+          <button class="action-btn" id="share-template-btn" title="Copy shareable link">
+            <span class="btn-icon">🔗</span>
+            <span class="btn-label">Share</span>
+          </button>
+          <div class="kbd-hint">
+            <kbd>?</kbd> for shortcuts
+          </div>
+        </div>
+
+        <!-- Recent Templates -->
+        <div class="recent-templates-section" id="recent-templates-section" style="display: none;">
+          <label class="section-label">
+            ⏱️ Recent Templates
+            <button class="clear-history-btn" id="clear-history-btn" title="Clear history">✕</button>
+          </label>
+          <div class="recent-templates" id="recent-templates">
+            <!-- Recent templates will be dynamically generated -->
+          </div>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="template-discovery">
+          <div class="template-search-wrapper">
+            <input type="text" id="template-search" placeholder="🔍 Search templates... (Ctrl+F)" />
+            <div class="template-count" id="template-count">Showing 0 of 0 templates</div>
+          </div>
+
+          <div class="tag-filter-section">
+            <label class="filter-label">Filter by tags:</label>
+            <div class="tag-pills" id="tag-pills">
+              <!-- Tag pills will be dynamically generated -->
+            </div>
+          </div>
+        </div>
+
+        <div class="templates-grid" id="templates-grid">
           <button class="template-card" data-template="sql-insert">
             <div class="template-icon">💾</div>
             <div class="template-name">SQL Insert</div>
@@ -157,6 +203,50 @@
           <button class="template-card" data-template="csv-to-json">
             <div class="template-icon">🔄</div>
             <div class="template-name">CSV to JSON</div>
+          </button>
+          <button class="template-card" data-template="git-commit">
+            <div class="template-icon">📝</div>
+            <div class="template-name">Git Commit Messages</div>
+          </button>
+          <button class="template-card" data-template="readme-template">
+            <div class="template-icon">📖</div>
+            <div class="template-name">README Generator</div>
+          </button>
+          <button class="template-card" data-template="postman-collection">
+            <div class="template-icon">📮</div>
+            <div class="template-name">Postman Collection</div>
+          </button>
+          <button class="template-card" data-template="changelog">
+            <div class="template-icon">📋</div>
+            <div class="template-name">Changelog</div>
+          </button>
+          <button class="template-card" data-template="nginx-config">
+            <div class="template-icon">🔧</div>
+            <div class="template-name">Nginx Config</div>
+          </button>
+          <button class="template-card" data-template="jira-tickets">
+            <div class="template-icon">📌</div>
+            <div class="template-name">JIRA Tickets</div>
+          </button>
+          <button class="template-card" data-template="package-json">
+            <div class="template-icon">📦</div>
+            <div class="template-name">package.json</div>
+          </button>
+          <button class="template-card" data-template="openapi">
+            <div class="template-icon">🔌</div>
+            <div class="template-name">OpenAPI Spec</div>
+          </button>
+          <button class="template-card" data-template="sql-migration">
+            <div class="template-icon">🔄</div>
+            <div class="template-name">SQL Migration</div>
+          </button>
+          <button class="template-card" data-template="bash-script">
+            <div class="template-icon">💻</div>
+            <div class="template-name">Bash Script</div>
+          </button>
+          <button class="template-card" data-template="jest-test">
+            <div class="template-icon">🧪</div>
+            <div class="template-name">Jest Test</div>
           </button>
         </div>
       </div>
@@ -381,25 +471,58 @@
   }
 
   .template-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
     padding: 20px;
-    background: var(--bg-secondary);
+    background: var(--bg-primary);
     border: 2px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   }
 
   .template-card:hover {
     border-color: var(--accent);
-    background: var(--bg-tertiary);
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  .template-card:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Tooltip on hover */
+  .template-card::after {
+    content: attr(data-description);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    font-size: 11px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s;
+    z-index: 1000;
+  }
+
+  .template-card:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
   }
 
   .template-icon {
-    font-size: 32px;
+    font-size: 1.2em;
   }
 
   .template-name {
@@ -573,9 +696,258 @@
     display: block;
   }
 
+  /* Quick Actions Bar */
+  .quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .action-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  }
+
+  .action-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .btn-icon {
+    font-size: 16px;
+  }
+
+  .btn-label {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .kbd-hint {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .kbd-hint kbd {
+    padding: 2px 6px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Recent Templates Section */
+  .recent-templates-section {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .recent-templates-section .section-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .clear-history-btn {
+    padding: 2px 8px;
+    font-size: 12px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .clear-history-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--error);
+    border-color: var(--border-color);
+  }
+
+  .recent-templates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .recent-template-chip {
+    padding: 6px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .recent-template-chip:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Template Discovery Section */
+  .template-discovery {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .template-search-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  #template-search {
+    flex: 1;
+    min-height: 40px;
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+
+  .template-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .tag-filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .tag-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag-pill {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .tag-pill:hover {
+    border-color: var(--accent);
+    background: var(--bg-tertiary);
+  }
+
+  .tag-pill.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .template-card {
+    position: relative;
+  }
+
+  .template-card.hidden {
+    display: none;
+  }
+
+  .template-favorite {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0.3;
+    transition: all 0.2s;
+  }
+
+  .template-favorite:hover,
+  .template-favorite.active {
+    opacity: 1;
+  }
+
   @media (max-width: 1024px) {
     .editor-layout {
       grid-template-columns: 1fr;
+    }
+
+    .template-search-wrapper {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    #template-search {
+      width: 100%;
     }
   }
 </style>
@@ -703,6 +1075,12 @@ export const DevChefTool = {
   currentDataFormat: 'json',
   autocompleteKeys: [],
   currentSnippet: null,
+  selectedTags: [],
+  searchQuery: '',
+  favorites: [],
+  allTags: [],
+  recentTemplates: [],
+  autoSaveTimer: null,
 
   snippets: {
     'sql-insert-basic': {
@@ -832,6 +1210,9 @@ WHERE {{ whereCondition }};`
 
   templates: {
     'sql-insert': {
+      name: 'SQL Insert',
+      description: 'Generate SQL INSERT statements from data',
+      tags: ['data', 'sql', 'database', 'dev'],
       json: JSON.stringify({
         table: 'Users',
         columns: ['FirstName', 'LastName', 'Email'],
@@ -847,6 +1228,9 @@ VALUES ({% for col in columns %}'{{ row[col] }}'{% if not loop.last %}, {% endif
 {% endfor %}`
     },
     'sql-update': {
+      name: 'SQL Update',
+      description: 'Generate SQL UPDATE statements from data',
+      tags: ['data', 'sql', 'database', 'dev'],
       json: JSON.stringify({
         table: 'Users',
         keyColumn: 'Id',
@@ -865,6 +1249,9 @@ WHERE {{ keyColumn }} = {{ row.Id }};
 {% endfor %}`
     },
     'sql-merge': {
+      name: 'SQL Merge',
+      description: 'Generate SQL MERGE statements',
+      tags: ['data', 'sql', 'database', 'dev'],
       json: JSON.stringify({
         targetTable: 'Users',
         sourceTable: 'StagingUsers',
@@ -886,6 +1273,9 @@ WHEN NOT MATCHED BY SOURCE THEN
   DELETE;`
     },
     'html': {
+      name: 'HTML Template',
+      description: 'Generate HTML documents',
+      tags: ['code', 'web', 'html'],
       json: JSON.stringify({
         title: 'My Page',
         heading: 'Welcome',
@@ -907,6 +1297,9 @@ WHEN NOT MATCHED BY SOURCE THEN
 </html>`
     },
     'config': {
+      name: 'Config File',
+      description: 'Generate configuration files',
+      tags: ['text', 'config', 'dev'],
       json: JSON.stringify({
         app: {
           name: 'MyApp',
@@ -930,6 +1323,9 @@ host = "{{ database.host }}"
 port = {{ database.port }}`
     },
     'email': {
+      name: 'Email Template',
+      description: 'Generate email messages',
+      tags: ['text', 'email', 'communication'],
       json: JSON.stringify({
         recipient: 'John Doe',
         product: 'Premium Plan',
@@ -951,6 +1347,9 @@ Best regards,
 The Team`
     },
     'xml': {
+      name: 'XML/SOAP',
+      description: 'Generate XML and SOAP messages',
+      tags: ['data', 'xml', 'api'],
       json: JSON.stringify({
         requestId: '12345',
         items: [
@@ -977,6 +1376,9 @@ The Team`
 </soap:Envelope>`
     },
     'csv': {
+      name: 'CSV Export',
+      description: 'Generate CSV data files',
+      tags: ['data', 'csv', 'reports'],
       json: JSON.stringify({
         headers: ['ID', 'Name', 'Email', 'Status'],
         rows: [
@@ -990,6 +1392,9 @@ The Team`
 {% endfor %}`
     },
     'markdown': {
+      name: 'Markdown Docs',
+      description: 'Generate Markdown documentation',
+      tags: ['text', 'markdown', 'docs'],
       json: JSON.stringify({
         title: 'API Documentation',
         sections: [
@@ -1020,6 +1425,9 @@ The Team`
 {% endfor %}`
     },
     'api-doc': {
+      name: 'API Docs',
+      description: 'Generate API documentation',
+      tags: ['text', 'markdown', 'docs', 'api', 'dev'],
       json: JSON.stringify({
         endpoints: [
           {
@@ -1057,6 +1465,9 @@ The Team`
 {% endfor %}`
     },
     'typescript': {
+      name: 'TypeScript',
+      description: 'Generate TypeScript interfaces and types',
+      tags: ['code', 'typescript', 'dev'],
       json: JSON.stringify({
         interfaceName: 'User',
         properties: [
@@ -1083,6 +1494,9 @@ export const create{{ interfaceName }} = (data: {{ interfaceName }}): {{ interfa
 };`
     },
     'docker': {
+      name: 'Docker Compose',
+      description: 'Generate Docker Compose configurations',
+      tags: ['code', 'config', 'dev', 'docker'],
       json: JSON.stringify({
         services: [
           {
@@ -1119,6 +1533,9 @@ services:
 {% endfor %}`
     },
     'json-api': {
+      name: 'JSON API',
+      description: 'Generate JSON API responses',
+      tags: ['data', 'json', 'api'],
       json: JSON.stringify({
         users: [
           { id: 1, name: 'John Doe', email: 'john@example.com', active: true },
@@ -1142,6 +1559,9 @@ services:
 }`
     },
     'csharp-class': {
+      name: 'C# Class',
+      description: 'Generate C# class definitions',
+      tags: ['code', 'csharp', 'dev'],
       json: JSON.stringify({
         namespace: 'MyApp.Models',
         className: 'User',
@@ -1173,6 +1593,9 @@ services:
 }`
     },
     'python-class': {
+      name: 'Python Class',
+      description: 'Generate Python class definitions',
+      tags: ['code', 'python', 'dev'],
       json: JSON.stringify({
         className: 'User',
         properties: [
@@ -1207,6 +1630,9 @@ services:
         return f"{{ className }}: {self.name}"`
     },
     'java-class': {
+      name: 'Java Class',
+      description: 'Generate Java class definitions',
+      tags: ['code', 'java', 'dev'],
       json: JSON.stringify({
         package: 'com.example.models',
         className: 'User',
@@ -1241,6 +1667,9 @@ public class {{ className }} implements Serializable {
 }`
     },
     'kubernetes': {
+      name: 'Kubernetes',
+      description: 'Generate Kubernetes manifests',
+      tags: ['code', 'config', 'dev', 'kubernetes'],
       json: JSON.stringify({
         appName: 'my-app',
         namespace: 'production',
@@ -1295,6 +1724,9 @@ spec:
   type: LoadBalancer`
     },
     'terraform': {
+      name: 'Terraform',
+      description: 'Generate Terraform configurations',
+      tags: ['code', 'config', 'dev', 'terraform'],
       json: JSON.stringify({
         resources: [
           {
@@ -1340,6 +1772,9 @@ resource "{{ resource.type }}" "{{ resource.name }}" {
 {% endfor %}`
     },
     'react-component': {
+      name: 'React Component',
+      description: 'Generate React components',
+      tags: ['code', 'react', 'dev', 'javascript'],
       json: JSON.stringify({
         componentName: 'UserCard',
         props: [
@@ -1375,6 +1810,9 @@ export const {{ componentName }}: FC<{{ componentName }}Props> = ({ {% for prop 
 };`
     },
     'graphql': {
+      name: 'GraphQL Schema',
+      description: 'Generate GraphQL schemas',
+      tags: ['code', 'api', 'graphql', 'dev'],
       json: JSON.stringify({
         types: [
           {
@@ -1418,6 +1856,9 @@ type Query {
 }`
     },
     'sql-table': {
+      name: 'CREATE TABLE',
+      description: 'Generate SQL CREATE TABLE statements',
+      tags: ['data', 'sql', 'database', 'dev'],
       json: JSON.stringify({
         schema: 'dbo',
         tableName: 'Users',
@@ -1446,6 +1887,9 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
 {% endfor %}`
     },
     'rest-test': {
+      name: 'REST API Test',
+      description: 'Generate REST API test cases',
+      tags: ['code', 'api', 'testing', 'dev'],
       json: JSON.stringify({
         apiName: 'User API',
         baseUrl: 'https://api.example.com',
@@ -1490,6 +1934,9 @@ ON [{{ schema }}].[{{ tableName }}] ({% for col in index.columns %}[{{ col }}]{%
 });`
     },
     'csv-sql-insert': {
+      name: 'CSV to SQL INSERT',
+      description: 'Convert CSV data to SQL INSERT statements',
+      tags: ['data', 'csv', 'sql', 'database'],
       dataFormat: 'csv',
       csv: `tableName,firstName,lastName,email,age\nUsers,John,Doe,john@example.com,30\nUsers,Jane,Smith,jane@example.com,25\nUsers,Bob,Johnson,bob@example.com,35`,
       template: `-- SQL INSERT statements generated from CSV
@@ -1499,6 +1946,9 @@ VALUES ('{{ row.firstName }}', '{{ row.lastName }}', '{{ row.email }}', {{ row.a
 {% endfor %}`
     },
     'csv-sql-update': {
+      name: 'CSV to SQL UPDATE',
+      description: 'Convert CSV data to SQL UPDATE statements',
+      tags: ['data', 'csv', 'sql', 'database'],
       dataFormat: 'csv',
       csv: `id,firstName,lastName,email,status\n1,John,Doe,john.updated@example.com,Active\n2,Jane,Smith,jane.updated@example.com,Inactive\n3,Bob,Johnson,bob.updated@example.com,Active`,
       template: `-- SQL UPDATE statements generated from CSV
@@ -1512,6 +1962,9 @@ WHERE [id] = {{ row.id }};
 {% endfor %}`
     },
     'csv-html-table': {
+      name: 'CSV to HTML Table',
+      description: 'Convert CSV data to HTML table',
+      tags: ['data', 'csv', 'html', 'table', 'reports'],
       dataFormat: 'csv',
       csv: `name,email,department,salary\nJohn Doe,john@example.com,Engineering,75000\nJane Smith,jane@example.com,Marketing,65000\nBob Johnson,bob@example.com,Sales,70000`,
       template: `<table>
@@ -1534,6 +1987,9 @@ WHERE [id] = {{ row.id }};
 </table>`
     },
     'csv-markdown-table': {
+      name: 'CSV to MD Table',
+      description: 'Convert CSV data to Markdown table',
+      tags: ['data', 'csv', 'markdown', 'table', 'reports'],
       dataFormat: 'csv',
       csv: `feature,status,assignee,priority\nUser Authentication,In Progress,John Doe,High\nDashboard UI,Completed,Jane Smith,Medium\nAPI Integration,Not Started,Bob Johnson,High\nReporting Module,In Progress,Alice Brown,Low`,
       template: `| {% for header in headers %}{{ header }} | {% endfor %}
@@ -1543,6 +1999,9 @@ WHERE [id] = {{ row.id }};
 {% endfor %}`
     },
     'kv-env-file': {
+      name: 'Env File',
+      description: 'Generate environment configuration files',
+      tags: ['text', 'config', 'env', 'dev'],
       dataFormat: 'text',
       text: `APP_NAME=MyApplication\nAPP_ENV=production\nAPP_DEBUG=false\nAPP_URL=https://example.com\nDB_HOST=localhost\nDB_PORT=5432\nDB_DATABASE=myapp\nDB_USERNAME=dbuser\nDB_PASSWORD=secret123\nMAIL_HOST=smtp.mailtrap.io\nMAIL_PORT=2525`,
       template: `# Environment Configuration
@@ -1566,6 +2025,9 @@ MAIL_HOST={{ MAIL_HOST }}
 MAIL_PORT={{ MAIL_PORT }}`
     },
     'kv-properties': {
+      name: 'Properties File',
+      description: 'Generate properties configuration files',
+      tags: ['text', 'config', 'properties', 'dev'],
       dataFormat: 'text',
       text: `application.name=MyApp\napplication.version=1.0.0\nserver.port=8080\nserver.host=localhost\ndatabase.url=jdbc:postgresql://localhost:5432/mydb\ndatabase.username=admin\ndatabase.password=secret\nlogging.level=INFO\nlogging.file=/var/log/app.log`,
       template: `# Application Properties
@@ -1585,6 +2047,9 @@ logging.level={{ logging.level }}
 logging.file={{ logging.file }}`
     },
     'kv-email': {
+      name: 'Simple Email',
+      description: 'Generate simple email messages',
+      tags: ['text', 'email', 'communication'],
       dataFormat: 'text',
       text: `recipient=John Doe\nemail=john@example.com\nsubject=Welcome to Our Service\ncompany=Acme Corporation\nplan=Premium Plan\nprice=99.99\nsupport_email=support@acme.com`,
       template: `Dear {{ recipient }},
@@ -1603,6 +2068,9 @@ Best regards,
 The {{ company }} Team`
     },
     'kv-config-yaml': {
+      name: 'YAML Config',
+      description: 'Generate YAML configuration files',
+      tags: ['text', 'config', 'yaml', 'dev'],
       dataFormat: 'text',
       text: `app_name=MyApplication\nversion=1.0.0\nport=3000\nhost=localhost\ndb_host=localhost\ndb_port=5432\ndb_name=myapp\nlog_level=debug\nmax_connections=100`,
       template: `# Application Configuration (YAML)
@@ -1624,12 +2092,402 @@ logging:
 
 performance:
   max_connections: {{ max_connections }}`
+    },
+    'csv-to-json': {
+      name: 'CSV to JSON',
+      description: 'Convert CSV data to JSON format',
+      tags: ['data', 'csv', 'json', 'conversion'],
+      dataFormat: 'csv',
+      csv: `id,name,email,age,department\n1,John Doe,john@example.com,30,Engineering\n2,Jane Smith,jane@example.com,25,Marketing\n3,Bob Johnson,bob@example.com,35,Sales`,
+      template: `[
+{% for row in rows %}
+  {
+    "id": {{ row.id }},
+    "name": "{{ row.name }}",
+    "email": "{{ row.email }}",
+    "age": {{ row.age }},
+    "department": "{{ row.department }}"
+  }{% if not loop.last %},{% endif %}
+{% endfor %}
+]`
+    },
+    'git-commit': {
+      name: 'Git Commit Messages',
+      description: 'Generate standardized commit messages',
+      tags: ['dev', 'git', 'text'],
+      json: JSON.stringify({
+        type: 'feat',
+        scope: 'auth',
+        subject: 'add OAuth2 authentication',
+        body: 'Implemented OAuth2 flow with Google and GitHub providers',
+        breaking: false,
+        issues: ['#123', '#456']
+      }, null, 2),
+      template: `{{ type }}{% if scope %}({{ scope }}){% endif %}: {{ subject }}
+
+{{ body }}
+{% if breaking %}
+BREAKING CHANGE: This is a breaking change
+{% endif %}
+{% if issues %}
+Closes {% for issue in issues %}{{ issue }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}`
+    },
+    'readme-template': {
+      name: 'README Generator',
+      description: 'Generate project README files',
+      tags: ['markdown', 'docs', 'dev'],
+      json: JSON.stringify({
+        projectName: 'My Awesome Project',
+        description: 'A tool that does amazing things',
+        installation: 'npm install my-awesome-project',
+        usage: 'const tool = require(\'my-awesome-project\');',
+        features: ['Fast', 'Reliable', 'Easy to use'],
+        license: 'MIT',
+        author: 'John Doe'
+      }, null, 2),
+      template: `# {{ projectName }}
+
+{{ description }}
+
+## Features
+
+{% for feature in features %}
+- {{ feature }}
+{% endfor %}
+
+## Installation
+
+\`\`\`bash
+{{ installation }}
+\`\`\`
+
+## Usage
+
+\`\`\`javascript
+{{ usage }}
+\`\`\`
+
+## License
+
+{{ license }}
+
+## Author
+
+{{ author }}`
+    },
+    'postman-collection': {
+      name: 'Postman Collection',
+      description: 'Generate Postman API collections',
+      tags: ['api', 'json', 'testing', 'dev'],
+      json: JSON.stringify({
+        collectionName: 'My API',
+        baseUrl: 'https://api.example.com',
+        endpoints: [
+          { name: 'Get Users', method: 'GET', path: '/users' },
+          { name: 'Create User', method: 'POST', path: '/users', body: { name: 'John' } }
+        ]
+      }, null, 2),
+      template: `{
+  "info": {
+    "name": "{{ collectionName }}",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+{% for endpoint in endpoints %}
+    {
+      "name": "{{ endpoint.name }}",
+      "request": {
+        "method": "{{ endpoint.method }}",
+        "url": "{{ baseUrl }}{{ endpoint.path }}"{% if endpoint.body %},
+        "body": {
+          "mode": "raw",
+          "raw": {{ endpoint.body | tojson }}
+        }{% endif %}
+      }
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+  ]
+}`
+    },
+    'changelog': {
+      name: 'Changelog',
+      description: 'Generate CHANGELOG.md files',
+      tags: ['markdown', 'docs', 'dev'],
+      json: JSON.stringify({
+        version: '1.0.0',
+        date: '2024-01-15',
+        changes: {
+          added: ['OAuth2 authentication', 'User profile page'],
+          fixed: ['Login redirect bug', 'Memory leak in cache'],
+          changed: ['Updated dependencies']
+        }
+      }, null, 2),
+      template: `# Changelog
+
+## [{{ version }}] - {{ date }}
+
+### Added
+{% for item in changes.added %}
+- {{ item }}
+{% endfor %}
+
+### Fixed
+{% for item in changes.fixed %}
+- {{ item }}
+{% endfor %}
+
+### Changed
+{% for item in changes.changed %}
+- {{ item }}
+{% endfor %}`
+    },
+    'nginx-config': {
+      name: 'Nginx Config',
+      description: 'Generate Nginx server configurations',
+      tags: ['config', 'dev', 'server'],
+      json: JSON.stringify({
+        serverName: 'example.com',
+        port: 80,
+        root: '/var/www/html',
+        locations: [
+          { path: '/api', proxyPass: 'http://localhost:3000' },
+          { path: '/static', alias: '/var/www/static' }
+        ]
+      }, null, 2),
+      template: `server {
+    listen {{ port }};
+    server_name {{ serverName }};
+    root {{ root }};
+
+{% for location in locations %}
+    location {{ location.path }} {
+{% if location.proxyPass %}
+        proxy_pass {{ location.proxyPass }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+{% endif %}
+{% if location.alias %}
+        alias {{ location.alias }};
+{% endif %}
+    }
+{% endfor %}
+}`
+    },
+    'jira-tickets': {
+      name: 'JIRA Tickets',
+      description: 'Generate JIRA ticket descriptions',
+      tags: ['text', 'dev', 'project'],
+      json: JSON.stringify({
+        title: 'Add user authentication',
+        type: 'Story',
+        description: 'Implement OAuth2 authentication',
+        acceptanceCriteria: [
+          'Users can log in with Google',
+          'Users can log in with GitHub',
+          'Session persists for 7 days'
+        ],
+        estimate: '8 hours'
+      }, null, 2),
+      template: `## {{ title }}
+
+**Type:** {{ type }}
+**Estimate:** {{ estimate }}
+
+### Description
+{{ description }}
+
+### Acceptance Criteria
+{% for criterion in acceptanceCriteria %}
+- [ ] {{ criterion }}
+{% endfor %}`
+    },
+    'package-json': {
+      name: 'package.json',
+      description: 'Generate npm package.json files',
+      tags: ['json', 'config', 'dev', 'javascript'],
+      json: JSON.stringify({
+        name: 'my-package',
+        version: '1.0.0',
+        description: 'A useful package',
+        author: 'John Doe',
+        license: 'MIT',
+        scripts: [
+          { name: 'start', command: 'node index.js' },
+          { name: 'test', command: 'jest' }
+        ],
+        dependencies: [
+          { name: 'express', version: '^4.18.0' },
+          { name: 'dotenv', version: '^16.0.0' }
+        ]
+      }, null, 2),
+      template: `{
+  "name": "{{ name }}",
+  "version": "{{ version }}",
+  "description": "{{ description }}",
+  "author": "{{ author }}",
+  "license": "{{ license }}",
+  "scripts": {
+{% for script in scripts %}
+    "{{ script.name }}": "{{ script.command }}"{% if not loop.last %},{% endif %}
+{% endfor %}
+  },
+  "dependencies": {
+{% for dep in dependencies %}
+    "{{ dep.name }}": "{{ dep.version }}"{% if not loop.last %},{% endif %}
+{% endfor %}
+  }
+}`
+    },
+    'openapi': {
+      name: 'OpenAPI Spec',
+      description: 'Generate OpenAPI/Swagger specifications',
+      tags: ['api', 'json', 'docs', 'dev'],
+      json: JSON.stringify({
+        title: 'My API',
+        version: '1.0.0',
+        baseUrl: '/api/v1',
+        endpoints: [
+          {
+            path: '/users',
+            method: 'get',
+            summary: 'List users',
+            response: { type: 'array', items: 'User' }
+          },
+          {
+            path: '/users/{id}',
+            method: 'get',
+            summary: 'Get user by ID',
+            parameters: [{ name: 'id', in: 'path', required: true }],
+            response: { type: 'object', ref: 'User' }
+          }
+        ]
+      }, null, 2),
+      template: `openapi: 3.0.0
+info:
+  title: {{ title }}
+  version: {{ version }}
+
+paths:
+{% for endpoint in endpoints %}
+  {{ endpoint.path }}:
+    {{ endpoint.method }}:
+      summary: {{ endpoint.summary }}
+{% if endpoint.parameters %}
+      parameters:
+{% for param in endpoint.parameters %}
+        - name: {{ param.name }}
+          in: {{ param.in }}
+          required: {{ param.required }}
+{% endfor %}
+{% endif %}
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: {{ endpoint.response.type }}
+{% endfor %}`
+    },
+    'sql-migration': {
+      name: 'SQL Migration',
+      description: 'Generate database migration scripts',
+      tags: ['sql', 'database', 'dev'],
+      json: JSON.stringify({
+        migrationName: 'add_users_table',
+        timestamp: '20240115120000',
+        operations: [
+          { type: 'CREATE TABLE', table: 'users', columns: ['id INT PRIMARY KEY', 'email VARCHAR(255)'] },
+          { type: 'CREATE INDEX', name: 'idx_email', table: 'users', column: 'email' }
+        ]
+      }, null, 2),
+      template: `-- Migration: {{ migrationName }}
+-- Created at: {{ timestamp }}
+
+{% for op in operations %}
+{% if op.type == 'CREATE TABLE' %}
+CREATE TABLE {{ op.table }} (
+{% for col in op.columns %}
+    {{ col }}{% if not loop.last %},{% endif %}
+{% endfor %}
+);
+{% endif %}
+{% if op.type == 'CREATE INDEX' %}
+CREATE INDEX {{ op.name }} ON {{ op.table }}({{ op.column }});
+{% endif %}
+
+{% endfor %}
+
+-- Rollback
+{% for op in operations %}
+{% if op.type == 'CREATE TABLE' %}
+DROP TABLE IF EXISTS {{ op.table }};
+{% endif %}
+{% if op.type == 'CREATE INDEX' %}
+DROP INDEX IF EXISTS {{ op.name }};
+{% endif %}
+{% endfor %}`
+    },
+    'bash-script': {
+      name: 'Bash Script',
+      description: 'Generate Bash shell scripts',
+      tags: ['code', 'dev', 'script'],
+      json: JSON.stringify({
+        scriptName: 'deploy.sh',
+        description: 'Deployment script',
+        variables: [
+          { name: 'APP_NAME', value: 'myapp' },
+          { name: 'ENV', value: 'production' }
+        ],
+        commands: [
+          'echo "Starting deployment..."',
+          'npm run build',
+          'docker build -t $APP_NAME .',
+          'docker push $APP_NAME:latest',
+          'echo "Deployment complete!"'
+        ]
+      }, null, 2),
+      template: `#!/bin/bash
+# {{ description }}
+
+set -e
+
+{% for var in variables %}
+{{ var.name }}="{{ var.value }}"
+{% endfor %}
+
+{% for cmd in commands %}
+{{ cmd }}
+{% endfor %}`
+    },
+    'jest-test': {
+      name: 'Jest Test',
+      description: 'Generate Jest test suites',
+      tags: ['code', 'testing', 'javascript', 'dev'],
+      json: JSON.stringify({
+        moduleName: 'Calculator',
+        tests: [
+          { name: 'adds two numbers', expect: '2 + 2', toBe: '4' },
+          { name: 'subtracts two numbers', expect: '5 - 3', toBe: '2' }
+        ]
+      }, null, 2),
+      template: `describe('{{ moduleName }}', () => {
+{% for test in tests %}
+  test('{{ test.name }}', () => {
+    expect({{ test.expect }}).toBe({{ test.toBe }});
+  });
+{% endfor %}
+});`
     }
   },
 
   init(container, context) {
     this.container = container;
     this.context = context;
+
+    // Load saved state
+    this.loadState();
 
     const simplifiedModeBtn = container.querySelector("#simplified-mode-btn");
     const advancedModeBtn = container.querySelector("#advanced-mode-btn");
@@ -1643,6 +2501,7 @@ performance:
     const snippetsInput = container.querySelector("#snippets-input");
     const templateInput = container.querySelector("#template-input");
     const copyOutputBtn = container.querySelector("#copy-output-btn");
+    const templateSearch = container.querySelector("#template-search");
 
     simplifiedModeBtn?.addEventListener("click", () => this.setMode('simplified'));
     advancedModeBtn?.addEventListener("click", () => this.setMode('advanced'));
@@ -1661,9 +2520,44 @@ performance:
 
     copyOutputBtn?.addEventListener("click", () => this.copyOutput());
 
+    // Search input listener
+    templateSearch?.addEventListener("input", (e) => {
+      this.searchQuery = e.target.value.toLowerCase();
+      this.filterTemplates();
+    });
+
+    // Quick action buttons
+    const clearAllBtn = container.querySelector("#clear-all-btn");
+    const saveTemplateBtn = container.querySelector("#save-template-btn");
+    const shareTemplateBtn = container.querySelector("#share-template-btn");
+    const clearHistoryBtn = container.querySelector("#clear-history-btn");
+
+    clearAllBtn?.addEventListener("click", () => this.clearAll());
+    saveTemplateBtn?.addEventListener("click", () => this.saveCurrentWork());
+    shareTemplateBtn?.addEventListener("click", () => this.shareTemplate());
+    clearHistoryBtn?.addEventListener("click", () => this.clearHistory());
+
+    // Keyboard shortcuts
+    this.setupKeyboardShortcuts();
+
+    // Auto-save setup
+    jsonInput?.addEventListener("input", () => this.scheduleAutoSave());
+    textInput?.addEventListener("input", () => this.scheduleAutoSave());
+    csvInput?.addEventListener("input", () => this.scheduleAutoSave());
+    snippetsInput?.addEventListener("input", () => this.scheduleAutoSave());
+    templateInput?.addEventListener("input", () => this.scheduleAutoSave());
+
+    // Initialize tag pills and favorites
+    this.initializeTagPills();
+    this.initializeFavorites();
+    this.updateRecentTemplates();
+
     // Template card listeners
     container.querySelectorAll('.template-card').forEach(card => {
       card.addEventListener('click', (e) => {
+        // Don't trigger if clicking favorite star
+        if (e.target.classList.contains('template-favorite')) return;
+
         const templateId = e.currentTarget.dataset.template;
         this.loadTemplate(templateId);
       });
@@ -1684,6 +2578,9 @@ performance:
         this.loadSnippet(snippetId);
       });
     });
+
+    // Initial filter
+    this.filterTemplates();
 
     // Load default template
     this.loadTemplate('sql-insert');
@@ -1802,6 +2699,9 @@ performance:
 
     // Load the template
     templateInput.value = template.template;
+
+    // Add to recent templates
+    this.addToRecentTemplates(templateId);
 
     this.render();
   },
@@ -2130,6 +3030,355 @@ performance:
         }, 2000);
       });
     }
+  },
+
+  initializeTagPills() {
+    // Collect all unique tags from templates
+    const tagsSet = new Set();
+    Object.values(this.templates).forEach(template => {
+      if (template.tags) {
+        template.tags.forEach(tag => tagsSet.add(tag));
+      }
+    });
+
+    this.allTags = Array.from(tagsSet).sort();
+
+    // Create tag pills
+    const tagPillsContainer = this.container.querySelector('#tag-pills');
+    if (!tagPillsContainer) return;
+
+    tagPillsContainer.innerHTML = this.allTags.map(tag => {
+      const isActive = this.selectedTags.includes(tag);
+      return `<span class="tag-pill${isActive ? ' active' : ''}" data-tag="${tag}">${tag}</span>`;
+    }).join('');
+
+    // Add click listeners
+    tagPillsContainer.querySelectorAll('.tag-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const tag = pill.dataset.tag;
+        this.toggleTag(tag);
+      });
+    });
+  },
+
+  initializeFavorites() {
+    // Add favorite stars to each template card
+    this.container.querySelectorAll('.template-card').forEach(card => {
+      const templateId = card.dataset.template;
+      const isFavorite = this.favorites.includes(templateId);
+
+      const star = document.createElement('span');
+      star.className = 'template-favorite' + (isFavorite ? ' active' : '');
+      star.textContent = '⭐';
+      star.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleFavorite(templateId);
+      });
+
+      card.appendChild(star);
+    });
+  },
+
+  toggleTag(tag) {
+    const index = this.selectedTags.indexOf(tag);
+    if (index > -1) {
+      this.selectedTags.splice(index, 1);
+    } else {
+      this.selectedTags.push(tag);
+    }
+
+    // Update pill UI
+    this.container.querySelectorAll('.tag-pill').forEach(pill => {
+      if (pill.dataset.tag === tag) {
+        pill.classList.toggle('active');
+      }
+    });
+
+    this.filterTemplates();
+    this.saveState();
+  },
+
+  toggleFavorite(templateId) {
+    const index = this.favorites.indexOf(templateId);
+    if (index > -1) {
+      this.favorites.splice(index, 1);
+    } else {
+      this.favorites.push(templateId);
+    }
+
+    // Update star UI
+    this.container.querySelectorAll('.template-card').forEach(card => {
+      if (card.dataset.template === templateId) {
+        const star = card.querySelector('.template-favorite');
+        if (star) {
+          star.classList.toggle('active');
+        }
+      }
+    });
+
+    this.filterTemplates();
+    this.saveState();
+  },
+
+  filterTemplates() {
+    const cards = this.container.querySelectorAll('.template-card');
+    let visibleCount = 0;
+    const totalCount = cards.length;
+
+    cards.forEach(card => {
+      const templateId = card.dataset.template;
+      const template = this.templates[templateId];
+
+      if (!template) {
+        card.classList.add('hidden');
+        return;
+      }
+
+      let matches = true;
+
+      // Filter by selected tags (AND logic)
+      if (this.selectedTags.length > 0) {
+        matches = this.selectedTags.every(selectedTag =>
+          template.tags && template.tags.includes(selectedTag)
+        );
+      }
+
+      // Filter by search query
+      if (matches && this.searchQuery) {
+        const searchableText = [
+          template.name,
+          template.description,
+          ...(template.tags || [])
+        ].join(' ').toLowerCase();
+
+        matches = searchableText.includes(this.searchQuery);
+      }
+
+      if (matches) {
+        card.classList.remove('hidden');
+        visibleCount++;
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+
+    // Update count display
+    const countDisplay = this.container.querySelector('#template-count');
+    if (countDisplay) {
+      countDisplay.textContent = `Showing ${visibleCount} of ${totalCount} templates`;
+    }
+  },
+
+  loadState() {
+    try {
+      if (window.DevChef && window.DevChef.storage) {
+        const state = window.DevChef.storage.loadToolState('template-transform');
+        if (state) {
+          this.selectedTags = state.selectedTags || [];
+          this.favorites = state.favorites || [];
+          this.recentTemplates = state.recentTemplates || [];
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load state:', e);
+    }
+  },
+
+  saveState() {
+    try {
+      if (window.DevChef && window.DevChef.storage) {
+        window.DevChef.storage.saveToolState('template-transform', {
+          selectedTags: this.selectedTags,
+          favorites: this.favorites,
+          recentTemplates: this.recentTemplates
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to save state:', e);
+    }
+  },
+
+  addToRecentTemplates(templateId) {
+    // Remove if already exists
+    this.recentTemplates = this.recentTemplates.filter(id => id !== templateId);
+    // Add to beginning
+    this.recentTemplates.unshift(templateId);
+    // Keep only last 5
+    this.recentTemplates = this.recentTemplates.slice(0, 5);
+    this.saveState();
+    this.updateRecentTemplates();
+  },
+
+  updateRecentTemplates() {
+    const recentSection = this.container.querySelector('#recent-templates-section');
+    const recentContainer = this.container.querySelector('#recent-templates');
+
+    if (!recentSection || !recentContainer) return;
+
+    if (this.recentTemplates.length === 0) {
+      recentSection.style.display = 'none';
+      return;
+    }
+
+    recentSection.style.display = 'block';
+    recentContainer.innerHTML = this.recentTemplates.map(templateId => {
+      const template = this.templates[templateId];
+      if (!template) return '';
+      return `<button class="recent-template-chip" data-template="${templateId}">${template.name}</button>`;
+    }).join('');
+
+    // Add click listeners
+    recentContainer.querySelectorAll('.recent-template-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const templateId = chip.dataset.template;
+        this.loadTemplate(templateId);
+      });
+    });
+  },
+
+  clearAll() {
+    if (!confirm('Clear all inputs? This cannot be undone.')) return;
+
+    const jsonInput = this.container.querySelector("#json-input");
+    const textInput = this.container.querySelector("#text-input");
+    const csvInput = this.container.querySelector("#csv-input");
+    const snippetsInput = this.container.querySelector("#snippets-input");
+    const templateInput = this.container.querySelector("#template-input");
+
+    if (jsonInput) jsonInput.value = '{}';
+    if (textInput) textInput.value = '';
+    if (csvInput) csvInput.value = '';
+    if (snippetsInput) snippetsInput.value = '{}';
+    if (templateInput) templateInput.value = '';
+
+    this.render();
+  },
+
+  saveCurrentWork() {
+    const data = {
+      mode: this.currentDataFormat,
+      jsonInput: this.container.querySelector("#json-input")?.value || '',
+      textInput: this.container.querySelector("#text-input")?.value || '',
+      csvInput: this.container.querySelector("#csv-input")?.value || '',
+      snippetsInput: this.container.querySelector("#snippets-input")?.value || '',
+      templateInput: this.container.querySelector("#template-input")?.value || ''
+    };
+
+    try {
+      if (window.DevChef && window.DevChef.storage) {
+        window.DevChef.storage.saveToolState('template-transform-draft', data);
+        this.showNotification('✅ Work saved!');
+      }
+    } catch (e) {
+      this.showNotification('❌ Failed to save');
+    }
+  },
+
+  shareTemplate() {
+    const templateInput = this.container.querySelector("#template-input");
+    const jsonInput = this.container.querySelector("#json-input");
+
+    if (!templateInput || !jsonInput) return;
+
+    const shareData = {
+      template: templateInput.value,
+      data: jsonInput.value
+    };
+
+    const encoded = btoa(JSON.stringify(shareData));
+    const url = `${window.location.origin}${window.location.pathname}?template=${encoded}`;
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.showNotification('🔗 Link copied to clipboard!');
+    }).catch(() => {
+      this.showNotification('❌ Failed to copy link');
+    });
+  },
+
+  clearHistory() {
+    if (!confirm('Clear recent templates history?')) return;
+
+    this.recentTemplates = [];
+    this.saveState();
+    this.updateRecentTemplates();
+    this.showNotification('🗑️ History cleared');
+  },
+
+  showNotification(message) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 10000;
+      animation: slideIn 0.3s ease;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateY(-10px)';
+      notification.style.transition = 'all 0.3s ease';
+      setTimeout(() => notification.remove(), 300);
+    }, 2000);
+  },
+
+  setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      // Ctrl/Cmd + L: Clear all
+      if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+        e.preventDefault();
+        this.clearAll();
+      }
+
+      // Ctrl/Cmd + S: Save current work
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        this.saveCurrentWork();
+      }
+
+      // Ctrl/Cmd + F: Focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        const searchInput = this.container.querySelector('#template-search');
+        searchInput?.focus();
+      }
+
+      // ?: Show keyboard shortcuts
+      if (e.key === '?' && !e.target.matches('input, textarea')) {
+        e.preventDefault();
+        this.showKeyboardShortcuts();
+      }
+    });
+  },
+
+  showKeyboardShortcuts() {
+    const shortcuts = [
+      { keys: 'Ctrl/Cmd + L', action: 'Clear all inputs' },
+      { keys: 'Ctrl/Cmd + S', action: 'Save current work' },
+      { keys: 'Ctrl/Cmd + F', action: 'Focus search' },
+      { keys: '?', action: 'Show this help' }
+    ];
+
+    const message = shortcuts.map(s => `${s.keys}: ${s.action}`).join('\n');
+    alert(`Keyboard Shortcuts:\n\n${message}`);
+  },
+
+  scheduleAutoSave() {
+    if (this.autoSaveTimer) {
+      clearTimeout(this.autoSaveTimer);
+    }
+
+    this.autoSaveTimer = setTimeout(() => {
+      this.saveCurrentWork();
+    }, 3000); // Auto-save after 3 seconds of inactivity
   },
 
   onInput(input, context) {
