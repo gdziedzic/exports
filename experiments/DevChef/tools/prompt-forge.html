@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prompt Forge - DevChef Tool</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Forge</title>
 </head>
 <body>
 
@@ -12,195 +12,2165 @@
 {
   "id": "prompt-forge",
   "name": "Prompt Forge",
+  "description": "Assemble high-quality AI prompts in seconds with presets, templates, and one-click recipes",
   "category": "AI",
-  "description": "Embedded AI Prompt Builder experience with legacy Prompt Forge presets",
-  "version": "2.0.0",
-  "keywords": ["prompt", "builder", "ai", "forge"]
+  "keywords": ["prompt", "ai", "builder", "template", "recipe"],
+  "version": "2.0.0"
 }
 </script>
 
 <!-- Tool UI Template -->
 <template id="tool-ui">
-  <div class="tool-container prompt-forge">
-    <div class="tool-header">
-      <h2 class="tool-title">Prompt Forge</h2>
-      <p class="tool-description">Legacy Prompt Forge presets now run inside DevChef via the embedded AI Prompt Builder.</p>
-    </div>
-
-    <div class="tool-section forge-actions">
-      <tool-button id="reload-builder" variant="secondary" label="Reload Builder"></tool-button>
-      <tool-button id="open-builder" variant="primary" label="Open Full Builder"></tool-button>
-    </div>
-
-    <div class="tool-section forge-embed-section">
-      <div id="builder-host" class="forge-embed">
-        <div class="forge-placeholder">
-          <div class="forge-spinner"></div>
-          <p>Loading Prompt Forge...</p>
+  <div class="tool-container prompt-forge-tool">
+    <!-- Header -->
+    <div class="forge-header">
+      <div class="forge-brand">
+        <div class="forge-logo">⚡</div>
+        <div>
+          <h2 class="forge-title">Prompt Forge</h2>
+          <div class="forge-tagline">Assemble prompts fast • <kbd>⌘1-8</kbd> Quick Fire • <kbd>⌘S</kbd> Save • <kbd>⌘C</kbd> Copy</div>
         </div>
+      </div>
+      <div class="forge-header-actions">
+        <button class="forge-btn" id="exportBtn" title="Export templates as JSON">📤 Export</button>
+        <button class="forge-btn" id="importBtn" title="Import templates from JSON">📥 Import</button>
       </div>
     </div>
 
-    <div class="tool-section">
-      <tool-status id="forge-status"></tool-status>
+    <div class="forge-main-grid">
+      <!-- Sidebar -->
+      <aside class="forge-sidebar">
+        <!-- Quick Fire -->
+        <div class="forge-panel">
+          <div class="forge-panel-header">
+            <span class="forge-panel-title">Quick Fire</span>
+            <span class="forge-panel-badge">⌘1-8</span>
+          </div>
+          <div class="forge-panel-body">
+            <div class="forge-quick-fire-grid" id="quickFireGrid"></div>
+          </div>
+        </div>
+
+        <!-- Recipes -->
+        <div class="forge-panel">
+          <div class="forge-panel-header">
+            <span class="forge-panel-title">Recipes</span>
+          </div>
+          <div class="forge-panel-body">
+            <div class="forge-recipe-list" id="recipeList"></div>
+          </div>
+        </div>
+
+        <!-- My Templates -->
+        <div class="forge-panel">
+          <div class="forge-panel-header">
+            <span class="forge-panel-title">My Templates</span>
+            <button class="forge-btn forge-btn-sm" id="newTemplateBtn">+ Save</button>
+          </div>
+          <div class="forge-panel-body">
+            <div class="forge-history-list" id="templateList"></div>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="forge-panel">
+          <div class="forge-panel-header">
+            <span class="forge-panel-title">History</span>
+          </div>
+          <div class="forge-panel-body">
+            <div class="forge-history-list" id="historyList"></div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Builder -->
+      <main class="forge-builder">
+        <!-- Score Bar -->
+        <div class="forge-score-bar">
+          <span class="forge-score-label">Score</span>
+          <div class="forge-score-track">
+            <div class="forge-score-fill" id="scoreFill" style="width: 0%"></div>
+          </div>
+          <span class="forge-score-value" id="scoreValue">0%</span>
+          <span class="forge-score-tips" id="scoreTips">Add objective</span>
+        </div>
+
+        <!-- Role Section -->
+        <div class="forge-section-card" id="roleCard">
+          <div class="forge-section-header">
+            <h3><span>🎭</span> Role & Voice</h3>
+            <div class="forge-section-toggle">
+              <span class="forge-section-tag">Preset</span>
+              <div class="forge-section-check checked" data-section-toggle="includeRole" title="Include in prompt">✓</div>
+            </div>
+          </div>
+          <div class="forge-section-body" id="roleSection">
+            <div class="forge-form-row">
+              <div class="forge-form-group">
+                <label>Persona</label>
+                <select id="personaSelect"></select>
+              </div>
+              <div class="forge-form-group">
+                <label>Voice</label>
+                <select id="voiceSelect"></select>
+              </div>
+            </div>
+            <div class="forge-form-row forge-form-row-single forge-override-field" id="customPersonaRow">
+              <div class="forge-form-group">
+                <label>Custom Persona</label>
+                <textarea id="customPersona" placeholder="Describe your custom persona..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task Section -->
+        <div class="forge-section-card" id="taskCard">
+          <div class="forge-section-header">
+            <h3><span>🎯</span> Task & Output</h3>
+            <div class="forge-section-toggle">
+              <span class="forge-section-tag">Pattern</span>
+              <div class="forge-section-check checked" data-section-toggle="includeTask" title="Include in prompt">✓</div>
+            </div>
+          </div>
+          <div class="forge-section-body" id="taskSection">
+            <div class="forge-form-row">
+              <div class="forge-form-group">
+                <label>Task Pattern</label>
+                <select id="patternSelect"></select>
+              </div>
+              <div class="forge-form-group">
+                <label>Output Format</label>
+                <select id="formatSelect"></select>
+              </div>
+            </div>
+            <div class="forge-form-row">
+              <div class="forge-form-group">
+                <label>Tone</label>
+                <select id="toneSelect"></select>
+              </div>
+              <div class="forge-form-group">
+                <label>Audience</label>
+                <select id="audienceSelect"></select>
+              </div>
+            </div>
+            <div class="forge-form-row forge-form-row-single forge-override-field" id="customAudienceRow">
+              <div class="forge-form-group">
+                <label>Custom Audience</label>
+                <input id="customAudience" placeholder="Describe your audience..." />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Objective Section -->
+        <div class="forge-section-card" id="objectiveCard">
+          <div class="forge-section-header">
+            <h3><span>🎯</span> Objective & Deliverable</h3>
+            <div class="forge-section-toggle">
+              <span class="forge-section-tag">Goal</span>
+              <div class="forge-section-check checked" data-section-toggle="includeObjective" title="Include in prompt">✓</div>
+            </div>
+          </div>
+          <div class="forge-section-body" id="objectiveSection">
+            <div class="forge-form-row">
+              <div class="forge-form-group">
+                <label>Objective ⭐</label>
+                <select id="objectiveSelect"></select>
+              </div>
+              <div class="forge-form-group">
+                <label>Deliverable ⭐</label>
+                <select id="deliverableSelect"></select>
+              </div>
+            </div>
+            <div class="forge-form-row forge-override-field" id="customObjDelRow">
+              <div class="forge-form-group">
+                <label>Custom Objective</label>
+                <textarea id="customObjective" placeholder="What does success look like?"></textarea>
+              </div>
+              <div class="forge-form-group">
+                <label>Custom Deliverable</label>
+                <textarea id="customDeliverable" placeholder="What artifact to produce?"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Context Section -->
+        <div class="forge-section-card forge-disabled" id="contextCard">
+          <div class="forge-section-header">
+            <h3><span>📋</span> Context & Inputs</h3>
+            <div class="forge-section-toggle">
+              <span class="forge-section-tag">Optional</span>
+              <div class="forge-section-check" data-section-toggle="includeContext" title="Include in prompt">✓</div>
+            </div>
+          </div>
+          <div class="forge-section-body" id="contextSection">
+            <div class="forge-form-row">
+              <div class="forge-form-group">
+                <label>Context Preset</label>
+                <select id="contextSelect"></select>
+              </div>
+              <div class="forge-form-group">
+                <label>Exclusions Preset</label>
+                <select id="exclusionsSelect"></select>
+              </div>
+            </div>
+            <div class="forge-form-row">
+              <div class="forge-form-group">
+                <label>Custom Context</label>
+                <textarea id="customContext" placeholder="Background, constraints, prior attempts..."></textarea>
+              </div>
+              <div class="forge-form-group">
+                <label>Inputs Provided</label>
+                <textarea id="inputsProvided" placeholder="Links, data, prior work..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dev Section -->
+        <div class="forge-section-card" id="devCard">
+          <div class="forge-section-header">
+            <h3><span>💻</span> Development Context</h3>
+            <div class="forge-section-toggle">
+              <span class="forge-section-tag">For code</span>
+              <div class="forge-section-check checked" data-section-toggle="includeDev" title="Include in prompt">✓</div>
+            </div>
+          </div>
+          <div class="forge-section-body" id="devSection">
+            <div class="forge-form-row forge-form-row-triple">
+              <div class="forge-form-group">
+                <label>Tech Stack</label>
+                <select id="techStackSelect"></select>
+              </div>
+              <div class="forge-form-group">
+                <label>Framework</label>
+                <select id="frameworkSelect"></select>
+              </div>
+              <div class="forge-form-group">
+                <label>Task Type</label>
+                <select id="devTaskSelect"></select>
+              </div>
+            </div>
+            <div class="forge-form-row forge-form-row-single forge-override-field" id="customStackRow">
+              <div class="forge-form-group">
+                <label>Custom Stack Details</label>
+                <input id="customStack" placeholder="Additional stack details..." />
+              </div>
+            </div>
+            <div class="forge-form-row">
+              <div class="forge-form-group">
+                <label>Codebase Focus</label>
+                <select id="codebaseSelect"></select>
+              </div>
+              <div class="forge-form-group">
+                <label>Risk Level</label>
+                <select id="riskSelect"></select>
+              </div>
+            </div>
+            <div class="forge-form-row forge-form-row-single forge-override-field" id="customCodebaseRow">
+              <div class="forge-form-group">
+                <label>Custom Codebase Path</label>
+                <input id="customCodebase" placeholder="src/components/, apps/..." />
+              </div>
+            </div>
+            <div class="forge-form-row">
+              <div class="forge-form-group">
+                <label>Constraints Preset</label>
+                <select id="constraintsSelect"></select>
+              </div>
+              <div class="forge-form-group">
+                <label>Testing Preset</label>
+                <select id="testingSelect"></select>
+              </div>
+            </div>
+            <div class="forge-form-row forge-form-row-single forge-override-field" id="customConstraintsRow">
+              <div class="forge-form-group">
+                <label>Custom Constraints</label>
+                <textarea id="customConstraints" placeholder="Tests, perf, security requirements..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modifiers Section -->
+        <div class="forge-section-card" id="modifiersCard">
+          <div class="forge-section-header">
+            <h3><span>⚡</span> Quality Modifiers</h3>
+            <div class="forge-section-toggle">
+              <span class="forge-section-tag">Click to add</span>
+              <div class="forge-section-check checked" data-section-toggle="includeGuardrails" title="Include in prompt">✓</div>
+            </div>
+          </div>
+          <div class="forge-section-body" id="modifiersSection">
+            <label style="margin-bottom: 8px;">Guardrails</label>
+            <div class="forge-toggle-grid" id="guardrailsGrid"></div>
+
+            <label style="margin: 14px 0 8px;">Boosters</label>
+            <div class="forge-toggle-grid" id="boostersGrid"></div>
+
+            <label style="margin: 14px 0 8px;">Quick Clauses</label>
+            <div class="forge-clause-palette" id="clausePalette"></div>
+
+            <div class="forge-form-group">
+              <label>Additional Instructions</label>
+              <textarea id="extraInstructions" placeholder="Extra directives (or use clauses above)..."></textarea>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Output -->
+      <aside class="forge-output-panel forge-panel">
+        <div class="forge-output-header">
+          <span class="forge-panel-title">Assembled Prompt</span>
+          <div class="forge-output-actions">
+            <button class="forge-btn forge-btn-icon" id="clearBtn" title="Clear">🗑️</button>
+            <button class="forge-btn forge-btn-primary" id="copyBtn">📋 Copy</button>
+          </div>
+        </div>
+        <div class="forge-output-body">
+          <pre class="forge-output-pre" id="outputPre"></pre>
+        </div>
+      </aside>
     </div>
+  </div>
+
+  <!-- Save Template Modal -->
+  <div class="forge-modal-overlay" id="saveModal">
+    <div class="forge-modal">
+      <div class="forge-modal-header">
+        <h3>💾 Save Template</h3>
+        <button class="forge-btn forge-btn-icon" id="closeSaveModal">✕</button>
+      </div>
+      <div class="forge-modal-body">
+        <div class="forge-form-group">
+          <label>Template Name</label>
+          <input id="templateNameInput" placeholder="e.g., Feature Dev, Bug Triage..." />
+        </div>
+      </div>
+      <div class="forge-modal-footer">
+        <button class="forge-btn" id="cancelSaveBtn">Cancel</button>
+        <button class="forge-btn forge-btn-primary" id="confirmSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div class="forge-modal-overlay" id="importModal">
+    <div class="forge-modal">
+      <div class="forge-modal-header">
+        <h3>📥 Import Templates</h3>
+        <button class="forge-btn forge-btn-icon" id="closeImportModal">✕</button>
+      </div>
+      <div class="forge-modal-body">
+        <div class="forge-form-group">
+          <label>Paste JSON</label>
+          <textarea id="importInput" style="min-height: 120px;" placeholder='{"templates": {...}}'></textarea>
+        </div>
+      </div>
+      <div class="forge-modal-footer">
+        <button class="forge-btn" id="cancelImportBtn">Cancel</button>
+        <button class="forge-btn forge-btn-primary" id="confirmImportBtn">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="forge-toast" id="toast">
+    <span id="toastIcon">✓</span>
+    <span id="toastText">Copied!</span>
   </div>
 </template>
 
-<!-- Tool styles -->
+<!-- Tool Styles -->
 <style>
-  .prompt-forge .forge-actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .prompt-forge .forge-embed-section {
+  /* Container */
+  .prompt-forge-tool {
     padding: 0;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+    font-family: var(--font-sans);
   }
 
-  .prompt-forge .forge-embed {
-    position: relative;
-    min-height: 720px;
-    border: 1px solid var(--border-color, #2c2c2c);
-    border-radius: 12px;
-    background: var(--surface, #0f1116);
-    overflow: hidden;
-  }
-
-  .prompt-forge .forge-iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: #06070c;
-  }
-
-  .prompt-forge .forge-placeholder {
-    position: absolute;
-    inset: 0;
+  /* Header */
+  .forge-header {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+  }
+
+  .forge-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .forge-logo {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--success));
+    border-radius: 10px;
+    display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .forge-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .forge-tagline {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 1px;
+  }
+
+  .forge-header-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Main Grid */
+  .forge-main-grid {
+    display: grid;
+    grid-template-columns: 260px 1fr 380px;
+    gap: 16px;
+    align-items: start;
+    padding: 20px 24px;
+  }
+
+  /* Sidebar */
+  .forge-sidebar {
+    display: flex;
+    flex-direction: column;
     gap: 12px;
-    color: var(--text-muted, #b0b8d2);
+  }
+
+  .forge-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .forge-panel-header {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-tertiary);
+  }
+
+  .forge-panel-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+
+  .forge-panel-badge {
+    font-size: 9px;
+    padding: 3px 7px;
+    background: var(--accent);
+    color: white;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+
+  .forge-panel-body {
+    padding: 10px;
+  }
+
+  /* Quick Fire */
+  .forge-quick-fire-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .forge-qf-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+  }
+
+  .forge-qf-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .forge-qf-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  }
+
+  .forge-qf-icon { font-size: 16px; margin-bottom: 4px; }
+  .forge-qf-label { font-size: 11px; font-weight: 600; color: var(--text-primary); display: block; }
+  .forge-qf-key { font-size: 9px; color: var(--text-secondary); font-family: var(--font-mono); margin-top: 2px; }
+
+  /* Recipe List */
+  .forge-recipe-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  .forge-recipe-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+
+  .forge-recipe-item:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+  }
+
+  .forge-recipe-item.selected {
+    background: var(--accent-light);
+    border-color: var(--accent);
+  }
+
+  .forge-recipe-icon {
     font-size: 14px;
-    background: linear-gradient(135deg, rgba(66, 133, 244, 0.08), rgba(219, 68, 55, 0.08));
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
   }
 
-  .prompt-forge .forge-spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid rgba(255, 255, 255, 0.15);
-    border-top-color: #3b82f6;
-    border-radius: 50%;
-    animation: forge-spin 1s linear infinite;
+  .forge-recipe-item.selected .forge-recipe-icon {
+    background: var(--accent);
+    color: white;
+    font-size: 12px;
   }
 
-  @keyframes forge-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+  .forge-recipe-info { flex: 1; min-width: 0; }
+  .forge-recipe-name { font-size: 12px; font-weight: 600; }
+  .forge-recipe-desc { font-size: 10px; color: var(--text-secondary); }
+
+  /* History List */
+  .forge-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+
+  .forge-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    gap: 6px;
+  }
+
+  .forge-history-item:hover { background: var(--bg-hover); }
+  .forge-history-name {
+    font-size: 11px;
+    font-weight: 600;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .forge-history-time { font-size: 9px; color: var(--text-secondary); font-family: var(--font-mono); }
+  .forge-history-actions { display: flex; gap: 2px; }
+  .forge-history-actions .forge-btn-icon { padding: 4px; font-size: 10px; }
+
+  /* Builder */
+  .forge-builder {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Score Bar */
+  .forge-score-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .forge-score-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .forge-score-track {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .forge-score-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+  .forge-score-value {
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    min-width: 45px;
+    text-align: right;
+  }
+  .forge-score-tips {
+    font-size: 10px;
+    color: var(--text-secondary);
+    max-width: 180px;
+    text-align: right;
+  }
+
+  /* Section Cards */
+  .forge-section-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .forge-section-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.12s ease;
+    background: var(--bg-tertiary);
+  }
+
+  .forge-section-header:hover { background: var(--bg-hover); }
+
+  .forge-section-header h3 {
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .forge-section-header h3 span { font-size: 15px; }
+
+  .forge-section-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .forge-section-check {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    color: transparent;
+    background: var(--bg-primary);
+  }
+
+  .forge-section-check:hover {
+    border-color: var(--accent);
+  }
+
+  .forge-section-check.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .forge-section-card.forge-disabled {
+    opacity: 0.5;
+  }
+
+  .forge-section-card.forge-disabled .forge-section-body {
+    display: none;
+  }
+
+  .forge-section-tag {
+    font-size: 9px;
+    padding: 3px 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .forge-section-body { padding: 14px 16px; }
+  .forge-section-body.collapsed { display: none; }
+
+  /* Form Elements */
+  .forge-form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .forge-form-row-triple { grid-template-columns: repeat(3, 1fr); }
+  .forge-form-row-single { grid-template-columns: 1fr; }
+  .forge-form-row:last-child { margin-bottom: 0; }
+
+  .forge-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .forge-form-group label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .forge-form-group select,
+  .forge-form-group input,
+  .forge-form-group textarea {
+    width: 100%;
+    padding: 9px 11px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--font-sans);
+    transition: all 0.12s ease;
+  }
+
+  .forge-form-group select:focus,
+  .forge-form-group input:focus,
+  .forge-form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: var(--bg-primary);
+  }
+
+  .forge-form-group textarea {
+    min-height: 60px;
+    resize: vertical;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .forge-form-group select { cursor: pointer; }
+
+  .forge-override-field {
+    margin-top: 6px;
+    display: none;
+  }
+
+  .forge-override-field.show { display: block; }
+
+  /* Toggle Chips */
+  .forge-toggle-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .forge-toggle-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .forge-toggle-chip:hover { border-color: var(--text-secondary); }
+
+  .forge-toggle-chip.active {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .forge-toggle-chip input { display: none; }
+
+  .forge-chip-check {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    transition: all 0.12s ease;
+    color: transparent;
+  }
+
+  .forge-toggle-chip.active .forge-chip-check {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  /* Clause Palette */
+  .forge-clause-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+
+  .forge-clause-chip {
+    padding: 5px 9px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .forge-clause-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  /* Output Panel */
+  .forge-output-panel { position: sticky; top: 20px; }
+
+  .forge-output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+  }
+
+  .forge-output-actions { display: flex; gap: 6px; }
+
+  .forge-output-body {
+    padding: 14px;
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+    background: #1e1e2e;
+    border-radius: 0 0 10px 10px;
+  }
+
+  .forge-output-pre {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #cdd6f4;
+    margin: 0;
+  }
+
+  .forge-output-pre .section-label { color: #89b4fa; font-weight: 600; }
+
+  /* Buttons */
+  .forge-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .forge-btn:hover { background: var(--bg-hover); transform: translateY(-1px); }
+  .forge-btn-primary { background: var(--accent); border-color: var(--accent); color: white; box-shadow: var(--shadow-sm); }
+  .forge-btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .forge-btn-success { background: var(--success); border-color: var(--success); color: white; transition: all 0.15s ease; }
+  .forge-btn-icon { padding: 7px; }
+  .forge-btn-sm { padding: 5px 8px; font-size: 10px; }
+
+  /* Modal */
+  .forge-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+  }
+
+  .forge-modal-overlay.active { opacity: 1; visibility: visible; }
+
+  .forge-modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    width: 90%;
+    max-width: 460px;
+    max-height: 80vh;
+    overflow: hidden;
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .forge-modal-overlay.active .forge-modal { transform: scale(1); }
+  .forge-modal-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-tertiary);
+  }
+  .forge-modal-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
+  .forge-modal-body { padding: 18px; max-height: 55vh; overflow-y: auto; }
+  .forge-modal-footer {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* Toast */
+  .forge-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 18px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--success);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.25s ease;
+    z-index: 1001;
+    color: var(--success);
+  }
+
+  .forge-toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Kbd */
+  kbd {
+    display: inline-block;
+    padding: 2px 5px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-secondary);
+  }
+
+  /* Scrollbar */
+  .forge-recipe-list::-webkit-scrollbar,
+  .forge-history-list::-webkit-scrollbar,
+  .forge-output-body::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  .forge-recipe-list::-webkit-scrollbar-track,
+  .forge-history-list::-webkit-scrollbar-track,
+  .forge-output-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .forge-recipe-list::-webkit-scrollbar-thumb,
+  .forge-history-list::-webkit-scrollbar-thumb,
+  .forge-output-body::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+  }
+  .forge-recipe-list::-webkit-scrollbar-thumb:hover,
+  .forge-history-list::-webkit-scrollbar-thumb:hover,
+  .forge-output-body::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+  }
+
+  /* Responsive */
+  @media (max-width: 1200px) {
+    .forge-main-grid { grid-template-columns: 1fr; }
+    .forge-sidebar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .forge-output-panel { position: static; }
+  }
+
+  @media (max-width: 768px) {
+    .forge-sidebar { grid-template-columns: 1fr; }
+    .forge-form-row { grid-template-columns: 1fr; }
+    .forge-form-row-triple { grid-template-columns: 1fr; }
   }
 </style>
 
-<!-- Tool Module Logic -->
+<!-- Tool Module -->
 <script type="module">
-import { showStatus } from '../core/tool-utils.js';
+import { copyToClipboard, showStatus } from '../core/tool-utils.js';
 
-const BUILDER_PATH = './tools/ai-prompt-builder.html';
+// ============ DATA ============
+const PERSONAS = [
+  { id: 'strategy', label: 'Strategy Architect', text: 'You are a crisp strategy architect who distills ambiguity into actionable, staged plans with clear trade-offs.' },
+  { id: 'coach', label: 'Performance Coach', text: 'You are an accountability-focused coach who keeps the user honest about goals, scope, and outcomes.' },
+  { id: 'architect', label: 'Systems Architect', text: 'You are a systems architect who maps constraints, dependencies, and risk surfaces before building.' },
+  { id: 'ops', label: 'Chief of Staff', text: 'You are an operations-minded chief of staff who standardizes workflows with owner, risk, and success signals.' },
+  { id: 'senior_dev', label: 'Senior Developer', text: 'You are a senior developer with 15+ years experience who writes clean, maintainable code and catches edge cases.' },
+  { id: 'code_reviewer', label: 'Code Reviewer', text: 'You are a meticulous code reviewer who spots bugs, security issues, and suggests improvements.' },
+  { id: 'product_mgr', label: 'Product Manager', text: 'You are a product manager who balances user needs, technical constraints, and business goals.' },
+  { id: 'tech_lead', label: 'Tech Lead', text: 'You are a tech lead who balances architecture decisions with delivery velocity and team growth.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
 
-function resolveBuilderUrl() {
-  const baseDir = new URL('.', window.location.href);
-  return new URL(BUILDER_PATH.replace(/^\.\//, ''), baseDir).href;
-}
+const VOICES = [
+  { id: 'neutral', label: 'Neutral', text: '' },
+  { id: 'executive', label: 'Executive brevity', text: 'Be extremely concise. Lead with the answer.' },
+  { id: 'teacher', label: 'Teacher', text: 'Explain reasoning step by step.' },
+  { id: 'challenger', label: 'Challenger', text: 'Push back on assumptions. Ask hard questions.' },
+  { id: 'pair', label: 'Pair programmer', text: 'Think out loud, collaborate, ask before assuming.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
 
-function createPlaceholder() {
-  const placeholder = document.createElement('div');
-  placeholder.className = 'forge-placeholder';
-  placeholder.innerHTML = `
-    <div class="forge-spinner"></div>
-    <p>Loading Prompt Forge...</p>
-  `;
-  return placeholder;
-}
+const PATTERNS = [
+  { id: 'feature', label: '🚀 Feature development', text: 'Plan and implement a new feature with requirements analysis, design, implementation steps, and testing strategy.' },
+  { id: 'research', label: 'Research synthesis', text: 'Synthesize provided material into an evidence-backed summary with signals, contradictions, and open questions.' },
+  { id: 'decision', label: 'Decision brief', text: 'Create a decision-ready brief with options, pros/cons, second-order effects, and recommendation.' },
+  { id: 'rewrite', label: 'Rewrite / Polish', text: 'Rewrite input to be concise, audience-fit, and structured.' },
+  { id: 'debug', label: 'Debug partner', text: 'Probe the issue, form hypotheses, propose experiments, and supply fixes with verification.' },
+  { id: 'review', label: 'Code review', text: 'Review changes, catch correctness/perf/security issues, propose actionable fixes.' },
+  { id: 'spec', label: 'Feature spec / RFC', text: 'Draft RFC with problem, requirements, non-goals, options, risks, acceptance tests.' },
+  { id: 'bugfix', label: 'Bugfix steps', text: 'Reproduce, isolate root cause, propose fix, verify with tests.' },
+  { id: 'refactor', label: 'Refactor plan', text: 'Stabilize behavior, reduce complexity, keep parity with checks.' },
+  { id: 'api', label: 'API design', text: 'Design API endpoints with request/response schemas, error handling, and documentation.' },
+  { id: 'migration', label: 'Data migration', text: 'Plan migration with rollback strategy, validation, and zero-downtime approach.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
 
+const FORMATS = [
+  { id: 'bullets', label: 'Bullets', text: 'Dense bullets with bold labels.' },
+  { id: 'steps', label: 'Numbered steps', text: 'Numbered sequence with owner, duration, success criteria.' },
+  { id: 'table', label: 'Comparison table', text: 'Markdown table comparing options.' },
+  { id: 'outline', label: 'Structured outline', text: 'Tight outline with headers and key points.' },
+  { id: 'patch', label: 'Patch plan', text: 'Git-style plan: files, diffs, tests, risks.' },
+  { id: 'prose', label: 'Prose', text: 'Flowing prose, no bullets.' },
+  { id: 'code', label: 'Code + Comments', text: 'Working code with inline documentation.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const TONES = [
+  { id: 'executive', label: 'Executive', text: 'Concise, directive, no hedging.' },
+  { id: 'friendly', label: 'Friendly', text: 'Warm, encouraging, supportive.' },
+  { id: 'precise', label: 'Precise', text: 'Exacting, cite assumptions, no fluff.' },
+  { id: 'exploratory', label: 'Exploratory', text: 'Curious, surface uncertainties.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const AUDIENCES = [
+  { id: 'senior_dev', label: 'Senior developers', text: 'Senior developers who value depth and precision.' },
+  { id: 'team', label: 'Development team', text: 'Cross-functional development team.' },
+  { id: 'leadership', label: 'Technical leadership', text: 'CTOs, VPs, tech leads making strategic decisions.' },
+  { id: 'stakeholders', label: 'Non-technical stakeholders', text: 'Product, business, or exec stakeholders.' },
+  { id: 'self', label: 'Myself', text: 'Personal reference and notes.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const OBJECTIVES = [
+  { id: 'ship_feature', label: 'Ship working feature', text: 'Deliver a complete, tested, production-ready feature.' },
+  { id: 'fix_bug', label: 'Fix bug with root cause', text: 'Identify root cause and implement verified fix.' },
+  { id: 'make_decision', label: 'Make informed decision', text: 'Gather evidence and recommend clear path forward.' },
+  { id: 'understand', label: 'Understand codebase', text: 'Build mental model of how the code works.' },
+  { id: 'improve_quality', label: 'Improve code quality', text: 'Reduce complexity, improve maintainability.' },
+  { id: 'design_system', label: 'Design system/API', text: 'Create clean, extensible architecture.' },
+  { id: 'document', label: 'Document for team', text: 'Create clear documentation for team consumption.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const DELIVERABLES = [
+  { id: 'code', label: 'Working code', text: 'Production-ready code with tests.' },
+  { id: 'pr', label: 'Pull request', text: 'Reviewable PR with description and tests.' },
+  { id: 'spec', label: 'Technical spec', text: 'Design document with requirements and approach.' },
+  { id: 'plan', label: 'Implementation plan', text: 'Step-by-step plan with estimates.' },
+  { id: 'analysis', label: 'Analysis/recommendation', text: 'Written analysis with clear recommendation.' },
+  { id: 'review', label: 'Code review feedback', text: 'Actionable review comments.' },
+  { id: 'docs', label: 'Documentation', text: 'README, API docs, or runbook.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const CONTEXTS = [
+  { id: 'none', label: 'No context needed', text: '' },
+  { id: 'greenfield', label: 'Greenfield project', text: 'Starting from scratch with no legacy constraints.' },
+  { id: 'legacy', label: 'Legacy codebase', text: 'Working within existing legacy system with tech debt.' },
+  { id: 'migration', label: 'Active migration', text: 'System is undergoing migration or major refactor.' },
+  { id: 'production', label: 'Production critical', text: 'Changes affect live production systems.' },
+  { id: 'startup', label: 'Startup/MVP', text: 'Speed matters, can accept some tech debt.' },
+  { id: 'enterprise', label: 'Enterprise scale', text: 'Must consider scale, compliance, and process.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const EXCLUSIONS = [
+  { id: 'none', label: 'No exclusions', text: '' },
+  { id: 'no_fluff', label: 'No fluff/apologies', text: 'Skip pleasantries, get to the point.' },
+  { id: 'no_breaking', label: 'No breaking changes', text: 'Must maintain backward compatibility.' },
+  { id: 'no_new_deps', label: 'No new dependencies', text: 'Use existing libraries only.' },
+  { id: 'no_over_eng', label: 'No over-engineering', text: 'Keep it simple, avoid premature abstraction.' },
+  { id: 'no_perf_regression', label: 'No perf regression', text: 'Must not degrade performance.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const TECH_STACKS = [
+  { id: 'html_single', label: 'HTML/CSS/JS (single file)', text: 'HTML, CSS, JavaScript in a single file.' },
+  { id: 'html_multi', label: 'HTML + CSS + JS (separate)', text: 'HTML, CSS, JavaScript in separate files.' },
+  { id: 'ts_react', label: 'TypeScript + React', text: 'TypeScript, React.' },
+  { id: 'ts_node', label: 'TypeScript + Node.js', text: 'TypeScript, Node.js.' },
+  { id: 'python', label: 'Python', text: 'Python 3.x.' },
+  { id: 'csharp', label: 'C# / .NET', text: 'C#, .NET.' },
+  { id: 'sql', label: 'SQL', text: 'SQL, database.' },
+  { id: 'powershell', label: 'PowerShell', text: 'PowerShell scripting.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const FRAMEWORKS = [
+  { id: 'none', label: 'None / Vanilla', text: '' },
+  { id: 'react', label: 'React', text: 'React with hooks and functional components.' },
+  { id: 'nextjs', label: 'Next.js', text: 'Next.js with App Router.' },
+  { id: 'vue', label: 'Vue.js', text: 'Vue 3 with Composition API.' },
+  { id: 'angular', label: 'Angular', text: 'Angular with TypeScript.' },
+  { id: 'express', label: 'Express.js', text: 'Express.js REST API.' },
+  { id: 'fastify', label: 'Fastify', text: 'Fastify high-performance API.' },
+  { id: 'django', label: 'Django', text: 'Django web framework.' },
+  { id: 'fastapi', label: 'FastAPI', text: 'FastAPI async framework.' },
+  { id: 'dotnet', label: '.NET Core', text: '.NET Core / ASP.NET.' },
+  { id: 'spring', label: 'Spring Boot', text: 'Spring Boot Java framework.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const DEV_TASKS = [
+  { id: 'feature', label: '🚀 New feature', text: 'Implement new functionality.' },
+  { id: 'bugfix', label: '🐛 Bugfix', text: 'Fix a bug or issue.' },
+  { id: 'refactor', label: '🔧 Refactor', text: 'Improve code without changing behavior.' },
+  { id: 'review', label: '👁️ Code review', text: 'Review code for issues.' },
+  { id: 'spec', label: '📝 Spec/RFC', text: 'Write technical specification.' },
+  { id: 'test', label: '🧪 Testing', text: 'Write or improve tests.' },
+  { id: 'perf', label: '⚡ Performance', text: 'Optimize for performance.' },
+  { id: 'security', label: '🔒 Security', text: 'Security review or hardening.' },
+  { id: 'ops', label: '🏗️ Ops/Infra', text: 'Infrastructure or DevOps work.' }
+];
+
+const CODEBASES = [
+  { id: 'frontend', label: 'Frontend (src/)', text: 'Frontend source code.' },
+  { id: 'backend', label: 'Backend (api/)', text: 'Backend/API code.' },
+  { id: 'components', label: 'Components library', text: 'Shared component library.' },
+  { id: 'services', label: 'Services layer', text: 'Business logic services.' },
+  { id: 'database', label: 'Database layer', text: 'Data access and models.' },
+  { id: 'tests', label: 'Test suite', text: 'Test files and fixtures.' },
+  { id: 'config', label: 'Configuration', text: 'Config and environment.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const RISK_LEVELS = [
+  { id: 'low', label: '🟢 Low – isolated', text: 'Low risk, contained area.' },
+  { id: 'medium', label: '🟡 Medium – shared', text: 'Medium risk, shared components.' },
+  { id: 'high', label: '🔴 High – critical path', text: 'High risk, core flows or compliance.' }
+];
+
+const CONSTRAINTS = [
+  { id: 'none', label: 'No constraints', text: '' },
+  { id: 'minimal_deps', label: 'Minimal dependencies', text: 'Prefer stdlib, avoid new deps.' },
+  { id: 'tested', label: 'Must have tests', text: 'All code must have test coverage.' },
+  { id: 'typed', label: 'Strict typing', text: 'Full type safety, no any.' },
+  { id: 'perf', label: 'Performance critical', text: 'Must meet latency/throughput targets.' },
+  { id: 'security', label: 'Security hardened', text: 'Follow security best practices.' },
+  { id: 'accessible', label: 'Accessibility required', text: 'Must meet WCAG standards.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const TESTING = [
+  { id: 'none', label: 'No specific testing', text: '' },
+  { id: 'unit', label: 'Unit tests', text: 'Unit tests for functions/components.' },
+  { id: 'integration', label: 'Integration tests', text: 'Integration tests for modules.' },
+  { id: 'e2e', label: 'E2E tests', text: 'End-to-end browser tests.' },
+  { id: 'all', label: 'Full coverage', text: 'Unit, integration, and E2E tests.' },
+  { id: 'tdd', label: 'TDD approach', text: 'Test-driven development.' },
+  { id: 'custom', label: '✏️ Custom...', text: '' }
+];
+
+const GUARDRAILS = [
+  { id: 'sources', label: 'Cite sources', text: 'Use provided materials; flag unknowns.' },
+  { id: 'assumptions', label: 'Call out assumptions', text: 'List assumptions; request missing info.' },
+  { id: 'hallucination', label: 'Anti-hallucination', text: 'If evidence missing, say so.' },
+  { id: 'security', label: 'Security focus', text: 'Never log secrets; least privilege.' },
+  { id: 'privacy', label: 'Privacy aware', text: 'Redact sensitive data.' },
+  { id: 'backwards', label: 'Backward compat', text: 'Maintain API compatibility.' }
+];
+
+const BOOSTERS = [
+  { id: 'alternatives', label: '2-3 alternatives', text: 'Supply contrasting approaches.' },
+  { id: 'reasoning', label: 'Show reasoning', text: 'Expose reasoning before answer.' },
+  { id: 'selfcheck', label: 'Self-review', text: 'Check relevance, completeness.' },
+  { id: 'edge', label: 'Edge cases', text: 'List failure modes and mitigations.' },
+  { id: 'tests', label: 'Test plan', text: 'Propose tests with assertions.' },
+  { id: 'followup', label: 'Follow-up Q', text: 'End with quality-improving question.' }
+];
+
+const CLAUSES = [
+  'Assume nothing; ask for missing details first.',
+  'Surface trade-offs with rationale.',
+  '30-second summary first, then depth.',
+  'Prioritize clarity over cleverness.',
+  'Mark speculation vs. facts.',
+  'Action plan with owners and timing.',
+  'Checklist to verify the output.',
+  'Minimal diff with files and tests.',
+  'Flag perf/security risks early.',
+  'Rollback plan if needed.',
+  'Consider mobile/responsive.',
+  'Think about error states.'
+];
+
+const QUICK_FIRES = [
+  { id: 'feature', icon: '🚀', label: 'Feature', key: '1', recipe: { pattern: 'feature', persona: 'senior_dev', devTask: 'feature', guardrails: ['assumptions'], boosters: ['edge', 'tests'] }},
+  { id: 'debug', icon: '🐛', label: 'Debug', key: '2', recipe: { pattern: 'debug', persona: 'senior_dev', devTask: 'bugfix', guardrails: ['assumptions', 'hallucination'], boosters: ['reasoning', 'edge'] }},
+  { id: 'review', icon: '👁️', label: 'Review', key: '3', recipe: { pattern: 'review', persona: 'code_reviewer', devTask: 'review', guardrails: ['security'], boosters: ['alternatives', 'tests'] }},
+  { id: 'spec', icon: '📝', label: 'Spec', key: '4', recipe: { pattern: 'spec', persona: 'architect', devTask: 'spec', guardrails: ['assumptions'], boosters: ['edge', 'selfcheck'] }},
+  { id: 'refactor', icon: '🔧', label: 'Refactor', key: '5', recipe: { pattern: 'refactor', persona: 'senior_dev', devTask: 'refactor', guardrails: ['backwards'], boosters: ['tests', 'edge'] }},
+  { id: 'decision', icon: '⚖️', label: 'Decision', key: '6', recipe: { pattern: 'decision', persona: 'strategy', guardrails: ['sources', 'assumptions'], boosters: ['alternatives', 'reasoning'] }},
+  { id: 'api', icon: '🔌', label: 'API', key: '7', recipe: { pattern: 'api', persona: 'architect', devTask: 'feature', guardrails: ['backwards', 'security'], boosters: ['edge', 'tests'] }},
+  { id: 'perf', icon: '⚡', label: 'Perf', key: '8', recipe: { pattern: 'debug', persona: 'senior_dev', devTask: 'perf', guardrails: ['assumptions'], boosters: ['reasoning', 'alternatives'] }}
+];
+
+const RECIPES = [
+  { id: 'new_feature', icon: '🚀', name: 'New Feature', desc: 'Full feature development', config: { persona: 'senior_dev', pattern: 'feature', format: 'steps', tone: 'precise', devTask: 'feature', objective: 'ship_feature', deliverable: 'pr', guardrails: ['assumptions'], boosters: ['edge', 'tests'] }},
+  { id: 'bug_fix', icon: '🐞', name: 'Bug Investigation', desc: 'Root cause analysis', config: { persona: 'senior_dev', pattern: 'debug', format: 'steps', tone: 'precise', devTask: 'bugfix', objective: 'fix_bug', deliverable: 'pr', guardrails: ['assumptions', 'hallucination'], boosters: ['reasoning', 'edge'] }},
+  { id: 'pr_review', icon: '🔍', name: 'PR Review', desc: 'Thorough code review', config: { persona: 'code_reviewer', pattern: 'review', format: 'bullets', tone: 'precise', devTask: 'review', objective: 'improve_quality', deliverable: 'review', guardrails: ['security'], boosters: ['edge', 'tests'] }},
+  { id: 'rfc', icon: '📋', name: 'RFC / Spec', desc: 'Technical specification', config: { persona: 'architect', pattern: 'spec', format: 'outline', tone: 'precise', devTask: 'spec', objective: 'design_system', deliverable: 'spec', guardrails: ['assumptions'], boosters: ['alternatives', 'edge'] }},
+  { id: 'refactor_plan', icon: '🏗️', name: 'Refactor Plan', desc: 'Safe refactoring', config: { persona: 'tech_lead', pattern: 'refactor', format: 'steps', tone: 'precise', devTask: 'refactor', objective: 'improve_quality', deliverable: 'plan', guardrails: ['backwards'], boosters: ['tests', 'edge'] }},
+  { id: 'api_design', icon: '🔌', name: 'API Design', desc: 'Design endpoints', config: { persona: 'architect', pattern: 'api', format: 'outline', tone: 'precise', devTask: 'feature', objective: 'design_system', deliverable: 'spec', guardrails: ['backwards', 'security'], boosters: ['edge'] }},
+  { id: 'exec_brief', icon: '📊', name: 'Executive Brief', desc: 'Decision summary', config: { persona: 'strategy', pattern: 'decision', format: 'bullets', tone: 'executive', audience: 'leadership', objective: 'make_decision', deliverable: 'analysis', guardrails: ['sources'], boosters: ['alternatives', 'reasoning'] }},
+  { id: 'onboarding', icon: '🎓', name: 'Explain Code', desc: 'Codebase walkthrough', config: { persona: 'senior_dev', voice: 'teacher', pattern: 'research', format: 'outline', tone: 'friendly', objective: 'understand', deliverable: 'docs', guardrails: ['hallucination'], boosters: ['reasoning', 'followup'] }}
+];
+
+// ============ STATE ============
+let state = {
+  persona: 'senior_dev', voice: 'neutral', customPersona: '',
+  pattern: 'feature', format: 'steps', tone: 'precise',
+  audience: 'senior_dev', customAudience: '',
+  objective: 'ship_feature', customObjective: '',
+  deliverable: 'pr', customDeliverable: '',
+  context: 'none', customContext: '',
+  exclusions: 'no_fluff', inputsProvided: '',
+  techStack: 'html_single', framework: 'none', customStack: '',
+  devTask: 'feature', codebase: 'frontend', customCodebase: '',
+  risk: 'medium', constraints: 'tested', customConstraints: '',
+  testing: 'unit', extraInstructions: '',
+  guardrails: ['assumptions'],
+  boosters: ['edge', 'tests'],
+  includeRole: true,
+  includeTask: true,
+  includeObjective: true,
+  includeContext: false,
+  includeDev: true,
+  includeGuardrails: true
+};
+
+let templates = {};
+let history = [];
+
+// ============ DEVCHEF TOOL INTERFACE ============
 export const DevChefTool = {
-  init(container, context = {}) {
-    this.context = context;
+  container: null,
+
+  init(container, context) {
     this.container = container;
-    this.hostEl = container.querySelector('#builder-host');
-    this.statusEl = container.querySelector('#forge-status');
-    this.reloadBtn = container.querySelector('#reload-builder');
-    this.openBtn = container.querySelector('#open-builder');
-    this.iframe = null;
-
-    this.loadEmbed();
-    this.bindEvents();
+    loadFromStorage();
+    renderAll();
+    attachListeners();
+    updatePrompt();
   },
 
-  bindEvents() {
-    this.reloadBtn?.addEventListener('tool-click', () => this.reloadEmbed());
-    this.openBtn?.addEventListener('tool-click', () => this.openExternal());
-  },
-
-  loadEmbed() {
-    if (!this.hostEl) return;
-
-    this.hostEl.innerHTML = '';
-    const placeholder = createPlaceholder();
-    this.hostEl.appendChild(placeholder);
-
-    const iframe = document.createElement('iframe');
-    iframe.className = 'forge-iframe';
-    iframe.title = 'Prompt Forge - AI Prompt Builder';
-    iframe.src = resolveBuilderUrl();
-    iframe.addEventListener('load', () => {
-      placeholder.remove();
-      showStatus(this.statusEl, 'Prompt Forge ready', 'success');
-    });
-    iframe.addEventListener('error', () => {
-      showStatus(this.statusEl, 'Failed to load Prompt Forge', 'error');
-    });
-
-    this.hostEl.appendChild(iframe);
-    this.iframe = iframe;
-  },
-
-  reloadEmbed() {
-    showStatus(this.statusEl, 'Reloading Prompt Forge...', 'info');
-    if (this.iframe) {
-      this.iframe.src = resolveBuilderUrl();
-    } else {
-      this.loadEmbed();
-    }
-  },
-
-  openExternal() {
-    const url = resolveBuilderUrl();
-    window.open(url, '_blank', 'noopener');
-    showStatus(this.statusEl, 'Opened Prompt Forge in a new tab', 'success');
-  },
-
-  onInput() {
+  onInput(input, context) {
     return { output: '' };
   },
 
-  destroy() {
-    this.iframe?.remove();
-    this.iframe = null;
-    this.hostEl = null;
-    this.statusEl = null;
+  cleanup() {
+    saveToStorage();
   }
 };
 
-if (typeof window !== 'undefined' && !window.DevChef) {
-  document.addEventListener('DOMContentLoaded', () => {
-    const template = document.querySelector('#tool-ui');
-    if (!template) return;
-    document.body.innerHTML = template.innerHTML;
-    DevChefTool.init(document.body, {});
+// ============ DOM UTILITIES ============
+const $ = id => document.getElementById(id);
+
+// ============ INITIALIZATION ============
+function loadFromStorage() {
+  try {
+    const saved = localStorage.getItem('promptForge_templates');
+    if (saved) templates = JSON.parse(saved);
+    const savedHistory = localStorage.getItem('promptForge_history');
+    if (savedHistory) history = JSON.parse(savedHistory);
+    const savedState = localStorage.getItem('promptForge_lastState');
+    if (savedState) state = { ...state, ...JSON.parse(savedState) };
+  } catch (e) { console.error('Load error:', e); }
+}
+
+function saveToStorage() {
+  localStorage.setItem('promptForge_templates', JSON.stringify(templates));
+  localStorage.setItem('promptForge_history', JSON.stringify(history.slice(0, 20)));
+  localStorage.setItem('promptForge_lastState', JSON.stringify(state));
+}
+
+function renderAll() {
+  renderSelects();
+  renderQuickFire();
+  renderRecipes();
+  renderGuardrails();
+  renderBoosters();
+  renderClauses();
+  renderTemplates();
+  renderHistory();
+  updateCustomVisibility();
+  updateSectionVisibility();
+}
+
+// ============ RENDER FUNCTIONS ============
+function renderSelects() {
+  fillSelect('personaSelect', PERSONAS, state.persona);
+  fillSelect('voiceSelect', VOICES, state.voice);
+  fillSelect('patternSelect', PATTERNS, state.pattern);
+  fillSelect('formatSelect', FORMATS, state.format);
+  fillSelect('toneSelect', TONES, state.tone);
+  fillSelect('audienceSelect', AUDIENCES, state.audience);
+  fillSelect('objectiveSelect', OBJECTIVES, state.objective);
+  fillSelect('deliverableSelect', DELIVERABLES, state.deliverable);
+  fillSelect('contextSelect', CONTEXTS, state.context);
+  fillSelect('exclusionsSelect', EXCLUSIONS, state.exclusions);
+  fillSelect('techStackSelect', TECH_STACKS, state.techStack);
+  fillSelect('frameworkSelect', FRAMEWORKS, state.framework);
+  fillSelect('devTaskSelect', DEV_TASKS, state.devTask);
+  fillSelect('codebaseSelect', CODEBASES, state.codebase);
+  fillSelect('riskSelect', RISK_LEVELS, state.risk);
+  fillSelect('constraintsSelect', CONSTRAINTS, state.constraints);
+  fillSelect('testingSelect', TESTING, state.testing);
+
+  $('customPersona').value = state.customPersona || '';
+  $('customAudience').value = state.customAudience || '';
+  $('customObjective').value = state.customObjective || '';
+  $('customDeliverable').value = state.customDeliverable || '';
+  $('customContext').value = state.customContext || '';
+  $('inputsProvided').value = state.inputsProvided || '';
+  $('customStack').value = state.customStack || '';
+  $('customCodebase').value = state.customCodebase || '';
+  $('customConstraints').value = state.customConstraints || '';
+  $('extraInstructions').value = state.extraInstructions || '';
+}
+
+function fillSelect(id, options, selectedValue) {
+  const sel = $(id);
+  if (!sel) return;
+  sel.innerHTML = options.map(o =>
+    `<option value="${o.id}" ${o.id === selectedValue ? 'selected' : ''}>${o.label}</option>`
+  ).join('');
+}
+
+function renderQuickFire() {
+  const grid = $('quickFireGrid');
+  if (!grid) return;
+  grid.innerHTML = QUICK_FIRES.map(qf => `
+    <button class="forge-qf-btn" data-qf="${qf.id}">
+      <div class="forge-qf-icon">${qf.icon}</div>
+      <span class="forge-qf-label">${qf.label}</span>
+      <span class="forge-qf-key">⌘${qf.key}</span>
+    </button>
+  `).join('');
+}
+
+function renderRecipes() {
+  const list = $('recipeList');
+  if (!list) return;
+  list.innerHTML = RECIPES.map(r => `
+    <div class="forge-recipe-item" data-recipe="${r.id}">
+      <div class="forge-recipe-icon">${r.icon}</div>
+      <div class="forge-recipe-info">
+        <div class="forge-recipe-name">${r.name}</div>
+        <div class="forge-recipe-desc">${r.desc}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderGuardrails() {
+  const grid = $('guardrailsGrid');
+  if (!grid) return;
+  grid.innerHTML = GUARDRAILS.map(g => `
+    <label class="forge-toggle-chip ${state.guardrails.includes(g.id) ? 'active' : ''}" data-guardrail="${g.id}">
+      <input type="checkbox" ${state.guardrails.includes(g.id) ? 'checked' : ''} />
+      <span class="forge-chip-check">✓</span>
+      <span>${g.label}</span>
+    </label>
+  `).join('');
+}
+
+function renderBoosters() {
+  const grid = $('boostersGrid');
+  if (!grid) return;
+  grid.innerHTML = BOOSTERS.map(b => `
+    <label class="forge-toggle-chip ${state.boosters.includes(b.id) ? 'active' : ''}" data-booster="${b.id}">
+      <input type="checkbox" ${state.boosters.includes(b.id) ? 'checked' : ''} />
+      <span class="forge-chip-check">✓</span>
+      <span>${b.label}</span>
+    </label>
+  `).join('');
+}
+
+function renderClauses() {
+  const palette = $('clausePalette');
+  if (!palette) return;
+  palette.innerHTML = CLAUSES.map((c, i) => `
+    <button class="forge-clause-chip" data-clause="${i}" title="${c}">${c}</button>
+  `).join('');
+}
+
+function renderTemplates() {
+  const list = $('templateList');
+  if (!list) return;
+  const names = Object.keys(templates);
+  if (!names.length) {
+    list.innerHTML = '<div style="color: var(--text-secondary); font-size: 11px; padding: 6px;">No templates yet</div>';
+    return;
+  }
+  list.innerHTML = names.map(name => `
+    <div class="forge-history-item" data-template="${name}">
+      <span class="forge-history-name" title="${name}">${name}</span>
+      <div class="forge-history-actions">
+        <button class="forge-btn forge-btn-icon forge-btn-sm" data-update-template="${name}" title="Update with current">↻</button>
+        <button class="forge-btn forge-btn-icon forge-btn-sm" data-delete-template="${name}" title="Delete">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderHistory() {
+  const list = $('historyList');
+  if (!list) return;
+  if (!history.length) {
+    list.innerHTML = '<div style="color: var(--text-secondary); font-size: 11px; padding: 6px;">No history</div>';
+    return;
+  }
+  list.innerHTML = history.slice(0, 8).map((h, i) => `
+    <div class="forge-history-item" data-history="${i}">
+      <span class="forge-history-name">${h.name || 'Prompt'}</span>
+      <span class="forge-history-time">${formatTime(h.time)}</span>
+    </div>
+  `).join('');
+}
+
+// ============ EVENT LISTENERS ============
+function attachListeners() {
+  // Selects
+  const selects = ['personaSelect', 'voiceSelect', 'patternSelect', 'formatSelect', 'toneSelect',
+    'audienceSelect', 'objectiveSelect', 'deliverableSelect', 'contextSelect', 'exclusionsSelect',
+    'techStackSelect', 'frameworkSelect', 'devTaskSelect', 'codebaseSelect', 'riskSelect',
+    'constraintsSelect', 'testingSelect'];
+
+  selects.forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.addEventListener('change', e => {
+        const key = id.replace('Select', '');
+        state[key] = e.target.value;
+        updateCustomVisibility();
+        updatePrompt();
+      });
+    }
   });
+
+  // Text inputs
+  const inputs = ['customPersona', 'customAudience', 'customObjective', 'customDeliverable',
+    'customContext', 'inputsProvided', 'customStack', 'customCodebase', 'customConstraints', 'extraInstructions'];
+
+  inputs.forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.addEventListener('input', e => {
+        state[id] = e.target.value;
+        updatePrompt();
+      });
+    }
+  });
+
+  // Quick Fire
+  const qfGrid = $('quickFireGrid');
+  if (qfGrid) {
+    qfGrid.addEventListener('click', e => {
+      const btn = e.target.closest('.forge-qf-btn');
+      if (btn) applyQuickFire(btn.dataset.qf);
+    });
+  }
+
+  // Recipes
+  const recipeList = $('recipeList');
+  if (recipeList) {
+    recipeList.addEventListener('click', e => {
+      const item = e.target.closest('.forge-recipe-item');
+      if (item) applyRecipe(item.dataset.recipe);
+    });
+  }
+
+  // Guardrails
+  const guardrailsGrid = $('guardrailsGrid');
+  if (guardrailsGrid) {
+    guardrailsGrid.addEventListener('click', e => {
+      const chip = e.target.closest('.forge-toggle-chip');
+      if (chip) toggleArrayItem('guardrails', chip.dataset.guardrail, renderGuardrails);
+    });
+  }
+
+  // Boosters
+  const boostersGrid = $('boostersGrid');
+  if (boostersGrid) {
+    boostersGrid.addEventListener('click', e => {
+      const chip = e.target.closest('.forge-toggle-chip');
+      if (chip) toggleArrayItem('boosters', chip.dataset.booster, renderBoosters);
+    });
+  }
+
+  // Clauses
+  const clausePalette = $('clausePalette');
+  if (clausePalette) {
+    clausePalette.addEventListener('click', e => {
+      const chip = e.target.closest('.forge-clause-chip');
+      if (chip) {
+        const clause = CLAUSES[parseInt(chip.dataset.clause)];
+        const extra = $('extraInstructions');
+        if (extra) {
+          extra.value = extra.value ? extra.value + '\n- ' + clause : '- ' + clause;
+          state.extraInstructions = extra.value;
+          updatePrompt();
+        }
+      }
+    });
+  }
+
+  // Templates
+  const templateList = $('templateList');
+  if (templateList) {
+    templateList.addEventListener('click', e => {
+      const del = e.target.closest('[data-delete-template]');
+      if (del) {
+        e.stopPropagation();
+        if (confirm(`Delete "${del.dataset.deleteTemplate}"?`)) {
+          delete templates[del.dataset.deleteTemplate];
+          saveToStorage();
+          renderTemplates();
+          showToast('Deleted!');
+        }
+        return;
+      }
+      const upd = e.target.closest('[data-update-template]');
+      if (upd) {
+        e.stopPropagation();
+        const name = upd.dataset.updateTemplate;
+        templates[name] = { ...state };
+        saveToStorage();
+        showToast(`Updated: ${name}`);
+        return;
+      }
+      const item = e.target.closest('.forge-history-item');
+      if (item && item.dataset.template) loadTemplate(item.dataset.template);
+    });
+  }
+
+  // History
+  const historyList = $('historyList');
+  if (historyList) {
+    historyList.addEventListener('click', e => {
+      const item = e.target.closest('.forge-history-item');
+      if (item && history[item.dataset.history]) {
+        state = { ...state, ...history[item.dataset.history].state };
+        renderSelects();
+        renderGuardrails();
+        renderBoosters();
+        updateCustomVisibility();
+        updateSectionVisibility();
+        updatePrompt();
+      }
+    });
+  }
+
+  // Buttons
+  const copyBtn = $('copyBtn');
+  if (copyBtn) copyBtn.addEventListener('click', copyPrompt);
+
+  const clearBtn = $('clearBtn');
+  if (clearBtn) clearBtn.addEventListener('click', clearAll);
+
+  const newTemplateBtn = $('newTemplateBtn');
+  if (newTemplateBtn) {
+    newTemplateBtn.addEventListener('click', () => {
+      openModal('saveModal');
+      setTimeout(() => {
+        const input = $('templateNameInput');
+        if (input) input.focus();
+      }, 100);
+    });
+  }
+
+  const exportBtn = $('exportBtn');
+  if (exportBtn) exportBtn.addEventListener('click', exportTemplates);
+
+  const importBtn = $('importBtn');
+  if (importBtn) importBtn.addEventListener('click', () => openModal('importModal'));
+
+  // Modals
+  const closeSaveModal = $('closeSaveModal');
+  if (closeSaveModal) closeSaveModal.addEventListener('click', () => closeModal('saveModal'));
+
+  const cancelSaveBtn = $('cancelSaveBtn');
+  if (cancelSaveBtn) cancelSaveBtn.addEventListener('click', () => closeModal('saveModal'));
+
+  const closeImportModal = $('closeImportModal');
+  if (closeImportModal) closeImportModal.addEventListener('click', () => closeModal('importModal'));
+
+  const cancelImportBtn = $('cancelImportBtn');
+  if (cancelImportBtn) cancelImportBtn.addEventListener('click', () => closeModal('importModal'));
+
+  const confirmSaveBtn = $('confirmSaveBtn');
+  if (confirmSaveBtn) confirmSaveBtn.addEventListener('click', saveCurrentTemplate);
+
+  const templateNameInput = $('templateNameInput');
+  if (templateNameInput) {
+    templateNameInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveCurrentTemplate();
+      }
+    });
+  }
+
+  const confirmImportBtn = $('confirmImportBtn');
+  if (confirmImportBtn) {
+    confirmImportBtn.addEventListener('click', () => {
+      try {
+        const importInput = $('importInput');
+        if (!importInput) return;
+        const data = JSON.parse(importInput.value);
+        const incoming = data.templates || data;
+        Object.assign(templates, incoming);
+        saveToStorage();
+        renderTemplates();
+        closeModal('importModal');
+        importInput.value = '';
+        showToast('Templates imported!');
+      } catch (e) {
+        alert('Invalid JSON');
+      }
+    });
+  }
+
+  // Section toggles
+  document.querySelectorAll('[data-section-toggle]').forEach(toggle => {
+    toggle.addEventListener('click', e => {
+      e.stopPropagation();
+      const key = toggle.dataset.sectionToggle;
+      state[key] = !state[key];
+      updateSectionVisibility();
+      updatePrompt();
+    });
+  });
+
+  // Close modal on overlay click
+  document.querySelectorAll('.forge-modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) {
+        overlay.classList.remove('active');
+      }
+    });
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeModal('saveModal');
+      closeModal('importModal');
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '8') {
+      e.preventDefault();
+      const qf = QUICK_FIRES[parseInt(e.key) - 1];
+      if (qf) applyQuickFire(qf.id);
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'c' && !isInputFocused()) {
+      e.preventDefault();
+      copyPrompt();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      e.preventDefault();
+      openModal('saveModal');
+      setTimeout(() => {
+        const input = $('templateNameInput');
+        if (input) input.focus();
+      }, 100);
+    }
+  });
+}
+
+function isInputFocused() {
+  const a = document.activeElement;
+  return a && ['INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName);
+}
+
+function toggleArrayItem(key, id, renderFn) {
+  if (state[key].includes(id)) state[key] = state[key].filter(x => x !== id);
+  else state[key].push(id);
+  renderFn();
+  updatePrompt();
+}
+
+function updateCustomVisibility() {
+  const customPersonaRow = $('customPersonaRow');
+  if (customPersonaRow) customPersonaRow.classList.toggle('show', state.persona === 'custom');
+
+  const customAudienceRow = $('customAudienceRow');
+  if (customAudienceRow) customAudienceRow.classList.toggle('show', state.audience === 'custom');
+
+  const customObjDelRow = $('customObjDelRow');
+  if (customObjDelRow) customObjDelRow.classList.toggle('show', state.objective === 'custom' || state.deliverable === 'custom');
+
+  const customStackRow = $('customStackRow');
+  if (customStackRow) customStackRow.classList.toggle('show', state.techStack === 'custom' || state.framework === 'custom');
+
+  const customCodebaseRow = $('customCodebaseRow');
+  if (customCodebaseRow) customCodebaseRow.classList.toggle('show', state.codebase === 'custom');
+
+  const customConstraintsRow = $('customConstraintsRow');
+  if (customConstraintsRow) customConstraintsRow.classList.toggle('show', state.constraints === 'custom' || state.testing === 'custom');
+}
+
+function updateSectionVisibility() {
+  const sections = [
+    { key: 'includeRole', cardId: 'roleCard' },
+    { key: 'includeTask', cardId: 'taskCard' },
+    { key: 'includeObjective', cardId: 'objectiveCard' },
+    { key: 'includeContext', cardId: 'contextCard' },
+    { key: 'includeDev', cardId: 'devCard' },
+    { key: 'includeGuardrails', cardId: 'modifiersCard' }
+  ];
+
+  sections.forEach(({ key, cardId }) => {
+    const card = $(cardId);
+    const toggle = document.querySelector(`[data-section-toggle="${key}"]`);
+    if (card && toggle) {
+      card.classList.toggle('forge-disabled', !state[key]);
+      toggle.classList.toggle('checked', state[key]);
+    }
+  });
+}
+
+// ============ ACTIONS ============
+function applyQuickFire(id) {
+  const qf = QUICK_FIRES.find(q => q.id === id);
+  if (!qf) return;
+
+  document.querySelectorAll('.forge-qf-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`[data-qf="${id}"]`);
+  if (btn) btn.classList.add('active');
+
+  applyConfig(qf.recipe);
+  showToast(`${qf.label} mode!`);
+}
+
+function applyRecipe(id) {
+  const recipe = RECIPES.find(r => r.id === id);
+  if (!recipe) return;
+
+  document.querySelectorAll('.forge-recipe-item').forEach(r => r.classList.remove('selected'));
+  const item = document.querySelector(`[data-recipe="${id}"]`);
+  if (item) item.classList.add('selected');
+
+  applyConfig(recipe.config);
+  showToast(`${recipe.name} recipe!`);
+}
+
+function applyConfig(config) {
+  Object.keys(config).forEach(key => {
+    if (key === 'guardrails' || key === 'boosters') {
+      state[key] = [...config[key]];
+    } else if (state.hasOwnProperty(key)) {
+      state[key] = config[key];
+    }
+  });
+  renderSelects();
+  renderGuardrails();
+  renderBoosters();
+  updateCustomVisibility();
+  updateSectionVisibility();
+  updatePrompt();
+}
+
+function loadTemplate(name) {
+  if (!templates[name]) return;
+  state = { ...state, ...templates[name] };
+  renderSelects();
+  renderGuardrails();
+  renderBoosters();
+  updateCustomVisibility();
+  updateSectionVisibility();
+  updatePrompt();
+  showToast(`Loaded: ${name}`);
+}
+
+function clearAll() {
+  state = {
+    persona: 'senior_dev', voice: 'neutral', customPersona: '',
+    pattern: 'feature', format: 'steps', tone: 'precise',
+    audience: 'senior_dev', customAudience: '',
+    objective: 'ship_feature', customObjective: '',
+    deliverable: 'pr', customDeliverable: '',
+    context: 'none', customContext: '',
+    exclusions: 'no_fluff', inputsProvided: '',
+    techStack: 'html_single', framework: 'none', customStack: '',
+    devTask: 'feature', codebase: 'frontend', customCodebase: '',
+    risk: 'medium', constraints: 'tested', customConstraints: '',
+    testing: 'unit', extraInstructions: '',
+    guardrails: [], boosters: [],
+    includeRole: true, includeTask: true, includeObjective: true,
+    includeContext: false, includeDev: true, includeGuardrails: true
+  };
+  renderSelects();
+  renderGuardrails();
+  renderBoosters();
+  updateCustomVisibility();
+  updateSectionVisibility();
+  updatePrompt();
+  showToast('Cleared!');
+}
+
+function exportTemplates() {
+  const data = JSON.stringify({ templates, lastState: state }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'prompt-forge-templates.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported!');
+}
+
+// ============ PROMPT ASSEMBLY ============
+function updatePrompt() {
+  const prompt = assemblePrompt();
+  const outputPre = $('outputPre');
+  if (outputPre) {
+    if (prompt.trim()) {
+      outputPre.innerHTML = highlightPrompt(prompt);
+    } else {
+      outputPre.innerHTML = '<span style="color: var(--text-secondary);">Enable sections and configure options to build your prompt.</span>';
+    }
+  }
+  updateScore();
+  saveToStorage();
+}
+
+function getText(list, id, customValue) {
+  if (id === 'custom') return customValue || '';
+  const item = list.find(x => x.id === id);
+  return item?.text || item?.label || '';
+}
+
+function assemblePrompt() {
+  const lines = [];
+
+  // Role
+  if (state.includeRole) {
+    const personaText = getText(PERSONAS, state.persona, state.customPersona);
+    const voiceText = getText(VOICES, state.voice, '');
+    if (personaText) {
+      lines.push('--- ROLE ---');
+      lines.push(personaText);
+      if (voiceText) lines.push(`Voice: ${voiceText}`);
+      lines.push('');
+    }
+  }
+
+  // Task
+  if (state.includeTask) {
+    const patternText = getText(PATTERNS, state.pattern, '');
+    const formatText = getText(FORMATS, state.format, '');
+    const toneText = getText(TONES, state.tone, '');
+    const audienceText = getText(AUDIENCES, state.audience, state.customAudience);
+
+    if (patternText || formatText) {
+      lines.push('--- TASK ---');
+      if (patternText) lines.push(`Pattern: ${patternText}`);
+      if (formatText) lines.push(`Output: ${formatText}`);
+      if (toneText) lines.push(`Tone: ${toneText}`);
+      if (audienceText) lines.push(`Audience: ${audienceText}`);
+      lines.push('');
+    }
+  }
+
+  // Objective
+  if (state.includeObjective) {
+    const objectiveText = getText(OBJECTIVES, state.objective, state.customObjective);
+    const deliverableText = getText(DELIVERABLES, state.deliverable, state.customDeliverable);
+    if (objectiveText || deliverableText) {
+      lines.push('--- OBJECTIVE ---');
+      if (objectiveText) lines.push(`Goal: ${objectiveText}`);
+      if (deliverableText) lines.push(`Deliverable: ${deliverableText}`);
+      lines.push('');
+    }
+  }
+
+  // Context
+  if (state.includeContext) {
+    const contextText = getText(CONTEXTS, state.context, state.customContext);
+    const exclusionsText = getText(EXCLUSIONS, state.exclusions, '');
+    if (contextText || state.inputsProvided || exclusionsText) {
+      lines.push('--- CONTEXT ---');
+      if (contextText) lines.push(`Background: ${contextText}`);
+      if (state.inputsProvided) lines.push(`Inputs: ${state.inputsProvided}`);
+      if (exclusionsText) lines.push(`Avoid: ${exclusionsText}`);
+      lines.push('');
+    }
+  }
+
+  // Dev
+  if (state.includeDev) {
+    const stackText = getText(TECH_STACKS, state.techStack, state.customStack);
+    const frameworkText = getText(FRAMEWORKS, state.framework, '');
+    const taskText = getText(DEV_TASKS, state.devTask, '');
+    const codebaseText = getText(CODEBASES, state.codebase, state.customCodebase);
+    const riskText = getText(RISK_LEVELS, state.risk, '');
+    const constraintsText = getText(CONSTRAINTS, state.constraints, state.customConstraints);
+    const testingText = getText(TESTING, state.testing, '');
+
+    if (stackText || taskText) {
+      lines.push('--- DEV CONTEXT ---');
+      if (stackText) lines.push(`Stack: ${stackText}`);
+      if (frameworkText) lines.push(`Framework: ${frameworkText}`);
+      if (taskText) lines.push(`Task: ${taskText}`);
+      if (codebaseText) lines.push(`Focus: ${codebaseText}`);
+      if (riskText) lines.push(`Risk: ${riskText}`);
+      if (constraintsText) lines.push(`Constraints: ${constraintsText}`);
+      if (testingText) lines.push(`Testing: ${testingText}`);
+      lines.push('');
+    }
+  }
+
+  // Guardrails
+  if (state.includeGuardrails && state.guardrails.length) {
+    lines.push('--- GUARDRAILS ---');
+    state.guardrails.forEach(id => {
+      const g = GUARDRAILS.find(x => x.id === id);
+      if (g) lines.push(`• ${g.label}: ${g.text}`);
+    });
+    lines.push('');
+  }
+
+  // Boosters
+  if (state.includeGuardrails && state.boosters.length) {
+    lines.push('--- QUALITY BOOSTERS ---');
+    state.boosters.forEach(id => {
+      const b = BOOSTERS.find(x => x.id === id);
+      if (b) lines.push(`• ${b.label}: ${b.text}`);
+    });
+    lines.push('');
+  }
+
+  // Extra
+  if (state.extraInstructions) {
+    lines.push('--- INSTRUCTIONS ---');
+    lines.push(state.extraInstructions);
+    lines.push('');
+  }
+
+  // Remove trailing empty lines
+  while (lines.length && lines[lines.length - 1] === '') {
+    lines.pop();
+  }
+
+  return lines.join('\n');
+}
+
+function highlightPrompt(text) {
+  return text.replace(/^(---.*---)$/gm, '<span class="section-label">$1</span>');
+}
+
+function updateScore() {
+  let score = 0;
+  const tips = [];
+
+  if (state.objective !== 'none' && state.objective) score += 25; else tips.push('Add objective');
+  if (state.deliverable !== 'none' && state.deliverable) score += 25; else tips.push('Add deliverable');
+  if (state.persona) score += 15;
+  if (state.pattern) score += 10;
+  if (state.audience) score += 5;
+  if (state.guardrails.length) score += 10;
+  if (state.boosters.length) score += 10;
+
+  score = Math.min(100, score);
+
+  const scoreFill = $('scoreFill');
+  if (scoreFill) scoreFill.style.width = score + '%';
+
+  const scoreValue = $('scoreValue');
+  if (scoreValue) {
+    scoreValue.textContent = score + '%';
+    scoreValue.style.color = score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--warning)' : 'var(--error)';
+  }
+
+  const scoreTips = $('scoreTips');
+  if (scoreTips) scoreTips.textContent = tips.slice(0, 2).join(', ') || 'Good!';
+}
+
+function copyPrompt() {
+  const text = assemblePrompt();
+  if (!text.trim()) {
+    showToast('Nothing to copy!');
+    return;
+  }
+
+  copyToClipboard(text, {
+    onSuccess: () => {
+      history.unshift({
+        name: PATTERNS.find(p => p.id === state.pattern)?.label || 'Prompt',
+        time: Date.now(),
+        state: { ...state }
+      });
+      history = history.slice(0, 20);
+      renderHistory();
+      saveToStorage();
+
+      const btn = $('copyBtn');
+      if (btn) {
+        const original = btn.innerHTML;
+        btn.innerHTML = '✓ Copied!';
+        btn.classList.add('forge-btn-success');
+        setTimeout(() => {
+          btn.innerHTML = original;
+          btn.classList.remove('forge-btn-success');
+        }, 1500);
+      }
+    },
+    onError: () => {
+      showToast('Failed to copy!');
+    }
+  });
+}
+
+// ============ UTILITIES ============
+function openModal(id) {
+  const modal = $(id);
+  if (modal) modal.classList.add('active');
+}
+
+function closeModal(id) {
+  const modal = $(id);
+  if (modal) modal.classList.remove('active');
+}
+
+function saveCurrentTemplate() {
+  const input = $('templateNameInput');
+  if (!input) return;
+  const name = input.value.trim();
+  if (name) {
+    templates[name] = { ...state };
+    saveToStorage();
+    renderTemplates();
+    closeModal('saveModal');
+    input.value = '';
+    showToast(`Saved: ${name}`);
+  }
+}
+
+function showToast(msg) {
+  const toast = $('toast');
+  const toastText = $('toastText');
+  if (toast && toastText) {
+    toastText.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1800);
+  }
+}
+
+function formatTime(ts) {
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'now';
+  if (diff < 3600000) return Math.floor(diff / 60000) + 'm';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h';
+  return new Date(ts).toLocaleDateString();
 }
 </script>
 
