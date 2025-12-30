@@ -1,0 +1,95 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt Forge - DevChef Tool</title>
+</head>
+<body>
+
+<script type="devchef-manifest">
+{
+  "id": "prompt-forge",
+  "name": "Prompt Forge",
+  "category": "AI",
+  "description": "Legacy prompt workspace placeholder that routes to the AI Prompt Builder",
+  "version": "1.0.0"
+}
+</script>
+
+<template id="tool-ui">
+  <div class="tool-container">
+    <div class="tool-header">
+      <h2 class="tool-title">Prompt Forge</h2>
+      <p class="tool-description">This experiment now lives inside the AI Prompt Builder.</p>
+    </div>
+
+    <div class="tool-section">
+      <p>
+        All presets, saved snippets, and context aware features were migrated to the consolidated builder.
+        Use the shortcut below to open it in a separate tab or search for "AI Prompt Builder" from the
+        main DevChef workspace.
+      </p>
+    </div>
+
+    <div class="tool-section" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+      <tool-button id="open-builder" variant="primary" label="Open AI Prompt Builder"></tool-button>
+    </div>
+
+    <div class="tool-section">
+      <tool-status id="status"></tool-status>
+    </div>
+  </div>
+</template>
+
+<script type="module">
+import { showStatus } from '../core/tool-utils.js';
+
+const BUILDER_ID = 'ai-prompt-builder';
+
+function openBuilder(statusEl) {
+  try {
+    if (window.DevChef?.openTool) {
+      window.DevChef.openTool(BUILDER_ID);
+      showStatus(statusEl, 'Opening AI Prompt Builder...', 'success');
+      return;
+    }
+
+    const builderUrl = new URL('./tools/ai-prompt-builder.html', window.location.href);
+    window.open(builderUrl.href, '_blank');
+    showStatus(statusEl, 'AI Prompt Builder opened in a new tab', 'success');
+  } catch (error) {
+    console.error('Unable to open builder', error);
+    showStatus(statusEl, 'Failed to open builder', 'error');
+  }
+}
+
+
+export const DevChefTool = {
+  init(container) {
+    const builderBtn = container.querySelector('#open-builder');
+    const status = container.querySelector('#status');
+
+    if (builderBtn) {
+      builderBtn.addEventListener('tool-click', () => openBuilder(status));
+    }
+  },
+
+  onInput() {
+    return { output: '' };
+  }
+};
+
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const template = document.querySelector('#tool-ui');
+    if (template) {
+      document.body.innerHTML = template.innerHTML;
+      DevChefTool.init(document.body, {});
+    }
+  });
+}
+</script>
+
+</body>
+</html>

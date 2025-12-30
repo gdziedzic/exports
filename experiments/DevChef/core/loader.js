@@ -5,6 +5,62 @@
 
 import { ToolRegistry } from './registry.js';
 
+
+/**
+ * Rewrite relative import specifiers inside inline tool modules so they can be
+ * resolved from the blob URL we generate for dynamic imports.
+ *
+ * When we load HTML files and evaluate their <script type="module"> blocks via
+ * Blob URLs, any relative specifiers (e.g. "../core/tool-utils.js") would break
+ * because the blob URL doesn't have a hierarchical base. We rewrite those
+ * specifiers to absolute URLs using the tool file path so the browser can load
+ * the dependencies correctly.
+ *
+ * @param {string} scriptContent - Module source code to rewrite
+ * @param {string} toolPath - Original path of the HTML file being processed
+ * @returns {string} Updated module source code
+ */
+function rewriteModuleImports(scriptContent, toolPath) {
+  if (!scriptContent || typeof scriptContent !== 'string') {
+    return scriptContent;
+  }
+
+  let rewritten = scriptContent;
+
+  try {
+    const baseUrl = new URL(toolPath, window.location.href);
+
+    const resolveSpecifier = (specifier) => {
+      if (!specifier || (!specifier.startsWith('.') && !specifier.startsWith('/'))) {
+        return specifier;
+      }
+
+      try {
+        return new URL(specifier, baseUrl).href;
+      } catch (error) {
+        console.warn(`Failed to resolve specifier ${specifier} for ${toolPath}:`, error);
+        return specifier;
+      }
+    };
+
+    rewritten = rewritten
+      .replace(/from\s+(['"])(\.{1,2}\/[^'")]+)\1/g, (match, quote, specifier) => {
+        return match.replace(specifier, resolveSpecifier(specifier));
+      })
+      .replace(/import\s+(['"])(\.{1,2}\/[^'")]+)\1/g, (match, quote, specifier) => {
+        return match.replace(specifier, resolveSpecifier(specifier));
+      })
+      .replace(/import\s*\(\s*(['"])(\.{1,2}\/[^'")]+)\1\s*\)/g, (match, quote, specifier) => {
+        const resolved = resolveSpecifier(specifier);
+        return `import(${quote}${resolved}${quote})`;
+      });
+  } catch (error) {
+    console.warn(`Failed to rewrite module imports for ${toolPath}:`, error);
+  }
+
+  return rewritten;
+}
+
 // Track loading errors
 const loadingErrors = [];
 
@@ -110,8 +166,11 @@ async function loadTool(path) {
       scriptContent = scriptTag.textContent;
     }
 
+    // Rewrite relative imports so dependencies resolve from blob URLs
+    const rewrittenScript = rewriteModuleImports(scriptContent, path);
+
     // Create a blob URL for the module
-    const blob = new Blob([scriptContent], { type: "text/javascript" });
+    const blob = new Blob([rewrittenScript], { type: "text/javascript" });
     const moduleUrl = URL.createObjectURL(blob);
     const module = await import(moduleUrl);
 

@@ -763,22 +763,57 @@ class UnifiedSearchManager {
     this.usageCount = new Map();
     this.isDeepIndexed = false;
     this.debounceTimer = null;
+    this.initialized = false;
+  }
+
+  get isIndexed() {
+    return this.isDeepIndexed;
+  }
+
+  ensureDeepIndex(force = false) {
+    if (!this.isDeepIndexed || force) {
+      this.buildSearchIndex();
+    }
   }
 
   /**
    * Initialize search manager
    */
   init() {
+    if (this.initialized) {
+      return this;
+    }
+
     try {
       this.loadFavorites();
       this.loadRecentTools();
       this.loadUsageStats();
       this.loadSearchHistory();
-      console.log('🔍 Unified Search initialized');
+      console.log('?? Unified Search initialized');
     } catch (error) {
       console.error('Error initializing Unified Search:', error);
     }
+
+    this.initialized = true;
     return this;
+  }
+
+  /**
+   * Legacy alias used by older deep search UI
+   */
+  initialize() {
+    this.init();
+    this.ensureDeepIndex();
+    return this;
+  }
+
+  /**
+   * Build or rebuild the deep search index
+   */
+  buildSearchIndex() {
+    const index = this.deepSearchIndex.buildIndex();
+    this.isDeepIndexed = true;
+    return index;
   }
 
   /**
@@ -794,25 +829,64 @@ class UnifiedSearchManager {
   }
 
   /**
+   * Execute deep search and provide grouped results
+   */
+  search(query, options = {}, callback) {
+    const trimmedQuery = (query || '').trim();
+    const emptyResult = {
+      query: trimmedQuery,
+      results: [],
+      grouped: {},
+      total: 0
+    };
+
+    if (!trimmedQuery) {
+      if (typeof callback === 'function') {
+        callback(emptyResult);
+      }
+      return emptyResult;
+    }
+
+    this.ensureDeepIndex();
+    const results = this.deepSearchIndex.search(trimmedQuery, options);
+    const grouped = this.deepSearchIndex.groupResults(results);
+    const payload = {
+      query: trimmedQuery,
+      results,
+      grouped,
+      total: results.length
+    };
+
+    this.addToHistory(trimmedQuery);
+
+    if (typeof callback === 'function') {
+      callback(payload);
+    }
+
+    return payload;
+  }
+
+  /**
    * Deep search across saved content
    */
   deepSearch(query, options = {}) {
-    if (!this.isDeepIndexed) {
-      this.deepSearchIndex.buildIndex();
-      this.isDeepIndexed = true;
-    }
-
-    const results = this.deepSearchIndex.search(query, options);
-    this.addToHistory(query);
-    return results;
+    const payload = this.search(query, options);
+    return payload.results;
   }
 
   /**
    * Rebuild deep search index
    */
   rebuildDeepIndex() {
-    this.deepSearchIndex.buildIndex();
-    this.isDeepIndexed = true;
+    return this.buildSearchIndex();
+  }
+
+  /**
+   * Clear cached index and rebuild
+   */
+  clearAndRebuild() {
+    this.isDeepIndexed = false;
+    return this.buildSearchIndex();
   }
 
   /**
@@ -867,12 +941,16 @@ class UnifiedSearchManager {
    * Get statistics
    */
   getStats() {
+    const deepIndexStats = this.deepSearchIndex.getStats();
     return {
       favorites: this.favorites.size,
       recentTools: this.recentTools.length,
       usageTracked: this.usageCount.size,
       searchHistory: this.searchHistory.length,
-      deepIndex: this.deepSearchIndex.getStats()
+      deepIndex: deepIndexStats,
+      total: deepIndexStats.total,
+      indexAge: deepIndexStats.indexAge,
+      lastIndexTime: deepIndexStats.lastIndexTime
     };
   }
 
