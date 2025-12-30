@@ -7,33 +7,38 @@
 </head>
 <body>
 
+<!-- DevChef Manifest -->
 <script type="devchef-manifest">
 {
   "id": "prompt-forge",
   "name": "Prompt Forge",
   "category": "AI",
-  "description": "Legacy prompt workspace placeholder that routes to the AI Prompt Builder",
-  "version": "1.0.0"
+  "description": "Embedded AI Prompt Builder experience with legacy Prompt Forge presets",
+  "version": "2.0.0",
+  "keywords": ["prompt", "builder", "ai", "forge"]
 }
 </script>
 
+<!-- Tool UI Template -->
 <template id="tool-ui">
-  <div class="tool-container">
+  <div class="tool-container prompt-forge">
     <div class="tool-header">
       <h2 class="tool-title">Prompt Forge</h2>
-      <p class="tool-description">This experiment now lives inside the AI Prompt Builder.</p>
+      <p class="tool-description">Legacy Prompt Forge presets now run inside DevChef via the embedded AI Prompt Builder.</p>
     </div>
 
-    <div class="tool-section">
-      <p>
-        All presets, saved snippets, and context aware features were migrated to the consolidated builder.
-        Use the shortcut below to open it in a separate tab or search for "AI Prompt Builder" from the
-        main DevChef workspace.
-      </p>
+    <div class="tool-section forge-actions">
+      <tool-button id="reload-builder" variant="secondary" label="Reload Builder"></tool-button>
+      <tool-button id="open-builder" variant="primary" label="Open Full Builder"></tool-button>
     </div>
 
-    <div class="tool-section" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-      <tool-button id="open-builder" variant="primary" label="Open AI Prompt Builder"></tool-button>
+    <div class="tool-section forge-embed-section">
+      <div id="builder-host" class="forge-embed">
+        <div class="forge-placeholder">
+          <div class="forge-spinner"></div>
+          <p>Loading Prompt Forge...</p>
+        </div>
+      </div>
     </div>
 
     <div class="tool-section">
@@ -42,41 +47,163 @@
   </div>
 </template>
 
+<!-- Tool styles -->
+<style>
+  .prompt-forge .forge-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .prompt-forge .forge-embed-section {
+    padding: 0;
+  }
+
+  .prompt-forge .forge-embed {
+    position: relative;
+    min-height: 720px;
+    border: 1px solid var(--border-color, #2c2c2c);
+    border-radius: 12px;
+    background: var(--surface, #0f1116);
+    overflow: hidden;
+  }
+
+  .prompt-forge .forge-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #06070c;
+  }
+
+  .prompt-forge .forge-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-muted, #b0b8d2);
+    font-size: 14px;
+    background: linear-gradient(135deg, rgba(66, 133, 244, 0.08), rgba(219, 68, 55, 0.08));
+  }
+
+  .prompt-forge .forge-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(255, 255, 255, 0.15);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: forge-spin 1s linear infinite;
+  }
+
+  @keyframes forge-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>
+
+<!-- Tool Module Logic -->
 <script type="module">
 import { showStatus } from '../core/tool-utils.js';
 
-const BUILDER_ID = 'ai-prompt-builder';
+const BUILDER_PATH = './tools/ai-prompt-builder.html';
 
-function openBuilder(statusEl) {
-  try {
-    if (window.DevChef?.openTool) {
-      window.DevChef.openTool(BUILDER_ID);
-      showStatus(statusEl, 'Opening AI Prompt Builder...', 'success');
-      return;
-    }
-
-    const builderUrl = new URL('./tools/ai-prompt-builder.html', window.location.href);
-    window.open(builderUrl.href, '_blank');
-    showStatus(statusEl, 'AI Prompt Builder opened in a new tab', 'success');
-  } catch (error) {
-    console.error('Unable to open builder', error);
-    showStatus(statusEl, 'Failed to open builder', 'error');
-  }
+function buildBuilderUrl() {
+  const url = new URL(BUILDER_PATH, window.location.href);
+  url.searchParams.set('embedded', '1');
+  url.hash = 'prompt-forge';
+  return url.href;
 }
 
+function createPlaceholder() {
+  const placeholder = document.createElement('div');
+  placeholder.className = 'forge-placeholder';
+  placeholder.innerHTML = `
+    <div class="forge-spinner"></div>
+    <p>Loading Prompt Forge...</p>
+  `;
+  return placeholder;
+}
 
 export const DevChefTool = {
-  init(container) {
-    const builderBtn = container.querySelector('#open-builder');
-    const status = container.querySelector('#status');
+  init(container, context = {}) {
+    this.context = context;
+    this.container = container;
+    this.hostEl = container.querySelector('#builder-host');
+    this.statusEl = container.querySelector('#status');
+    this.reloadBtn = container.querySelector('#reload-builder');
+    this.openBtn = container.querySelector('#open-builder');
+    this.iframe = null;
 
-    if (builderBtn) {
-      builderBtn.addEventListener('tool-click', () => openBuilder(status));
+    this.boundHandleMessage = (event) => this.handleMessage(event);
+    window.addEventListener('message', this.boundHandleMessage);
+
+    this.loadEmbed();
+    this.bindEvents();
+  },
+
+  bindEvents() {
+    this.reloadBtn?.addEventListener('tool-click', () => this.reloadEmbed());
+    this.openBtn?.addEventListener('tool-click', () => this.openExternal());
+  },
+
+  loadEmbed() {
+    if (!this.hostEl) return;
+
+    this.hostEl.innerHTML = '';
+    const placeholder = createPlaceholder();
+    this.hostEl.appendChild(placeholder);
+
+    const iframe = document.createElement('iframe');
+    iframe.className = 'forge-iframe';
+    iframe.title = 'Prompt Forge - AI Prompt Builder';
+    iframe.src = buildBuilderUrl();
+    iframe.addEventListener('load', () => {
+      placeholder.remove();
+      showStatus(this.statusEl, 'Prompt Forge ready', 'success');
+    });
+    iframe.addEventListener('error', () => {
+      showStatus(this.statusEl, 'Failed to load Prompt Forge', 'error');
+    });
+
+    this.hostEl.appendChild(iframe);
+    this.iframe = iframe;
+  },
+
+  reloadEmbed() {
+    showStatus(this.statusEl, 'Reloading Prompt Forge...', 'info');
+    if (this.iframe) {
+      this.iframe.src = buildBuilderUrl();
+    } else {
+      this.loadEmbed();
     }
+  },
+
+  openExternal() {
+    const url = buildBuilderUrl();
+    window.open(url, '_blank', 'noopener');
+    showStatus(this.statusEl, 'Opened Prompt Forge in a new tab', 'success');
   },
 
   onInput() {
     return { output: '' };
+  },
+
+  handleMessage(event) {
+    if (!this.iframe || event.source !== this.iframe.contentWindow) return;
+    const data = event.data || {};
+
+    if (data.type === 'ai-prompt-builder:status' && data.message) {
+      showStatus(this.statusEl, data.message, data.level || 'info');
+    }
+  },
+
+  destroy() {
+    window.removeEventListener('message', this.boundHandleMessage);
+    this.hostEl = null;
+    this.iframe = null;
   }
 };
 
@@ -93,3 +220,4 @@ if (typeof window !== 'undefined' && !window.DevChef) {
 
 </body>
 </html>
+
