@@ -42,7 +42,7 @@
     </div>
 
     <div class="tool-section">
-      <tool-status id="status"></tool-status>
+      <tool-status id="forge-status"></tool-status>
     </div>
   </div>
 </template>
@@ -110,11 +110,9 @@ import { showStatus } from '../core/tool-utils.js';
 
 const BUILDER_PATH = './tools/ai-prompt-builder.html';
 
-function buildBuilderUrl() {
-  const url = new URL(BUILDER_PATH, window.location.href);
-  url.searchParams.set('embedded', '1');
-  url.hash = 'prompt-forge';
-  return url.href;
+function resolveBuilderUrl() {
+  const baseDir = new URL('.', window.location.href);
+  return new URL(BUILDER_PATH.replace(/^\.\//, ''), baseDir).href;
 }
 
 function createPlaceholder() {
@@ -132,13 +130,10 @@ export const DevChefTool = {
     this.context = context;
     this.container = container;
     this.hostEl = container.querySelector('#builder-host');
-    this.statusEl = container.querySelector('#status');
+    this.statusEl = container.querySelector('#forge-status');
     this.reloadBtn = container.querySelector('#reload-builder');
     this.openBtn = container.querySelector('#open-builder');
     this.iframe = null;
-
-    this.boundHandleMessage = (event) => this.handleMessage(event);
-    window.addEventListener('message', this.boundHandleMessage);
 
     this.loadEmbed();
     this.bindEvents();
@@ -159,7 +154,7 @@ export const DevChefTool = {
     const iframe = document.createElement('iframe');
     iframe.className = 'forge-iframe';
     iframe.title = 'Prompt Forge - AI Prompt Builder';
-    iframe.src = buildBuilderUrl();
+    iframe.src = resolveBuilderUrl();
     iframe.addEventListener('load', () => {
       placeholder.remove();
       showStatus(this.statusEl, 'Prompt Forge ready', 'success');
@@ -175,14 +170,14 @@ export const DevChefTool = {
   reloadEmbed() {
     showStatus(this.statusEl, 'Reloading Prompt Forge...', 'info');
     if (this.iframe) {
-      this.iframe.src = buildBuilderUrl();
+      this.iframe.src = resolveBuilderUrl();
     } else {
       this.loadEmbed();
     }
   },
 
   openExternal() {
-    const url = buildBuilderUrl();
+    const url = resolveBuilderUrl();
     window.open(url, '_blank', 'noopener');
     showStatus(this.statusEl, 'Opened Prompt Forge in a new tab', 'success');
   },
@@ -191,33 +186,23 @@ export const DevChefTool = {
     return { output: '' };
   },
 
-  handleMessage(event) {
-    if (!this.iframe || event.source !== this.iframe.contentWindow) return;
-    const data = event.data || {};
-
-    if (data.type === 'ai-prompt-builder:status' && data.message) {
-      showStatus(this.statusEl, data.message, data.level || 'info');
-    }
-  },
-
   destroy() {
-    window.removeEventListener('message', this.boundHandleMessage);
-    this.hostEl = null;
+    this.iframe?.remove();
     this.iframe = null;
+    this.hostEl = null;
+    this.statusEl = null;
   }
 };
 
 if (typeof window !== 'undefined' && !window.DevChef) {
   document.addEventListener('DOMContentLoaded', () => {
     const template = document.querySelector('#tool-ui');
-    if (template) {
-      document.body.innerHTML = template.innerHTML;
-      DevChefTool.init(document.body, {});
-    }
+    if (!template) return;
+    document.body.innerHTML = template.innerHTML;
+    DevChefTool.init(document.body, {});
   });
 }
 </script>
 
 </body>
 </html>
-
