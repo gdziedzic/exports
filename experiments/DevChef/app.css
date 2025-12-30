@@ -6451,3 +6451,503 @@ body[data-breakpoint="tablet"] #sidebar {
 [data-theme="dark"] .pwa-btn-update:hover {
   background: #2a2a2a;
 }
+
+/* ========================================
+   V7 STATE-OF-THE-ART EXCELLENCE
+   Smooth Animations, Micro-interactions, Modern Design
+   ======================================== */
+
+/* V7 Enhanced Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+  }
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* V7 Smooth Transitions for All Interactive Elements */
+button, .tool-item, .action-btn, input, textarea, select {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* V7 Enhanced Button Interactions */
+button:active {
+  transform: scale(0.95);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  animation: pulse 0.6s ease-in-out;
+}
+
+/* V7 Ripple Effect for Buttons */
+button {
+  position: relative;
+  overflow: hidden;
+}
+
+button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+button:active::after {
+  width: 300px;
+  height: 300px;
+  animation: ripple 0.6s ease-out;
+}
+
+/* V7 Enhanced Tool Items with Smooth Hover */
+.tool-item {
+  animation: fadeInUp 0.3s ease-out;
+  animation-fill-mode: both;
+  will-change: transform, box-shadow;
+}
+
+.tool-item:nth-child(1) { animation-delay: 0.05s; }
+.tool-item:nth-child(2) { animation-delay: 0.1s; }
+.tool-item:nth-child(3) { animation-delay: 0.15s; }
+.tool-item:nth-child(4) { animation-delay: 0.2s; }
+.tool-item:nth-child(5) { animation-delay: 0.25s; }
+
+.tool-item:hover {
+  transform: translateX(8px) scale(1.02);
+  box-shadow: var(--shadow-md);
+}
+
+.tool-item.active {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+/* V7 Glassmorphism Effects */
+.v7-glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .v7-glass {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* V7 Modern Gradients */
+.v7-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.v7-gradient-success {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.v7-gradient-danger {
+  background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+}
+
+.v7-gradient-info {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* V7 Enhanced Shadows */
+.v7-shadow-soft {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.v7-shadow-medium {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.v7-shadow-hard {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.v7-shadow-glow {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+/* V7 Smooth Scroll */
+* {
+  scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+}
+
+/* V7 Loading Skeleton */
+.v7-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 0%,
+    var(--bg-tertiary) 50%,
+    var(--bg-secondary) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* V7 Enhanced Input Fields */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  animation: glow 1.5s ease-in-out infinite;
+}
+
+input, textarea, select {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* V7 Modern Tooltips */
+.v7-tooltip {
+  position: relative;
+}
+
+.v7-tooltip::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow: var(--shadow-md);
+  z-index: 1000;
+}
+
+.v7-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--bg-tertiary);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.v7-tooltip:hover::before,
+.v7-tooltip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* V7 Success/Error Animations */
+.v7-success {
+  animation: successPulse 0.5s ease-out;
+}
+
+.v7-error {
+  animation: errorShake 0.5s ease-out;
+}
+
+@keyframes successPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes errorShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-10px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(10px);
+  }
+}
+
+/* V7 Enhanced Version Badge */
+.version-badge {
+  position: relative;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  animation: fadeInScale 0.5s ease-out;
+}
+
+.version-badge:hover {
+  animation: pulse 1s ease-in-out infinite;
+  cursor: pointer;
+}
+
+/* V7 Floating Action Button Enhancement */
+#quick-panel-fab {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+#quick-panel-fab:hover {
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4);
+}
+
+#quick-panel-fab:active {
+  transform: scale(0.9) rotate(90deg);
+}
+
+/* V7 Modal Animations */
+.modal {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+.modal-backdrop {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* V7 Command Palette Enhancement */
+.command-palette {
+  animation: fadeInDown 0.3s ease-out;
+}
+
+.command-palette-item:hover {
+  transform: translateX(8px);
+  background: var(--bg-hover);
+}
+
+/* V7 Notification Enhancements */
+.notification {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification.success {
+  border-left: 4px solid var(--success);
+  animation: slideInRight 0.3s ease-out, successPulse 0.5s ease-out 0.3s;
+}
+
+.notification.error {
+  border-left: 4px solid var(--error);
+  animation: slideInRight 0.3s ease-out, errorShake 0.5s ease-out 0.3s;
+}
+
+/* V7 Card Hover Effects */
+.v7-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, box-shadow;
+}
+
+.v7-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hard);
+}
+
+/* V7 Loading Spinner Enhancement */
+.loading-spinner {
+  animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* V7 Welcome Screen Animation */
+.welcome-screen {
+  animation: fadeInScale 0.5s ease-out;
+}
+
+.welcome-screen h2 {
+  animation: fadeInDown 0.6s ease-out 0.2s both;
+}
+
+.welcome-screen p {
+  animation: fadeInUp 0.6s ease-out 0.4s both;
+}
+
+/* V7 Sidebar Animation */
+#sidebar {
+  animation: slideInLeft 0.4s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* V7 Search Box Enhancement */
+.search-box {
+  position: relative;
+}
+
+.search-box input:focus {
+  transform: scale(1.02);
+}
+
+.search-icon {
+  transition: all 0.3s ease;
+}
+
+.search-box input:focus + .search-icon {
+  color: var(--accent);
+  animation: pulse 1s ease-in-out;
+}
+
+/* V7 Performance Optimization */
+.v7-will-change {
+  will-change: transform, opacity;
+}
+
+/* V7 Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* V7 Focus States for Accessibility */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* V7 High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .v7-glass {
+    background: var(--bg-secondary);
+    backdrop-filter: none;
+  }
+
+  button {
+    border: 2px solid var(--text-primary);
+  }
+}
+
+/* V7 Print Optimization */
+@media print {
+  .v7-glass,
+  .v7-shadow-soft,
+  .v7-shadow-medium,
+  .v7-shadow-hard {
+    background: white;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+}

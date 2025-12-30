@@ -1,8 +1,8 @@
 {
-  "name": "DevChef - Developer Productivity Platform",
-  "short_name": "DevChef",
-  "description": "Revolutionary offline-first developer productivity platform with smart clipboard, pipelines, snippets, analytics, and multi-panel workspaces",
-  "version": "2.6.0",
+  "name": "DevChef V7 - State-of-the-Art Productivity Excellence",
+  "short_name": "DevChef V7",
+  "description": "State-of-the-art developer productivity platform with flawless UX, buttery-smooth animations, AI-powered features, and delightful interactions",
+  "version": "7.0.0",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

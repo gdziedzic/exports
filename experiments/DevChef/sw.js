@@ -1,9 +1,9 @@
 /**
- * DevChef V2.6 - Service Worker
- * Full offline PWA support with intelligent caching
+ * DevChef V7 - Service Worker
+ * Full offline PWA support with intelligent caching & performance optimization
  */
 
-const CACHE_VERSION = 'devchef-v2.6.0';
+const CACHE_VERSION = 'devchef-v7.0.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const TOOLS_CACHE = `${CACHE_VERSION}-tools`;

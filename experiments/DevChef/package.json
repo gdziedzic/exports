@@ -1,7 +1,7 @@
 {
   "name": "devchef",
-  "version": "6.5.0",
-  "description": "DevChef - Offline developer productivity platform",
+  "version": "7.0.0",
+  "description": "DevChef V7 - State-of-the-art developer productivity platform with flawless UX",
   "type": "module",
   "scripts": {
     "test": "playwright test",
