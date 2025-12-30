@@ -4,6 +4,10 @@ import { defineConfig, devices } from '@playwright/test';
  * Playwright configuration for DevChef E2E tests
  * @see https://playwright.dev/docs/test-configuration
  */
+const webServerCommand = process.platform === 'win32'
+  ? 'python -m http.server 8000'
+  : 'python3 -m http.server 8000';
+
 export default defineConfig({
   testDir: './tests/e2e',
 
@@ -60,7 +64,7 @@ export default defineConfig({
 
   // Run local dev server before starting the tests
   webServer: {
-    command: 'python3 -m http.server 8000',
+    command: webServerCommand,
     url: 'http://localhost:8000',
     reuseExistingServer: !process.env.CI,
     timeout: 10 * 1000,
