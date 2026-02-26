@@ -33,73 +33,7 @@
         </div>
 
         <div class="snippet-categories">
-          <div class="category">
-            <h4>⏰ Date & Time Queries</h4>
-            <button class="snippet-btn" data-snippet="relative-time">Relative Time (ago)</button>
-            <button class="snippet-btn" data-snippet="absolute-range">Absolute Date Range</button>
-            <button class="snippet-btn" data-snippet="today-only">Today Only</button>
-            <button class="snippet-btn" data-snippet="this-week">This Week</button>
-            <button class="snippet-btn" data-snippet="last-n-days">Last N Days</button>
-            <button class="snippet-btn" data-snippet="hourly-breakdown">Hourly Breakdown</button>
-          </div>
-
-          <div class="category">
-            <h4>🔍 Common Queries</h4>
-            <button class="snippet-btn" data-snippet="basic-filter">Basic Filter</button>
-            <button class="snippet-btn" data-snippet="time-range">Time Range</button>
-            <button class="snippet-btn" data-snippet="top-records">Top N Records</button>
-            <button class="snippet-btn" data-snippet="distinct-values">Distinct Values</button>
-          </div>
-
-          <div class="category">
-            <h4>📊 Aggregations</h4>
-            <button class="snippet-btn" data-snippet="count-by">Count By Field</button>
-            <button class="snippet-btn" data-snippet="summarize">Summarize Stats</button>
-            <button class="snippet-btn" data-snippet="percentile">Percentile Analysis</button>
-            <button class="snippet-btn" data-snippet="timechart">Time Chart</button>
-          </div>
-
-          <div class="category">
-            <h4>📝 Errors & Traces</h4>
-            <button class="snippet-btn" data-snippet="trace-errors">Trace Errors & Warnings</button>
-            <button class="snippet-btn" data-snippet="trace-search">Search Trace Messages</button>
-            <button class="snippet-btn" data-snippet="error-timeline">Error Timeline</button>
-            <button class="snippet-btn" data-snippet="error-rate">Error Rate Trending</button>
-            <button class="snippet-btn" data-snippet="trace-correlation">Trace-Exception Correlation</button>
-            <button class="snippet-btn" data-snippet="critical-traces">Critical Issues</button>
-          </div>
-
-          <div class="category">
-            <h4>⚠️ Monitoring & Alerts</h4>
-            <button class="snippet-btn" data-snippet="errors">Error Tracking</button>
-            <button class="snippet-btn" data-snippet="performance">Performance Issues</button>
-            <button class="snippet-btn" data-snippet="availability">Availability Check</button>
-            <button class="snippet-btn" data-snippet="anomalies">Detect Anomalies</button>
-          </div>
-
-          <div class="category">
-            <h4>🔒 Security</h4>
-            <button class="snippet-btn" data-snippet="failed-logins">Failed Logins</button>
-            <button class="snippet-btn" data-snippet="suspicious-activity">Suspicious Activity</button>
-            <button class="snippet-btn" data-snippet="audit-trail">Audit Trail</button>
-            <button class="snippet-btn" data-snippet="threat-detection">Threat Detection</button>
-          </div>
-
-          <div class="category">
-            <h4>💻 Application Insights</h4>
-            <button class="snippet-btn" data-snippet="request-stats">Request Statistics</button>
-            <button class="snippet-btn" data-snippet="dependency-tracking">Dependency Tracking</button>
-            <button class="snippet-btn" data-snippet="exception-analysis">Exception Analysis</button>
-            <button class="snippet-btn" data-snippet="user-analytics">User Analytics</button>
-          </div>
-
-          <div class="category">
-            <h4>🖥️ Infrastructure</h4>
-            <button class="snippet-btn" data-snippet="vm-performance">VM Performance</button>
-            <button class="snippet-btn" data-snippet="disk-usage">Disk Usage</button>
-            <button class="snippet-btn" data-snippet="network-traffic">Network Traffic</button>
-            <button class="snippet-btn" data-snippet="resource-health">Resource Health</button>
-          </div>
+          <!-- Rendered dynamically from SNIPPETS array in init() -->
         </div>
       </div>
 
@@ -108,18 +42,6 @@
           <h3>⚡ Query Editor</h3>
           <div class="editor-controls">
             <select id="table-select" class="control-select">
-              <option value="AppRequests">AppRequests</option>
-              <option value="AppDependencies">AppDependencies</option>
-              <option value="AppExceptions">AppExceptions</option>
-              <option value="AppTraces">AppTraces</option>
-              <option value="AppMetrics">AppMetrics</option>
-              <option value="Heartbeat">Heartbeat</option>
-              <option value="Perf">Perf</option>
-              <option value="SecurityEvent">SecurityEvent</option>
-              <option value="Syslog">Syslog</option>
-              <option value="AzureActivity">AzureActivity</option>
-              <option value="ContainerLog">ContainerLog</option>
-              <option value="CustomLogs">CustomLogs</option>
             </select>
             <select id="timerange-select" class="control-select">
               <option value="15m">Last 15 minutes</option>
@@ -156,8 +78,8 @@
               <button class="time-chip" data-time="startofday(now())">startofday()</button>
               <button class="time-chip" data-time="endofday(now())">endofday()</button>
               <button class="time-chip" data-time="startofweek(now())">startofweek()</button>
-              <button class="time-chip" data-time="bin(TimeGenerated, 1h)">bin(..., 1h)</button>
-              <button class="time-chip" data-time="bin(TimeGenerated, 1d)">bin(..., 1d)</button>
+              <button class="time-chip" data-time="bin(timestamp, 1h)">bin(..., 1h)</button>
+              <button class="time-chip" data-time="bin(timestamp, 1d)">bin(..., 1d)</button>
             </div>
           </div>
         </div>
@@ -720,385 +642,203 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
+export const TABLES = [
+  'requests',
+  'dependencies',
+  'exceptions',
+  'traces',
+  'customEvents',
+  'pageViews',
+  'availabilityResults',
+  'performanceCounters',
+];
+
+export const SNIPPETS = [
+  // ── Date & Time ──────────────────────────────────────────
+  {
+    id: 'relative-time',
+    name: 'Relative Time (ago)',
+    category: 'Date & Time',
+    query: `{{TABLE}}\n| where timestamp > ago(1h)\n| take 100`,
+  },
+  {
+    id: 'absolute-range',
+    name: 'Absolute Date Range',
+    category: 'Date & Time',
+    query: `{{TABLE}}\n| where timestamp between(datetime(2024-01-01 00:00:00) .. datetime(2024-01-31 23:59:59))\n| take 100`,
+  },
+  {
+    id: 'today-only',
+    name: 'Today Only',
+    category: 'Date & Time',
+    query: `{{TABLE}}\n| where timestamp between(startofday(now()) .. endofday(now()))\n| summarize count() by bin(timestamp, 1h)`,
+  },
+  {
+    id: 'this-week',
+    name: 'This Week',
+    category: 'Date & Time',
+    query: `{{TABLE}}\n| where timestamp between(startofweek(now()) .. now())\n| summarize count() by bin(timestamp, 1d)`,
+  },
+  {
+    id: 'last-n-days',
+    name: 'Last N Days',
+    category: 'Date & Time',
+    query: `{{TABLE}}\n| where timestamp > ago(7d)\n| summarize count() by bin(timestamp, 1d)\n| render timechart`,
+  },
+  {
+    id: 'hourly-breakdown',
+    name: 'Hourly Breakdown',
+    category: 'Date & Time',
+    query: `{{TABLE}}\n| where timestamp > ago(24h)\n| extend Hour = bin(timestamp, 1h)\n| summarize\n    Count=count(),\n    UniqueUsers=dcount(user_Id)\n  by Hour\n| order by Hour asc\n| render timechart`,
+  },
+  // ── Common Queries ───────────────────────────────────────
+  {
+    id: 'basic-filter',
+    name: 'Basic Filter',
+    category: 'Common Queries',
+    query: `{{TABLE}}\n| where timestamp > ago(1h)\n| where resultCode >= 400\n| take 100`,
+  },
+  {
+    id: 'time-range',
+    name: 'Time Range',
+    category: 'Common Queries',
+    query: `{{TABLE}}\n| where timestamp between(datetime(2024-01-01) .. datetime(2024-01-31))\n| summarize count() by bin(timestamp, 1h)`,
+  },
+  {
+    id: 'top-records',
+    name: 'Top N Records',
+    category: 'Common Queries',
+    query: `{{TABLE}}\n| top 100 by timestamp desc`,
+  },
+  {
+    id: 'distinct-values',
+    name: 'Distinct Values',
+    category: 'Common Queries',
+    query: `{{TABLE}}\n| distinct name, resultCode\n| order by name asc`,
+  },
+  // ── Aggregations ─────────────────────────────────────────
+  {
+    id: 'count-by',
+    name: 'Count By Field',
+    category: 'Aggregations',
+    query: `{{TABLE}}\n| where timestamp > ago(24h)\n| summarize Count=count() by resultCode\n| order by Count desc`,
+  },
+  {
+    id: 'summarize',
+    name: 'Summarize Stats',
+    category: 'Aggregations',
+    query: `requests\n| where timestamp > ago(1h)\n| summarize\n    TotalCount=count(),\n    AvgDuration=avg(duration),\n    P50=percentile(duration, 50),\n    P95=percentile(duration, 95)\n  by bin(timestamp, 5m)`,
+  },
+  {
+    id: 'percentile',
+    name: 'Percentile Analysis',
+    category: 'Aggregations',
+    query: `requests\n| where timestamp > ago(24h)\n| summarize\n    P50=percentile(duration, 50),\n    P90=percentile(duration, 90),\n    P95=percentile(duration, 95),\n    P99=percentile(duration, 99)\n  by name`,
+  },
+  {
+    id: 'timechart',
+    name: 'Time Chart',
+    category: 'Aggregations',
+    query: `requests\n| where timestamp > ago(24h)\n| summarize count() by bin(timestamp, 1h), resultCode\n| render timechart`,
+  },
+  // ── Errors & Traces ──────────────────────────────────────
+  {
+    id: 'trace-errors',
+    name: 'Trace Errors & Warnings',
+    category: 'Errors & Traces',
+    query: `traces\n| where timestamp > ago(24h)\n| where severityLevel >= 2 // 2=Warning, 3=Error, 4=Critical\n| project\n    timestamp,\n    severityLevel,\n    message,\n    operation_Id,\n    customDimensions\n| order by timestamp desc\n| take 100`,
+  },
+  {
+    id: 'trace-search',
+    name: 'Search Trace Messages',
+    category: 'Errors & Traces',
+    query: `traces\n| where timestamp > ago(24h)\n| where message contains "error" or message contains "exception" or message contains "failed"\n| extend\n    Severity = case(\n        severityLevel == 0, "Verbose",\n        severityLevel == 1, "Information",\n        severityLevel == 2, "Warning",\n        severityLevel == 3, "Error",\n        severityLevel == 4, "Critical",\n        "Unknown"\n    )\n| project timestamp, Severity, message, operation_Id\n| order by timestamp desc`,
+  },
+  {
+    id: 'error-timeline',
+    name: 'Error Timeline',
+    category: 'Errors & Traces',
+    query: `traces\n| where timestamp > ago(24h)\n| where severityLevel >= 2\n| summarize\n    ErrorCount=countif(severityLevel == 3 or severityLevel == 4),\n    WarningCount=countif(severityLevel == 2),\n    TotalIssues=count()\n  by bin(timestamp, 15m)\n| render timechart`,
+  },
+  {
+    id: 'error-rate',
+    name: 'Error Rate Trending',
+    category: 'Errors & Traces',
+    query: `traces\n| where timestamp > ago(7d)\n| summarize\n    TotalTraces=count(),\n    ErrorTraces=countif(severityLevel >= 3),\n    WarningTraces=countif(severityLevel == 2)\n  by bin(timestamp, 1h)\n| extend\n    ErrorRate = round(100.0 * ErrorTraces / TotalTraces, 2),\n    WarningRate = round(100.0 * WarningTraces / TotalTraces, 2)\n| project timestamp, ErrorRate, WarningRate, TotalTraces\n| render timechart`,
+  },
+  {
+    id: 'trace-correlation',
+    name: 'Trace-Exception Correlation',
+    category: 'Errors & Traces',
+    query: `exceptions\n| where timestamp > ago(1h)\n| join kind=inner (\n    traces\n    | where timestamp > ago(1h)\n    | where severityLevel >= 2\n) on operation_Id\n| project\n    timestamp,\n    ExceptionType=type,\n    ExceptionMessage=outerMessage,\n    TraceMessage=message,\n    operation_Id\n| order by timestamp desc\n| take 50`,
+  },
+  {
+    id: 'critical-traces',
+    name: 'Critical Issues',
+    category: 'Errors & Traces',
+    query: `traces\n| where timestamp > ago(24h)\n| where severityLevel == 4 // Critical only\n| extend MessagePreview = substring(message, 0, 200)\n| summarize\n    Count=count(),\n    FirstOccurrence=min(timestamp),\n    LastOccurrence=max(timestamp),\n    SampleMessage=any(MessagePreview),\n    Operations=make_set(operation_Id, 5)\n  by message\n| order by Count desc`,
+  },
+  // ── Monitoring & Alerts ──────────────────────────────────
+  {
+    id: 'errors',
+    name: 'Error Tracking',
+    category: 'Monitoring & Alerts',
+    query: `exceptions\n| where timestamp > ago(24h)\n| extend ErrorType = tostring(split(type, '.')[-1])\n| summarize\n    ErrorCount=count(),\n    AffectedUsers=dcount(user_Id),\n    SampleMessage=any(outerMessage)\n  by ErrorType\n| order by ErrorCount desc`,
+  },
+  {
+    id: 'performance',
+    name: 'Performance Issues',
+    category: 'Monitoring & Alerts',
+    query: `requests\n| where timestamp > ago(1h)\n| where duration > 1000\n| project\n    timestamp,\n    name,\n    duration,\n    resultCode,\n    operation_Id\n| order by duration desc\n| take 50`,
+  },
+  {
+    id: 'availability',
+    name: 'Availability Check',
+    category: 'Monitoring & Alerts',
+    query: `availabilityResults\n| where timestamp > ago(24h)\n| summarize\n    TotalTests=count(),\n    SuccessRate=100.0 * countif(success == true) / count()\n  by bin(timestamp, 1h), location\n| render timechart`,
+  },
+  {
+    id: 'anomalies',
+    name: 'Detect Anomalies',
+    category: 'Monitoring & Alerts',
+    query: `{{TABLE}}\n| where timestamp > ago(7d)\n| make-series Count=count() default=0 on timestamp step 1h\n| extend Anomalies=series_decompose_anomalies(Count, 1.5)\n| render anomalychart with (anomalycolumns=Anomalies)`,
+  },
+  // ── Application Insights ─────────────────────────────────
+  {
+    id: 'request-stats',
+    name: 'Request Statistics',
+    category: 'Application Insights',
+    query: `requests\n| where timestamp > ago(1h)\n| summarize\n    RequestCount=count(),\n    AvgDuration=avg(duration),\n    SuccessRate=100.0 * countif(success == true) / count()\n  by name\n| order by RequestCount desc`,
+  },
+  {
+    id: 'dependency-tracking',
+    name: 'Dependency Tracking',
+    category: 'Application Insights',
+    query: `dependencies\n| where timestamp > ago(1h)\n| summarize\n    CallCount=count(),\n    AvgDuration=avg(duration),\n    FailureRate=100.0 * countif(success == false) / count()\n  by target, type\n| order by FailureRate desc`,
+  },
+  {
+    id: 'exception-analysis',
+    name: 'Exception Analysis',
+    category: 'Application Insights',
+    query: `exceptions\n| where timestamp > ago(24h)\n| extend ExceptionType = tostring(split(type, '.')[-1])\n| summarize\n    Count=count(),\n    FirstSeen=min(timestamp),\n    LastSeen=max(timestamp),\n    SampleStack=any(details)\n  by ExceptionType, outerMessage\n| order by Count desc`,
+  },
+  {
+    id: 'user-analytics',
+    name: 'User Analytics',
+    category: 'Application Insights',
+    query: `pageViews\n| where timestamp > ago(24h)\n| summarize\n    PageViews=count(),\n    UniqueUsers=dcount(user_Id),\n    AvgDuration=avg(duration)\n  by name\n| order by PageViews desc`,
+  },
+];
+
+// Build snippet lookup from SNIPPETS array
+const SNIPPET_MAP = Object.fromEntries(SNIPPETS.map(s => [s.id, s]));
+
 export const DevChefTool = {
   container: null,
   context: null,
 
-  snippets: {
-    'relative-time': {
-      query: `{{TABLE}}
-| where TimeGenerated > ago(1h)
-| take 100`,
-      description: 'Query using relative time with ago()'
-    },
-    'absolute-range': {
-      query: `{{TABLE}}
-| where TimeGenerated between(datetime(2024-01-01 00:00:00) .. datetime(2024-01-31 23:59:59))
-| take 100`,
-      description: 'Query specific date range'
-    },
-    'today-only': {
-      query: `{{TABLE}}
-| where TimeGenerated between(startofday(now()) .. endofday(now()))
-| summarize count() by bin(TimeGenerated, 1h)`,
-      description: 'Query today\'s data only'
-    },
-    'this-week': {
-      query: `{{TABLE}}
-| where TimeGenerated between(startofweek(now()) .. now())
-| summarize count() by bin(TimeGenerated, 1d)`,
-      description: 'Query current week data'
-    },
-    'last-n-days': {
-      query: `{{TABLE}}
-| where TimeGenerated > ago(7d)
-| summarize count() by bin(TimeGenerated, 1d)
-| render timechart`,
-      description: 'Query last N days with daily aggregation'
-    },
-    'hourly-breakdown': {
-      query: `{{TABLE}}
-| where TimeGenerated > ago(24h)
-| extend Hour = bin(TimeGenerated, 1h)
-| summarize
-    Count=count(),
-    UniqueUsers=dcount(UserId)
-  by Hour
-| order by Hour asc
-| render timechart`,
-      description: 'Hourly breakdown with metrics'
-    },
-    'basic-filter': {
-      query: `{{TABLE}}
-| where TimeGenerated > ago(1h)
-| where ResponseCode >= 400
-| take 100`,
-      description: 'Filter records by time and condition'
-    },
-    'time-range': {
-      query: `{{TABLE}}
-| where TimeGenerated between(datetime(2024-01-01) .. datetime(2024-01-31))
-| summarize count() by bin(TimeGenerated, 1h)`,
-      description: 'Query specific time range'
-    },
-    'top-records': {
-      query: `{{TABLE}}
-| top 100 by TimeGenerated desc`,
-      description: 'Get top N most recent records'
-    },
-    'distinct-values': {
-      query: `{{TABLE}}
-| distinct OperationName, ResultCode
-| order by OperationName asc`,
-      description: 'Find unique combinations'
-    },
-    'count-by': {
-      query: `{{TABLE}}
-| where TimeGenerated > ago(24h)
-| summarize Count=count() by ResultCode
-| order by Count desc`,
-      description: 'Count occurrences by field'
-    },
-    'summarize': {
-      query: `{{TABLE}}
-| where TimeGenerated > ago(1h)
-| summarize
-    TotalCount=count(),
-    AvgDuration=avg(DurationMs),
-    P50=percentile(DurationMs, 50),
-    P95=percentile(DurationMs, 95)
-  by bin(TimeGenerated, 5m)`,
-      description: 'Statistical summary over time'
-    },
-    'percentile': {
-      query: `{{TABLE}}
-| where TimeGenerated > ago(24h)
-| summarize
-    P50=percentile(DurationMs, 50),
-    P90=percentile(DurationMs, 90),
-    P95=percentile(DurationMs, 95),
-    P99=percentile(DurationMs, 99)
-  by OperationName`,
-      description: 'Percentile analysis by operation'
-    },
-    'timechart': {
-      query: `{{TABLE}}
-| where TimeGenerated > ago(24h)
-| summarize count() by bin(TimeGenerated, 1h), ResultCode
-| render timechart`,
-      description: 'Time series chart'
-    },
-    'trace-errors': {
-      query: `AppTraces
-| where TimeGenerated > ago(24h)
-| where SeverityLevel >= 2 // 2=Warning, 3=Error, 4=Critical
-| project
-    TimeGenerated,
-    SeverityLevel,
-    Message,
-    OperationId,
-    Properties
-| order by TimeGenerated desc
-| take 100`,
-      description: 'Find errors and warnings in traces'
-    },
-    'trace-search': {
-      query: `AppTraces
-| where TimeGenerated > ago(24h)
-| where Message contains "error" or Message contains "exception" or Message contains "failed"
-| extend
-    Severity = case(
-        SeverityLevel == 0, "Verbose",
-        SeverityLevel == 1, "Information",
-        SeverityLevel == 2, "Warning",
-        SeverityLevel == 3, "Error",
-        SeverityLevel == 4, "Critical",
-        "Unknown"
-    )
-| project TimeGenerated, Severity, Message, OperationId
-| order by TimeGenerated desc`,
-      description: 'Search for error keywords in traces'
-    },
-    'error-timeline': {
-      query: `AppTraces
-| where TimeGenerated > ago(24h)
-| where SeverityLevel >= 2
-| summarize
-    ErrorCount=countif(SeverityLevel == 3 or SeverityLevel == 4),
-    WarningCount=countif(SeverityLevel == 2),
-    TotalIssues=count()
-  by bin(TimeGenerated, 15m)
-| render timechart`,
-      description: 'Error and warning timeline'
-    },
-    'error-rate': {
-      query: `AppTraces
-| where TimeGenerated > ago(7d)
-| summarize
-    TotalTraces=count(),
-    ErrorTraces=countif(SeverityLevel >= 3),
-    WarningTraces=countif(SeverityLevel == 2)
-  by bin(TimeGenerated, 1h)
-| extend
-    ErrorRate = round(100.0 * ErrorTraces / TotalTraces, 2),
-    WarningRate = round(100.0 * WarningTraces / TotalTraces, 2)
-| project TimeGenerated, ErrorRate, WarningRate, TotalTraces
-| render timechart`,
-      description: 'Track error rate over time'
-    },
-    'trace-correlation': {
-      query: `AppExceptions
-| where TimeGenerated > ago(1h)
-| join kind=inner (
-    AppTraces
-    | where TimeGenerated > ago(1h)
-    | where SeverityLevel >= 2
-) on OperationId
-| project
-    TimeGenerated,
-    ExceptionType=Type,
-    ExceptionMessage=OuterMessage,
-    TraceMessage=Message,
-    OperationId
-| order by TimeGenerated desc
-| take 50`,
-      description: 'Correlate exceptions with trace logs'
-    },
-    'critical-traces': {
-      query: `AppTraces
-| where TimeGenerated > ago(24h)
-| where SeverityLevel == 4 // Critical only
-| extend MessagePreview = substring(Message, 0, 200)
-| summarize
-    Count=count(),
-    FirstOccurrence=min(TimeGenerated),
-    LastOccurrence=max(TimeGenerated),
-    SampleMessage=any(MessagePreview),
-    Operations=make_set(OperationId, 5)
-  by Message
-| order by Count desc`,
-      description: 'Critical severity issues summary'
-    },
-    'errors': {
-      query: `AppExceptions
-| where TimeGenerated > ago(24h)
-| extend ErrorType = tostring(split(Type, '.')[-1])
-| summarize
-    ErrorCount=count(),
-    AffectedUsers=dcount(UserId),
-    SampleMessage=any(OuterMessage)
-  by ErrorType
-| order by ErrorCount desc`,
-      description: 'Track application errors'
-    },
-    'performance': {
-      query: `AppRequests
-| where TimeGenerated > ago(1h)
-| where DurationMs > 1000
-| project
-    TimeGenerated,
-    Name,
-    DurationMs,
-    ResultCode,
-    OperationId
-| order by DurationMs desc
-| take 50`,
-      description: 'Slow request detection'
-    },
-    'availability': {
-      query: `AppAvailabilityResults
-| where TimeGenerated > ago(24h)
-| summarize
-    TotalTests=count(),
-    SuccessRate=100.0 * countif(Success == true) / count()
-  by bin(TimeGenerated, 1h), Location
-| render timechart`,
-      description: 'Availability monitoring'
-    },
-    'anomalies': {
-      query: `{{TABLE}}
-| where TimeGenerated > ago(7d)
-| make-series Count=count() default=0 on TimeGenerated step 1h
-| extend Anomalies=series_decompose_anomalies(Count, 1.5)
-| render anomalychart with (anomalycolumns=Anomalies)`,
-      description: 'Detect statistical anomalies'
-    },
-    'failed-logins': {
-      query: `SecurityEvent
-| where TimeGenerated > ago(24h)
-| where EventID == 4625 // Failed login
-| summarize
-    FailedAttempts=count(),
-    Accounts=make_set(Account),
-    IPs=make_set(IpAddress)
-  by Computer
-| where FailedAttempts > 5
-| order by FailedAttempts desc`,
-      description: 'Failed login attempts'
-    },
-    'suspicious-activity': {
-      query: `SecurityEvent
-| where TimeGenerated > ago(1h)
-| where EventID in (4728, 4732, 4756) // Privileged group changes
-| project
-    TimeGenerated,
-    Computer,
-    Account,
-    TargetAccount,
-    Activity
-| order by TimeGenerated desc`,
-      description: 'Suspicious security events'
-    },
-    'audit-trail': {
-      query: `AzureActivity
-| where TimeGenerated > ago(24h)
-| where OperationNameValue contains "Write" or OperationNameValue contains "Delete"
-| project
-    TimeGenerated,
-    Caller,
-    OperationNameValue,
-    ResourceGroup,
-    ResourceId,
-    ActivityStatusValue
-| order by TimeGenerated desc`,
-      description: 'Azure activity audit'
-    },
-    'threat-detection': {
-      query: `SecurityAlert
-| where TimeGenerated > ago(24h)
-| summarize
-    AlertCount=count(),
-    Severity=max(AlertSeverity),
-    Entities=make_set(Entities)
-  by AlertName
-| order by Severity desc, AlertCount desc`,
-      description: 'Security threat summary'
-    },
-    'request-stats': {
-      query: `AppRequests
-| where TimeGenerated > ago(1h)
-| summarize
-    RequestCount=count(),
-    AvgDuration=avg(DurationMs),
-    SuccessRate=100.0 * countif(Success == true) / count()
-  by Name
-| order by RequestCount desc`,
-      description: 'Request statistics'
-    },
-    'dependency-tracking': {
-      query: `AppDependencies
-| where TimeGenerated > ago(1h)
-| summarize
-    CallCount=count(),
-    AvgDuration=avg(DurationMs),
-    FailureRate=100.0 * countif(Success == false) / count()
-  by Target, DependencyType
-| order by FailureRate desc`,
-      description: 'External dependency performance'
-    },
-    'exception-analysis': {
-      query: `AppExceptions
-| where TimeGenerated > ago(24h)
-| extend ExceptionType = tostring(split(Type, '.')[-1])
-| summarize
-    Count=count(),
-    FirstSeen=min(TimeGenerated),
-    LastSeen=max(TimeGenerated),
-    SampleStack=any(Details)
-  by ExceptionType, OuterMessage
-| order by Count desc`,
-      description: 'Exception breakdown'
-    },
-    'user-analytics': {
-      query: `AppPageViews
-| where TimeGenerated > ago(24h)
-| summarize
-    PageViews=count(),
-    UniqueUsers=dcount(UserId),
-    AvgDuration=avg(DurationMs)
-  by Name
-| order by PageViews desc`,
-      description: 'User behavior analytics'
-    },
-    'vm-performance': {
-      query: `Perf
-| where TimeGenerated > ago(1h)
-| where ObjectName == "Processor" and CounterName == "% Processor Time"
-| summarize AvgCPU=avg(CounterValue) by bin(TimeGenerated, 5m), Computer
-| render timechart`,
-      description: 'VM CPU performance'
-    },
-    'disk-usage': {
-      query: `Perf
-| where TimeGenerated > ago(1h)
-| where ObjectName == "LogicalDisk" and CounterName == "% Free Space"
-| summarize AvgFreeSpace=avg(CounterValue) by Computer, InstanceName
-| where AvgFreeSpace < 20
-| order by AvgFreeSpace asc`,
-      description: 'Low disk space detection'
-    },
-    'network-traffic': {
-      query: `Perf
-| where TimeGenerated > ago(1h)
-| where ObjectName == "Network Adapter"
-| where CounterName in ("Bytes Sent/sec", "Bytes Received/sec")
-| summarize AvgBytes=avg(CounterValue) by bin(TimeGenerated, 5m), Computer, CounterName
-| render timechart`,
-      description: 'Network traffic analysis'
-    },
-    'resource-health': {
-      query: `AzureActivity
-| where TimeGenerated > ago(24h)
-| where CategoryValue == "ResourceHealth"
-| project
-    TimeGenerated,
-    Resource,
-    Properties.currentHealthStatus,
-    Properties.previousHealthStatus
-| order by TimeGenerated desc`,
-      description: 'Resource health changes'
-    }
-  },
+  // keep legacy property for any external callers
+  get snippets() { return SNIPPET_MAP; },
 
   init(container, context) {
     this.container = container;
@@ -1107,13 +847,45 @@ export const DevChefTool = {
     const queryEditor = container.querySelector('#query-editor');
     const tableSelect = container.querySelector('#table-select');
 
-    // Snippet buttons
-    container.querySelectorAll('.snippet-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const snippetId = e.target.dataset.snippet;
-        this.loadSnippet(snippetId);
-      });
-    });
+    // Populate table picker from TABLES
+    for (const table of TABLES) {
+      const opt = document.createElement('option');
+      opt.value = table;
+      opt.textContent = table;
+      tableSelect.appendChild(opt);
+    }
+
+    // Render snippet buttons from SNIPPETS array
+    const categoriesEl = container.querySelector('.snippet-categories');
+    categoriesEl.innerHTML = '';
+    const categoryMap = new Map();
+    for (const s of SNIPPETS) {
+      if (!categoryMap.has(s.category)) categoryMap.set(s.category, []);
+      categoryMap.get(s.category).push(s);
+    }
+    const CATEGORY_ICONS = {
+      'Date & Time': '\u23F0',
+      'Common Queries': '\uD83D\uDD0D',
+      'Aggregations': '\uD83D\uDCCA',
+      'Errors & Traces': '\uD83D\uDCDD',
+      'Monitoring & Alerts': '\u26A0\uFE0F',
+      'Application Insights': '\uD83D\uDCBB',
+    };
+    for (const [cat, snippets] of categoryMap) {
+      const div = document.createElement('div');
+      div.className = 'category';
+      const icon = CATEGORY_ICONS[cat] || '';
+      div.innerHTML = `<h4>${icon ? icon + ' ' : ''}${cat}</h4>`;
+      for (const s of snippets) {
+        const btn = document.createElement('button');
+        btn.className = 'snippet-btn';
+        btn.dataset.snippet = s.id;
+        btn.textContent = s.name;
+        btn.addEventListener('click', () => this.loadSnippet(s.id));
+        div.appendChild(btn);
+      }
+      categoriesEl.appendChild(div);
+    }
 
     // Quick action chips
     container.querySelectorAll('.action-chip').forEach(chip => {
@@ -1145,8 +917,57 @@ export const DevChefTool = {
     container.querySelector('#copy-query-btn')?.addEventListener('click', () => this.copyQuery());
     container.querySelector('#export-btn')?.addEventListener('click', () => this.exportQuery());
 
+    // When the table picker changes, swap the table name on the first line
+    tableSelect?.addEventListener('change', () => {
+      const query = queryEditor.value;
+      if (!query.trim()) return;
+      const newTable = tableSelect.value;
+      // First non-empty line is the table name in KQL
+      const lines = query.split('\n');
+      const idx = lines.findIndex(l => l.trim() !== '');
+      if (idx !== -1 && !lines[idx].trim().startsWith('|') && !lines[idx].trim().startsWith('//')) {
+        lines[idx] = newTable;
+        queryEditor.value = lines.join('\n');
+      }
+      this.updateStats();
+    });
+
+    const timerangeSelect = container.querySelector('#timerange-select');
+    timerangeSelect?.addEventListener('change', () => {
+      this.applyTimeRange();
+    });
+
     // Load default snippet
     this.loadSnippet('basic-filter');
+  },
+
+  applyTimeRange() {
+    const queryEditor = this.container.querySelector('#query-editor');
+    const timerangeSelect = this.container.querySelector('#timerange-select');
+    const selectedRange = timerangeSelect.value;
+
+    if (selectedRange === 'custom') return;
+
+    const timeMap = {
+      '15m': 'ago(15m)',
+      '1h': 'ago(1h)',
+      '4h': 'ago(4h)',
+      '24h': 'ago(24h)',
+      '7d': 'ago(7d)',
+      '30d': 'ago(30d)'
+    };
+
+    const timeExpr = timeMap[selectedRange];
+    if (!timeExpr) return;
+
+    // Replace existing ago() expressions in "where timestamp > ago(...)" patterns
+    const query = queryEditor.value;
+    const updated = query.replace(
+      /ago\(\s*\d+[smhd]\s*\)/g,
+      timeExpr
+    );
+    queryEditor.value = updated;
+    this.updateStats();
   },
 
   loadSnippet(snippetId) {
@@ -1156,7 +977,7 @@ export const DevChefTool = {
     const queryEditor = this.container.querySelector('#query-editor');
     const tableSelect = this.container.querySelector('#table-select');
 
-    let query = snippet.query.replace('{{TABLE}}', tableSelect.value);
+    let query = snippet.query.replaceAll('{{TABLE}}', tableSelect.value);
     queryEditor.value = query;
 
     this.updateStats();
@@ -1216,7 +1037,7 @@ export const DevChefTool = {
     const startDate = startValue.replace('T', ' ');
     const endDate = endValue.replace('T', ' ');
 
-    const rangeClause = `| where TimeGenerated between(datetime(${startDate}) .. datetime(${endDate}))`;
+    const rangeClause = `| where timestamp between(datetime(${startDate}) .. datetime(${endDate}))`;
 
     const cursorPos = queryEditor.selectionStart;
     const textBefore = queryEditor.value.substring(0, cursorPos);
@@ -1231,14 +1052,192 @@ export const DevChefTool = {
 
   formatQuery() {
     const queryEditor = this.container.querySelector('#query-editor');
-    let query = queryEditor.value;
+    const raw = queryEditor.value;
+    if (!raw.trim()) return;
 
-    // Basic KQL formatting
-    query = query.split('\n').map(line => line.trim()).join('\n');
-    query = query.replace(/\|\s*/g, '\n| ');
-    query = query.replace(/\n\n+/g, '\n');
+    // Split into lines preserving original structure
+    const inputLines = raw.replace(/\r\n/g, '\n').split('\n');
 
-    queryEditor.value = query.trim();
+    // First pass: split any lines that have pipe operators mid-line
+    // (e.g. "Table | where x | take 10" -> three lines)
+    // but NOT pipes inside strings or comments
+    const expanded = [];
+    for (const line of inputLines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue; // skip blank lines
+
+      // If line is a comment, keep as-is
+      if (trimmed.startsWith('//')) {
+        expanded.push(trimmed);
+        continue;
+      }
+
+      // Split on pipe operators that are KQL operators (not inside strings)
+      // Strategy: walk the line character by character tracking string context
+      const segments = [];
+      let current = '';
+      let inString = false;
+      let stringChar = '';
+
+      for (let i = 0; i < trimmed.length; i++) {
+        const ch = trimmed[i];
+
+        if (inString) {
+          current += ch;
+          if (ch === '\\') {
+            // escaped char - grab next too
+            if (i + 1 < trimmed.length) {
+              current += trimmed[i + 1];
+              i++;
+            }
+          } else if (ch === stringChar) {
+            inString = false;
+          }
+          continue;
+        }
+
+        // Check for string start
+        if (ch === '"' || ch === "'") {
+          inString = true;
+          stringChar = ch;
+          current += ch;
+          continue;
+        }
+
+        // Check for inline comment
+        if (ch === '/' && i + 1 < trimmed.length && trimmed[i + 1] === '/') {
+          current += trimmed.substring(i);
+          break;
+        }
+
+        // Check for pipe operator: | followed by a word (KQL operator)
+        if (ch === '|') {
+          // Look ahead: skip whitespace, check for word char
+          let j = i + 1;
+          while (j < trimmed.length && trimmed[j] === ' ') j++;
+          if (j < trimmed.length && /[a-zA-Z]/.test(trimmed[j])) {
+            // This is a pipe operator - split here
+            if (current.trim()) {
+              segments.push(current.trim());
+            }
+            current = '| ';
+            // Skip the whitespace after pipe
+            i = j - 1;
+            continue;
+          }
+        }
+
+        current += ch;
+      }
+
+      if (current.trim()) {
+        segments.push(current.trim());
+      }
+
+      expanded.push(...segments);
+    }
+
+    // Second pass: format with proper indentation based on context
+    // KQL operators that take multi-line arguments
+    const multiLineOps = /^(summarize|extend|project|project-away|project-keep|project-rename|project-reorder)\b/i;
+    const result = [];
+    let parenDepth = 0;
+    let expectContinuation = false;
+
+    for (let i = 0; i < expanded.length; i++) {
+      const line = expanded[i];
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+
+      // Count parentheses (outside strings) to track join subqueries
+      let lineParenDelta = 0;
+      {
+        let inStr = false;
+        let strCh = '';
+        for (let c = 0; c < trimmed.length; c++) {
+          const ch = trimmed[c];
+          if (inStr) {
+            if (ch === '\\') { c++; continue; }
+            if (ch === strCh) inStr = false;
+            continue;
+          }
+          if (ch === '"' || ch === "'") { inStr = true; strCh = ch; continue; }
+          if (ch === '/' && c + 1 < trimmed.length && trimmed[c + 1] === '/') break;
+          if (ch === '(') lineParenDelta++;
+          if (ch === ')') lineParenDelta--;
+        }
+      }
+
+      // Determine if this line starts with a pipe operator
+      const isPipeLine = trimmed.startsWith('| ') || trimmed === '|';
+
+      // Determine if this is a "by" clause continuation (e.g. "by bin(timestamp, 5m)")
+      const isByClause = /^by\b/i.test(trimmed);
+
+      // Handle closing-paren lines (like ") on OperationId")
+      const startsWithCloseParen = trimmed.startsWith(')');
+
+      if (startsWithCloseParen) {
+        // The closing paren reduces depth before we format this line
+        parenDepth = Math.max(0, parenDepth + lineParenDelta);
+        const indent = parenDepth > 0 ? '    ' : '';
+        result.push(indent + trimmed);
+        expectContinuation = false;
+        continue;
+      }
+
+      if (isPipeLine) {
+        // Pipe line: check if the operator is a multi-line one
+        const afterPipe = trimmed.substring(2).trim();
+        const indent = parenDepth > 0 ? '    ' : '';
+        result.push(indent + '| ' + afterPipe);
+
+        // Check if this pipe operator expects continuation lines
+        expectContinuation = multiLineOps.test(afterPipe);
+
+        parenDepth += lineParenDelta;
+        if (parenDepth < 0) parenDepth = 0;
+        continue;
+      }
+
+      if (trimmed.startsWith('//')) {
+        // Comment line - preserve at current indentation level
+        const indent = parenDepth > 0 ? '    ' : (expectContinuation ? '    ' : '');
+        result.push(indent + trimmed);
+        parenDepth += lineParenDelta;
+        if (parenDepth < 0) parenDepth = 0;
+        continue;
+      }
+
+      if (expectContinuation) {
+        // Continuation of a multi-line operator (summarize, extend, project, etc.)
+        if (isByClause) {
+          const indent = parenDepth > 0 ? '    ' : '';
+          result.push(indent + '  ' + trimmed);
+        } else {
+          const indent = parenDepth > 0 ? '    ' : '';
+          result.push(indent + '    ' + trimmed);
+        }
+        parenDepth += lineParenDelta;
+        if (parenDepth < 0) parenDepth = 0;
+        continue;
+      }
+
+      // First line (table name) or non-operator line
+      if (result.length === 0) {
+        // Table name - no indent
+        result.push(trimmed);
+      } else {
+        // Some other continuation line
+        const indent = parenDepth > 0 ? '    ' : '';
+        result.push(indent + trimmed);
+      }
+
+      parenDepth += lineParenDelta;
+      if (parenDepth < 0) parenDepth = 0;
+    }
+
+    queryEditor.value = result.join('\n');
     this.updateStats();
   },
 
@@ -1278,7 +1277,7 @@ export const DevChefTool = {
     const queryEditor = this.container.querySelector('#query-editor');
     const query = queryEditor.value;
 
-    const lines = query.split('\n').length;
+    const lines = query.trim() ? query.split('\n').length : 0;
     const chars = query.length;
     const operators = (query.match(/\b(where|summarize|project|extend|join|render|take|top|distinct|order)\b/g) || []).length;
 
@@ -1291,18 +1290,38 @@ export const DevChefTool = {
 
   copyQuery() {
     const query = this.context.getOutput();
-    if (query) {
-      navigator.clipboard.writeText(query).then(() => {
-        const btn = this.container.querySelector('#copy-query-btn');
-        const original = btn.textContent;
-        btn.textContent = '✓ Copied!';
-        setTimeout(() => btn.textContent = original, 2000);
-      });
+    if (!query) {
+      alert('Nothing to copy — query is empty');
+      return;
     }
+    navigator.clipboard.writeText(query).then(() => {
+      const btn = this.container.querySelector('#copy-query-btn');
+      const original = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = original, 2000);
+    }).catch(() => {
+      // Fallback for insecure contexts
+      const textarea = document.createElement('textarea');
+      textarea.value = query;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      const btn = this.container.querySelector('#copy-query-btn');
+      const original = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = original, 2000);
+    });
   },
 
   exportQuery() {
     const query = this.context.getOutput();
+    if (!query) {
+      alert('Nothing to export — query is empty');
+      return;
+    }
     const blob = new Blob([query], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

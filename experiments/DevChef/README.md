@@ -776,8 +776,30 @@ DevChef includes 31+ built-in tools organized by category:
 - **Bimble Transforms**: Advanced text transformations
 - **Code Transformer**: Transform code patterns
 - **Data Pipeline Studio**: Build data transformation pipelines
-- **KQL Builder**: Build Kusto Query Language (KQL) queries for Azure
+- **KQL Builder**: Build Kusto Query Language (KQL) queries for Azure Application Insights
 - **cURL Builder**: Build cURL commands with PowerShell safe mode for HTTP requests
+
+### KQL Builder — Adding Snippets
+
+The KQL Builder ships with 24 query snippets organized by category. To add a new one, append an object to the `SNIPPETS` array in `tools/kql-builder.html`:
+
+```js
+{
+  id: 'slow-dependencies',         // unique key (used in data-snippet attribute)
+  name: 'Slow Dependencies',       // button label shown in the sidebar
+  category: 'Application Insights', // group header — existing or new
+  query: `dependencies
+| where timestamp > ago(1h)
+| where duration > 5000
+| project timestamp, target, duration, resultCode
+| order by duration desc`,
+},
+```
+
+- **`{{TABLE}}`** in the query is replaced with whatever table is selected in the picker. Use a literal table name (e.g. `traces`) when the snippet is specific to one table.
+- **`category`** determines which group the button appears under. Use an existing category (`Date & Time`, `Common Queries`, `Aggregations`, `Errors & Traces`, `Monitoring & Alerts`, `Application Insights`) and the button is added to that group automatically. Use a new string and a new section is created.
+- No HTML to edit — buttons and category headings are rendered from the array at init time.
+- Tables available in the picker: `requests`, `dependencies`, `exceptions`, `traces`, `customEvents`, `pageViews`, `availabilityResults`, `performanceCounters`.
 
 ## Getting Started
 
