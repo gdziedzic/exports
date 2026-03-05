@@ -59,6 +59,7 @@ import { showDeepSearch, toggleDeepSearch } from './core/deepsearch-ui.js';
 
 // V7 State-of-the-Art UX Excellence
 import { v7UX } from './core/v7-ux.js';
+import { onboarding } from './core/onboarding.js';
 
 /**
  * ============================================================================
@@ -69,6 +70,8 @@ import { v7UX } from './core/v7-ux.js';
 
 let deferredInstallPrompt = null;
 let serviceWorkerRegistration = null;
+const APP_VERSION = '9.0';
+const APP_TAGLINE = 'Skyrocket Productivity';
 
 /**
  * Initialize PWA functionality
@@ -280,7 +283,7 @@ function getQueryParam(name) {
  * Initialize the DevChef application
  */
 async function init() {
-  console.log("✨ DevChef V7: State-of-the-Art Excellence starting...");
+  console.log(`✨ DevChef V${APP_VERSION}: ${APP_TAGLINE} starting...`);
 
   // Initialize PWA (service worker, install prompt, updates)
   await initializePWA();
@@ -299,7 +302,7 @@ async function init() {
 
   // Show splash notification (using V6 UI Engine)
   if (window.uiEngine) {
-    window.uiEngine.showToast('DevChef V7 - State-of-the-Art Excellence ✨', {
+    window.uiEngine.showToast(`DevChef V${APP_VERSION} - ${APP_TAGLINE} ✨`, {
       type: 'success',
       duration: 5000,
       icon: '✨'
@@ -364,6 +367,15 @@ async function init() {
   // Set up settings menu
   setupSettingsMenu(context);
 
+  // Set up guided onboarding affordances
+  setupGuidedOnboarding();
+  setupGettingStartedPanel();
+  setupV8BoostDock();
+  setupAdaptiveClarity();
+  if (localStorage.getItem('devchef-focus-mode') === 'true') {
+    document.body.classList.add('focus-mode');
+  }
+
   // Set up browser history navigation
   setupHistoryNavigation();
 
@@ -383,13 +395,14 @@ async function init() {
     showWelcomeScreen();
   }
 
-  console.log(`✓ DevChef V6.5 ULTIMATE ready - ${toolCount} tools loaded 🚀🌙`);
-  console.log(`🎨 V6 Features: Modern UI | State Management | Tool Orchestration | Error Handling`);
-  console.log(`⚡ V6.5 Features: Performance Monitor | Advanced Search (Ctrl+K) | DevTools (F12)`);
+  console.log(`✓ DevChef V${APP_VERSION} ${APP_TAGLINE} ready - ${toolCount} tools loaded 🚀🌙`);
+  console.log(`🎨 V9 Features: Quick Resume | Clipboard Sprint | Clip-to-Snippet | Smart Automation`);
+  console.log(`⚡ Core Features: Performance Monitor | Advanced Search (Ctrl+K) | DevTools (F12)`);
   console.log(`🌙 ULTIMATE Features: Snippets++ | Universal Favorites | Macros | Batch | Quick Panel`);
   console.log(``);
   console.log(`📌 ULTIMATE SHORTCUTS:`);
-  console.log(`   ⚡ Quick Panel: Ctrl+Shift+Q  |  ⭐ Favorites: Ctrl+Alt+F  |  🕐 Recent: Ctrl+Shift+R`);
+  console.log(`   ⚡ Quick Panel: Ctrl+Shift+Q  |  🚀 V9 Boost: Ctrl+Shift+0  |  🎯 Focus Mode: Ctrl+Shift+9`);
+  console.log(`   1️⃣ Resume: Ctrl+Shift+1  |  2️⃣ Clipboard Sprint: Ctrl+Shift+2  |  3️⃣ Clip→Snippet: Ctrl+Shift+3`);
   console.log(`   🔴 Macro: Ctrl+Shift+M  |  ⚡ Batch: Ctrl+Shift+B  |  📜 History: Ctrl+Shift+H`);
   console.log(`   🔍 Search: Ctrl+K / Ctrl+Shift+F  |  📝 Snippets: Ctrl+B  |  🛠️ DevTools: F12`);
   console.log(``);
@@ -438,7 +451,7 @@ function initializeV25Features() {
   });
 
   // Track page load
-  analytics.trackEvent('app_init', { version: '7.0' });
+  analytics.trackEvent('app_init', { version: APP_VERSION });
 
   // Setup quick actions bar
   setupQuickActionsBar();
@@ -901,6 +914,12 @@ function setupKeyboardShortcuts() {
       showKeyboardShortcutsHelp();
     }
 
+    // F1 - Start guided tour
+    if (e.key === "F1") {
+      e.preventDefault();
+      onboarding.startTour();
+    }
+
     // V2.5 Shortcuts
 
     // Ctrl+Space - Quick Actions
@@ -951,7 +970,384 @@ function setupKeyboardShortcuts() {
       toggleDeepSearch(context);
       return;
     }
+
+    // Ctrl+Shift+0 - Open V8 10x Boost Dock
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "0") {
+      e.preventDefault();
+      openV8BoostDock();
+      return;
+    }
+
+    // Ctrl+Shift+9 - Toggle Focus Mode
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "9") {
+      e.preventDefault();
+      toggleFocusMode();
+      return;
+    }
+
+    // Ctrl+Shift+1 - Quick Resume (last used tool)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "1") {
+      e.preventDefault();
+      quickResumeLastTool();
+      return;
+    }
+
+    // Ctrl+Shift+2 - Clipboard Sprint (open quick input and process clipboard)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "2") {
+      e.preventDefault();
+      runClipboardSprint();
+      return;
+    }
+
+    // Ctrl+Shift+3 - Save clipboard as snippet
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "3") {
+      e.preventDefault();
+      captureClipboardToSnippet();
+      return;
+    }
+
+    // Ctrl+Shift+. - Toggle adaptive clarity mode
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === ".") {
+      e.preventDefault();
+      toggleAdaptiveClarity();
+      return;
+    }
   });
+}
+
+/**
+ * Set up onboarding helpers for first-time users
+ */
+function setupGuidedOnboarding() {
+  const header = document.querySelector('#sidebar header .header-content');
+  const searchInput = document.querySelector('#tool-search');
+  const themeBtn = document.querySelector('#theme-toggle');
+
+  if (searchInput) {
+    searchInput.setAttribute('data-shortcut', 'Ctrl+Shift+F');
+  }
+
+  if (themeBtn) {
+    themeBtn.setAttribute('data-shortcut', 'Theme');
+  }
+
+  if (header && !document.getElementById('help-tour-btn')) {
+    const helpBtn = document.createElement('button');
+    helpBtn.id = 'help-tour-btn';
+    helpBtn.className = 'icon-btn';
+    helpBtn.title = 'Start guided tour (F1)';
+    helpBtn.setAttribute('interestfor', 'tooltip');
+    helpBtn.setAttribute('data-tooltip', 'Start guided tour (F1)');
+    helpBtn.setAttribute('data-shortcut', 'F1');
+    helpBtn.innerHTML = '🧭';
+    helpBtn.addEventListener('click', () => onboarding.startTour());
+    header.appendChild(helpBtn);
+  }
+
+  const nudgeDismissed = localStorage.getItem('devchef-tour-nudge-dismissed') === 'true';
+  if (!onboarding.shouldShowTour() || nudgeDismissed) return;
+
+  setTimeout(() => {
+    if (document.querySelector('.first-run-coach')) return;
+
+    const nudge = document.createElement('div');
+    nudge.className = 'first-run-coach';
+    nudge.innerHTML = `
+      <div class="coach-title">Get productive in under 2 minutes</div>
+      <div class="coach-copy">
+        Start the guided tour or jump straight in with <kbd>Ctrl+K</kbd> for fast tool search.
+      </div>
+      <div class="coach-actions">
+        <button class="coach-start">Start tour</button>
+        <button class="coach-skip secondary">Skip for now</button>
+      </div>
+    `;
+
+    document.body.appendChild(nudge);
+
+    const dismissNudge = () => {
+      localStorage.setItem('devchef-tour-nudge-dismissed', 'true');
+      nudge.remove();
+    };
+
+    nudge.querySelector('.coach-start')?.addEventListener('click', () => {
+      dismissNudge();
+      onboarding.startTour();
+    });
+
+    nudge.querySelector('.coach-skip')?.addEventListener('click', () => {
+      dismissNudge();
+    });
+  }, 900);
+}
+
+/**
+ * Sidebar "Start Here" panel for zero-friction onboarding
+ */
+function setupGettingStartedPanel() {
+  const sidebar = document.querySelector('#sidebar');
+  const searchBox = document.querySelector('.search-box');
+  if (!sidebar || !searchBox) return;
+
+  const dismissed = localStorage.getItem('devchef-start-here-dismissed') === 'true';
+  if (dismissed) return;
+
+  let panel = document.getElementById('getting-started-panel');
+  if (!panel) {
+    panel = document.createElement('section');
+    panel.id = 'getting-started-panel';
+    panel.className = 'getting-started-panel';
+    searchBox.insertAdjacentElement('afterend', panel);
+  }
+
+  const tools = ToolRegistry.all();
+  const firstTool = tools.find((tool) => tool?.id);
+  const firstToolId = firstTool?.id || null;
+  const firstToolName = firstTool?.manifest?.name || firstTool?.id || 'first tool';
+
+  panel.innerHTML = `
+    <div class="getting-started-header">
+      <h3>Start Here</h3>
+      <button class="getting-started-close" interestfor="tooltip" data-tooltip="Hide this panel">✕</button>
+    </div>
+    <p class="getting-started-copy">Use one quick action and you are productive immediately.</p>
+    <div class="getting-started-actions">
+      <button class="getting-started-btn" data-action="tour" interestfor="tooltip" data-tooltip="Guided walkthrough (F1)">
+        1. Guided Tour
+      </button>
+      <button class="getting-started-btn secondary" data-action="palette" interestfor="tooltip" data-tooltip="Find any tool fast (Ctrl+K)">
+        2. Command Palette
+      </button>
+      <button class="getting-started-btn secondary" data-action="tool" interestfor="tooltip" data-tooltip="Open ${escapeHtml(firstToolName)}">
+        3. Try ${escapeHtml(firstToolName)}
+      </button>
+    </div>
+    <div class="getting-started-tip">
+      Tip: paste data, then press <kbd>Ctrl+K</kbd> to find the right tool fast.
+    </div>
+  `;
+
+  panel.querySelector('.getting-started-close')?.addEventListener('click', () => {
+    localStorage.setItem('devchef-start-here-dismissed', 'true');
+    panel.remove();
+  });
+
+  panel.querySelector('[data-action="tour"]')?.addEventListener('click', () => {
+    onboarding.startTour();
+  });
+
+  panel.querySelector('[data-action="palette"]')?.addEventListener('click', () => {
+    showCommandPalette(context);
+  });
+
+  panel.querySelector('[data-action="tool"]')?.addEventListener('click', () => {
+    if (firstToolId) {
+      openTool(firstToolId, context);
+    }
+  });
+}
+
+/**
+ * V9 "10x Boost Dock" - one-click high-value productivity actions
+ */
+function setupV8BoostDock() {
+  if (document.getElementById('v8-boost-dock')) return;
+
+  const dock = document.createElement('section');
+  dock.id = 'v8-boost-dock';
+  dock.className = 'v8-boost-dock';
+  dock.innerHTML = `
+    <div class="v8-boost-header">
+      <h3>V9 10x Boost</h3>
+      <button class="v8-boost-close" type="button" interestfor="tooltip" data-tooltip="Hide dock">✕</button>
+    </div>
+    <p class="v8-boost-copy">Run high-impact actions in one click.</p>
+    <div class="v8-boost-actions">
+      <button class="v8-boost-btn" data-v8-action="resume">1. Quick Resume</button>
+      <button class="v8-boost-btn" data-v8-action="clipboard-sprint">2. Clipboard Sprint</button>
+      <button class="v8-boost-btn" data-v8-action="clip-snippet">3. Clip → Snippet</button>
+      <button class="v8-boost-btn" data-v8-action="focus">Focus Mode</button>
+    </div>
+    <div class="v8-boost-tip">Shortcuts: <kbd>Ctrl+Shift+1</kbd> resume, <kbd>Ctrl+Shift+2</kbd> sprint, <kbd>Ctrl+Shift+3</kbd> clip.</div>
+  `;
+
+  document.body.appendChild(dock);
+
+  const hidden = localStorage.getItem('devchef-v8-boost-hidden') === 'true';
+  if (hidden) {
+    dock.classList.add('hidden');
+  } else {
+    setTimeout(() => dock.classList.add('show'), 120);
+  }
+
+  dock.querySelector('.v8-boost-close')?.addEventListener('click', () => {
+    dock.classList.remove('show');
+    dock.classList.add('hidden');
+    localStorage.setItem('devchef-v8-boost-hidden', 'true');
+  });
+
+  dock.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-v8-action]');
+    if (!btn) return;
+    runV8BoostAction(btn.dataset.v8Action);
+  });
+}
+
+function openV8BoostDock() {
+  const dock = document.getElementById('v8-boost-dock');
+  if (!dock) {
+    setupV8BoostDock();
+    return;
+  }
+  dock.classList.remove('hidden');
+  dock.classList.add('show');
+  localStorage.setItem('devchef-v8-boost-hidden', 'false');
+}
+
+function runV8BoostAction(action) {
+  switch (action) {
+    case 'resume':
+      quickResumeLastTool();
+      break;
+    case 'clipboard-sprint':
+      runClipboardSprint();
+      break;
+    case 'clip-snippet':
+      captureClipboardToSnippet();
+      break;
+    case 'focus':
+      toggleFocusMode();
+      break;
+    default:
+      break;
+  }
+}
+
+function quickResumeLastTool() {
+  const lastToolId = getLastUsedTool();
+  if (lastToolId && ToolRegistry.get(lastToolId)) {
+    openTool(lastToolId, context);
+    const tool = ToolRegistry.get(lastToolId);
+    const toolName = tool?.manifest?.name || lastToolId;
+    notifications.success(`V9 Resume: ${toolName}`, { duration: 1800 });
+    return;
+  }
+  showCommandPalette(context);
+  notifications.info('V9 Resume: no recent tool found, opened Command Palette', { duration: 2200 });
+}
+
+async function runClipboardSprint() {
+  try {
+    await quickInput.open();
+    notifications.success('V9 Sprint: clipboard loaded into Quick Input', { duration: 1800 });
+  } catch (error) {
+    quickInput.toggle();
+    notifications.info('V9 Sprint: opened Quick Input', { duration: 1800 });
+  }
+}
+
+async function captureClipboardToSnippet() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) {
+      notifications.warning('Clipboard is empty');
+      return;
+    }
+
+    const currentToolId = getCurrentToolId();
+    const snippet = snippetManager.createSnippet({
+      title: `Clipboard ${new Date().toLocaleTimeString()}`,
+      content: text,
+      description: 'Captured via V9 Clip-to-Snippet',
+      language: 'text',
+      category: 'Captured',
+      toolId: currentToolId || null,
+      tags: ['clipboard', 'v9']
+    });
+
+    notifications.success(`V9 Clip→Snippet: saved "${snippet.title}"`, { duration: 2200 });
+  } catch (error) {
+    notifications.error('V9 Clip→Snippet failed: clipboard access denied');
+  }
+}
+
+function toggleFocusMode() {
+  const enabled = document.body.classList.toggle('focus-mode');
+  localStorage.setItem('devchef-focus-mode', enabled ? 'true' : 'false');
+  notifications.info(`Focus mode ${enabled ? 'enabled' : 'disabled'}`, { duration: 1800 });
+}
+
+function setupAdaptiveClarity() {
+  const body = document.body;
+  const sidebar = document.getElementById('sidebar');
+  const workspace = document.getElementById('workspace');
+  const headerActions = document.querySelector('#sidebar .header-actions');
+  if (!body || !sidebar || !workspace) return;
+
+  const saved = localStorage.getItem('devchef-clarity-mode');
+  const enabled = saved === null ? true : saved === 'true';
+  body.classList.toggle('clarity-mode', enabled);
+
+  let clarityBtn = document.getElementById('clarity-toggle-btn');
+  if (!clarityBtn && headerActions) {
+    clarityBtn = document.createElement('button');
+    clarityBtn.id = 'clarity-toggle-btn';
+    clarityBtn.title = 'Toggle adaptive clarity mode (Ctrl+Shift+.)';
+    clarityBtn.setAttribute('interestfor', 'tooltip');
+    clarityBtn.setAttribute('data-tooltip', 'Adaptive clarity mode (Ctrl+Shift+.)');
+    clarityBtn.innerHTML = '<span class="action-icon">🎯</span>';
+    headerActions.prepend(clarityBtn);
+  }
+
+  clarityBtn?.addEventListener('click', toggleAdaptiveClarity);
+
+  const syncDeepFocus = () => {
+    const active = document.activeElement;
+    const isEditor = active && (
+      active.tagName === 'INPUT' ||
+      active.tagName === 'TEXTAREA' ||
+      active.isContentEditable
+    );
+    const inWorkspace = active && active.closest && active.closest('#workspace');
+    body.classList.toggle('deep-focus', Boolean(body.classList.contains('clarity-mode') && inWorkspace && isEditor));
+  };
+
+  document.addEventListener('focusin', syncDeepFocus);
+  document.addEventListener('focusout', () => setTimeout(syncDeepFocus, 0));
+
+  const updateScrolledState = () => {
+    body.classList.toggle('workspace-scrolled', workspace.scrollTop > 24);
+  };
+  workspace.addEventListener('scroll', updateScrolledState, { passive: true });
+  updateScrolledState();
+
+  const applyStagger = () => {
+    const items = document.querySelectorAll('#tool-list .tool-item');
+    items.forEach((item, index) => {
+      item.style.setProperty('--item-index', String(Math.min(index, 40)));
+    });
+  };
+  applyStagger();
+
+  const observer = new MutationObserver(() => applyStagger());
+  const toolList = document.getElementById('tool-list');
+  if (toolList) {
+    observer.observe(toolList, { childList: true, subtree: true });
+  }
+
+  sidebar.addEventListener('mouseenter', () => {
+    if (body.classList.contains('clarity-mode')) body.classList.add('clarity-peek');
+  });
+  sidebar.addEventListener('mouseleave', () => body.classList.remove('clarity-peek'));
+
+  requestAnimationFrame(() => body.classList.add('ui-ready'));
+}
+
+function toggleAdaptiveClarity() {
+  const enabled = document.body.classList.toggle('clarity-mode');
+  if (!enabled) document.body.classList.remove('deep-focus');
+  localStorage.setItem('devchef-clarity-mode', enabled ? 'true' : 'false');
+  notifications.info(`Adaptive clarity ${enabled ? 'enabled' : 'disabled'}`, { duration: 1700 });
 }
 
 /**

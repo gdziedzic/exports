@@ -36,14 +36,6 @@ class V7UX {
    * Automatically adds helpful tooltips to interactive elements
    */
   initSmartTooltips() {
-    // Add tooltips to elements that don't have them
-    const addTooltipToElement = (element, text) => {
-      if (!element.hasAttribute('data-tooltip') && !element.hasAttribute('title')) {
-        element.classList.add('v7-tooltip');
-        element.setAttribute('data-tooltip', text);
-      }
-    };
-
     // Observe DOM for new elements
     const observer = new MutationObserver((mutations) => {
       mutations.forEach(mutation => {
@@ -72,18 +64,32 @@ class V7UX {
    * Enhance element with V7 UX features
    */
   enhanceElement(element) {
-    // Add ripple effect class
-    if (element.tagName === 'BUTTON' && !element.classList.contains('v7-enhanced')) {
-      element.classList.add('v7-enhanced');
+    const interactiveSelector = 'button, .tool-item, .action-btn';
+    const candidates = [];
+
+    if (element.matches?.(interactiveSelector)) {
+      candidates.push(element);
     }
 
-    // Add tooltip if has title attribute
-    if (element.hasAttribute('title') && !element.classList.contains('v7-tooltip')) {
-      const title = element.getAttribute('title');
-      element.setAttribute('data-tooltip', title);
-      element.removeAttribute('title');
-      element.classList.add('v7-tooltip');
-    }
+    candidates.push(...element.querySelectorAll?.(interactiveSelector) || []);
+
+    candidates.forEach((candidate) => {
+      // Add ripple effect class
+      if (candidate.tagName === 'BUTTON' && !candidate.classList.contains('v7-enhanced')) {
+        candidate.classList.add('v7-enhanced');
+      }
+
+      // Normalize tooltip attributes for modern CSS-driven tooltips
+      if (candidate.hasAttribute('title') && !candidate.hasAttribute('data-tooltip')) {
+        candidate.setAttribute('data-tooltip', candidate.getAttribute('title'));
+      }
+
+      if (candidate.hasAttribute('data-tooltip')) {
+        candidate.classList.add('v7-tooltip');
+        candidate.setAttribute('interestfor', 'tooltip');
+        candidate.setAttribute('aria-description', candidate.getAttribute('data-tooltip'));
+      }
+    });
   }
 
   /**

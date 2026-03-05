@@ -4,6 +4,7 @@
   "description": "DevChef V7 - State-of-the-art developer productivity platform with flawless UX",
   "type": "module",
   "scripts": {
+    "start": "node scripts/start-devchef.mjs",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",

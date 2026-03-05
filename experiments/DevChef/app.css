@@ -64,6 +64,7 @@ body {
   display: flex;
   height: 100vh;
   width: 100vw;
+  animation: app-fade-in 220ms ease-out;
 }
 
 /* Sidebar */
@@ -75,6 +76,7 @@ body {
   flex-direction: column;
   overflow-y: auto;
   transition: all 0.3s ease;
+  animation: shell-slide-in-left 300ms ease-out;
 }
 
 #sidebar header {
@@ -283,6 +285,38 @@ body {
   flex-direction: column;
   overflow: hidden;
   background: var(--bg-primary);
+  animation: shell-slide-in-up 340ms ease-out;
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shell-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shell-slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Workspace */
@@ -6950,4 +6984,744 @@ input, textarea, select {
     box-shadow: none;
     backdrop-filter: none;
   }
+}
+
+/* ============================================================================
+   2026 UI Modernization Layer (non-breaking overrides)
+   ============================================================================ */
+
+:root {
+  --font-sans: "Sora", "Manrope", "Segoe UI Variable", "SF Pro Text", "Segoe UI", sans-serif;
+  --font-display: "Clash Display", "Sora", "Avenir Next", sans-serif;
+  --surface-0: color-mix(in oklch, var(--bg-primary) 86%, var(--accent) 14%);
+  --surface-1: color-mix(in oklch, var(--bg-secondary) 92%, white 8%);
+}
+
+@supports (color: oklch(0.7 0.25 29)) {
+  :root {
+    --accent: oklch(0.7 0.25 29);
+    --accent-hover: oklch(0.63 0.22 29);
+    --accent-light: oklch(0.94 0.06 29);
+  }
+
+  [data-theme="dark"] {
+    --accent: oklch(0.78 0.2 29);
+    --accent-hover: oklch(0.84 0.18 29);
+    --accent-light: oklch(0.3 0.09 29);
+  }
+}
+
+html,
+body {
+  scrollbar-gutter: stable;
+}
+
+#sidebar,
+#tool-list,
+#workspace,
+.palette-results,
+.console-body,
+.error-details {
+  scrollbar-gutter: stable both-edges;
+}
+
+body {
+  background:
+    radial-gradient(1200px 800px at 0% -10%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 60%),
+    radial-gradient(900px 700px at 100% 120%, color-mix(in oklch, var(--success) 10%, transparent), transparent 50%),
+    var(--bg-primary);
+}
+
+#sidebar h1,
+.tool-title,
+.welcome-screen h2 {
+  font-family: var(--font-display);
+}
+
+.version-badge {
+  color: oklch(0.7 0.25 29);
+  border: 1px solid color-mix(in oklch, oklch(0.7 0.25 29) 40%, transparent);
+  box-shadow: 0 10px 24px color-mix(in oklch, oklch(0.7 0.25 29) 28%, transparent);
+}
+
+.tool-item {
+  border: 1px solid transparent;
+}
+
+.tool-item:hover {
+  border-color: color-mix(in oklch, var(--accent) 28%, transparent);
+}
+
+[interestfor="tooltip"][data-tooltip] {
+  position: relative;
+}
+
+[interestfor="tooltip"][data-tooltip]::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  background: color-mix(in oklch, var(--bg-tertiary) 92%, black 8%);
+  color: var(--text-primary);
+  border: 1px solid color-mix(in oklch, var(--border-color) 85%, var(--accent) 15%);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1200;
+}
+
+[interestfor="tooltip"][data-tooltip]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  width: 8px;
+  height: 8px;
+  border-left: 1px solid color-mix(in oklch, var(--border-color) 85%, var(--accent) 15%);
+  border-top: 1px solid color-mix(in oklch, var(--border-color) 85%, var(--accent) 15%);
+  background: color-mix(in oklch, var(--bg-tertiary) 92%, black 8%);
+  transform: translateX(-50%) rotate(45deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1199;
+}
+
+[interestfor="tooltip"][data-tooltip]:is(:hover, :focus-visible)::before,
+[interestfor="tooltip"][data-tooltip]:is(:hover, :focus-visible)::after {
+  opacity: 1;
+}
+
+.notification-dialog.show .notification-dialog-content,
+.pwa-update-notification,
+.pwa-install-banner,
+.v7-notification {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 220ms ease, transform 220ms ease;
+  @starting-style {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (max-width: 768px) {
+  #workspace {
+    padding: 16px;
+  }
+
+  #sidebar {
+    width: min(78vw, 280px);
+  }
+}
+
+/* ============================================================================
+   2026 Visual Refinement Pass (behavior-preserving)
+   ============================================================================ */
+
+:root {
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+}
+
+#app {
+  isolation: isolate;
+}
+
+#sidebar {
+  background:
+    linear-gradient(170deg, color-mix(in oklch, var(--bg-secondary) 90%, white 10%), var(--bg-secondary));
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--border-color) 70%, var(--accent) 30%);
+}
+
+#sidebar header {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: color-mix(in oklch, var(--bg-tertiary) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+#main {
+  background:
+    radial-gradient(1000px 600px at 100% 0%, color-mix(in oklch, var(--accent) 8%, transparent), transparent 65%),
+    var(--bg-primary);
+}
+
+#workspace {
+  padding-block: clamp(20px, 3vw, 36px);
+  padding-inline: clamp(16px, 3vw, 40px);
+}
+
+.tool-container {
+  max-width: min(1440px, 100%);
+}
+
+.search-box input {
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklch, var(--bg-primary) 85%, white 15%);
+  border-color: color-mix(in oklch, var(--border-color) 85%, var(--accent) 15%);
+}
+
+.search-box input:focus {
+  transform: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent);
+}
+
+button,
+.icon-btn,
+#theme-toggle,
+#save-snapshot-btn,
+#manage-snapshots-btn {
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in oklch, var(--border-color) 82%, var(--accent) 18%);
+}
+
+button:hover,
+.icon-btn:hover,
+#theme-toggle:hover,
+#save-snapshot-btn:hover,
+#manage-snapshots-btn:hover {
+  transform: translateY(-1px);
+}
+
+.tool-header {
+  border-bottom: 1px solid color-mix(in oklch, var(--border-color) 82%, var(--accent) 18%);
+}
+
+.tool-title {
+  letter-spacing: -0.03em;
+  font-size: clamp(1.75rem, 2.2vw, 2.35rem);
+}
+
+.tool-description {
+  max-width: 72ch;
+}
+
+.tool-item {
+  border-radius: var(--radius-md);
+  gap: 10px;
+}
+
+.tool-item.active {
+  background: linear-gradient(
+    100deg,
+    color-mix(in oklch, var(--accent-light) 88%, white 12%),
+    color-mix(in oklch, var(--accent-light) 92%, var(--bg-secondary) 8%)
+  );
+}
+
+.palette-content {
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in oklch, var(--border-color) 78%, var(--accent) 22%);
+}
+
+.palette-item:hover {
+  background: color-mix(in oklch, var(--bg-hover) 84%, var(--accent) 16%);
+}
+
+.welcome-screen p {
+  max-width: 62ch;
+  margin-inline: auto;
+}
+
+@media (max-width: 900px) {
+  #sidebar {
+    width: min(82vw, 300px);
+  }
+}
+
+/* First-run onboarding coach */
+.first-run-coach {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: min(380px, calc(100vw - 24px));
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: color-mix(in oklch, var(--bg-secondary) 90%, white 10%);
+  border: 1px solid color-mix(in oklch, var(--border-color) 78%, var(--accent) 22%);
+  box-shadow: var(--shadow-lg);
+  z-index: 1201;
+  transition: opacity 220ms ease, transform 220ms ease;
+  @starting-style {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.coach-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.coach-copy {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+.coach-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.coach-actions button {
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+}
+
+@media (max-width: 768px) {
+  .first-run-coach {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+  }
+}
+
+/* Sidebar start-here helper panel */
+.getting-started-panel {
+  margin: 10px 12px 6px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklch, var(--border-color) 75%, var(--accent) 25%);
+  background: color-mix(in oklch, var(--bg-primary) 88%, var(--accent-light) 12%);
+  box-shadow: var(--shadow-sm);
+  transition: opacity 220ms ease, transform 220ms ease;
+  @starting-style {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.getting-started-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.getting-started-header h3 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+.getting-started-close {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid var(--border-color);
+  padding: 0;
+  font-size: 12px;
+  box-shadow: none;
+}
+
+.getting-started-copy {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.getting-started-actions {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.getting-started-btn {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.getting-started-tip {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.getting-started-tip kbd {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+}
+
+/* ============================================================================
+   2026 CSS Modernization Pass II (non-breaking)
+   ============================================================================ */
+
+:root {
+  --space-1: clamp(0.375rem, 0.35vw, 0.5rem);
+  --space-2: clamp(0.5rem, 0.5vw, 0.75rem);
+  --space-3: clamp(0.75rem, 0.8vw, 1rem);
+  --space-4: clamp(1rem, 1vw, 1.25rem);
+  --space-5: clamp(1.25rem, 1.3vw, 1.6rem);
+  --control-radius: 10px;
+  --ring: 0 0 0 3px color-mix(in oklch, var(--accent) 22%, transparent);
+  --surface-elevated: color-mix(in oklch, var(--bg-secondary) 90%, white 10%);
+}
+
+@supports (text-wrap: balance) {
+  .tool-title,
+  .welcome-screen h2,
+  .modal-header h2 {
+    text-wrap: balance;
+  }
+}
+
+body {
+  text-rendering: optimizeLegibility;
+}
+
+#workspace {
+  container-type: inline-size;
+}
+
+:where(button, .icon-btn, #theme-toggle, #save-snapshot-btn, #manage-snapshots-btn) {
+  transition:
+    transform 140ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+:where(button, .icon-btn, #theme-toggle, #save-snapshot-btn, #manage-snapshots-btn):focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+:where(input, textarea, select) {
+  border-radius: var(--control-radius);
+}
+
+:where(input, textarea, select):focus {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+#sidebar header,
+.panel-header,
+.modal-header {
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+.modal {
+  border: 1px solid color-mix(in oklch, var(--border-color) 78%, var(--accent) 22%);
+  border-radius: var(--radius-lg, 18px);
+  background: var(--surface-elevated);
+}
+
+.modal-content {
+  border-top: 1px solid color-mix(in oklch, var(--border-color) 85%, transparent);
+}
+
+.toast {
+  border-radius: 12px;
+  border: 1px solid color-mix(in oklch, var(--border-color) 78%, var(--accent) 22%);
+  backdrop-filter: blur(8px);
+}
+
+.tool-item {
+  padding-block: var(--space-2);
+}
+
+#sidebar header {
+  padding: var(--space-5);
+}
+
+.search-box {
+  padding: var(--space-3) var(--space-4);
+}
+
+@container (max-width: 720px) {
+  .tool-title {
+    font-size: clamp(1.4rem, 5.6cqw, 1.9rem);
+  }
+
+  .tool-description {
+    font-size: 0.94rem;
+  }
+}
+
+@media (max-width: 820px) {
+  #sidebar {
+    width: min(84vw, 320px);
+  }
+
+  #workspace {
+    padding-inline: var(--space-3);
+    padding-block: var(--space-4);
+  }
+}
+
+/* ============================================================================
+   V8 10x Boost Dock + Focus Mode
+   ============================================================================ */
+
+.v8-boost-dock {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: min(360px, calc(100vw - 24px));
+  background: color-mix(in oklch, var(--bg-secondary) 90%, white 10%);
+  border: 1px solid color-mix(in oklch, var(--border-color) 78%, var(--accent) 22%);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 12px;
+  z-index: 1202;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.v8-boost-dock.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.v8-boost-dock.hidden {
+  display: none;
+}
+
+.v8-boost-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.v8-boost-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.v8-boost-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  padding: 0;
+}
+
+.v8-boost-copy {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.v8-boost-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.v8-boost-btn {
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.v8-boost-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 0%, color-mix(in oklch, var(--accent) 24%, transparent) 50%, transparent 100%);
+  transform: translateX(-120%);
+  transition: transform 320ms ease;
+}
+
+.v8-boost-btn:hover::after {
+  transform: translateX(120%);
+}
+
+.v8-boost-tip {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.focus-mode #sidebar {
+  width: 84px;
+  min-width: 84px;
+}
+
+.focus-mode #sidebar .subtitle,
+.focus-mode #sidebar .search-box,
+.focus-mode #sidebar #recent-tools,
+.focus-mode #sidebar .getting-started-panel,
+.focus-mode #sidebar .category-header,
+.focus-mode #sidebar .tool-name,
+.focus-mode #sidebar .tool-description {
+  display: none;
+}
+
+.focus-mode #sidebar h1 {
+  font-size: 20px;
+}
+
+@media (max-width: 768px) {
+  .v8-boost-dock {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    width: auto;
+  }
+}
+
+/* ============================================================================
+   2026 Adaptive Clarity + Motion Layer
+   ============================================================================ */
+
+:root {
+  --motion-fast: 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-med: 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-slow: 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#clarity-toggle-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  padding: 0;
+  transition: transform var(--motion-fast), box-shadow var(--motion-fast), border-color var(--motion-fast), background var(--motion-fast);
+}
+
+#clarity-toggle-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+body.ui-ready #sidebar,
+body.ui-ready #main,
+body.ui-ready .v8-boost-dock.show {
+  animation: ui-settle var(--motion-slow) both;
+}
+
+@keyframes ui-settle {
+  0% {
+    filter: saturate(0.92) contrast(0.98);
+  }
+  100% {
+    filter: saturate(1) contrast(1);
+  }
+}
+
+body.ui-ready #tool-list .tool-item {
+  animation: tool-item-rise var(--motion-med) both;
+  animation-delay: calc(var(--item-index, 0) * 14ms);
+}
+
+@keyframes tool-item-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Adaptive Clarity: reduce non-essential chrome by default */
+body.clarity-mode #sidebar .subtitle,
+body.clarity-mode #recent-tools,
+body.clarity-mode .getting-started-panel,
+body.clarity-mode .first-run-coach {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity var(--motion-fast), max-height var(--motion-med);
+}
+
+body.clarity-mode:not(.clarity-peek):not(.deep-focus) #sidebar {
+  width: 210px;
+}
+
+body.clarity-mode:not(.clarity-peek):not(.deep-focus) #sidebar .search-box {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+/* Deep focus while typing in workspace */
+body.clarity-mode.deep-focus:not(.focus-mode) #sidebar {
+  width: 92px;
+  min-width: 92px;
+}
+
+body.clarity-mode.deep-focus #sidebar .search-box,
+body.clarity-mode.deep-focus #sidebar .category-header,
+body.clarity-mode.deep-focus #sidebar .tool-item.active::before,
+body.clarity-mode.deep-focus #sidebar .version-badge {
+  display: none;
+}
+
+body.clarity-mode.deep-focus #sidebar .tool-item {
+  margin-inline: 6px;
+  padding-inline: 10px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.clarity-mode.deep-focus #main {
+  background:
+    radial-gradient(900px 520px at 100% 0%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 68%),
+    var(--bg-primary);
+}
+
+/* Scroll-aware header compression */
+body.workspace-scrolled #sidebar header {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  transition: padding var(--motion-med), backdrop-filter var(--motion-med);
+}
+
+body.workspace-scrolled #sidebar h1 {
+  font-size: 20px;
+  transition: font-size var(--motion-med);
+}
+
+/* Hover spotlight for primary actions */
+.header-actions > button:hover,
+.v8-boost-btn:hover {
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 20%, transparent);
 }

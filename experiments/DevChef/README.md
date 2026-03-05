@@ -818,8 +818,11 @@ The KQL Builder ships with 24 query snippets organized by category. To add a new
 
 2. Serve the files using a local web server:
    ```bash
-   # Using Python 3
-   python -m http.server 8000
+   # Recommended: built-in start script (default port: 39173)
+   npm start
+
+   # Custom port
+   npm start -- --port 48081
 
    # Using Node.js http-server
    npx http-server
@@ -828,7 +831,7 @@ The KQL Builder ships with 24 query snippets organized by category. To add a new
    php -S localhost:8000
    ```
 
-3. Open your browser and navigate to `http://localhost:8000`
+3. Open your browser and navigate to `http://localhost:39173`
 
 ### Direct File Access
 

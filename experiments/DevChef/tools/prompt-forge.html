@@ -95,6 +95,52 @@
           <span class="forge-score-tips" id="scoreTips">Add objective</span>
         </div>
 
+        <!-- Intent-first Section -->
+        <div class="forge-section-card forge-intent-card">
+          <div class="forge-section-header forge-intent-header">
+            <h3><span>🧭</span> Intent</h3>
+            <div class="forge-intent-header-actions">
+              <button class="forge-btn forge-btn-sm" id="intentPasteBtn" type="button" title="Paste context (Alt+V)">Paste</button>
+              <button class="forge-btn forge-btn-sm" id="intentClearBtn" type="button" title="Clear intent (Alt+Backspace)">Clear</button>
+              <button class="forge-btn forge-btn-sm" id="toggleRefineBtn" type="button" title="Toggle refine (Alt+R)">Refine options</button>
+            </div>
+          </div>
+          <div class="forge-section-body">
+            <div class="forge-intent-modes" id="intentModes">
+              <button class="forge-intent-mode-btn" type="button" data-intent-mode="create">Create</button>
+              <button class="forge-intent-mode-btn" type="button" data-intent-mode="analyze">Analyze</button>
+              <button class="forge-intent-mode-btn" type="button" data-intent-mode="rewrite">Rewrite</button>
+              <button class="forge-intent-mode-btn" type="button" data-intent-mode="plan">Plan</button>
+            </div>
+            <div class="forge-form-row forge-form-row-single">
+              <div class="forge-form-group">
+                <label>Goal</label>
+                <textarea id="intentGoal" placeholder="What outcome do you want?"></textarea>
+              </div>
+            </div>
+            <div class="forge-form-row forge-form-row-single">
+              <div class="forge-form-group">
+                <label>Input / Context</label>
+                <textarea id="intentInput" placeholder="Paste context, draft text, notes, links, data..."></textarea>
+              </div>
+            </div>
+            <div class="forge-form-row forge-form-row-single">
+              <div class="forge-form-group">
+                <label>Output Format</label>
+                <div class="forge-intent-output-grid" id="intentOutputOptions">
+                  <button class="forge-intent-mode-btn" type="button" data-intent-output="bullets">Bullet List</button>
+                  <button class="forge-intent-mode-btn" type="button" data-intent-output="checklist">Checklist</button>
+                  <button class="forge-intent-mode-btn" type="button" data-intent-output="table">Table</button>
+                  <button class="forge-intent-mode-btn" type="button" data-intent-output="summary">Executive Summary</button>
+                  <button class="forge-intent-mode-btn" type="button" data-intent-output="steps">Step-by-step Plan</button>
+                  <button class="forge-intent-mode-btn" type="button" data-intent-output="json">Structured JSON</button>
+                </div>
+              </div>
+            </div>
+            <div class="forge-intent-status" id="intentStatusChips"></div>
+          </div>
+        </div>
+
         <!-- Role Section -->
         <div class="forge-section-card" id="roleCard">
           <div class="forge-section-header">
@@ -625,6 +671,127 @@
     gap: 12px;
   }
 
+  .forge-intent-header {
+    cursor: default;
+  }
+
+  .forge-intent-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .forge-intent-header-actions .forge-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  .forge-intent-modes {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 10px;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-color) 65%);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--accent-light) 35%, var(--bg-tertiary) 65%);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+  }
+
+  .forge-intent-modes::before {
+    content: "Start here";
+    position: absolute;
+    top: -10px;
+    left: 12px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: white;
+  }
+
+  .forge-intent-output-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .forge-intent-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .forge-intent-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-color) 76%);
+    background: color-mix(in srgb, var(--bg-tertiary) 84%, var(--accent-light) 16%);
+    color: var(--text-secondary);
+    padding: 5px 10px;
+  }
+
+  .forge-intent-chip strong {
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+
+  .forge-intent-mode-btn {
+    border: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--bg-tertiary) 86%, var(--accent) 14%);
+    color: var(--text-primary);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: 120ms ease;
+  }
+
+  .forge-intent-mode-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .forge-intent-mode-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+
+  .forge-intent-modes .forge-intent-mode-btn:not(.active) {
+    animation: intent-nudge 2.4s ease-in-out infinite;
+  }
+
+  @keyframes intent-nudge {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1px); }
+  }
+
+  .forge-builder:not(.refine-open) #roleCard,
+  .forge-builder:not(.refine-open) #taskCard,
+  .forge-builder:not(.refine-open) #objectiveCard,
+  .forge-builder:not(.refine-open) #contextCard,
+  .forge-builder:not(.refine-open) #devCard,
+  .forge-builder:not(.refine-open) #modifiersCard {
+    display: none;
+  }
+
+  .forge-builder[data-intent-mode="analyze"] #devCard,
+  .forge-builder[data-intent-mode="rewrite"] #devCard {
+    display: none;
+  }
+
   /* Score Bar */
   .forge-score-bar {
     display: flex;
@@ -1076,6 +1243,13 @@
     .forge-sidebar { grid-template-columns: 1fr; }
     .forge-form-row { grid-template-columns: 1fr; }
     .forge-form-row-triple { grid-template-columns: 1fr; }
+    .forge-intent-header {
+      align-items: flex-start;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .forge-intent-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .forge-intent-output-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>
 
@@ -1323,8 +1497,36 @@ const RECIPES = [
   { id: 'onboarding', icon: '🎓', name: 'Explain Code', desc: 'Codebase walkthrough', config: { persona: 'senior_dev', voice: 'teacher', pattern: 'research', format: 'outline', tone: 'friendly', objective: 'understand', deliverable: 'docs', guardrails: ['hallucination'], boosters: ['reasoning', 'followup'] }}
 ];
 
+const INTENT_MODES = [
+  { id: 'create', label: 'Create' },
+  { id: 'analyze', label: 'Analyze' },
+  { id: 'rewrite', label: 'Rewrite' },
+  { id: 'plan', label: 'Plan' }
+];
+
+const INTENT_OUTPUT_OPTIONS = [
+  { id: 'bullets', label: 'bullet list' },
+  { id: 'checklist', label: 'checklist' },
+  { id: 'table', label: 'table' },
+  { id: 'summary', label: 'executive summary' },
+  { id: 'steps', label: 'step-by-step plan' },
+  { id: 'json', label: 'structured JSON' }
+];
+
+const DEFAULT_OUTPUT_BY_MODE = {
+  create: 'steps',
+  analyze: 'summary',
+  rewrite: 'bullets',
+  plan: 'checklist'
+};
+
 // ============ STATE ============
 let state = {
+  intentMode: 'create',
+  intentGoal: '',
+  intentInput: '',
+  intentOutputFormat: 'steps',
+  showRefine: false,
   persona: 'senior_dev', voice: 'neutral', customPersona: '',
   pattern: 'feature', format: 'steps', tone: 'precise',
   audience: 'senior_dev', customAudience: '',
@@ -1392,6 +1594,7 @@ function saveToStorage() {
 }
 
 function renderAll() {
+  ensureIntentState();
   renderSelects();
   renderQuickFire();
   renderRecipes();
@@ -1400,6 +1603,7 @@ function renderAll() {
   renderClauses();
   renderTemplates();
   renderHistory();
+  renderIntentControls();
   updateCustomVisibility();
   updateSectionVisibility();
 }
@@ -1434,6 +1638,61 @@ function renderSelects() {
   $('customCodebase').value = state.customCodebase || '';
   $('customConstraints').value = state.customConstraints || '';
   $('extraInstructions').value = state.extraInstructions || '';
+}
+
+function ensureIntentState() {
+  if (!INTENT_MODES.some(mode => mode.id === state.intentMode)) {
+    state.intentMode = 'create';
+  }
+  if (typeof state.intentGoal !== 'string') state.intentGoal = '';
+  if (typeof state.intentInput !== 'string') state.intentInput = '';
+  if (!INTENT_OUTPUT_OPTIONS.some(option => option.id === state.intentOutputFormat)) {
+    state.intentOutputFormat = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
+  }
+  state.showRefine = Boolean(state.showRefine);
+}
+
+function getIntentOutputLabel() {
+  const selected = INTENT_OUTPUT_OPTIONS.find(option => option.id === state.intentOutputFormat);
+  return selected?.label || state.intentOutputFormat;
+}
+
+function renderIntentControls() {
+  ensureIntentState();
+  const builder = document.querySelector('.forge-builder');
+  if (builder) {
+    builder.dataset.intentMode = state.intentMode;
+    builder.classList.toggle('refine-open', state.showRefine);
+  }
+
+  document.querySelectorAll('.forge-intent-mode-btn').forEach((button) => {
+    button.classList.toggle('active', button.dataset.intentMode === state.intentMode);
+  });
+
+  const intentGoal = $('intentGoal');
+  if (intentGoal) intentGoal.value = state.intentGoal || '';
+
+  const intentInput = $('intentInput');
+  if (intentInput) intentInput.value = state.intentInput || '';
+
+  document.querySelectorAll('[data-intent-output]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.intentOutput === state.intentOutputFormat);
+  });
+
+  const toggleRefineBtn = $('toggleRefineBtn');
+  if (toggleRefineBtn) {
+    toggleRefineBtn.textContent = state.showRefine ? 'Hide refine' : 'Refine options';
+  }
+
+  const intentStatusChips = $('intentStatusChips');
+  if (intentStatusChips) {
+    intentStatusChips.innerHTML = `
+      <span class="forge-intent-chip">Mode <strong>${state.intentMode}</strong></span>
+      <span class="forge-intent-chip">Output <strong>${getIntentOutputLabel()}</strong></span>
+      <span class="forge-intent-chip">Refine <strong>${state.showRefine ? 'on' : 'off'}</strong></span>
+      <span class="forge-intent-chip">Shortcuts <strong>Alt+1..4 / Alt+R / Alt+V</strong></span>
+    `;
+  }
 }
 
 function fillSelect(id, options, selectedValue) {
@@ -1538,6 +1797,61 @@ function renderHistory() {
 
 // ============ EVENT LISTENERS ============
 function attachListeners() {
+  const intentModes = $('intentModes');
+  if (intentModes) {
+    intentModes.addEventListener('click', e => {
+      const button = e.target.closest('.forge-intent-mode-btn');
+      if (!button) return;
+      state.intentMode = button.dataset.intentMode;
+      state.intentOutputFormat = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
+      renderIntentControls();
+      updateSectionVisibility();
+      updatePrompt();
+    });
+  }
+
+  const intentOutputOptions = $('intentOutputOptions');
+  if (intentOutputOptions) {
+    intentOutputOptions.addEventListener('click', e => {
+      const button = e.target.closest('[data-intent-output]');
+      if (!button) return;
+      state.intentOutputFormat = button.dataset.intentOutput;
+      renderIntentControls();
+      updatePrompt();
+    });
+  }
+
+  const toggleRefineBtn = $('toggleRefineBtn');
+  if (toggleRefineBtn) {
+    toggleRefineBtn.addEventListener('click', () => {
+      state.showRefine = !state.showRefine;
+      renderIntentControls();
+    });
+  }
+
+  const intentPasteBtn = $('intentPasteBtn');
+  if (intentPasteBtn) {
+    intentPasteBtn.addEventListener('click', () => {
+      pasteIntentContext();
+    });
+  }
+
+  const intentClearBtn = $('intentClearBtn');
+  if (intentClearBtn) {
+    intentClearBtn.addEventListener('click', () => {
+      clearIntentFields();
+    });
+  }
+
+  ['intentGoal', 'intentInput'].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener('input', e => {
+      state[id] = e.target.value;
+      updatePrompt();
+    });
+  });
+
   // Selects
   const selects = ['personaSelect', 'voiceSelect', 'patternSelect', 'formatSelect', 'toneSelect',
     'audienceSelect', 'objectiveSelect', 'deliverableSelect', 'contextSelect', 'exclusionsSelect',
@@ -1761,16 +2075,45 @@ function attachListeners() {
 
   // Keyboard shortcuts
   document.addEventListener('keydown', e => {
+    const isTyping = isInputFocused();
     if (e.key === 'Escape') {
       closeModal('saveModal');
       closeModal('importModal');
+    }
+    if (e.altKey && !e.ctrlKey && !e.metaKey) {
+      if (e.key >= '1' && e.key <= '4') {
+        e.preventDefault();
+        const modeByIndex = ['create', 'analyze', 'rewrite', 'plan'];
+        state.intentMode = modeByIndex[Number(e.key) - 1] || state.intentMode;
+        state.intentOutputFormat = DEFAULT_OUTPUT_BY_MODE[state.intentMode] || state.intentOutputFormat;
+        renderIntentControls();
+        updateSectionVisibility();
+        updatePrompt();
+        return;
+      }
+      if (e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        state.showRefine = !state.showRefine;
+        renderIntentControls();
+        return;
+      }
+      if (e.key.toLowerCase() === 'v') {
+        e.preventDefault();
+        pasteIntentContext();
+        return;
+      }
+      if (e.key === 'Backspace' && !isTyping) {
+        e.preventDefault();
+        clearIntentFields();
+        return;
+      }
     }
     if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '8') {
       e.preventDefault();
       const qf = QUICK_FIRES[parseInt(e.key) - 1];
       if (qf) applyQuickFire(qf.id);
     }
-    if ((e.metaKey || e.ctrlKey) && e.key === 'c' && !isInputFocused()) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'c' && !isTyping) {
       e.preventDefault();
       copyPrompt();
     }
@@ -1797,6 +2140,35 @@ function toggleArrayItem(key, id, renderFn) {
   updatePrompt();
 }
 
+function clearIntentFields() {
+  state.intentGoal = '';
+  state.intentInput = '';
+  renderIntentControls();
+  updatePrompt();
+  showToast('Intent cleared');
+}
+
+async function pasteIntentContext() {
+  if (!navigator.clipboard?.readText) {
+    showToast('Clipboard unavailable');
+    return;
+  }
+
+  try {
+    const value = await navigator.clipboard.readText();
+    if (!value.trim()) {
+      showToast('Clipboard is empty');
+      return;
+    }
+    state.intentInput = value;
+    renderIntentControls();
+    updatePrompt();
+    showToast('Context pasted');
+  } catch (err) {
+    showToast('Clipboard blocked');
+  }
+}
+
 function updateCustomVisibility() {
   const customPersonaRow = $('customPersonaRow');
   if (customPersonaRow) customPersonaRow.classList.toggle('show', state.persona === 'custom');
@@ -1818,6 +2190,7 @@ function updateCustomVisibility() {
 }
 
 function updateSectionVisibility() {
+  renderIntentControls();
   const sections = [
     { key: 'includeRole', cardId: 'roleCard' },
     { key: 'includeTask', cardId: 'taskCard' },
@@ -1846,6 +2219,7 @@ function applyQuickFire(id) {
   const btn = document.querySelector(`[data-qf="${id}"]`);
   if (btn) btn.classList.add('active');
 
+  state.showRefine = true;
   applyConfig(qf.recipe);
   showToast(`${qf.label} mode!`);
 }
@@ -1858,6 +2232,7 @@ function applyRecipe(id) {
   const item = document.querySelector(`[data-recipe="${id}"]`);
   if (item) item.classList.add('selected');
 
+  state.showRefine = true;
   applyConfig(recipe.config);
   showToast(`${recipe.name} recipe!`);
 }
@@ -1892,6 +2267,11 @@ function loadTemplate(name) {
 
 function clearAll() {
   state = {
+    intentMode: 'create',
+    intentGoal: '',
+    intentInput: '',
+    intentOutputFormat: 'steps',
+    showRefine: false,
     persona: 'senior_dev', voice: 'neutral', customPersona: '',
     pattern: 'feature', format: 'steps', tone: 'precise',
     audience: 'senior_dev', customAudience: '',
@@ -1951,6 +2331,22 @@ function getText(list, id, customValue) {
 
 function assemblePrompt() {
   const lines = [];
+  const selectedIntentOutput = INTENT_OUTPUT_OPTIONS.find(option => option.id === state.intentOutputFormat);
+  const outputLabel = selectedIntentOutput?.label || state.intentOutputFormat;
+
+  if (state.intentMode) {
+    lines.push('--- INTENT ---');
+    lines.push(`Mode: ${state.intentMode}`);
+    lines.push('');
+  }
+
+  if (!state.showRefine) {
+    lines.push('--- REQUEST ---');
+    lines.push(state.intentGoal || 'Help me with this request.');
+    if (state.intentInput) lines.push(`Context:\n${state.intentInput}`);
+    if (outputLabel) lines.push(`Return format: ${outputLabel}`);
+    return lines.join('\n').trim();
+  }
 
   // Role
   if (state.includeRole) {

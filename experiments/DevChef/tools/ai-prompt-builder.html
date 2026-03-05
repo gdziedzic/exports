@@ -27,6 +27,45 @@
       <p class="tool-description">Compose structured prompts with selectable personas and tech stack awareness</p>
     </div>
 
+    <div class="intent-starter">
+      <div class="intent-starter-header">
+        <h3>Intent Starter</h3>
+        <div class="intent-header-actions">
+          <button id="intent-paste-btn" class="secondary" type="button" title="Paste from clipboard (Alt+V)">Paste</button>
+          <button id="intent-clear-btn" class="secondary" type="button" title="Clear intent (Alt+Backspace)">Clear</button>
+          <button id="intent-refine-toggle" class="secondary" type="button" title="Toggle refine (Alt+R)">Refine options</button>
+        </div>
+      </div>
+      <div class="intent-mode-group" id="intent-mode-group">
+        <button type="button" class="intent-mode-btn" data-intent-mode="create">Create</button>
+        <button type="button" class="intent-mode-btn" data-intent-mode="analyze">Analyze</button>
+        <button type="button" class="intent-mode-btn" data-intent-mode="rewrite">Rewrite</button>
+        <button type="button" class="intent-mode-btn" data-intent-mode="plan">Plan</button>
+      </div>
+      <div class="intent-fields">
+        <div class="intent-field">
+          <label for="intent-goal">Goal</label>
+          <textarea id="intent-goal" rows="2" placeholder="What outcome do you want?"></textarea>
+        </div>
+        <div class="intent-field">
+          <label for="intent-input">Input / Context</label>
+          <textarea id="intent-input" rows="2" placeholder="Paste context, draft text, notes, links, or data"></textarea>
+        </div>
+        <div class="intent-field">
+          <label for="intent-output-options">Output format</label>
+          <div class="intent-output-grid" id="intent-output-options">
+            <button type="button" class="intent-mode-btn" data-intent-output="bullets">Bullet List</button>
+            <button type="button" class="intent-mode-btn" data-intent-output="checklist">Checklist</button>
+            <button type="button" class="intent-mode-btn" data-intent-output="table">Table</button>
+            <button type="button" class="intent-mode-btn" data-intent-output="summary">Executive Summary</button>
+            <button type="button" class="intent-mode-btn" data-intent-output="steps">Step-by-step Plan</button>
+            <button type="button" class="intent-mode-btn" data-intent-output="json">Structured JSON</button>
+          </div>
+        </div>
+      </div>
+      <div class="intent-status" id="intent-status-chips"></div>
+    </div>
+
     <div class="tool-layout">
       <!-- Left Panel: Components -->
       <div class="components-panel">
@@ -310,6 +349,187 @@
 
   .updating {
     animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .intent-starter {
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: linear-gradient(160deg, var(--bg-secondary), color-mix(in srgb, var(--bg-secondary) 88%, var(--primary-color) 12%));
+  }
+
+  .intent-starter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .intent-header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .intent-header-actions button {
+    margin: 0;
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 8px;
+  }
+
+  .intent-starter-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .intent-mode-group {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid color-mix(in srgb, var(--primary-color) 35%, var(--border-color) 65%);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--primary-color) 14%, var(--bg-primary) 86%);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+  }
+
+  .intent-mode-group::before {
+    content: "Start here";
+    position: absolute;
+    top: -10px;
+    left: 12px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .intent-mode-btn {
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.15s ease;
+  }
+
+  .intent-mode-btn:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+  }
+
+  .intent-mode-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 24%, transparent);
+  }
+
+  .intent-mode-group .intent-mode-btn:not(.active) {
+    animation: intent-nudge 2.4s ease-in-out infinite;
+  }
+
+  @keyframes intent-nudge {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1px); }
+  }
+
+  .intent-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+
+  .intent-output-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .intent-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .intent-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid color-mix(in srgb, var(--primary-color) 24%, var(--border-color) 76%);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--bg-primary) 84%, var(--primary-color) 16%);
+  }
+
+  .intent-chip strong {
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+
+  .intent-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .intent-field label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .intent-field textarea,
+  .intent-field input {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 8px 10px;
+    font-size: 12px;
+    transition: 0.15s ease;
+  }
+
+  .intent-field textarea {
+    resize: vertical;
+    min-height: 56px;
+    line-height: 1.45;
+  }
+
+  .intent-field textarea:focus,
+  .intent-field input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 16%, transparent);
+  }
+
+  .tool-container[data-intent-refine="closed"] .quick-actions-toolbar,
+  .tool-container[data-intent-refine="closed"] .drop-zone,
+  .tool-container[data-intent-refine="closed"] .add-component-section {
+    display: none;
+  }
+
+  .tool-container[data-intent-mode="rewrite"] .component-item[data-id="tech-stack"],
+  .tool-container[data-intent-mode="rewrite"] .component-item[data-id="constraints"],
+  .tool-container[data-intent-mode="analyze"] .component-item[data-id="tech-stack"] {
+    display: none;
   }
 
   .tool-layout {
@@ -1492,6 +1712,23 @@
   }
 
   @media (max-width: 1024px) {
+    .intent-starter-header {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .intent-fields {
+      grid-template-columns: 1fr;
+    }
+
+    .intent-mode-group {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .intent-output-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .tool-layout {
       grid-template-columns: 1fr;
     }
@@ -2610,8 +2847,56 @@ So that [benefit/value]
     placeholders: {}, // {placeholder_name: value}
     customTemplates: [],
     focusedIndex: -1,
-    selectedComponents: new Set()
+    selectedComponents: new Set(),
+    intentMode: 'create',
+    intentGoal: '',
+    intentInput: '',
+    intentOutput: 'steps',
+    showRefine: false
   };
+
+  const INTENT_MODES = ['create', 'analyze', 'rewrite', 'plan'];
+  const INTENT_OUTPUT_OPTIONS = [
+    { id: 'bullets', label: 'bullet list' },
+    { id: 'checklist', label: 'checklist' },
+    { id: 'table', label: 'table' },
+    { id: 'summary', label: 'executive summary' },
+    { id: 'steps', label: 'step-by-step plan' },
+    { id: 'json', label: 'structured JSON' }
+  ];
+  const DEFAULT_OUTPUT_BY_MODE = {
+    create: 'steps',
+    analyze: 'summary',
+    rewrite: 'bullets',
+    plan: 'checklist'
+  };
+
+  function clearIntentFields() {
+    state.intentGoal = '';
+    state.intentInput = '';
+    state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode] || 'steps';
+    renderIntentControls();
+    updatePreview();
+    saveConfig();
+    showStatus('Intent cleared', 'info');
+  }
+
+  async function pasteIntentContext() {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) {
+        showStatus('Clipboard is empty', 'info');
+        return;
+      }
+      state.intentInput = text;
+      renderIntentControls();
+      updatePreview();
+      saveConfig();
+      showStatus('Clipboard pasted into Input/Context', 'success');
+    } catch (error) {
+      showStatus('Clipboard access denied', 'error');
+    }
+  }
 
   function normalizeComponents() {
     if (!state.config || !Array.isArray(state.config.components)) {
@@ -2639,6 +2924,80 @@ So that [benefit/value]
     });
   }
 
+  function ensureIntentState() {
+    if (!INTENT_MODES.includes(state.intentMode)) state.intentMode = 'create';
+    if (typeof state.intentGoal !== 'string') state.intentGoal = '';
+    if (typeof state.intentInput !== 'string') state.intentInput = '';
+    if (!INTENT_OUTPUT_OPTIONS.some((option) => option.id === state.intentOutput)) {
+      state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
+    }
+    state.showRefine = Boolean(state.showRefine);
+  }
+
+  function getIntentOutputLabel() {
+    const selected = INTENT_OUTPUT_OPTIONS.find((option) => option.id === state.intentOutput);
+    return selected?.label || state.intentOutput;
+  }
+
+  function renderIntentControls() {
+    ensureIntentState();
+    const container = document.querySelector('.tool-container');
+    if (container) {
+      container.dataset.intentMode = state.intentMode;
+      container.dataset.intentRefine = state.showRefine ? 'open' : 'closed';
+    }
+
+    document.querySelectorAll('.intent-mode-btn').forEach((button) => {
+      button.classList.toggle('active', button.dataset.intentMode === state.intentMode);
+    });
+
+    const goalInput = document.getElementById('intent-goal');
+    if (goalInput) goalInput.value = state.intentGoal;
+
+    const inputArea = document.getElementById('intent-input');
+    if (inputArea) inputArea.value = state.intentInput;
+
+    document.querySelectorAll('[data-intent-output]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.intentOutput === state.intentOutput);
+    });
+
+    const refineToggle = document.getElementById('intent-refine-toggle');
+    if (refineToggle) {
+      refineToggle.textContent = state.showRefine ? 'Hide refine' : 'Refine options';
+    }
+
+    const intentStatusChips = document.getElementById('intent-status-chips');
+    if (intentStatusChips) {
+      intentStatusChips.innerHTML = `
+        <span class="intent-chip">Mode <strong>${state.intentMode}</strong></span>
+        <span class="intent-chip">Output <strong>${getIntentOutputLabel()}</strong></span>
+        <span class="intent-chip">Refine <strong>${state.showRefine ? 'on' : 'off'}</strong></span>
+        <span class="intent-chip">Shortcuts <strong>Alt+1..4 / Alt+R / Alt+V</strong></span>
+      `;
+    }
+  }
+
+  function composeIntentHeader(format) {
+    const lines = [];
+
+    if (state.intentMode) {
+      lines.push(`Mode: ${state.intentMode}`);
+    }
+
+    if (!lines.length) return '';
+
+    if (format === 'markdown') {
+      return `# Intent\n\n${lines.join('\n')}\n\n---\n\n`;
+    }
+    if (format === 'plain') {
+      return `Intent:\n${lines.join('\n')}\n\n`;
+    }
+
+    const title = 'Intent';
+    const separator = '='.repeat(title.length + 4);
+    return `${separator}\n# ${title}\n${separator}\n\n${lines.join('\n')}\n\n`;
+  }
+
   export function init(context) {
     console.log('AI Prompt Builder v3.0 initialized');
 
@@ -2646,6 +3005,7 @@ So that [benefit/value]
     loadConfig();
     loadCustomTemplates();
     normalizeComponents();
+    ensureIntentState();
 
     // Check for shared config in URL
     loadFromURL();
@@ -2653,6 +3013,7 @@ So that [benefit/value]
     // Render components and templates
     renderComponents();
     renderTemplates();
+    renderIntentControls();
     updatePreview();
 
     // Event listeners
@@ -2672,6 +3033,101 @@ So that [benefit/value]
   }
 
   function setupEventListeners() {
+    const intentModeGroup = document.getElementById('intent-mode-group');
+    if (intentModeGroup) {
+      intentModeGroup.addEventListener('click', (e) => {
+        const button = e.target.closest('.intent-mode-btn');
+        if (!button) return;
+        state.intentMode = button.dataset.intentMode;
+        state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
+        renderIntentControls();
+        updatePreview();
+        saveConfig();
+      });
+    }
+
+    const intentOutputOptions = document.getElementById('intent-output-options');
+    if (intentOutputOptions) {
+      intentOutputOptions.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-intent-output]');
+        if (!button) return;
+        state.intentOutput = button.dataset.intentOutput;
+        renderIntentControls();
+        updatePreview();
+        saveConfig();
+      });
+    }
+
+    const refineToggle = document.getElementById('intent-refine-toggle');
+    if (refineToggle) {
+      refineToggle.addEventListener('click', () => {
+        state.showRefine = !state.showRefine;
+        renderIntentControls();
+        saveConfig();
+      });
+    }
+
+    const pasteIntentBtn = document.getElementById('intent-paste-btn');
+    if (pasteIntentBtn) {
+      pasteIntentBtn.addEventListener('click', () => {
+        pasteIntentContext();
+      });
+    }
+
+    const clearIntentBtn = document.getElementById('intent-clear-btn');
+    if (clearIntentBtn) {
+      clearIntentBtn.addEventListener('click', () => {
+        clearIntentFields();
+      });
+    }
+
+    ['intent-goal', 'intent-input'].forEach((id) => {
+      const input = document.getElementById(id);
+      if (!input) return;
+      input.addEventListener('input', (e) => {
+        if (id === 'intent-goal') state.intentGoal = e.target.value;
+        if (id === 'intent-input') state.intentInput = e.target.value;
+        updatePreview();
+        debouncedSaveConfig();
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey) return;
+      const targetTag = e.target?.tagName;
+      const isTypingField = targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT';
+
+      if (e.key >= '1' && e.key <= '4') {
+        e.preventDefault();
+        const modeByIndex = ['create', 'analyze', 'rewrite', 'plan'];
+        state.intentMode = modeByIndex[Number(e.key) - 1] || state.intentMode;
+        state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode] || state.intentOutput;
+        renderIntentControls();
+        updatePreview();
+        saveConfig();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        state.showRefine = !state.showRefine;
+        renderIntentControls();
+        saveConfig();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'v') {
+        e.preventDefault();
+        pasteIntentContext();
+        return;
+      }
+
+      if (e.key === 'Backspace' && !isTypingField) {
+        e.preventDefault();
+        clearIntentFields();
+      }
+    });
+
     document.getElementById('add-component-btn').addEventListener('click', handleAddComponent);
     document.getElementById('new-component-name').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleAddComponent();
@@ -3677,23 +4133,39 @@ So that [benefit/value]
 
   function updatePreview() {
     const format = document.getElementById('export-format').value;
+    let prompt = composeIntentHeader(format);
     const enabledComponents = state.config.components
       .filter(c => c.enabled && c.content)
       .sort((a, b) => a.order - b.order);
+    const intentOutput = INTENT_OUTPUT_OPTIONS.find((option) => option.id === state.intentOutput);
+    const intentOutputLabel = intentOutput?.label || state.intentOutput;
 
-    let prompt = '';
+    if (!state.showRefine) {
+      const summaryLines = [];
+      summaryLines.push(state.intentGoal || 'Help me with this request.');
+      if (state.intentInput) summaryLines.push(`Context:\n${state.intentInput}`);
+      if (intentOutputLabel) summaryLines.push(`Return format: ${intentOutputLabel}`);
 
-    if (format === 'markdown') {
-      prompt = enabledComponents
+      if (format === 'markdown') {
+        prompt += `# Request\n\n${summaryLines.join('\n\n')}`;
+      } else if (format === 'plain') {
+        prompt += `Request:\n${summaryLines.join('\n\n')}`;
+      } else {
+        const title = 'Request';
+        const separator = '='.repeat(title.length + 4);
+        prompt += `${separator}\n# ${title}\n${separator}\n\n${summaryLines.join('\n\n')}`;
+      }
+    } else if (format === 'markdown') {
+      prompt += enabledComponents
         .map(c => `# ${c.name}\n\n${c.content}`)
         .join('\n\n---\n\n');
     } else if (format === 'plain') {
-      prompt = enabledComponents
+      prompt += enabledComponents
         .map(c => `${c.name}:\n${c.content}`)
         .join('\n\n');
     } else {
       // Structured format (default)
-      prompt = enabledComponents
+      prompt += enabledComponents
         .map(c => {
           const separator = '='.repeat(c.name.length + 4);
           return `${separator}\n# ${c.name}\n${separator}\n\n${c.content}`;
@@ -3703,6 +4175,7 @@ So that [benefit/value]
 
     const textarea = document.getElementById('final-prompt');
     textarea.value = prompt;
+    renderIntentControls();
 
     // Update stats
     const chars = prompt.length;
@@ -3819,6 +4292,13 @@ So that [benefit/value]
   function saveConfig() {
     try {
       localStorage.setItem('ai-prompt-builder-config', JSON.stringify(state.config));
+      localStorage.setItem('ai-prompt-builder-intent', JSON.stringify({
+        intentMode: state.intentMode,
+        intentGoal: state.intentGoal,
+        intentInput: state.intentInput,
+        intentOutput: state.intentOutput,
+        showRefine: state.showRefine
+      }));
     } catch (error) {
       console.error('Failed to save config:', error);
     }
@@ -3835,6 +4315,17 @@ So that [benefit/value]
       if (saved) {
         state.config = JSON.parse(saved);
       }
+
+      const savedIntent = localStorage.getItem('ai-prompt-builder-intent');
+      if (savedIntent) {
+        const intent = JSON.parse(savedIntent);
+        state.intentMode = intent.intentMode ?? state.intentMode;
+        state.intentGoal = intent.intentGoal ?? state.intentGoal;
+        state.intentInput = intent.intentInput ?? state.intentInput;
+        state.intentOutput = intent.intentOutput ?? state.intentOutput;
+        state.showRefine = intent.showRefine ?? state.showRefine;
+      }
+      ensureIntentState();
     } catch (error) {
       console.error('Failed to load config:', error);
     }
