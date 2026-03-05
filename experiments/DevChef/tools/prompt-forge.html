@@ -15,7 +15,7 @@
   "description": "Assemble high-quality AI prompts in seconds with presets, templates, and one-click recipes",
   "category": "AI",
   "keywords": ["prompt", "ai", "builder", "template", "recipe"],
-  "version": "2.0.0"
+  "version": "10.0.0"
 }
 </script>
 
@@ -107,10 +107,15 @@
           </div>
           <div class="forge-section-body">
             <div class="forge-intent-modes" id="intentModes">
-              <button class="forge-intent-mode-btn" type="button" data-intent-mode="create">Create</button>
-              <button class="forge-intent-mode-btn" type="button" data-intent-mode="analyze">Analyze</button>
-              <button class="forge-intent-mode-btn" type="button" data-intent-mode="rewrite">Rewrite</button>
-              <button class="forge-intent-mode-btn" type="button" data-intent-mode="plan">Plan</button>
+              <button class="forge-intent-mode-btn forge-intent-primary-btn" type="button" data-intent-mode="create">Create</button>
+              <button class="forge-intent-mode-btn forge-intent-primary-btn" type="button" data-intent-mode="analyze">Analyze</button>
+              <button class="forge-intent-mode-btn forge-intent-primary-btn" type="button" data-intent-mode="rewrite">Rewrite</button>
+              <button class="forge-intent-mode-btn forge-intent-primary-btn" type="button" data-intent-mode="plan">Plan</button>
+            </div>
+            <div class="forge-workflow-modes" id="workflowModes">
+              <button class="forge-intent-mode-btn" type="button" data-workflow-profile="rapid">Rapid</button>
+              <button class="forge-intent-mode-btn" type="button" data-workflow-profile="balanced">Balanced</button>
+              <button class="forge-intent-mode-btn" type="button" data-workflow-profile="deep">Deep</button>
             </div>
             <div class="forge-form-row forge-form-row-single">
               <div class="forge-form-group">
@@ -700,6 +705,48 @@
     position: relative;
   }
 
+  .forge-intent-modes .forge-intent-primary-btn {
+    min-height: 42px;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    border-width: 1.5px;
+    background: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--bg-tertiary) 88%, var(--accent) 12%),
+      color-mix(in srgb, var(--bg-tertiary) 76%, var(--accent) 24%)
+    );
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+
+  .forge-intent-modes .forge-intent-primary-btn:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+
+  .forge-intent-modes .forge-intent-primary-btn.active {
+    background: linear-gradient(155deg, var(--accent), color-mix(in srgb, var(--accent) 76%, black));
+    color: white;
+    border-color: color-mix(in srgb, var(--accent) 72%, black);
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent),
+      0 14px 24px color-mix(in srgb, var(--accent) 34%, transparent);
+  }
+
+  .forge-workflow-modes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .forge-workflow-modes .forge-intent-mode-btn {
+    border-radius: 10px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 7px 8px;
+  }
+
   .forge-intent-modes::before {
     content: "Start here";
     position: absolute;
@@ -1249,6 +1296,7 @@
       flex-wrap: wrap;
     }
     .forge-intent-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .forge-workflow-modes { grid-template-columns: 1fr; }
     .forge-intent-output-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>
@@ -1520,9 +1568,12 @@ const DEFAULT_OUTPUT_BY_MODE = {
   plan: 'checklist'
 };
 
+const WORKFLOW_PROFILES = ['rapid', 'balanced', 'deep'];
+
 // ============ STATE ============
 let state = {
   intentMode: 'create',
+  workflowProfile: 'balanced',
   intentGoal: '',
   intentInput: '',
   intentOutputFormat: 'steps',
@@ -1644,6 +1695,9 @@ function ensureIntentState() {
   if (!INTENT_MODES.some(mode => mode.id === state.intentMode)) {
     state.intentMode = 'create';
   }
+  if (!WORKFLOW_PROFILES.includes(state.workflowProfile)) {
+    state.workflowProfile = 'balanced';
+  }
   if (typeof state.intentGoal !== 'string') state.intentGoal = '';
   if (typeof state.intentInput !== 'string') state.intentInput = '';
   if (!INTENT_OUTPUT_OPTIONS.some(option => option.id === state.intentOutputFormat)) {
@@ -1669,6 +1723,10 @@ function renderIntentControls() {
     button.classList.toggle('active', button.dataset.intentMode === state.intentMode);
   });
 
+  document.querySelectorAll('[data-workflow-profile]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.workflowProfile === state.workflowProfile);
+  });
+
   const intentGoal = $('intentGoal');
   if (intentGoal) intentGoal.value = state.intentGoal || '';
 
@@ -1688,9 +1746,10 @@ function renderIntentControls() {
   if (intentStatusChips) {
     intentStatusChips.innerHTML = `
       <span class="forge-intent-chip">Mode <strong>${state.intentMode}</strong></span>
+      <span class="forge-intent-chip">Workflow <strong>${state.workflowProfile}</strong></span>
       <span class="forge-intent-chip">Output <strong>${getIntentOutputLabel()}</strong></span>
       <span class="forge-intent-chip">Refine <strong>${state.showRefine ? 'on' : 'off'}</strong></span>
-      <span class="forge-intent-chip">Shortcuts <strong>Alt+1..4 / Alt+R / Alt+V</strong></span>
+      <span class="forge-intent-chip">Shortcuts <strong>Alt+1..7 / Alt+R / Alt+V</strong></span>
     `;
   }
 }
@@ -1807,6 +1866,15 @@ function attachListeners() {
       renderIntentControls();
       updateSectionVisibility();
       updatePrompt();
+    });
+  }
+
+  const workflowModes = $('workflowModes');
+  if (workflowModes) {
+    workflowModes.addEventListener('click', e => {
+      const button = e.target.closest('[data-workflow-profile]');
+      if (!button) return;
+      applyWorkflowProfile(button.dataset.workflowProfile);
     });
   }
 
@@ -2091,6 +2159,13 @@ function attachListeners() {
         updatePrompt();
         return;
       }
+      if (e.key >= '5' && e.key <= '7') {
+        e.preventDefault();
+        const profileByIndex = ['rapid', 'balanced', 'deep'];
+        const profile = profileByIndex[Number(e.key) - 5];
+        if (profile) applyWorkflowProfile(profile);
+        return;
+      }
       if (e.key.toLowerCase() === 'r') {
         e.preventDefault();
         state.showRefine = !state.showRefine;
@@ -2169,6 +2244,41 @@ async function pasteIntentContext() {
   }
 }
 
+function applyWorkflowProfile(profile) {
+  if (!WORKFLOW_PROFILES.includes(profile)) return;
+  state.workflowProfile = profile;
+
+  if (profile === 'rapid') {
+    state.showRefine = false;
+    state.includeRole = true;
+    state.includeTask = true;
+    state.includeObjective = true;
+    state.includeContext = false;
+    state.includeDev = false;
+    state.includeGuardrails = false;
+  } else if (profile === 'balanced') {
+    state.showRefine = true;
+    state.includeRole = true;
+    state.includeTask = true;
+    state.includeObjective = true;
+    state.includeContext = true;
+    state.includeDev = false;
+    state.includeGuardrails = true;
+  } else {
+    state.showRefine = true;
+    state.includeRole = true;
+    state.includeTask = true;
+    state.includeObjective = true;
+    state.includeContext = true;
+    state.includeDev = true;
+    state.includeGuardrails = true;
+  }
+
+  renderIntentControls();
+  updateSectionVisibility();
+  updatePrompt();
+}
+
 function updateCustomVisibility() {
   const customPersonaRow = $('customPersonaRow');
   if (customPersonaRow) customPersonaRow.classList.toggle('show', state.persona === 'custom');
@@ -2220,6 +2330,7 @@ function applyQuickFire(id) {
   if (btn) btn.classList.add('active');
 
   state.showRefine = true;
+  state.workflowProfile = 'deep';
   applyConfig(qf.recipe);
   showToast(`${qf.label} mode!`);
 }
@@ -2233,6 +2344,7 @@ function applyRecipe(id) {
   if (item) item.classList.add('selected');
 
   state.showRefine = true;
+  state.workflowProfile = 'deep';
   applyConfig(recipe.config);
   showToast(`${recipe.name} recipe!`);
 }
@@ -2268,6 +2380,7 @@ function loadTemplate(name) {
 function clearAll() {
   state = {
     intentMode: 'create',
+    workflowProfile: 'balanced',
     intentGoal: '',
     intentInput: '',
     intentOutputFormat: 'steps',

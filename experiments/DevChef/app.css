@@ -7725,3 +7725,83 @@ body.workspace-scrolled #sidebar h1 {
 .v8-boost-btn:hover {
   box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 20%, transparent);
 }
+
+/* ==========================================================================
+   V10 Shell Modernization
+   ========================================================================== */
+
+#sidebar {
+  background:
+    radial-gradient(140% 70% at 0% 0%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 42%),
+    var(--bg-secondary);
+}
+
+#sidebar header {
+  backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--bg-tertiary) 92%, var(--accent) 8%);
+}
+
+.v10-productivity-rail {
+  margin: 10px 14px 12px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border-color) 74%);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-primary) 84%, var(--accent-light) 16%);
+  box-shadow: var(--shadow-sm);
+}
+
+.v10-rail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.v10-rail-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.v10-rail-shortcuts {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.v10-rail-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.v10-rail-btn {
+  padding: 8px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+body.sidebar-compact #sidebar {
+  width: 216px !important;
+}
+
+body.sidebar-compact .tool-item {
+  margin-inline: 8px;
+  padding-inline: 10px;
+}
+
+body.sidebar-compact .tool-item .tool-description,
+body.sidebar-compact #sidebar .subtitle,
+body.sidebar-compact #recent-tools,
+body.sidebar-compact .getting-started-panel {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .v10-rail-actions {
+    grid-template-columns: 1fr;
+  }
+}

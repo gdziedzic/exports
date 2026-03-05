@@ -70,8 +70,8 @@ import { onboarding } from './core/onboarding.js';
 
 let deferredInstallPrompt = null;
 let serviceWorkerRegistration = null;
-const APP_VERSION = '9.0';
-const APP_TAGLINE = 'Skyrocket Productivity';
+const APP_VERSION = '10.0';
+const APP_TAGLINE = '30x Productivity, Production Ready';
 
 /**
  * Initialize PWA functionality
@@ -371,6 +371,7 @@ async function init() {
   setupGuidedOnboarding();
   setupGettingStartedPanel();
   setupV8BoostDock();
+  setupV10ProductivityRail();
   setupAdaptiveClarity();
   if (localStorage.getItem('devchef-focus-mode') === 'true') {
     document.body.classList.add('focus-mode');
@@ -396,12 +397,12 @@ async function init() {
   }
 
   console.log(`✓ DevChef V${APP_VERSION} ${APP_TAGLINE} ready - ${toolCount} tools loaded 🚀🌙`);
-  console.log(`🎨 V9 Features: Quick Resume | Clipboard Sprint | Clip-to-Snippet | Smart Automation`);
+  console.log(`🎨 V10 Features: Quick Resume | Clipboard Sprint | Clip-to-Snippet | Smart Automation`);
   console.log(`⚡ Core Features: Performance Monitor | Advanced Search (Ctrl+K) | DevTools (F12)`);
   console.log(`🌙 ULTIMATE Features: Snippets++ | Universal Favorites | Macros | Batch | Quick Panel`);
   console.log(``);
   console.log(`📌 ULTIMATE SHORTCUTS:`);
-  console.log(`   ⚡ Quick Panel: Ctrl+Shift+Q  |  🚀 V9 Boost: Ctrl+Shift+0  |  🎯 Focus Mode: Ctrl+Shift+9`);
+  console.log(`   ⚡ Quick Panel: Ctrl+Shift+Q  |  🚀 V10 Boost: Ctrl+Shift+0  |  🎯 Focus Mode: Ctrl+Shift+9`);
   console.log(`   1️⃣ Resume: Ctrl+Shift+1  |  2️⃣ Clipboard Sprint: Ctrl+Shift+2  |  3️⃣ Clip→Snippet: Ctrl+Shift+3`);
   console.log(`   🔴 Macro: Ctrl+Shift+M  |  ⚡ Batch: Ctrl+Shift+B  |  📜 History: Ctrl+Shift+H`);
   console.log(`   🔍 Search: Ctrl+K / Ctrl+Shift+F  |  📝 Snippets: Ctrl+B  |  🛠️ DevTools: F12`);
@@ -879,6 +880,13 @@ function setupKeyboardShortcuts() {
     // Other shortcuts disabled in input fields
     if (isInput) return;
 
+    // / - focus sidebar search for fast tool switching
+    if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      focusToolSearch();
+      return;
+    }
+
     // Ctrl+D or Cmd+D - Toggle favorite for current tool
     if ((e.ctrlKey || e.metaKey) && e.key === "d") {
       e.preventDefault();
@@ -971,7 +979,7 @@ function setupKeyboardShortcuts() {
       return;
     }
 
-    // Ctrl+Shift+0 - Open V8 10x Boost Dock
+    // Ctrl+Shift+0 - Open V10 Boost Dock
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "0") {
       e.preventDefault();
       openV8BoostDock();
@@ -1012,7 +1020,21 @@ function setupKeyboardShortcuts() {
       toggleAdaptiveClarity();
       return;
     }
+
+    // Ctrl+Shift+L - Toggle compact sidebar
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "l") {
+      e.preventDefault();
+      toggleCompactSidebar();
+      return;
+    }
   });
+}
+
+function focusToolSearch() {
+  const searchInput = document.querySelector('#tool-search');
+  if (!searchInput) return;
+  searchInput.focus();
+  searchInput.select();
 }
 
 /**
@@ -1100,8 +1122,11 @@ function setupGettingStartedPanel() {
     searchBox.insertAdjacentElement('afterend', panel);
   }
 
-  const tools = ToolRegistry.all();
-  const firstTool = tools.find((tool) => tool?.id);
+  const registryTools = ToolRegistry.all();
+  const tools = Array.isArray(registryTools)
+    ? registryTools.filter((tool) => tool && typeof tool.id === 'string')
+    : [];
+  const firstTool = tools.find((tool) => tool.id);
   const firstToolId = firstTool?.id || null;
   const firstToolName = firstTool?.manifest?.name || firstTool?.id || 'first tool';
 
@@ -1148,7 +1173,57 @@ function setupGettingStartedPanel() {
 }
 
 /**
- * V9 "10x Boost Dock" - one-click high-value productivity actions
+ * V10 Productivity Rail - high-value actions with low UI noise
+ */
+function setupV10ProductivityRail() {
+  const sidebar = document.getElementById('sidebar');
+  const recentTools = document.getElementById('recent-tools');
+  if (!sidebar || !recentTools) return;
+
+  let rail = document.getElementById('v10-productivity-rail');
+  if (!rail) {
+    rail = document.createElement('section');
+    rail.id = 'v10-productivity-rail';
+    rail.className = 'v10-productivity-rail';
+    rail.innerHTML = `
+      <div class="v10-rail-header">
+        <span class="v10-rail-title">V10 Productivity</span>
+        <span class="v10-rail-shortcuts">/ • Ctrl+K • Ctrl+Shift+L</span>
+      </div>
+      <div class="v10-rail-actions">
+        <button class="v10-rail-btn" data-v10-action="resume" interestfor="tooltip" data-tooltip="Open last tool">Resume</button>
+        <button class="v10-rail-btn" data-v10-action="palette" interestfor="tooltip" data-tooltip="Open command palette">Find Tool</button>
+        <button class="v10-rail-btn" data-v10-action="compact" interestfor="tooltip" data-tooltip="Toggle compact sidebar">Compact</button>
+      </div>
+    `;
+    recentTools.insertAdjacentElement('afterend', rail);
+  }
+
+  rail.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-v10-action]');
+    if (!button) return;
+    const action = button.dataset.v10Action;
+    if (action === 'resume') {
+      quickResumeLastTool();
+    } else if (action === 'palette') {
+      showCommandPalette(context);
+    } else if (action === 'compact') {
+      toggleCompactSidebar();
+    }
+  });
+
+  const compactSaved = localStorage.getItem('devchef-sidebar-compact') === 'true';
+  document.body.classList.toggle('sidebar-compact', compactSaved);
+}
+
+function toggleCompactSidebar() {
+  const enabled = document.body.classList.toggle('sidebar-compact');
+  localStorage.setItem('devchef-sidebar-compact', enabled ? 'true' : 'false');
+  notifications.info(`Compact sidebar ${enabled ? 'enabled' : 'disabled'}`, { duration: 1500 });
+}
+
+/**
+ * V10 "Boost Dock" - one-click high-value productivity actions
  */
 function setupV8BoostDock() {
   if (document.getElementById('v8-boost-dock')) return;
@@ -1158,7 +1233,7 @@ function setupV8BoostDock() {
   dock.className = 'v8-boost-dock';
   dock.innerHTML = `
     <div class="v8-boost-header">
-      <h3>V9 10x Boost</h3>
+      <h3>V10 Boost</h3>
       <button class="v8-boost-close" type="button" interestfor="tooltip" data-tooltip="Hide dock">✕</button>
     </div>
     <p class="v8-boost-copy">Run high-impact actions in one click.</p>
@@ -1229,20 +1304,20 @@ function quickResumeLastTool() {
     openTool(lastToolId, context);
     const tool = ToolRegistry.get(lastToolId);
     const toolName = tool?.manifest?.name || lastToolId;
-    notifications.success(`V9 Resume: ${toolName}`, { duration: 1800 });
+    notifications.success(`V10 Resume: ${toolName}`, { duration: 1800 });
     return;
   }
   showCommandPalette(context);
-  notifications.info('V9 Resume: no recent tool found, opened Command Palette', { duration: 2200 });
+  notifications.info('V10 Resume: no recent tool found, opened Command Palette', { duration: 2200 });
 }
 
 async function runClipboardSprint() {
   try {
     await quickInput.open();
-    notifications.success('V9 Sprint: clipboard loaded into Quick Input', { duration: 1800 });
+    notifications.success('V10 Sprint: clipboard loaded into Quick Input', { duration: 1800 });
   } catch (error) {
     quickInput.toggle();
-    notifications.info('V9 Sprint: opened Quick Input', { duration: 1800 });
+    notifications.info('V10 Sprint: opened Quick Input', { duration: 1800 });
   }
 }
 
@@ -1258,16 +1333,16 @@ async function captureClipboardToSnippet() {
     const snippet = snippetManager.createSnippet({
       title: `Clipboard ${new Date().toLocaleTimeString()}`,
       content: text,
-      description: 'Captured via V9 Clip-to-Snippet',
+      description: 'Captured via V10 Clip-to-Snippet',
       language: 'text',
       category: 'Captured',
       toolId: currentToolId || null,
-      tags: ['clipboard', 'v9']
+      tags: ['clipboard', 'v10']
     });
 
-    notifications.success(`V9 Clip→Snippet: saved "${snippet.title}"`, { duration: 2200 });
+    notifications.success(`V10 Clip→Snippet: saved "${snippet.title}"`, { duration: 2200 });
   } catch (error) {
-    notifications.error('V9 Clip→Snippet failed: clipboard access denied');
+    notifications.error('V10 Clip→Snippet failed: clipboard access denied');
   }
 }
 
@@ -1958,11 +2033,42 @@ function showWorkspaceSwitcher() {
   notifications.info(`You have ${workspaces.length} workspace(s). Full workspace UI coming soon!`);
 }
 
+function setupGlobalResilience() {
+  window.addEventListener('error', (event) => {
+    console.error('Unhandled error:', event.error || event.message);
+    notifications?.error?.('A runtime error occurred. Open debug console for details.');
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled promise rejection:', event.reason);
+    notifications?.error?.('An async error occurred. Open debug console for details.');
+  });
+}
+
+async function startApp() {
+  try {
+    setupGlobalResilience();
+    await init();
+  } catch (error) {
+    console.error('DevChef failed to initialize:', error);
+    const workspace = document.getElementById('workspace');
+    if (workspace) {
+      workspace.innerHTML = `
+        <div class="welcome-screen">
+          <h2>DevChef failed to start</h2>
+          <p>Open the debug console and refresh after fixing the issue.</p>
+          <p class="text-error">${escapeHtml(error?.message || 'Unknown startup error')}</p>
+        </div>
+      `;
+    }
+  }
+}
+
 // Initialize app when DOM is ready
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", startApp);
 } else {
-  init();
+  startApp();
 }
 
 // Export for debugging and V2.5 access

@@ -15,7 +15,7 @@
   "category": "Developer Tools",
   "description": "Compose AI prompts with personas, tech stacks, templates, placeholders, and shareable links",
   "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "composer", "rules", "personas", "templates", "sharing"],
-  "version": "3.0.0"
+  "version": "10.0.0"
 }
 </script>
 
@@ -37,10 +37,15 @@
         </div>
       </div>
       <div class="intent-mode-group" id="intent-mode-group">
-        <button type="button" class="intent-mode-btn" data-intent-mode="create">Create</button>
-        <button type="button" class="intent-mode-btn" data-intent-mode="analyze">Analyze</button>
-        <button type="button" class="intent-mode-btn" data-intent-mode="rewrite">Rewrite</button>
-        <button type="button" class="intent-mode-btn" data-intent-mode="plan">Plan</button>
+        <button type="button" class="intent-mode-btn intent-primary-mode-btn" data-intent-mode="create">Create</button>
+        <button type="button" class="intent-mode-btn intent-primary-mode-btn" data-intent-mode="analyze">Analyze</button>
+        <button type="button" class="intent-mode-btn intent-primary-mode-btn" data-intent-mode="rewrite">Rewrite</button>
+        <button type="button" class="intent-mode-btn intent-primary-mode-btn" data-intent-mode="plan">Plan</button>
+      </div>
+      <div class="intent-workflow-group" id="intent-workflow-group">
+        <button type="button" class="intent-mode-btn" data-workflow-profile="rapid">Rapid</button>
+        <button type="button" class="intent-mode-btn" data-workflow-profile="balanced">Balanced</button>
+        <button type="button" class="intent-mode-btn" data-workflow-profile="deep">Deep</button>
       </div>
       <div class="intent-fields">
         <div class="intent-field">
@@ -397,6 +402,48 @@
     background: color-mix(in srgb, var(--primary-color) 14%, var(--bg-primary) 86%);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
     position: relative;
+  }
+
+  .intent-mode-group .intent-primary-mode-btn {
+    min-height: 42px;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    border-width: 1.5px;
+    background: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--bg-primary) 88%, var(--primary-color) 12%),
+      color-mix(in srgb, var(--bg-primary) 78%, var(--primary-color) 22%)
+    );
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--primary-color) 16%, transparent);
+  }
+
+  .intent-mode-group .intent-primary-mode-btn:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--primary-color) 24%, transparent);
+  }
+
+  .intent-mode-group .intent-primary-mode-btn.active {
+    background: linear-gradient(155deg, var(--primary-color), color-mix(in srgb, var(--primary-color) 78%, black));
+    color: white;
+    border-color: color-mix(in srgb, var(--primary-color) 72%, black);
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--primary-color) 20%, transparent),
+      0 14px 24px color-mix(in srgb, var(--primary-color) 34%, transparent);
+  }
+
+  .intent-workflow-group {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .intent-workflow-group .intent-mode-btn {
+    border-radius: 10px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 7px 8px;
   }
 
   .intent-mode-group::before {
@@ -1729,6 +1776,10 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .intent-workflow-group {
+      grid-template-columns: 1fr;
+    }
+
     .tool-layout {
       grid-template-columns: 1fr;
     }
@@ -2849,6 +2900,7 @@ So that [benefit/value]
     focusedIndex: -1,
     selectedComponents: new Set(),
     intentMode: 'create',
+    workflowProfile: 'balanced',
     intentGoal: '',
     intentInput: '',
     intentOutput: 'steps',
@@ -2869,6 +2921,13 @@ So that [benefit/value]
     analyze: 'summary',
     rewrite: 'bullets',
     plan: 'checklist'
+  };
+  const WORKFLOW_PROFILES = ['rapid', 'balanced', 'deep'];
+  const CORE_COMPONENT_IDS = ['role', 'tech-stack', 'context', 'task', 'rules', 'output-format', 'constraints', 'examples'];
+  const WORKFLOW_COMPONENTS = {
+    rapid: new Set(['role', 'task', 'output-format']),
+    balanced: new Set(['role', 'context', 'task', 'rules', 'output-format']),
+    deep: new Set(CORE_COMPONENT_IDS)
   };
 
   function clearIntentFields() {
@@ -2926,6 +2985,7 @@ So that [benefit/value]
 
   function ensureIntentState() {
     if (!INTENT_MODES.includes(state.intentMode)) state.intentMode = 'create';
+    if (!WORKFLOW_PROFILES.includes(state.workflowProfile)) state.workflowProfile = 'balanced';
     if (typeof state.intentGoal !== 'string') state.intentGoal = '';
     if (typeof state.intentInput !== 'string') state.intentInput = '';
     if (!INTENT_OUTPUT_OPTIONS.some((option) => option.id === state.intentOutput)) {
@@ -2939,6 +2999,31 @@ So that [benefit/value]
     return selected?.label || state.intentOutput;
   }
 
+  function applyWorkflowProfile(profile, options = {}) {
+    const { silent = false } = options;
+    if (!WORKFLOW_PROFILES.includes(profile)) return;
+
+    state.workflowProfile = profile;
+    state.showRefine = profile !== 'rapid';
+
+    const enabledCoreComponents = WORKFLOW_COMPONENTS[profile] || WORKFLOW_COMPONENTS.balanced;
+    if (state.config?.components?.length) {
+      state.config.components.forEach((component) => {
+        if (CORE_COMPONENT_IDS.includes(component.id)) {
+          component.enabled = enabledCoreComponents.has(component.id);
+        }
+      });
+    }
+
+    renderComponents();
+    renderIntentControls();
+    updatePreview();
+    saveConfig();
+    if (!silent) {
+      showStatus(`Workflow: ${profile}`, 'success');
+    }
+  }
+
   function renderIntentControls() {
     ensureIntentState();
     const container = document.querySelector('.tool-container');
@@ -2949,6 +3034,10 @@ So that [benefit/value]
 
     document.querySelectorAll('.intent-mode-btn').forEach((button) => {
       button.classList.toggle('active', button.dataset.intentMode === state.intentMode);
+    });
+
+    document.querySelectorAll('[data-workflow-profile]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.workflowProfile === state.workflowProfile);
     });
 
     const goalInput = document.getElementById('intent-goal');
@@ -2970,9 +3059,10 @@ So that [benefit/value]
     if (intentStatusChips) {
       intentStatusChips.innerHTML = `
         <span class="intent-chip">Mode <strong>${state.intentMode}</strong></span>
+        <span class="intent-chip">Workflow <strong>${state.workflowProfile}</strong></span>
         <span class="intent-chip">Output <strong>${getIntentOutputLabel()}</strong></span>
         <span class="intent-chip">Refine <strong>${state.showRefine ? 'on' : 'off'}</strong></span>
-        <span class="intent-chip">Shortcuts <strong>Alt+1..4 / Alt+R / Alt+V</strong></span>
+        <span class="intent-chip">Shortcuts <strong>Alt+1..7 / Alt+R / Alt+V</strong></span>
       `;
     }
   }
@@ -2999,13 +3089,14 @@ So that [benefit/value]
   }
 
   export function init(context) {
-    console.log('AI Prompt Builder v3.0 initialized');
+    console.log('AI Prompt Builder v10 initialized');
 
     // Load saved configuration and custom templates
     loadConfig();
     loadCustomTemplates();
     normalizeComponents();
     ensureIntentState();
+    applyWorkflowProfile(state.workflowProfile, { silent: true });
 
     // Check for shared config in URL
     loadFromURL();
@@ -3043,6 +3134,15 @@ So that [benefit/value]
         renderIntentControls();
         updatePreview();
         saveConfig();
+      });
+    }
+
+    const intentWorkflowGroup = document.getElementById('intent-workflow-group');
+    if (intentWorkflowGroup) {
+      intentWorkflowGroup.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-workflow-profile]');
+        if (!button) return;
+        applyWorkflowProfile(button.dataset.workflowProfile);
       });
     }
 
@@ -3105,6 +3205,14 @@ So that [benefit/value]
         renderIntentControls();
         updatePreview();
         saveConfig();
+        return;
+      }
+
+      if (e.key >= '5' && e.key <= '7') {
+        e.preventDefault();
+        const profileByIndex = ['rapid', 'balanced', 'deep'];
+        const profile = profileByIndex[Number(e.key) - 5];
+        if (profile) applyWorkflowProfile(profile);
         return;
       }
 
@@ -4294,6 +4402,7 @@ So that [benefit/value]
       localStorage.setItem('ai-prompt-builder-config', JSON.stringify(state.config));
       localStorage.setItem('ai-prompt-builder-intent', JSON.stringify({
         intentMode: state.intentMode,
+        workflowProfile: state.workflowProfile,
         intentGoal: state.intentGoal,
         intentInput: state.intentInput,
         intentOutput: state.intentOutput,
@@ -4320,6 +4429,7 @@ So that [benefit/value]
       if (savedIntent) {
         const intent = JSON.parse(savedIntent);
         state.intentMode = intent.intentMode ?? state.intentMode;
+        state.workflowProfile = intent.workflowProfile ?? state.workflowProfile;
         state.intentGoal = intent.intentGoal ?? state.intentGoal;
         state.intentInput = intent.intentInput ?? state.intentInput;
         state.intentOutput = intent.intentOutput ?? state.intentOutput;
@@ -4625,7 +4735,15 @@ So that [benefit/value]
   function generateShareLink() {
     const config = {
       components: state.config.components,
-      version: '3.0.0'
+      intent: {
+        intentMode: state.intentMode,
+        workflowProfile: state.workflowProfile,
+        intentGoal: state.intentGoal,
+        intentInput: state.intentInput,
+        intentOutput: state.intentOutput,
+        showRefine: state.showRefine
+      },
+      version: '10.0.0'
     };
 
     const json = JSON.stringify(config);
@@ -4652,8 +4770,19 @@ So that [benefit/value]
         if (config.components && Array.isArray(config.components)) {
           if (confirm('Load shared configuration? This will replace your current configuration.')) {
             state.config.components = config.components;
+            if (config.intent) {
+              state.intentMode = config.intent.intentMode ?? state.intentMode;
+              state.workflowProfile = config.intent.workflowProfile ?? state.workflowProfile;
+              state.intentGoal = config.intent.intentGoal ?? state.intentGoal;
+              state.intentInput = config.intent.intentInput ?? state.intentInput;
+              state.intentOutput = config.intent.intentOutput ?? state.intentOutput;
+              state.showRefine = config.intent.showRefine ?? state.showRefine;
+            }
             normalizeComponents();
+            ensureIntentState();
+            applyWorkflowProfile(state.workflowProfile, { silent: true });
             renderComponents();
+            renderIntentControls();
             updatePreview();
             saveConfig();
             showStatus('Configuration loaded from shared link', 'success');
