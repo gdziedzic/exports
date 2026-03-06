@@ -12,7 +12,7 @@
 {
   "id": "prompt-forge",
   "name": "Prompt Forge",
-  "description": "Assemble high-quality AI prompts in seconds with presets, templates, and one-click recipes",
+  "description": "Assemble AI prompts with presets, recipes, and one-click templates",
   "category": "AI",
   "keywords": ["prompt", "ai", "builder", "template", "recipe"],
   "version": "10.0.0"
@@ -257,14 +257,10 @@
             </div>
           </div>
           <div class="forge-section-body" id="contextSection">
-            <div class="forge-form-row">
+            <div class="forge-form-row forge-form-row-single">
               <div class="forge-form-group">
                 <label>Context Preset</label>
                 <select id="contextSelect"></select>
-              </div>
-              <div class="forge-form-group">
-                <label>Exclusions Preset</label>
-                <select id="exclusionsSelect"></select>
               </div>
             </div>
             <div class="forge-form-row">
@@ -281,12 +277,12 @@
         </div>
 
         <!-- Dev Section -->
-        <div class="forge-section-card" id="devCard">
+        <div class="forge-section-card forge-disabled" id="devCard">
           <div class="forge-section-header">
             <h3><span>💻</span> Development Context</h3>
             <div class="forge-section-toggle">
               <span class="forge-section-tag">For code</span>
-              <div class="forge-section-check checked" data-section-toggle="includeDev" title="Include in prompt">✓</div>
+              <div class="forge-section-check" data-section-toggle="includeDev" title="Include in prompt">✓</div>
             </div>
           </div>
           <div class="forge-section-body" id="devSection">
@@ -310,30 +306,10 @@
                 <input id="customStack" placeholder="Additional stack details..." />
               </div>
             </div>
-            <div class="forge-form-row">
-              <div class="forge-form-group">
-                <label>Codebase Focus</label>
-                <select id="codebaseSelect"></select>
-              </div>
-              <div class="forge-form-group">
-                <label>Risk Level</label>
-                <select id="riskSelect"></select>
-              </div>
-            </div>
-            <div class="forge-form-row forge-form-row-single forge-override-field" id="customCodebaseRow">
-              <div class="forge-form-group">
-                <label>Custom Codebase Path</label>
-                <input id="customCodebase" placeholder="src/components/, apps/..." />
-              </div>
-            </div>
-            <div class="forge-form-row">
+            <div class="forge-form-row forge-form-row-single">
               <div class="forge-form-group">
                 <label>Constraints Preset</label>
                 <select id="constraintsSelect"></select>
-              </div>
-              <div class="forge-form-group">
-                <label>Testing Preset</label>
-                <select id="testingSelect"></select>
               </div>
             </div>
             <div class="forge-form-row forge-form-row-single forge-override-field" id="customConstraintsRow">
@@ -558,10 +534,10 @@
   .forge-qf-btn {
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     padding: 10px 8px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
     text-align: left;
   }
 
@@ -575,7 +551,7 @@
   .forge-qf-btn.active {
     border-color: var(--accent);
     background: var(--accent-light);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 10%, transparent);
   }
 
   .forge-qf-icon { font-size: 16px; margin-bottom: 4px; }
@@ -598,9 +574,9 @@
     padding: 8px 10px;
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all 0.12s ease;
+    transition: all var(--transition-fast);
   }
 
   .forge-recipe-item:hover {
@@ -621,7 +597,7 @@
     align-items: center;
     justify-content: center;
     background: var(--bg-tertiary);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
   }
 
   .forge-recipe-item.selected .forge-recipe-icon {
@@ -649,9 +625,9 @@
     align-items: center;
     padding: 8px 10px;
     background: var(--bg-tertiary);
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all 0.12s ease;
+    transition: all var(--transition-fast);
     gap: 6px;
   }
 
@@ -801,7 +777,7 @@
     font-weight: 700;
     padding: 8px 10px;
     cursor: pointer;
-    transition: 120ms ease;
+    transition: var(--transition-fast);
   }
 
   .forge-intent-mode-btn:hover {
@@ -869,7 +845,7 @@
     height: 100%;
     background: linear-gradient(90deg, var(--accent), var(--success));
     border-radius: 3px;
-    transition: width 0.3s ease;
+    transition: width var(--transition-slow);
   }
   .forge-score-value {
     font-size: 13px;
@@ -901,7 +877,7 @@
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    transition: background 0.12s ease;
+    transition: background var(--transition-fast);
     background: var(--bg-tertiary);
   }
 
@@ -928,13 +904,13 @@
     width: 18px;
     height: 18px;
     border: 2px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 11px;
     cursor: pointer;
-    transition: all 0.12s ease;
+    transition: all var(--transition-fast);
     color: transparent;
     background: var(--bg-primary);
   }
@@ -1001,11 +977,11 @@
     padding: 9px 11px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     color: var(--text-primary);
     font-size: 12px;
     font-family: var(--font-sans);
-    transition: all 0.12s ease;
+    transition: all var(--transition-fast);
   }
 
   .forge-form-group select:focus,
@@ -1013,7 +989,7 @@
   .forge-form-group textarea:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
     background: var(--bg-primary);
   }
 
@@ -1050,7 +1026,7 @@
     border: 1px solid var(--border-color);
     border-radius: 20px;
     cursor: pointer;
-    transition: all 0.12s ease;
+    transition: all var(--transition-fast);
     font-size: 11px;
     font-weight: 500;
   }
@@ -1069,12 +1045,12 @@
     width: 14px;
     height: 14px;
     border: 2px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 9px;
-    transition: all 0.12s ease;
+    transition: all var(--transition-fast);
     color: transparent;
   }
 
@@ -1096,11 +1072,11 @@
     padding: 5px 9px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font-size: 10px;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.12s ease;
+    transition: all var(--transition-fast);
     max-width: 160px;
     white-space: nowrap;
     overflow: hidden;
@@ -1131,7 +1107,7 @@
     padding: 14px;
     max-height: calc(100vh - 180px);
     overflow-y: auto;
-    background: #1e1e2e;
+    background: var(--bg-tertiary);
     border-radius: 0 0 10px 10px;
   }
 
@@ -1141,11 +1117,11 @@
     line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-word;
-    color: #cdd6f4;
+    color: var(--text-primary);
     margin: 0;
   }
 
-  .forge-output-pre .section-label { color: #89b4fa; font-weight: 600; }
+  .forge-output-pre .section-label { color: var(--accent); font-weight: 600; }
 
   /* Buttons */
   .forge-btn {
@@ -1153,11 +1129,11 @@
     align-items: center;
     gap: 5px;
     padding: 7px 12px;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.12s ease;
+    transition: all var(--transition-fast);
     border: 1px solid var(--border-color);
     background: var(--bg-tertiary);
     color: var(--text-primary);
@@ -1166,7 +1142,7 @@
   .forge-btn:hover { background: var(--bg-hover); transform: translateY(-1px); }
   .forge-btn-primary { background: var(--accent); border-color: var(--accent); color: white; box-shadow: var(--shadow-sm); }
   .forge-btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-  .forge-btn-success { background: var(--success); border-color: var(--success); color: white; transition: all 0.15s ease; }
+  .forge-btn-success { background: var(--success); border-color: var(--success); color: white; transition: all var(--transition-fast); }
   .forge-btn-icon { padding: 7px; }
   .forge-btn-sm { padding: 5px 8px; font-size: 10px; }
 
@@ -1182,7 +1158,7 @@
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.2s ease;
+    transition: all var(--transition-normal);
   }
 
   .forge-modal-overlay.active { opacity: 1; visibility: visible; }
@@ -1196,7 +1172,7 @@
     max-height: 80vh;
     overflow: hidden;
     transform: scale(0.95);
-    transition: transform 0.2s ease;
+    transition: transform var(--transition-normal);
     box-shadow: var(--shadow-lg);
   }
 
@@ -1227,7 +1203,7 @@
     padding: 12px 18px;
     background: var(--bg-secondary);
     border: 1px solid var(--success);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     font-size: 12px;
     font-weight: 600;
     display: flex;
@@ -1236,7 +1212,7 @@
     box-shadow: var(--shadow-lg);
     transform: translateY(100px);
     opacity: 0;
-    transition: all 0.25s ease;
+    transition: all var(--transition-normal);
     z-index: 1001;
     color: var(--success);
   }
@@ -1249,7 +1225,7 @@
     padding: 2px 5px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-family: var(--font-mono);
     font-size: 9px;
     color: var(--text-secondary);
@@ -1303,18 +1279,16 @@
 
 <!-- Tool Module -->
 <script type="module">
-import { copyToClipboard, showStatus } from '../core/tool-utils.js';
+import { copyToClipboard, downloadAsFile, saveToolState, loadToolState } from '../core/tool-utils.js';
 
 // ============ DATA ============
 const PERSONAS = [
-  { id: 'strategy', label: 'Strategy Architect', text: 'You are a crisp strategy architect who distills ambiguity into actionable, staged plans with clear trade-offs.' },
-  { id: 'coach', label: 'Performance Coach', text: 'You are an accountability-focused coach who keeps the user honest about goals, scope, and outcomes.' },
-  { id: 'architect', label: 'Systems Architect', text: 'You are a systems architect who maps constraints, dependencies, and risk surfaces before building.' },
-  { id: 'ops', label: 'Chief of Staff', text: 'You are an operations-minded chief of staff who standardizes workflows with owner, risk, and success signals.' },
   { id: 'senior_dev', label: 'Senior Developer', text: 'You are a senior developer with 15+ years experience who writes clean, maintainable code and catches edge cases.' },
   { id: 'code_reviewer', label: 'Code Reviewer', text: 'You are a meticulous code reviewer who spots bugs, security issues, and suggests improvements.' },
-  { id: 'product_mgr', label: 'Product Manager', text: 'You are a product manager who balances user needs, technical constraints, and business goals.' },
-  { id: 'tech_lead', label: 'Tech Lead', text: 'You are a tech lead who balances architecture decisions with delivery velocity and team growth.' },
+  { id: 'architect', label: 'Solution Architect', text: 'You are a solution architect who maps constraints, dependencies, and risk surfaces before building.' },
+  { id: 'tech_writer', label: 'Technical Writer', text: 'You are a technical writer who creates clear, structured documentation for developers and stakeholders.' },
+  { id: 'devops', label: 'DevOps Engineer', text: 'You are a DevOps engineer focused on CI/CD, infrastructure as code, and operational reliability.' },
+  { id: 'content', label: 'Content Strategist', text: 'You are a content strategist who crafts clear, audience-aware messaging and information architecture.' },
   { id: 'custom', label: '✏️ Custom...', text: '' }
 ];
 
@@ -1335,10 +1309,7 @@ const PATTERNS = [
   { id: 'debug', label: 'Debug partner', text: 'Probe the issue, form hypotheses, propose experiments, and supply fixes with verification.' },
   { id: 'review', label: 'Code review', text: 'Review changes, catch correctness/perf/security issues, propose actionable fixes.' },
   { id: 'spec', label: 'Feature spec / RFC', text: 'Draft RFC with problem, requirements, non-goals, options, risks, acceptance tests.' },
-  { id: 'bugfix', label: 'Bugfix steps', text: 'Reproduce, isolate root cause, propose fix, verify with tests.' },
   { id: 'refactor', label: 'Refactor plan', text: 'Stabilize behavior, reduce complexity, keep parity with checks.' },
-  { id: 'api', label: 'API design', text: 'Design API endpoints with request/response schemas, error handling, and documentation.' },
-  { id: 'migration', label: 'Data migration', text: 'Plan migration with rollback strategy, validation, and zero-downtime approach.' },
   { id: 'custom', label: '✏️ Custom...', text: '' }
 ];
 
@@ -1374,10 +1345,8 @@ const OBJECTIVES = [
   { id: 'ship_feature', label: 'Ship working feature', text: 'Deliver a complete, tested, production-ready feature.' },
   { id: 'fix_bug', label: 'Fix bug with root cause', text: 'Identify root cause and implement verified fix.' },
   { id: 'make_decision', label: 'Make informed decision', text: 'Gather evidence and recommend clear path forward.' },
-  { id: 'understand', label: 'Understand codebase', text: 'Build mental model of how the code works.' },
   { id: 'improve_quality', label: 'Improve code quality', text: 'Reduce complexity, improve maintainability.' },
   { id: 'design_system', label: 'Design system/API', text: 'Create clean, extensible architecture.' },
-  { id: 'document', label: 'Document for team', text: 'Create clear documentation for team consumption.' },
   { id: 'custom', label: '✏️ Custom...', text: '' }
 ];
 
@@ -1387,8 +1356,6 @@ const DELIVERABLES = [
   { id: 'spec', label: 'Technical spec', text: 'Design document with requirements and approach.' },
   { id: 'plan', label: 'Implementation plan', text: 'Step-by-step plan with estimates.' },
   { id: 'analysis', label: 'Analysis/recommendation', text: 'Written analysis with clear recommendation.' },
-  { id: 'review', label: 'Code review feedback', text: 'Actionable review comments.' },
-  { id: 'docs', label: 'Documentation', text: 'README, API docs, or runbook.' },
   { id: 'custom', label: '✏️ Custom...', text: '' }
 ];
 
@@ -1403,15 +1370,6 @@ const CONTEXTS = [
   { id: 'custom', label: '✏️ Custom...', text: '' }
 ];
 
-const EXCLUSIONS = [
-  { id: 'none', label: 'No exclusions', text: '' },
-  { id: 'no_fluff', label: 'No fluff/apologies', text: 'Skip pleasantries, get to the point.' },
-  { id: 'no_breaking', label: 'No breaking changes', text: 'Must maintain backward compatibility.' },
-  { id: 'no_new_deps', label: 'No new dependencies', text: 'Use existing libraries only.' },
-  { id: 'no_over_eng', label: 'No over-engineering', text: 'Keep it simple, avoid premature abstraction.' },
-  { id: 'no_perf_regression', label: 'No perf regression', text: 'Must not degrade performance.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
 
 const TECH_STACKS = [
   { id: 'html_single', label: 'HTML/CSS/JS (single file)', text: 'HTML, CSS, JavaScript in a single file.' },
@@ -1452,22 +1410,6 @@ const DEV_TASKS = [
   { id: 'ops', label: '🏗️ Ops/Infra', text: 'Infrastructure or DevOps work.' }
 ];
 
-const CODEBASES = [
-  { id: 'frontend', label: 'Frontend (src/)', text: 'Frontend source code.' },
-  { id: 'backend', label: 'Backend (api/)', text: 'Backend/API code.' },
-  { id: 'components', label: 'Components library', text: 'Shared component library.' },
-  { id: 'services', label: 'Services layer', text: 'Business logic services.' },
-  { id: 'database', label: 'Database layer', text: 'Data access and models.' },
-  { id: 'tests', label: 'Test suite', text: 'Test files and fixtures.' },
-  { id: 'config', label: 'Configuration', text: 'Config and environment.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
-
-const RISK_LEVELS = [
-  { id: 'low', label: '🟢 Low – isolated', text: 'Low risk, contained area.' },
-  { id: 'medium', label: '🟡 Medium – shared', text: 'Medium risk, shared components.' },
-  { id: 'high', label: '🔴 High – critical path', text: 'High risk, core flows or compliance.' }
-];
 
 const CONSTRAINTS = [
   { id: 'none', label: 'No constraints', text: '' },
@@ -1480,15 +1422,6 @@ const CONSTRAINTS = [
   { id: 'custom', label: '✏️ Custom...', text: '' }
 ];
 
-const TESTING = [
-  { id: 'none', label: 'No specific testing', text: '' },
-  { id: 'unit', label: 'Unit tests', text: 'Unit tests for functions/components.' },
-  { id: 'integration', label: 'Integration tests', text: 'Integration tests for modules.' },
-  { id: 'e2e', label: 'E2E tests', text: 'End-to-end browser tests.' },
-  { id: 'all', label: 'Full coverage', text: 'Unit, integration, and E2E tests.' },
-  { id: 'tdd', label: 'TDD approach', text: 'Test-driven development.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
 
 const GUARDRAILS = [
   { id: 'sources', label: 'Cite sources', text: 'Use provided materials; flag unknowns.' },
@@ -1514,13 +1447,7 @@ const CLAUSES = [
   '30-second summary first, then depth.',
   'Prioritize clarity over cleverness.',
   'Mark speculation vs. facts.',
-  'Action plan with owners and timing.',
-  'Checklist to verify the output.',
-  'Minimal diff with files and tests.',
-  'Flag perf/security risks early.',
-  'Rollback plan if needed.',
-  'Consider mobile/responsive.',
-  'Think about error states.'
+  'Flag perf/security risks early.'
 ];
 
 const QUICK_FIRES = [
@@ -1528,21 +1455,21 @@ const QUICK_FIRES = [
   { id: 'debug', icon: '🐛', label: 'Debug', key: '2', recipe: { pattern: 'debug', persona: 'senior_dev', devTask: 'bugfix', guardrails: ['assumptions', 'hallucination'], boosters: ['reasoning', 'edge'] }},
   { id: 'review', icon: '👁️', label: 'Review', key: '3', recipe: { pattern: 'review', persona: 'code_reviewer', devTask: 'review', guardrails: ['security'], boosters: ['alternatives', 'tests'] }},
   { id: 'spec', icon: '📝', label: 'Spec', key: '4', recipe: { pattern: 'spec', persona: 'architect', devTask: 'spec', guardrails: ['assumptions'], boosters: ['edge', 'selfcheck'] }},
+
   { id: 'refactor', icon: '🔧', label: 'Refactor', key: '5', recipe: { pattern: 'refactor', persona: 'senior_dev', devTask: 'refactor', guardrails: ['backwards'], boosters: ['tests', 'edge'] }},
-  { id: 'decision', icon: '⚖️', label: 'Decision', key: '6', recipe: { pattern: 'decision', persona: 'strategy', guardrails: ['sources', 'assumptions'], boosters: ['alternatives', 'reasoning'] }},
-  { id: 'api', icon: '🔌', label: 'API', key: '7', recipe: { pattern: 'api', persona: 'architect', devTask: 'feature', guardrails: ['backwards', 'security'], boosters: ['edge', 'tests'] }},
+  { id: 'decision', icon: '⚖️', label: 'Decision', key: '6', recipe: { pattern: 'decision', persona: 'architect', guardrails: ['sources', 'assumptions'], boosters: ['alternatives', 'reasoning'] }},
+  { id: 'docs', icon: '📄', label: 'Docs', key: '7', recipe: { pattern: 'research', persona: 'tech_writer', guardrails: ['assumptions'], boosters: ['selfcheck', 'followup'] }},
   { id: 'perf', icon: '⚡', label: 'Perf', key: '8', recipe: { pattern: 'debug', persona: 'senior_dev', devTask: 'perf', guardrails: ['assumptions'], boosters: ['reasoning', 'alternatives'] }}
 ];
 
 const RECIPES = [
   { id: 'new_feature', icon: '🚀', name: 'New Feature', desc: 'Full feature development', config: { persona: 'senior_dev', pattern: 'feature', format: 'steps', tone: 'precise', devTask: 'feature', objective: 'ship_feature', deliverable: 'pr', guardrails: ['assumptions'], boosters: ['edge', 'tests'] }},
   { id: 'bug_fix', icon: '🐞', name: 'Bug Investigation', desc: 'Root cause analysis', config: { persona: 'senior_dev', pattern: 'debug', format: 'steps', tone: 'precise', devTask: 'bugfix', objective: 'fix_bug', deliverable: 'pr', guardrails: ['assumptions', 'hallucination'], boosters: ['reasoning', 'edge'] }},
-  { id: 'pr_review', icon: '🔍', name: 'PR Review', desc: 'Thorough code review', config: { persona: 'code_reviewer', pattern: 'review', format: 'bullets', tone: 'precise', devTask: 'review', objective: 'improve_quality', deliverable: 'review', guardrails: ['security'], boosters: ['edge', 'tests'] }},
+  { id: 'pr_review', icon: '🔍', name: 'PR Review', desc: 'Thorough code review', config: { persona: 'code_reviewer', pattern: 'review', format: 'bullets', tone: 'precise', devTask: 'review', objective: 'improve_quality', deliverable: 'analysis', guardrails: ['security'], boosters: ['edge', 'tests'] }},
   { id: 'rfc', icon: '📋', name: 'RFC / Spec', desc: 'Technical specification', config: { persona: 'architect', pattern: 'spec', format: 'outline', tone: 'precise', devTask: 'spec', objective: 'design_system', deliverable: 'spec', guardrails: ['assumptions'], boosters: ['alternatives', 'edge'] }},
-  { id: 'refactor_plan', icon: '🏗️', name: 'Refactor Plan', desc: 'Safe refactoring', config: { persona: 'tech_lead', pattern: 'refactor', format: 'steps', tone: 'precise', devTask: 'refactor', objective: 'improve_quality', deliverable: 'plan', guardrails: ['backwards'], boosters: ['tests', 'edge'] }},
-  { id: 'api_design', icon: '🔌', name: 'API Design', desc: 'Design endpoints', config: { persona: 'architect', pattern: 'api', format: 'outline', tone: 'precise', devTask: 'feature', objective: 'design_system', deliverable: 'spec', guardrails: ['backwards', 'security'], boosters: ['edge'] }},
-  { id: 'exec_brief', icon: '📊', name: 'Executive Brief', desc: 'Decision summary', config: { persona: 'strategy', pattern: 'decision', format: 'bullets', tone: 'executive', audience: 'leadership', objective: 'make_decision', deliverable: 'analysis', guardrails: ['sources'], boosters: ['alternatives', 'reasoning'] }},
-  { id: 'onboarding', icon: '🎓', name: 'Explain Code', desc: 'Codebase walkthrough', config: { persona: 'senior_dev', voice: 'teacher', pattern: 'research', format: 'outline', tone: 'friendly', objective: 'understand', deliverable: 'docs', guardrails: ['hallucination'], boosters: ['reasoning', 'followup'] }}
+  { id: 'refactor_plan', icon: '🏗️', name: 'Refactor Plan', desc: 'Safe refactoring', config: { persona: 'senior_dev', pattern: 'refactor', format: 'steps', tone: 'precise', devTask: 'refactor', objective: 'improve_quality', deliverable: 'plan', guardrails: ['backwards'], boosters: ['tests', 'edge'] }},
+  { id: 'exec_brief', icon: '📊', name: 'Executive Brief', desc: 'Decision summary', config: { persona: 'architect', pattern: 'decision', format: 'bullets', tone: 'executive', audience: 'leadership', objective: 'make_decision', deliverable: 'analysis', guardrails: ['sources'], boosters: ['alternatives', 'reasoning'] }},
+  { id: 'onboarding', icon: '🎓', name: 'Explain Code', desc: 'Codebase walkthrough', config: { persona: 'senior_dev', voice: 'teacher', pattern: 'research', format: 'outline', tone: 'friendly', objective: 'improve_quality', deliverable: 'analysis', guardrails: ['hallucination'], boosters: ['reasoning', 'followup'] }}
 ];
 
 const INTENT_MODES = [
@@ -1584,18 +1511,17 @@ let state = {
   objective: 'ship_feature', customObjective: '',
   deliverable: 'pr', customDeliverable: '',
   context: 'none', customContext: '',
-  exclusions: 'no_fluff', inputsProvided: '',
+  inputsProvided: '',
   techStack: 'html_single', framework: 'none', customStack: '',
-  devTask: 'feature', codebase: 'frontend', customCodebase: '',
-  risk: 'medium', constraints: 'tested', customConstraints: '',
-  testing: 'unit', extraInstructions: '',
+  devTask: 'feature', constraints: 'tested', customConstraints: '',
+  extraInstructions: '',
   guardrails: ['assumptions'],
   boosters: ['edge', 'tests'],
   includeRole: true,
   includeTask: true,
   includeObjective: true,
   includeContext: false,
-  includeDev: true,
+  includeDev: false,
   includeGuardrails: true
 };
 
@@ -1628,20 +1554,20 @@ const $ = id => document.getElementById(id);
 
 // ============ INITIALIZATION ============
 function loadFromStorage() {
-  try {
-    const saved = localStorage.getItem('promptForge_templates');
-    if (saved) templates = JSON.parse(saved);
-    const savedHistory = localStorage.getItem('promptForge_history');
-    if (savedHistory) history = JSON.parse(savedHistory);
-    const savedState = localStorage.getItem('promptForge_lastState');
-    if (savedState) state = { ...state, ...JSON.parse(savedState) };
-  } catch (e) { console.error('Load error:', e); }
+  const saved = loadToolState('prompt-forge');
+  if (saved) {
+    if (saved.templates) templates = saved.templates;
+    if (saved.history) history = saved.history;
+    if (saved.lastState) state = { ...state, ...saved.lastState };
+  }
 }
 
 function saveToStorage() {
-  localStorage.setItem('promptForge_templates', JSON.stringify(templates));
-  localStorage.setItem('promptForge_history', JSON.stringify(history.slice(0, 20)));
-  localStorage.setItem('promptForge_lastState', JSON.stringify(state));
+  saveToolState('prompt-forge', {
+    templates,
+    history: history.slice(0, 20),
+    lastState: state
+  });
 }
 
 function renderAll() {
@@ -1670,14 +1596,10 @@ function renderSelects() {
   fillSelect('objectiveSelect', OBJECTIVES, state.objective);
   fillSelect('deliverableSelect', DELIVERABLES, state.deliverable);
   fillSelect('contextSelect', CONTEXTS, state.context);
-  fillSelect('exclusionsSelect', EXCLUSIONS, state.exclusions);
   fillSelect('techStackSelect', TECH_STACKS, state.techStack);
   fillSelect('frameworkSelect', FRAMEWORKS, state.framework);
   fillSelect('devTaskSelect', DEV_TASKS, state.devTask);
-  fillSelect('codebaseSelect', CODEBASES, state.codebase);
-  fillSelect('riskSelect', RISK_LEVELS, state.risk);
   fillSelect('constraintsSelect', CONSTRAINTS, state.constraints);
-  fillSelect('testingSelect', TESTING, state.testing);
 
   $('customPersona').value = state.customPersona || '';
   $('customAudience').value = state.customAudience || '';
@@ -1686,7 +1608,6 @@ function renderSelects() {
   $('customContext').value = state.customContext || '';
   $('inputsProvided').value = state.inputsProvided || '';
   $('customStack').value = state.customStack || '';
-  $('customCodebase').value = state.customCodebase || '';
   $('customConstraints').value = state.customConstraints || '';
   $('extraInstructions').value = state.extraInstructions || '';
 }
@@ -1922,9 +1843,9 @@ function attachListeners() {
 
   // Selects
   const selects = ['personaSelect', 'voiceSelect', 'patternSelect', 'formatSelect', 'toneSelect',
-    'audienceSelect', 'objectiveSelect', 'deliverableSelect', 'contextSelect', 'exclusionsSelect',
-    'techStackSelect', 'frameworkSelect', 'devTaskSelect', 'codebaseSelect', 'riskSelect',
-    'constraintsSelect', 'testingSelect'];
+    'audienceSelect', 'objectiveSelect', 'deliverableSelect', 'contextSelect',
+    'techStackSelect', 'frameworkSelect', 'devTaskSelect',
+    'constraintsSelect'];
 
   selects.forEach(id => {
     const el = $(id);
@@ -1940,7 +1861,7 @@ function attachListeners() {
 
   // Text inputs
   const inputs = ['customPersona', 'customAudience', 'customObjective', 'customDeliverable',
-    'customContext', 'inputsProvided', 'customStack', 'customCodebase', 'customConstraints', 'extraInstructions'];
+    'customContext', 'inputsProvided', 'customStack', 'customConstraints', 'extraInstructions'];
 
   inputs.forEach(id => {
     const el = $(id);
@@ -2292,11 +2213,8 @@ function updateCustomVisibility() {
   const customStackRow = $('customStackRow');
   if (customStackRow) customStackRow.classList.toggle('show', state.techStack === 'custom' || state.framework === 'custom');
 
-  const customCodebaseRow = $('customCodebaseRow');
-  if (customCodebaseRow) customCodebaseRow.classList.toggle('show', state.codebase === 'custom');
-
   const customConstraintsRow = $('customConstraintsRow');
-  if (customConstraintsRow) customConstraintsRow.classList.toggle('show', state.constraints === 'custom' || state.testing === 'custom');
+  if (customConstraintsRow) customConstraintsRow.classList.toggle('show', state.constraints === 'custom');
 }
 
 function updateSectionVisibility() {
@@ -2391,14 +2309,13 @@ function clearAll() {
     objective: 'ship_feature', customObjective: '',
     deliverable: 'pr', customDeliverable: '',
     context: 'none', customContext: '',
-    exclusions: 'no_fluff', inputsProvided: '',
+    inputsProvided: '',
     techStack: 'html_single', framework: 'none', customStack: '',
-    devTask: 'feature', codebase: 'frontend', customCodebase: '',
-    risk: 'medium', constraints: 'tested', customConstraints: '',
-    testing: 'unit', extraInstructions: '',
+    devTask: 'feature', constraints: 'tested', customConstraints: '',
+    extraInstructions: '',
     guardrails: [], boosters: [],
     includeRole: true, includeTask: true, includeObjective: true,
-    includeContext: false, includeDev: true, includeGuardrails: true
+    includeContext: false, includeDev: false, includeGuardrails: true
   };
   renderSelects();
   renderGuardrails();
@@ -2411,13 +2328,7 @@ function clearAll() {
 
 function exportTemplates() {
   const data = JSON.stringify({ templates, lastState: state }, null, 2);
-  const blob = new Blob([data], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'prompt-forge-templates.json';
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadAsFile(data, 'prompt-forge-templates.json', 'application/json');
   showToast('Exported!');
 }
 
@@ -2505,12 +2416,10 @@ function assemblePrompt() {
   // Context
   if (state.includeContext) {
     const contextText = getText(CONTEXTS, state.context, state.customContext);
-    const exclusionsText = getText(EXCLUSIONS, state.exclusions, '');
-    if (contextText || state.inputsProvided || exclusionsText) {
+    if (contextText || state.inputsProvided) {
       lines.push('--- CONTEXT ---');
       if (contextText) lines.push(`Background: ${contextText}`);
       if (state.inputsProvided) lines.push(`Inputs: ${state.inputsProvided}`);
-      if (exclusionsText) lines.push(`Avoid: ${exclusionsText}`);
       lines.push('');
     }
   }
@@ -2520,20 +2429,14 @@ function assemblePrompt() {
     const stackText = getText(TECH_STACKS, state.techStack, state.customStack);
     const frameworkText = getText(FRAMEWORKS, state.framework, '');
     const taskText = getText(DEV_TASKS, state.devTask, '');
-    const codebaseText = getText(CODEBASES, state.codebase, state.customCodebase);
-    const riskText = getText(RISK_LEVELS, state.risk, '');
     const constraintsText = getText(CONSTRAINTS, state.constraints, state.customConstraints);
-    const testingText = getText(TESTING, state.testing, '');
 
     if (stackText || taskText) {
       lines.push('--- DEV CONTEXT ---');
       if (stackText) lines.push(`Stack: ${stackText}`);
       if (frameworkText) lines.push(`Framework: ${frameworkText}`);
       if (taskText) lines.push(`Task: ${taskText}`);
-      if (codebaseText) lines.push(`Focus: ${codebaseText}`);
-      if (riskText) lines.push(`Risk: ${riskText}`);
       if (constraintsText) lines.push(`Constraints: ${constraintsText}`);
-      if (testingText) lines.push(`Testing: ${testingText}`);
       lines.push('');
     }
   }

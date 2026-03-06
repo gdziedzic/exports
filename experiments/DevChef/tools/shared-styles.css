@@ -33,10 +33,17 @@
   --text-secondary: #7f8c8d;
   --accent: #3498db;
   --accent-hover: #2980b9;
+  --accent-light: #d6eaf8;
   --success: #27ae60;
   --error: #e74c3c;
   --warning: #f39c12;
   --info: #3498db;
+  --bg-hover: #c8c8c8;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
 
   /* Fonts */
   --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace;
@@ -70,6 +77,11 @@
   --text-secondary: #a0a0a0;
   --accent: #4a9eff;
   --accent-hover: #5cadff;
+  --accent-light: #1e3a5e;
+  --bg-hover: #4d4d4d;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 /* =============================================================================

@@ -13,7 +13,7 @@
   "id": "ai-prompt-builder",
   "name": "AI Prompt Builder",
   "category": "Developer Tools",
-  "description": "Compose AI prompts with personas, tech stacks, templates, placeholders, and shareable links",
+  "description": "Compose structured AI prompts with personas, tech stacks, and templates",
   "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "composer", "rules", "personas", "templates", "sharing"],
   "version": "10.0.0"
 }
@@ -77,7 +77,6 @@
         <div class="panel-header">
           <h3>Prompt Components</h3>
           <div class="panel-actions">
-            <button id="import-file-btn" class="icon-btn" title="Import package.json / requirements.txt">📂</button>
             <button id="import-config-btn" class="icon-btn" title="Import Configuration">📥</button>
             <button id="export-config-btn" class="icon-btn" title="Export Configuration">📤</button>
             <button id="reset-config-btn" class="icon-btn" title="Reset to Default">🔄</button>
@@ -91,14 +90,6 @@
           <button id="invert-selection-btn" class="quick-action-btn" title="Invert Selection (Ctrl+I)">⇄ Invert</button>
           <div class="quick-action-divider"></div>
           <span class="quick-action-hint">💡 Click header to toggle • 1-9 keys • Space • ↑↓ navigate • Esc to close</span>
-        </div>
-
-        <div class="drop-zone" id="drop-zone">
-          <div class="drop-zone-content">
-            <div class="drop-icon">📁</div>
-            <div class="drop-text">Drop package.json or requirements.txt</div>
-            <div class="drop-subtext">to auto-generate tech stack context</div>
-          </div>
         </div>
 
         <div id="components-list" class="components-list">
@@ -116,11 +107,6 @@
         <div class="panel-header">
           <h3>Final Prompt</h3>
           <div class="panel-actions">
-            <select id="export-format" class="format-select">
-              <option value="structured">Structured</option>
-              <option value="markdown">Markdown</option>
-              <option value="plain">Plain Text</option>
-            </select>
             <button id="share-btn" class="secondary" title="Share Configuration">🔗 Share</button>
             <button id="copy-prompt-btn" class="primary">📋 Copy</button>
             <button id="save-prompt-btn" class="secondary">💾 Save</button>
@@ -134,24 +120,6 @@
         <div class="stats-bar">
           <span id="char-count">0 characters</span>
           <span id="word-count">0 words</span>
-          <span id="line-count">0 lines</span>
-          <span id="placeholder-count">0 placeholders</span>
-        </div>
-
-        <div class="placeholders-section">
-          <div class="section-header collapsible" id="placeholders-header">
-            <label class="section-label">Placeholders <span id="placeholder-badge" class="count-badge">0</span></label>
-            <button class="collapse-btn">▼</button>
-          </div>
-          <div class="placeholders-content" id="placeholders-content">
-            <div id="placeholders-list" class="placeholders-list">
-              <p class="empty-state">No placeholders found. Use {{placeholder}} syntax in your components.</p>
-            </div>
-            <div class="placeholders-actions">
-              <button id="fill-placeholders-btn" class="secondary">✓ Apply Values</button>
-              <button id="clear-placeholders-btn" class="secondary">✗ Clear All</button>
-            </div>
-          </div>
         </div>
 
         <div class="templates-section">
@@ -183,39 +151,7 @@
     </div>
 
     <input type="file" id="file-input" accept=".json" style="display: none;">
-    <input type="file" id="project-file-input" accept=".json,.txt" style="display: none;">
     <div id="status-message" class="status-message"></div>
-
-    <!-- Context Menu -->
-    <div id="context-menu" class="context-menu">
-      <div class="context-menu-item" data-action="ctx-toggle">
-        <span class="context-menu-icon">✓</span>
-        <span>Toggle Component</span>
-        <span class="context-menu-shortcut">Space</span>
-      </div>
-      <div class="context-menu-item" data-action="ctx-edit">
-        <span class="context-menu-icon">✏️</span>
-        <span>Edit</span>
-        <span class="context-menu-shortcut">Enter</span>
-      </div>
-      <div class="context-menu-divider"></div>
-      <div class="context-menu-item" data-action="ctx-move-up">
-        <span class="context-menu-icon">↑</span>
-        <span>Move Up</span>
-        <span class="context-menu-shortcut">Ctrl+↑</span>
-      </div>
-      <div class="context-menu-item" data-action="ctx-move-down">
-        <span class="context-menu-icon">↓</span>
-        <span>Move Down</span>
-        <span class="context-menu-shortcut">Ctrl+↓</span>
-      </div>
-      <div class="context-menu-divider"></div>
-      <div class="context-menu-item" data-action="ctx-delete">
-        <span class="context-menu-icon">🗑️</span>
-        <span>Delete</span>
-        <span class="context-menu-shortcut">Del</span>
-      </div>
-    </div>
 
     <!-- Persona Selection Modal -->
     <div id="persona-modal" class="modal">
@@ -265,13 +201,6 @@
               <button id="copy-link-btn" class="primary">📋 Copy</button>
             </div>
             <p class="share-hint">Share this link with others to import your configuration</p>
-          </div>
-          <div class="share-section">
-            <label class="share-label">QR Code</label>
-            <div class="qr-container">
-              <canvas id="qr-canvas" width="200" height="200"></canvas>
-            </div>
-            <button id="download-qr-btn" class="secondary">💾 Download QR</button>
           </div>
         </div>
       </div>
@@ -327,8 +256,6 @@
   /* Use hardware acceleration for better performance */
   .component-item,
   .modal,
-  .context-menu,
-  .drop-zone,
   .quick-action-btn,
   .icon-btn {
     will-change: transform;
@@ -361,7 +288,7 @@
     padding: 14px;
     border: 1px solid var(--border-color);
     border-radius: 10px;
-    background: linear-gradient(160deg, var(--bg-secondary), color-mix(in srgb, var(--bg-secondary) 88%, var(--primary-color) 12%));
+    background: linear-gradient(160deg, var(--bg-secondary), color-mix(in srgb, var(--bg-secondary) 88%, var(--accent) 12%));
   }
 
   .intent-starter-header {
@@ -382,7 +309,7 @@
     margin: 0;
     padding: 6px 10px;
     font-size: 11px;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
   }
 
   .intent-starter-header h3 {
@@ -397,9 +324,9 @@
     gap: 8px;
     margin-bottom: 10px;
     padding: 10px;
-    border: 1px solid color-mix(in srgb, var(--primary-color) 35%, var(--border-color) 65%);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-color) 65%);
     border-radius: 12px;
-    background: color-mix(in srgb, var(--primary-color) 14%, var(--bg-primary) 86%);
+    background: color-mix(in srgb, var(--accent) 14%, var(--bg-primary) 86%);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
     position: relative;
   }
@@ -411,24 +338,24 @@
     border-width: 1.5px;
     background: linear-gradient(
       160deg,
-      color-mix(in srgb, var(--bg-primary) 88%, var(--primary-color) 12%),
-      color-mix(in srgb, var(--bg-primary) 78%, var(--primary-color) 22%)
+      color-mix(in srgb, var(--bg-primary) 88%, var(--accent) 12%),
+      color-mix(in srgb, var(--bg-primary) 78%, var(--accent) 22%)
     );
-    box-shadow: 0 6px 16px color-mix(in srgb, var(--primary-color) 16%, transparent);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 16%, transparent);
   }
 
   .intent-mode-group .intent-primary-mode-btn:hover {
     transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 10px 22px color-mix(in srgb, var(--primary-color) 24%, transparent);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 24%, transparent);
   }
 
   .intent-mode-group .intent-primary-mode-btn.active {
-    background: linear-gradient(155deg, var(--primary-color), color-mix(in srgb, var(--primary-color) 78%, black));
+    background: linear-gradient(155deg, var(--accent), color-mix(in srgb, var(--accent) 78%, black));
     color: white;
-    border-color: color-mix(in srgb, var(--primary-color) 72%, black);
+    border-color: color-mix(in srgb, var(--accent) 72%, black);
     box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--primary-color) 20%, transparent),
-      0 14px 24px color-mix(in srgb, var(--primary-color) 34%, transparent);
+      0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent),
+      0 14px 24px color-mix(in srgb, var(--accent) 34%, transparent);
   }
 
   .intent-workflow-group {
@@ -457,7 +384,7 @@
     text-transform: uppercase;
     padding: 2px 8px;
     border-radius: 999px;
-    background: var(--primary-color);
+    background: var(--accent);
     color: white;
   }
 
@@ -470,19 +397,19 @@
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    transition: 0.15s ease;
+    transition: var(--transition-fast);
   }
 
   .intent-mode-btn:hover {
-    border-color: var(--primary-color);
+    border-color: var(--accent);
     transform: translateY(-1px);
   }
 
   .intent-mode-btn.active {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
+    background: var(--accent);
+    border-color: var(--accent);
     color: white;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 24%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
   }
 
   .intent-mode-group .intent-mode-btn:not(.active) {
@@ -517,12 +444,12 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    border: 1px solid color-mix(in srgb, var(--primary-color) 24%, var(--border-color) 76%);
+    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-color) 76%);
     border-radius: 999px;
     padding: 5px 10px;
     font-size: 11px;
     color: var(--text-secondary);
-    background: color-mix(in srgb, var(--bg-primary) 84%, var(--primary-color) 16%);
+    background: color-mix(in srgb, var(--bg-primary) 84%, var(--accent) 16%);
   }
 
   .intent-chip strong {
@@ -546,12 +473,12 @@
   .intent-field input {
     width: 100%;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     background: var(--bg-primary);
     color: var(--text-primary);
     padding: 8px 10px;
     font-size: 12px;
-    transition: 0.15s ease;
+    transition: var(--transition-fast);
   }
 
   .intent-field textarea {
@@ -563,12 +490,11 @@
   .intent-field textarea:focus,
   .intent-field input:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 16%, transparent);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
   }
 
   .tool-container[data-intent-refine="closed"] .quick-actions-toolbar,
-  .tool-container[data-intent-refine="closed"] .drop-zone,
   .tool-container[data-intent-refine="closed"] .add-component-section {
     display: none;
   }
@@ -590,7 +516,7 @@
   .preview-panel {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -631,75 +557,22 @@
     background: transparent;
     border: 1px solid var(--border-color);
     padding: 6px 10px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 14px;
-    transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background var(--transition-normal),
+                border-color var(--transition-normal),
+                transform var(--transition-fast);
   }
 
   .icon-btn:hover {
     background: var(--bg-secondary);
-    border-color: var(--primary-color);
+    border-color: var(--accent);
     transform: translateY(-1px);
   }
 
   .icon-btn:active {
     transform: translateY(0);
-  }
-
-  .format-select {
-    padding: 6px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-size: 13px;
-    cursor: pointer;
-  }
-
-  .format-select:focus {
-    outline: none;
-    border-color: var(--primary-color);
-  }
-
-  .drop-zone {
-    margin: 12px;
-    padding: 30px;
-    border: 2px dashed var(--border-color);
-    border-radius: 8px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-                background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-                transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    background: var(--bg-primary);
-  }
-
-  .drop-zone:hover,
-  .drop-zone.dragover {
-    border-color: var(--primary-color);
-    background: var(--bg-hover);
-    transform: scale(1.01);
-  }
-
-  .drop-icon {
-    font-size: 48px;
-    margin-bottom: 12px;
-    opacity: 0.6;
-  }
-
-  .drop-text {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-  }
-
-  .drop-subtext {
-    font-size: 12px;
-    color: var(--text-secondary);
   }
 
   /* Quick Actions Toolbar */
@@ -718,17 +591,17 @@
     border: 1px solid var(--border-color);
     background: var(--bg-secondary);
     color: var(--text-primary);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 11px;
     font-weight: 500;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
   }
 
   .quick-action-btn:hover {
-    background: var(--primary-color);
+    background: var(--accent);
     color: white;
-    border-color: var(--primary-color);
+    border-color: var(--accent);
     transform: translateY(-1px);
   }
 
@@ -759,12 +632,12 @@
   .component-item {
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     margin-bottom: 12px;
     overflow: hidden;
-    transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: border-color var(--transition-normal),
+                box-shadow var(--transition-normal),
+                transform var(--transition-fast);
     position: relative;
   }
 
@@ -772,16 +645,16 @@
     content: '';
     position: absolute;
     inset: 4px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     opacity: 0;
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.08);
-    transition: opacity 0.2s;
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    transition: opacity var(--transition-normal);
     pointer-events: none;
   }
 
   .component-item.active {
-    border-color: var(--primary-color);
-    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-lg);
   }
 
   .component-item.active::after {
@@ -789,29 +662,29 @@
   }
 
   .component-item.active .component-header {
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.12);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
   }
 
   .component-item.has-options {
-    border-left: 3px solid var(--primary-color);
+    border-left: 3px solid var(--accent);
   }
 
   .component-item.focused {
-    box-shadow: 0 0 0 2px var(--primary-color), 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 0 0 2px var(--accent), 0 4px 12px rgba(0,0,0,0.1);
     transform: translateY(-1px);
   }
 
   .component-item.selected {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 59, 130, 246), 0.35);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
   }
 
   .component-item.active.selected::after {
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.2);
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
   }
 
   .component-item:hover {
-    border-color: var(--primary-color);
+    border-color: var(--accent);
     transform: translateX(2px);
   }
 
@@ -838,14 +711,14 @@
     cursor: pointer;
     position: relative;
     flex-shrink: 0;
-    transition: all 0.2s;
+    transition: all var(--transition-normal);
     background: var(--bg-secondary);
   }
 
   .component-toggle.checked {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    box-shadow: 0 3px 10px rgba(var(--primary-color-rgb, 59, 130, 246), 0.35);
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 35%, transparent);
   }
 
   .component-toggle.checked::after {
@@ -904,16 +777,16 @@
   }
 
   .component-item.active .component-number {
-    background: var(--primary-color);
+    background: var(--accent);
     color: white;
   }
 
   .component-badge {
     font-size: 11px;
     padding: 2px 8px;
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.15);
-    color: var(--primary-color);
-    border: 1px solid rgba(var(--primary-color-rgb, 59, 130, 246), 0.3);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
     border-radius: 999px;
     font-weight: 600;
   }
@@ -929,9 +802,9 @@
   }
 
   .component-state.on {
-    background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.2);
-    color: var(--primary-color);
-    border-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.5);
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 50%, transparent);
   }
 
   .component-state.off {
@@ -945,7 +818,7 @@
     display: flex;
     gap: 4px;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity var(--transition-normal);
     margin-left: auto;
     flex-shrink: 0;
     flex-wrap: wrap;
@@ -972,7 +845,7 @@
     cursor: pointer;
     font-size: 12px;
     border-radius: 3px;
-    transition: background 0.2s;
+    transition: background var(--transition-normal);
   }
 
   .component-action:hover {
@@ -993,38 +866,38 @@
     min-height: 100px;
     padding: 10px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-family: var(--font-mono);
     font-size: 13px;
     resize: vertical;
     background: var(--bg-primary);
     color: var(--text-primary);
-    transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: border-color var(--transition-normal),
+                box-shadow var(--transition-normal);
   }
 
   .component-body textarea:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
   }
 
   .component-select-btn {
     width: 100%;
     padding: 10px;
     margin-bottom: 8px;
-    background: var(--primary-color);
+    background: var(--accent);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
-    transition: background 0.2s;
+    transition: background var(--transition-normal);
   }
 
   .component-select-btn:hover {
-    background: var(--primary-hover);
+    background: var(--accent-hover);
   }
 
   .component-option-group {
@@ -1053,7 +926,7 @@
     width: 100%;
     padding: 8px 10px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: var(--bg-primary);
     color: var(--text-primary);
     font-size: 13px;
@@ -1061,7 +934,7 @@
 
   .component-preset-select:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--accent);
   }
 
   .component-meta {
@@ -1083,7 +956,7 @@
     flex: 1;
     padding: 8px 12px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 13px;
     background: var(--bg-primary);
     color: var(--text-primary);
@@ -1091,23 +964,23 @@
 
   #new-component-name:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--accent);
   }
 
   #add-component-btn {
     padding: 8px 16px;
-    background: var(--primary-color);
+    background: var(--accent);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
-    transition: background 0.2s;
+    transition: background var(--transition-normal);
   }
 
   #add-component-btn:hover {
-    background: var(--primary-hover);
+    background: var(--accent-hover);
   }
 
   .preview-area {
@@ -1123,7 +996,7 @@
     width: 100%;
     padding: 12px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.6;
@@ -1131,14 +1004,14 @@
     resize: vertical;
     background: var(--bg-primary);
     color: var(--text-primary);
-    transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: border-color var(--transition-normal),
+                box-shadow var(--transition-normal);
   }
 
   #final-prompt:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
   }
 
   .stats-bar {
@@ -1168,23 +1041,23 @@
     padding: 8px 12px;
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 12px;
-    transition: all 0.2s;
+    transition: all var(--transition-normal);
     color: var(--text-primary);
   }
 
   .template-btn:hover {
-    background: var(--primary-color);
+    background: var(--accent);
     color: white;
-    border-color: var(--primary-color);
+    border-color: var(--accent);
   }
 
   .status-message {
     margin-top: 16px;
     padding: 12px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 13px;
     display: none;
   }
@@ -1194,71 +1067,21 @@
   }
 
   .status-message.success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-  }
-
-  /* Context Menu */
-  .context-menu {
-    position: fixed;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    padding: 4px 0;
-    min-width: 200px;
-    z-index: 10000;
-    display: none;
-  }
-
-  .context-menu.show {
-    display: block;
-  }
-
-  .context-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--text-primary);
-    transition: background 0.15s;
-  }
-
-  .context-menu-item:hover {
-    background: var(--bg-hover);
-  }
-
-  .context-menu-icon {
-    width: 18px;
-    text-align: center;
-  }
-
-  .context-menu-shortcut {
-    margin-left: auto;
-    font-size: 11px;
-    color: var(--text-secondary);
-    opacity: 0.7;
-  }
-
-  .context-menu-divider {
-    height: 1px;
-    background: var(--border-color);
-    margin: 4px 0;
+    background: color-mix(in srgb, var(--success) 12%, var(--bg-primary));
+    color: var(--success);
+    border: 1px solid color-mix(in srgb, var(--success) 30%, var(--border-color));
   }
 
   .status-message.error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+    background: color-mix(in srgb, var(--error) 12%, var(--bg-primary));
+    color: var(--error);
+    border: 1px solid color-mix(in srgb, var(--error) 30%, var(--border-color));
   }
 
   .status-message.info {
-    background: #d1ecf1;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-primary));
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-color));
   }
 
   /* Modal Styles */
@@ -1281,13 +1104,13 @@
 
   .modal-content {
     background: var(--bg-primary);
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     max-width: 800px;
     width: 90%;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-lg);
   }
 
   .modal-header {
@@ -1316,8 +1139,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    transition: background 0.2s;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-normal);
   }
 
   .modal-close:hover {
@@ -1339,20 +1162,20 @@
   .persona-card {
     padding: 16px;
     border: 2px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all var(--transition-normal);
     background: var(--bg-secondary);
   }
 
   .persona-card:hover {
-    border-color: var(--primary-color);
+    border-color: var(--accent);
     background: var(--bg-hover);
   }
 
   .persona-card.selected {
-    border-color: var(--primary-color);
-    background: var(--primary-color);
+    border-color: var(--accent);
+    background: var(--accent);
     color: white;
   }
 
@@ -1380,7 +1203,7 @@
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 14px;
     background: var(--bg-secondary);
     color: var(--text-primary);
@@ -1388,7 +1211,7 @@
 
   .techstack-search input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--accent);
   }
 
   .techstack-grid {
@@ -1400,30 +1223,24 @@
   .techstack-item {
     padding: 12px;
     border: 2px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     text-align: center;
-    transition: all 0.2s;
+    transition: all var(--transition-normal);
     background: var(--bg-secondary);
     font-size: 13px;
     font-weight: 500;
   }
 
   .techstack-item:hover {
-    border-color: var(--primary-color);
+    border-color: var(--accent);
     background: var(--bg-hover);
   }
 
   .techstack-item.selected {
-    border-color: var(--primary-color);
-    background: var(--primary-color);
+    border-color: var(--accent);
+    background: var(--accent);
     color: white;
-  }
-
-  /* Placeholders Section */
-  .placeholders-section {
-    padding: 16px;
-    border-top: 1px solid var(--border-color);
   }
 
   .section-header {
@@ -1439,7 +1256,7 @@
     background: var(--bg-hover);
     margin: -4px -8px 12px -8px;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
 
   .section-label {
@@ -1452,7 +1269,7 @@
   }
 
   .count-badge {
-    background: var(--primary-color);
+    background: var(--accent);
     color: white;
     font-size: 11px;
     padding: 2px 8px;
@@ -1467,28 +1284,20 @@
     cursor: pointer;
     color: var(--text-secondary);
     padding: 4px;
-    transition: transform 0.2s;
+    transition: transform var(--transition-normal);
   }
 
   .section-header.collapsed .collapse-btn {
     transform: rotate(-90deg);
   }
 
-  .placeholders-content,
   .templates-content {
-    transition: max-height 0.3s ease-out;
+    transition: max-height var(--transition-slow);
     overflow: hidden;
   }
 
-  .section-header.collapsed + .placeholders-content,
   .section-header.collapsed + .templates-content {
     max-height: 0 !important;
-  }
-
-  .placeholders-list {
-    max-height: 200px;
-    overflow-y: auto;
-    margin-bottom: 12px;
   }
 
   .empty-state {
@@ -1497,52 +1306,6 @@
     font-size: 12px;
     padding: 20px;
     font-style: italic;
-  }
-
-  .placeholder-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    padding: 8px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-  }
-
-  .placeholder-name {
-    flex: 0 0 auto;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--primary-color);
-    font-weight: 500;
-    min-width: 120px;
-  }
-
-  .placeholder-input {
-    flex: 1;
-    padding: 6px 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 3px;
-    font-size: 12px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-  }
-
-  .placeholder-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-  }
-
-  .placeholder-input.filled {
-    background: var(--bg-hover);
-    border-color: var(--primary-color);
-  }
-
-  .placeholders-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
   }
 
   /* Template Enhancements */
@@ -1562,7 +1325,7 @@
     flex: 1;
     padding: 8px 12px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 13px;
     background: var(--bg-secondary);
     color: var(--text-primary);
@@ -1570,13 +1333,13 @@
 
   .template-filter input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--accent);
   }
 
   .category-select {
     padding: 8px 12px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: var(--bg-secondary);
     color: var(--text-primary);
     font-size: 13px;
@@ -1585,7 +1348,7 @@
 
   .category-select:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--accent);
   }
 
   .template-btn {
@@ -1604,7 +1367,7 @@
   }
 
   .template-btn.custom-template {
-    border-left: 3px solid var(--primary-color);
+    border-left: 3px solid var(--accent);
   }
 
   .template-btn.custom-template .delete-template-btn {
@@ -1618,7 +1381,7 @@
     font-size: 10px;
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity var(--transition-normal);
   }
 
   .template-btn.custom-template:hover .delete-template-btn {
@@ -1651,7 +1414,7 @@
     flex: 1;
     padding: 10px 12px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-family: var(--font-mono);
     font-size: 12px;
     background: var(--bg-secondary);
@@ -1660,7 +1423,7 @@
 
   .share-link-input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--accent);
   }
 
   .share-hint {
@@ -1668,20 +1431,6 @@
     color: var(--text-secondary);
     margin-top: 8px;
     font-style: italic;
-  }
-
-  .qr-container {
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-    background: white;
-    border-radius: 8px;
-    margin-bottom: 12px;
-  }
-
-  #qr-canvas {
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
   }
 
   /* Save Template Modal */
@@ -1705,7 +1454,7 @@
     width: 100%;
     padding: 8px 12px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 13px;
     background: var(--bg-secondary);
     color: var(--text-primary);
@@ -1714,7 +1463,7 @@
 
   .form-input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--accent);
   }
 
   .modal-actions {
@@ -1726,10 +1475,10 @@
 
   /* Enhanced button styles for better feedback */
   button {
-    transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background var(--transition-normal),
+                border-color var(--transition-normal),
+                transform var(--transition-fast),
+                box-shadow var(--transition-normal);
   }
 
   button:active {
@@ -1737,14 +1486,14 @@
   }
 
   button.primary {
-    background: var(--primary-color);
+    background: var(--accent);
     color: white;
-    border: 1px solid var(--primary-color);
+    border: 1px solid var(--accent);
   }
 
   button.primary:hover {
-    background: color-mix(in srgb, var(--primary-color) 90%, black);
-    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb, 59, 130, 246), 0.3);
+    background: color-mix(in srgb, var(--accent) 90%, black);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent);
   }
 
   button.secondary {
@@ -1755,7 +1504,7 @@
 
   button.secondary:hover {
     background: var(--bg-hover);
-    border-color: var(--primary-color);
+    border-color: var(--accent);
   }
 
   @media (max-width: 1024px) {
@@ -1796,6 +1545,8 @@
 
 <!-- Tool Module -->
 <script type="module">
+  import { copyToClipboard, debounce, deepClone, downloadAsFile, countWords, saveToolState, loadToolState } from '../core/tool-utils.js';
+
   // Persona library
   const PERSONAS = [
     {
@@ -1829,34 +1580,10 @@
       content: 'You are a security expert specializing in application security, secure coding practices, vulnerability assessment, and security best practices. You focus on OWASP top 10, authentication, authorization, and data protection.'
     },
     {
-      id: 'data-analyst',
-      name: 'Data Analyst',
-      description: 'Expert in statistical analysis, data visualization, and insights.',
-      content: 'You are a data analyst with expertise in statistical analysis, data visualization, SQL, Python/R, and extracting actionable insights from data. You understand data cleaning, transformation, and storytelling.'
-    },
-    {
-      id: 'frontend-specialist',
-      name: 'Frontend Specialist',
-      description: 'Expert in modern frontend frameworks, UX, and web performance.',
-      content: 'You are a frontend specialist with deep knowledge of React, Vue, Angular, TypeScript, CSS, and modern web development. You understand UX principles, accessibility, and web performance optimization.'
-    },
-    {
-      id: 'backend-specialist',
-      name: 'Backend Specialist',
-      description: 'Expert in APIs, databases, server architecture, and scalability.',
-      content: 'You are a backend specialist with expertise in REST/GraphQL APIs, database design, server architecture, caching strategies, and building scalable backend systems. You know Node.js, Python, Java, Go, and database technologies.'
-    },
-    {
       id: 'tech-educator',
       name: 'Technical Educator',
       description: 'Explains complex concepts in simple, understandable terms.',
       content: 'You are a technical educator who excels at breaking down complex technical concepts into simple, understandable explanations. You use analogies, examples, and step-by-step breakdowns to teach effectively.'
-    },
-    {
-      id: 'qa-engineer',
-      name: 'QA Engineer',
-      description: 'Expert in testing strategies, test automation, and quality assurance.',
-      content: 'You are a QA engineer with expertise in testing strategies, test automation, unit/integration/e2e testing, and quality assurance best practices. You understand testing frameworks and ensure software reliability.'
     },
     {
       id: 'technical-writer',
@@ -1892,16 +1619,6 @@
         content: 'Project: {{project_name}}\nDomain: {{domain}}\nKey requirements: {{requirements}}\nPrimary users: {{primary_users}}\nSuccess metric: {{success_metric}}'
       },
       {
-        id: 'incident-summary',
-        name: 'Incident / Bug Context',
-        content: 'Issue: {{issue_summary}}\nSeverity: {{severity}}\nAffected components: {{components}}\nUser impact: {{impact}}\nLogs/links: {{references}}'
-      },
-      {
-        id: 'meeting-context',
-        name: 'Meeting Recap Context',
-        content: 'Meeting type: {{meeting_type}}\nDate: {{date}}\nAttendees: {{attendees}}\nGoal: {{goal}}\nNotes: {{notes}}'
-      },
-      {
         id: 'codebase-context',
         name: 'Codebase / Repository Context',
         content: 'Repository: {{repo_name}}\nLanguages/frameworks: {{tech_stack}}\nArchitecture: {{architecture_pattern}}\nCode standards: {{standards}}\nRelated files: {{related_files}}'
@@ -1911,16 +1628,6 @@
         name: 'User Story Context',
         content: 'As a {{user_role}}\nI want {{user_goal}}\nSo that {{user_benefit}}\nAcceptance criteria: {{acceptance_criteria}}'
       },
-      {
-        id: 'api-integration-context',
-        name: 'API Integration Context',
-        content: 'API: {{api_name}}\nVersion: {{api_version}}\nAuthentication: {{auth_method}}\nEndpoints: {{endpoints}}\nRate limits: {{rate_limits}}\nDocumentation: {{docs_link}}'
-      },
-      {
-        id: 'performance-context',
-        name: 'Performance / Optimization Context',
-        content: 'Current metrics: {{current_metrics}}\nTarget metrics: {{target_metrics}}\nBottlenecks: {{bottlenecks}}\nConstraints: {{constraints}}\nMonitoring: {{monitoring_tools}}'
-      }
     ],
     'task': [
       {
@@ -1938,31 +1645,6 @@
         name: 'Analysis / Research Objective',
         content: 'Dataset or subject: {{subject}}\nQuestions to answer: {{questions}}\nConstraints: {{analysis_constraints}}\nSuccess looks like: {{success_definition}}'
       },
-      {
-        id: 'refactoring-task',
-        name: 'Code Refactoring',
-        content: 'Code to refactor: {{code_location}}\nCurrent issues: {{issues}}\nRefactoring goals: {{goals}}\nMust preserve: {{preserve}}\nTest coverage: {{test_coverage}}'
-      },
-      {
-        id: 'documentation-task',
-        name: 'Documentation Writing',
-        content: 'What to document: {{subject}}\nTarget audience: {{audience}}\nDocumentation type: {{doc_type}}\nExisting docs: {{existing_docs}}\nKey points to cover: {{key_points}}'
-      },
-      {
-        id: 'review-task',
-        name: 'Code / PR Review',
-        content: 'PR/Code: {{pr_number}}\nChanges summary: {{changes_summary}}\nFiles changed: {{files}}\nReview focus: {{review_focus}}\nContext: {{context}}'
-      },
-      {
-        id: 'migration-task',
-        name: 'Migration / Upgrade',
-        content: 'Migrate from: {{from_version}}\nMigrate to: {{to_version}}\nScope: {{scope}}\nBreaking changes: {{breaking_changes}}\nRollback plan: {{rollback}}'
-      },
-      {
-        id: 'testing-task',
-        name: 'Test Writing',
-        content: 'Code to test: {{code_location}}\nTest type: {{test_type}}\nCoverage goal: {{coverage_goal}}\nEdge cases: {{edge_cases}}\nTest data: {{test_data}}'
-      }
     ],
     'rules': [
       {
@@ -1971,29 +1653,9 @@
         content: `Follow these rules:\n- Cite relevant standards or RFCs when possible\n- Highlight risks, edge cases, and trade-offs\n- Prefer deterministic steps with measurable outcomes\n- Offer testing guidance for every recommendation\n- Keep explanations concise but technically rigorous`
       },
       {
-        id: 'writing-voice',
-        name: 'Writing Voice Guidelines',
-        content: `Writing guidelines:\n- Maintain {{tone}} tone throughout\n- Favor short paragraphs and scannable bullets\n- Include concrete examples and analogies\n- Reference the target audience directly\n- Close with a clear call-to-action or summary`
-      },
-      {
-        id: 'analysis-steps',
-        name: 'Analytical Thinking Rules',
-        content: `When reasoning:\n- Separate observations, inferences, and recommendations\n- Quantify impact whenever possible\n- Surface assumptions or missing data\n- Offer at least two solution paths\n- Note monitoring or follow-up signals`
-      },
-      {
         id: 'security-first',
         name: 'Security-First Approach',
         content: `Security guidelines:\n- Follow OWASP Top 10 best practices\n- Never expose sensitive data in logs or errors\n- Validate and sanitize all inputs\n- Use parameterized queries to prevent SQL injection\n- Implement proper authentication and authorization\n- Follow principle of least privilege`
-      },
-      {
-        id: 'accessibility-standards',
-        name: 'Accessibility Standards',
-        content: `Accessibility rules:\n- Follow WCAG 2.1 AA standards\n- Ensure keyboard navigation support\n- Provide ARIA labels for screen readers\n- Maintain sufficient color contrast ratios\n- Include alt text for images\n- Test with assistive technologies`
-      },
-      {
-        id: 'performance-optimization',
-        name: 'Performance Optimization',
-        content: `Performance rules:\n- Minimize network requests and payload sizes\n- Implement lazy loading for resources\n- Use caching strategies appropriately\n- Optimize database queries with indexes\n- Profile before optimizing\n- Set performance budgets and monitor`
       },
       {
         id: 'clean-code',
@@ -2008,16 +1670,6 @@
         content: `Structure your response as:\n1. Brief summary (1-2 sentences)\n2. Detailed explanation with step-by-step breakdown\n3. Code examples with inline comments\n4. Testing approach and edge cases\n5. Best practices and recommendations`
       },
       {
-        id: 'summary-output',
-        name: 'Executive Summary + Table',
-        content: `Provide:\n- Executive summary (3 bullets max)\n- Table with columns: Section | Details | Owner | ETA\n- Risks & mitigations\n- Follow-up questions for stakeholders\n- Resources or references for more depth`
-      },
-      {
-        id: 'ticket-ready-output',
-        name: 'Ticket-Ready Deliverable',
-        content: `Format response for ticketing system:\n**Title:** ...\n**Problem Statement:** ...\n**Steps/Plan:** (numbered list)\n**Dependencies:** ...\n**Validation:** tests or acceptance criteria\n**Attachments:** code refs, diagrams, links`
-      },
-      {
         id: 'step-by-step',
         name: 'Step-by-Step Guide',
         content: `Provide a step-by-step guide:\n1. Prerequisites and setup\n2. Step 1: [Action] - [Expected result]\n3. Step 2: [Action] - [Expected result]\n...\nN. Verification steps\nTroubleshooting common issues`
@@ -2027,42 +1679,12 @@
         name: 'Code-Focused (Minimal Explanation)',
         content: `Provide:\n- Working code solution\n- Inline comments explaining key logic\n- Usage example\n- Brief notes on edge cases or gotchas`
       },
-      {
-        id: 'comparison-table',
-        name: 'Comparison / Trade-offs Table',
-        content: `Present as comparison table:\n| Approach | Pros | Cons | Best For | Complexity |\n|----------|------|------|----------|------------|\n| Option 1 | ... | ... | ... | ... |\n| Option 2 | ... | ... | ... | ... |\n\nRecommendation: [Your pick with reasoning]`
-      },
-      {
-        id: 'eli5-format',
-        name: 'ELI5 (Explain Like I\'m 5)',
-        content: `Explain in simple terms:\n1. Simple analogy or metaphor\n2. Basic explanation without jargon\n3. Visual description or diagram in ASCII/markdown\n4. Simple example everyone can relate to\n5. Key takeaway in one sentence`
-      },
-      {
-        id: 'markdown-documentation',
-        name: 'Markdown Documentation',
-        content: `Format as markdown documentation:\n# Title\n## Overview\n## Installation\n## Usage\n### Basic Example\n### Advanced Example\n## API Reference\n## FAQ\n## Contributing`
-      },
-      {
-        id: 'json-structured',
-        name: 'JSON Structured Output',
-        content: `Return response as JSON:\n{\n  "summary": "...",\n  "solution": {...},\n  "examples": [...],\n  "alternatives": [...],\n  "resources": [...]\n}`
-      }
     ],
     'constraints': [
       {
         id: 'delivery-constraints',
         name: 'Delivery Constraints',
         content: 'Timeline: {{deadline}}\nBudget: {{budget}}\nCritical dependencies: {{dependencies}}\nCompliance requirements: {{compliance}}'
-      },
-      {
-        id: 'compliance-constraints',
-        name: 'Compliance & Policy Constraints',
-        content: 'Regulation: {{regulation}}\nData classification: {{data_level}}\nSecurity posture: {{security_requirements}}\nApproval needed from: {{approvers}}'
-      },
-      {
-        id: 'resource-constraints',
-        name: 'Resource Constraints',
-        content: 'Team availability: {{team_availability}}\nTooling limitations: {{tooling_limits}}\nEnvironments: {{environments}}\nOperational support window: {{support_window}}'
       },
       {
         id: 'technical-constraints',
@@ -2074,11 +1696,6 @@
         name: 'Scope Constraints',
         content: 'In scope: {{in_scope}}\nOut of scope: {{out_of_scope}}\nPhase 1 requirements: {{phase1}}\nFuture enhancements: {{future}}\nNon-goals: {{non_goals}}'
       },
-      {
-        id: 'quality-constraints',
-        name: 'Quality Constraints',
-        content: 'Code coverage minimum: {{coverage_min}}\nPerformance benchmarks: {{benchmarks}}\nAccessibility level: {{accessibility}}\nBrowser support: {{browsers}}\nUptime requirement: {{uptime}}'
-      }
     ],
     'examples': [
       {
@@ -2092,25 +1709,10 @@
         content: 'Scenario: {{scenario}}\nActions taken: {{actions}}\nOutcome: {{outcome}}\nLessons learned: {{lessons}}'
       },
       {
-        id: 'anti-patterns',
-        name: 'Anti-pattern Watchlist',
-        content: 'Anti-pattern: {{anti_pattern}}\nWhy it hurts: {{impact}}\nPreferred alternative: {{alternative}}\nDetection tips: {{detection}}'
-      },
-      {
-        id: 'real-world-example',
-        name: 'Real-world Example',
-        content: 'Company/project: {{example_source}}\nChallenge: {{challenge}}\nSolution: {{solution}}\nResults: {{results}}\nSource: {{source_link}}'
-      },
-      {
         id: 'code-comparison',
         name: 'Code Comparison',
         content: 'Bad approach:\n```{{language}}\n{{bad_code}}\n```\n\nGood approach:\n```{{language}}\n{{good_code}}\n```\n\nWhy it\'s better: {{explanation}}'
       },
-      {
-        id: 'multiple-scenarios',
-        name: 'Multiple Scenarios',
-        content: 'Scenario A: {{scenario_a}} → Solution: {{solution_a}}\nScenario B: {{scenario_b}} → Solution: {{solution_b}}\nScenario C: {{scenario_c}} → Solution: {{solution_c}}'
-      }
     ]
   };
 
@@ -2266,7 +1868,7 @@ Key improvements: {{improvements}}`
       ]
     },
     'data-analysis': {
-      name: 'Data Analysis Assistant',
+      name: 'General Analysis',
       category: 'analysis',
       components: [
         {
@@ -2275,8 +1877,8 @@ Key improvements: {{improvements}}`
           enabled: true,
           order: 1,
           hasOptions: true,
-          selectedPersona: 'data-analyst',
-          content: PERSONAS.find(p => p.id === 'data-analyst').content
+          selectedPersona: 'senior-engineer',
+          content: PERSONAS.find(p => p.id === 'senior-engineer').content
         },
         {
           id: 'context',
@@ -2350,531 +1952,11 @@ Key improvements: {{improvements}}`
         }
       ]
     },
-    'tech-explainer': {
-      name: 'Technical Explainer',
-      category: 'writing',
-      components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          hasOptions: true,
-          selectedPersona: 'tech-educator',
-          content: PERSONAS.find(p => p.id === 'tech-educator').content
-        },
-        {
-          id: 'task',
-          name: 'Concept to Explain',
-          enabled: true,
-          order: 2,
-          content: 'Explain: {{technical_concept}}\nAudience level: {{beginner/intermediate/advanced}}'
-        },
-        {
-          id: 'rules',
-          name: 'Explanation Principles',
-          enabled: true,
-          order: 3,
-          content: `Follow these principles:
-- Start with a simple real-world analogy
-- Build understanding from basics to advanced
-- Use concrete examples and diagrams
-- Avoid unnecessary jargon (or explain when needed)
-- Include practical applications and use cases
-- Address common misconceptions`
-        },
-        {
-          id: 'output-format',
-          name: 'Output Format',
-          enabled: true,
-          order: 4,
-          content: `Structure:
-1. Simple analogy (ELI5 - Explain Like I'm 5)
-2. Core concept explanation (what it is)
-3. How it works (step-by-step breakdown)
-4. Real-world examples and use cases
-5. Benefits and trade-offs
-6. Common misconceptions and FAQs
-7. Next steps for deeper learning`
-        }
-      ]
-    },
-    'architect': {
-      name: 'Solution Architect',
-      category: 'development',
-      components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          hasOptions: true,
-          selectedPersona: 'architect',
-          content: PERSONAS.find(p => p.id === 'architect').content
-        },
-        {
-          id: 'tech-stack',
-          name: 'Technology Stack',
-          enabled: true,
-          order: 2,
-          hasOptions: true,
-          selectedStacks: [],
-          content: 'Technology stack: {{tech_stack}}'
-        },
-        {
-          id: 'task',
-          name: 'Architecture Challenge',
-          enabled: true,
-          order: 3,
-          content: 'System to design: {{system_description}}\nScale: {{user_count}} users, {{request_rate}} requests/sec\nKey requirements: {{requirements}}'
-        },
-        {
-          id: 'rules',
-          name: 'Design Principles',
-          enabled: true,
-          order: 4,
-          content: `Consider:
-- Scalability and performance requirements
-- Security and compliance needs
-- High availability and fault tolerance
-- Cost optimization
-- Maintainability and developer experience
-- Technology trade-offs and alternatives`
-        },
-        {
-          id: 'output-format',
-          name: 'Output Format',
-          enabled: true,
-          order: 5,
-          content: `Provide:
-1. High-level architecture overview
-2. Component breakdown with responsibilities
-3. Data flow and communication patterns
-4. Technology choices with justification
-5. Scalability strategy
-6. Security considerations
-7. Potential bottlenecks and mitigation
-8. Architecture diagram (ASCII or description)`
-        }
-      ]
-    },
-    'debugging': {
-      name: 'Debugging Assistant',
-      category: 'development',
-      components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          hasOptions: true,
-          selectedPersona: 'senior-engineer',
-          content: 'You are a senior debugging expert with deep experience in troubleshooting complex issues across different technologies. You follow systematic debugging approaches and help identify root causes.'
-        },
-        {
-          id: 'context',
-          name: 'Environment',
-          enabled: true,
-          order: 2,
-          content: 'Environment: {{environment}}\nTech stack: {{tech_stack}}\nError occurred: {{when_occurred}}'
-        },
-        {
-          id: 'task',
-          name: 'Issue Description',
-          enabled: true,
-          order: 3,
-          content: 'Error message: {{error_message}}\n\nCode snippet:\n{{code_snippet}}\n\nExpected behavior: {{expected}}\nActual behavior: {{actual}}'
-        },
-        {
-          id: 'rules',
-          name: 'Debugging Approach',
-          enabled: true,
-          order: 4,
-          content: `Follow systematic debugging:
-1. Reproduce the issue
-2. Isolate the root cause
-3. Verify assumptions with evidence
-4. Consider recent changes
-5. Check logs and stack traces
-6. Test hypotheses incrementally`
-        },
-        {
-          id: 'output-format',
-          name: 'Output Format',
-          enabled: true,
-          order: 5,
-          content: `Provide:
-1. Root cause analysis (what's causing the issue)
-2. Step-by-step fix with code examples
-3. Why this solution works (explanation)
-4. How to verify the fix
-5. How to prevent similar issues
-6. Additional debugging tips if issue persists`
-        }
-      ]
-    },
-    'api-documentation': {
-      name: 'API Documentation',
-      category: 'documentation',
-      components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          hasOptions: true,
-          selectedPersona: 'technical-writer',
-          content: PERSONAS.find(p => p.id === 'technical-writer').content
-        },
-        {
-          id: 'context',
-          name: 'API Context',
-          enabled: true,
-          order: 2,
-          content: 'API Name: {{api_name}}\nVersion: {{version}}\nBase URL: {{base_url}}\nAuthentication: {{auth_method}}'
-        },
-        {
-          id: 'task',
-          name: 'Documentation Scope',
-          enabled: true,
-          order: 3,
-          content: 'Document the following endpoint(s):\n{{endpoints}}'
-        },
-        {
-          id: 'output-format',
-          name: 'Output Format',
-          enabled: true,
-          order: 4,
-          content: `Provide comprehensive API documentation with:
-1. Endpoint overview and purpose
-2. HTTP method and path
-3. Request parameters (path, query, body)
-4. Request/response examples (JSON)
-5. Response codes and error handling
-6. Authentication requirements
-7. Rate limiting information
-8. Code examples in multiple languages`
-        }
-      ]
-    },
-    'pr-review': {
-      name: 'Pull Request Review',
-      category: 'development',
-      components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          hasOptions: true,
-          selectedPersona: 'code-reviewer',
-          content: PERSONAS.find(p => p.id === 'code-reviewer').content
-        },
-        {
-          id: 'context',
-          name: 'PR Context',
-          enabled: true,
-          order: 2,
-          content: 'PR Title: {{pr_title}}\nBranch: {{branch_name}}\nFiles changed: {{file_count}}\nLines added/removed: {{line_stats}}'
-        },
-        {
-          id: 'task',
-          name: 'Changes to Review',
-          enabled: true,
-          order: 3,
-          content: 'PR Description:\n{{pr_description}}\n\nCode diff:\n{{code_diff}}'
-        },
-        {
-          id: 'rules',
-          name: 'Review Criteria',
-          enabled: true,
-          order: 4,
-          content: `Review for:
-- Code quality and consistency with codebase
-- Breaking changes and backward compatibility
-- Test coverage for new features
-- Documentation updates
-- Security vulnerabilities
-- Performance implications
-- Edge cases handling`
-        },
-        {
-          id: 'output-format',
-          name: 'Output Format',
-          enabled: true,
-          order: 5,
-          content: `Structure your review as:
-1. Summary (approve/request changes/comment)
-2. Key observations (what the PR does well)
-3. Required changes (blocking issues)
-4. Suggested improvements (non-blocking)
-5. Questions and clarifications
-6. Testing recommendations`
-        }
-      ]
-    },
-    'technical-spec': {
-      name: 'Technical Specification',
-      category: 'documentation',
-      components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          hasOptions: true,
-          selectedPersona: 'architect',
-          content: PERSONAS.find(p => p.id === 'architect').content
-        },
-        {
-          id: 'context',
-          name: 'Project Context',
-          enabled: true,
-          order: 2,
-          content: 'Feature: {{feature_name}}\nStakeholders: {{stakeholders}}\nTimeline: {{timeline}}\nPriority: {{priority}}'
-        },
-        {
-          id: 'task',
-          name: 'Specification Scope',
-          enabled: true,
-          order: 3,
-          content: 'Requirements:\n{{requirements}}\n\nConstraints:\n{{constraints}}'
-        },
-        {
-          id: 'output-format',
-          name: 'Output Format',
-          enabled: true,
-          order: 4,
-          content: `Create a technical specification with:
-1. Executive Summary
-2. Goals and Objectives
-3. Functional Requirements
-4. Technical Architecture
-5. Data Models and Schemas
-6. API Contracts
-7. Security Considerations
-8. Performance Requirements
-9. Testing Strategy
-10. Deployment Plan
-11. Risks and Mitigation
-12. Success Metrics`
-        }
-      ]
-    },
-    'user-story': {
-      name: 'User Story Generator',
-      category: 'documentation',
-      components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          hasOptions: true,
-          selectedPersona: 'senior-engineer',
-          content: 'You are a product-focused engineer skilled at writing clear, actionable user stories following Agile best practices.'
-        },
-        {
-          id: 'context',
-          name: 'Feature Context',
-          enabled: true,
-          order: 2,
-          content: 'Feature: {{feature_name}}\nUser persona: {{user_persona}}\nBusiness goal: {{business_goal}}'
-        },
-        {
-          id: 'task',
-          name: 'Story Requirements',
-          enabled: true,
-          order: 3,
-          content: 'User need:\n{{user_need}}\n\nExpected outcome:\n{{expected_outcome}}'
-        },
-        {
-          id: 'output-format',
-          name: 'Output Format',
-          enabled: true,
-          order: 4,
-          content: `Create user stories in this format:
-
-**User Story:**
-As a [user persona]
-I want to [action/feature]
-So that [benefit/value]
-
-**Acceptance Criteria:**
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
-
-**Technical Notes:**
-- Implementation considerations
-- Dependencies
-- Edge cases
-
-**Definition of Done:**
-- Code complete and reviewed
-- Tests written and passing
-- Documentation updated
-- Deployed to staging`
-        }
-      ]
-    },
-    'meeting-notes': {
-      name: 'Meeting Notes',
-      category: 'writing',
-      components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          content: 'You are an executive assistant skilled at creating clear, concise meeting summaries with actionable items.'
-        },
-        {
-          id: 'context',
-          name: 'Meeting Context',
-          enabled: true,
-          order: 2,
-          content: 'Meeting: {{meeting_title}}\nDate: {{date}}\nAttendees: {{attendees}}\nDuration: {{duration}}'
-        },
-        {
-          id: 'task',
-          name: 'Meeting Content',
-          enabled: true,
-          order: 3,
-          content: 'Raw notes or transcript:\n{{meeting_content}}'
-        },
-        {
-          id: 'output-format',
-          name: 'Output Format',
-          enabled: true,
-          order: 4,
-          content: `Structure the notes as:
-
-**Meeting Overview**
-- Purpose and objectives
-
-**Key Discussion Points**
-- Topic 1: Summary
-- Topic 2: Summary
-- Topic 3: Summary
-
-**Decisions Made**
-- Decision 1
-- Decision 2
-
-**Action Items**
-- [ ] Task (Owner: Name, Due: Date)
-- [ ] Task (Owner: Name, Due: Date)
-
-**Next Steps**
-- Follow-up items
-- Next meeting date/topic
-
-**Parking Lot**
-- Items to revisit later`
-        }
-      ]
-    },
-    'email-writing': {
-      name: 'Professional Email',
-      category: 'writing',
-      components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          content: 'You are a professional communication specialist skilled at writing clear, effective business emails.'
-        },
-        {
-          id: 'context',
-          name: 'Email Context',
-          enabled: true,
-          order: 2,
-          content: 'To: {{recipient}}\nPurpose: {{purpose}}\nTone: {{tone}} (formal/professional/friendly)\nUrgency: {{urgency}}'
-        },
-        {
-          id: 'task',
-          name: 'Email Content',
-          enabled: true,
-          order: 3,
-          content: 'Key points to cover:\n{{key_points}}\n\nDesired outcome:\n{{desired_outcome}}'
-        },
-        {
-          id: 'rules',
-          name: 'Writing Guidelines',
-          enabled: true,
-          order: 4,
-          content: `Follow these guidelines:
-- Clear, descriptive subject line
-- Professional greeting
-- Concise, scannable paragraphs
-- Bullet points for multiple items
-- Clear call-to-action
-- Professional sign-off
-- Proofread for clarity and tone`
-        },
-        {
-          id: 'output-format',
-          name: 'Output Format',
-          enabled: true,
-          order: 5,
-          content: `Provide:
-**Subject:** [Clear, actionable subject line]
-
-**Email Body:**
-[Well-structured email with greeting, body paragraphs, and closing]
-
-**Alternative Subject Lines:** (2-3 options)
-**Tone Analysis:** [How the email comes across]`
-        }
-      ]
-    }
   };
 
   // ============================================================================
   // Performance Utilities
   // ============================================================================
-
-  /**
-   * Debounce function - delays execution until after wait time has elapsed
-   * since the last time it was invoked
-   */
-  function debounce(func, wait = 300) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }
-
-  /**
-   * Throttle function - ensures function is called at most once per wait period
-   */
-  function throttle(func, wait = 100) {
-    let inThrottle;
-    let lastTime = 0;
-    return function executedFunction(...args) {
-      if (!inThrottle) {
-        func(...args);
-        lastTime = Date.now();
-        inThrottle = true;
-        setTimeout(() => {
-          inThrottle = false;
-          // Call with latest args if there was a pending call
-          const now = Date.now();
-          if (now - lastTime >= wait) {
-            func(...args);
-            lastTime = now;
-          }
-        }, wait);
-      }
-    };
-  }
 
   /**
    * Request animation frame wrapper for smooth DOM updates
@@ -2893,9 +1975,8 @@ So that [benefit/value]
   }
 
   let state = {
-    config: JSON.parse(JSON.stringify(DEFAULT_CONFIG)),
+    config: deepClone(DEFAULT_CONFIG),
     currentModal: null,
-    placeholders: {}, // {placeholder_name: value}
     customTemplates: [],
     focusedIndex: -1,
     selectedComponents: new Set(),
@@ -2959,7 +2040,7 @@ So that [benefit/value]
 
   function normalizeComponents() {
     if (!state.config || !Array.isArray(state.config.components)) {
-      state.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      state.config = deepClone(DEFAULT_CONFIG);
     }
 
     state.config.components.forEach((component, index) => {
@@ -3067,25 +2148,9 @@ So that [benefit/value]
     }
   }
 
-  function composeIntentHeader(format) {
-    const lines = [];
-
-    if (state.intentMode) {
-      lines.push(`Mode: ${state.intentMode}`);
-    }
-
-    if (!lines.length) return '';
-
-    if (format === 'markdown') {
-      return `# Intent\n\n${lines.join('\n')}\n\n---\n\n`;
-    }
-    if (format === 'plain') {
-      return `Intent:\n${lines.join('\n')}\n\n`;
-    }
-
-    const title = 'Intent';
-    const separator = '='.repeat(title.length + 4);
-    return `${separator}\n# ${title}\n${separator}\n\n${lines.join('\n')}\n\n`;
+  function composeIntentHeader() {
+    if (!state.intentMode) return '';
+    return `Intent:\nMode: ${state.intentMode}\n\n`;
   }
 
   export function init(context) {
@@ -3109,7 +2174,6 @@ So that [benefit/value]
 
     // Event listeners
     setupEventListeners();
-    setupDropZone();
     setupModals();
     setupCollapsibles();
   }
@@ -3120,7 +2184,6 @@ So that [benefit/value]
 
     // Remove global event listeners to prevent memory leaks
     document.removeEventListener('keydown', handleKeyboardShortcuts);
-    document.removeEventListener('click', hideContextMenu);
   }
 
   function setupEventListeners() {
@@ -3243,19 +2306,10 @@ So that [benefit/value]
 
     document.getElementById('copy-prompt-btn').addEventListener('click', handleCopyPrompt);
     document.getElementById('save-prompt-btn').addEventListener('click', handleSavePrompt);
-    document.getElementById('import-file-btn').addEventListener('click', handleImportProjectFile);
     document.getElementById('import-config-btn').addEventListener('click', handleImportConfig);
     document.getElementById('export-config-btn').addEventListener('click', handleExportConfig);
     document.getElementById('reset-config-btn').addEventListener('click', handleResetConfig);
     document.getElementById('share-btn').addEventListener('click', handleShare);
-
-    // Export format change
-    document.getElementById('export-format').addEventListener('change', updatePreview);
-
-    // Placeholder management
-    document.getElementById('fill-placeholders-btn').addEventListener('click', applyPlaceholders);
-    document.getElementById('clear-placeholders-btn').addEventListener('click', clearPlaceholders);
-    document.getElementById('placeholders-list').addEventListener('input', handlePlaceholderInput);
 
     // Template management
     document.getElementById('save-template-btn').addEventListener('click', showSaveTemplateModal);
@@ -3266,7 +2320,6 @@ So that [benefit/value]
 
     // Share modal
     document.getElementById('copy-link-btn').addEventListener('click', copyShareLink);
-    document.getElementById('download-qr-btn').addEventListener('click', downloadQRCode);
 
     // Component list delegation
     document.getElementById('components-list').addEventListener('click', handleComponentClick);
@@ -3283,45 +2336,6 @@ So that [benefit/value]
 
     // Component focus handling
     document.getElementById('components-list').addEventListener('focusin', handleComponentFocus);
-
-    // Context menu
-    document.getElementById('components-list').addEventListener('contextmenu', handleContextMenu);
-    document.getElementById('context-menu').addEventListener('click', handleContextMenuAction);
-    document.addEventListener('click', hideContextMenu);
-  }
-
-  function setupDropZone() {
-    const dropZone = document.getElementById('drop-zone');
-
-    dropZone.addEventListener('click', () => {
-      document.getElementById('project-file-input').click();
-    });
-
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-      dropZone.classList.remove('dragover');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-
-      const file = e.dataTransfer.files[0];
-      if (file) {
-        processProjectFile(file);
-      }
-    });
-
-    document.getElementById('project-file-input').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        processProjectFile(file);
-      }
-    });
   }
 
   function setupModals() {
@@ -3338,117 +2352,6 @@ So that [benefit/value]
     document.getElementById('techstack-search').addEventListener('input', (e) => {
       filterTechStacks(e.target.value);
     });
-  }
-
-  function processProjectFile(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target.result;
-        let techInfo = { technologies: [], description: '' };
-
-        if (file.name === 'package.json') {
-          techInfo = parsePackageJson(content);
-        } else if (file.name === 'requirements.txt') {
-          techInfo = parseRequirementsTxt(content);
-        }
-
-        if (techInfo.technologies.length > 0) {
-          updateTechStackComponent(techInfo);
-          showStatus(`Detected ${techInfo.technologies.length} technologies from ${file.name}`, 'success');
-        } else {
-          showStatus('No technologies detected in file', 'info');
-        }
-      } catch (error) {
-        showStatus(`Error processing file: ${error.message}`, 'error');
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  function parsePackageJson(content) {
-    const data = JSON.parse(content);
-    const technologies = [];
-    const deps = { ...data.dependencies, ...data.devDependencies };
-
-    // Map common npm packages to technologies
-    const techMap = {
-      'react': 'React',
-      'vue': 'Vue.js',
-      'angular': 'Angular',
-      '@angular/core': 'Angular',
-      'svelte': 'Svelte',
-      'next': 'Next.js',
-      'nuxt': 'Nuxt.js',
-      'express': 'Express.js',
-      'typescript': 'TypeScript',
-      'webpack': 'Webpack',
-      'vite': 'Vite',
-      'tailwindcss': 'Tailwind CSS',
-      'bootstrap': 'Bootstrap',
-      'jest': 'Jest',
-      'vitest': 'Vitest',
-      'cypress': 'Cypress',
-      'playwright': 'Playwright'
-    };
-
-    Object.keys(deps).forEach(pkg => {
-      const tech = techMap[pkg] || techMap[pkg.split('/').pop()];
-      if (tech && !technologies.includes(tech)) {
-        technologies.push(tech);
-      }
-    });
-
-    // Add Node.js if package.json exists
-    if (!technologies.includes('Node.js')) {
-      technologies.unshift('Node.js');
-    }
-
-    return {
-      technologies,
-      description: data.description || ''
-    };
-  }
-
-  function parseRequirementsTxt(content) {
-    const technologies = ['Python'];
-    const lines = content.split('\n');
-
-    const techMap = {
-      'django': 'Django',
-      'flask': 'Flask',
-      'fastapi': 'FastAPI',
-      'pandas': 'Pandas',
-      'numpy': 'NumPy',
-      'tensorflow': 'TensorFlow',
-      'pytorch': 'PyTorch',
-      'scikit-learn': 'Scikit-learn',
-      'requests': 'Python Requests',
-      'sqlalchemy': 'SQLAlchemy'
-    };
-
-    lines.forEach(line => {
-      const pkg = line.split('==')[0].split('>=')[0].trim().toLowerCase();
-      const tech = techMap[pkg];
-      if (tech && !technologies.includes(tech)) {
-        technologies.push(tech);
-      }
-    });
-
-    return { technologies, description: '' };
-  }
-
-  function updateTechStackComponent(techInfo) {
-    const component = state.config.components.find(c => c.id === 'tech-stack');
-    if (component) {
-      component.selectedStacks = techInfo.technologies;
-      const stackList = techInfo.technologies.join(', ');
-      component.content = `Technology stack: ${stackList}\n\nPlease provide solutions and examples specific to these technologies.`;
-      component.enabled = true;
-      renderComponents();
-      updatePreview();
-      saveConfig();
-    }
   }
 
   function showPersonaModal(componentId) {
@@ -3903,15 +2806,8 @@ So that [benefit/value]
       return;
     }
 
-    // Escape key to close context menu or collapse expanded components
+    // Escape key to collapse expanded components
     if (e.key === 'Escape') {
-      // Close context menu if open
-      const contextMenu = document.getElementById('context-menu');
-      if (contextMenu && contextMenu.classList.contains('show')) {
-        hideContextMenu();
-        return;
-      }
-
       // Collapse all expanded components
       const expandedComponents = list.querySelectorAll('.component-item.expanded');
       if (expandedComponents.length > 0) {
@@ -3987,112 +2883,6 @@ So that [benefit/value]
     if (item) {
       const index = parseInt(item.dataset.index);
       setFocusedComponent(index);
-    }
-  }
-
-  // Context Menu
-  let contextMenuTarget = null;
-
-  function handleContextMenu(e) {
-    const item = e.target.closest('.component-item');
-    if (!item) return;
-
-    e.preventDefault();
-    contextMenuTarget = item;
-
-    const menu = document.getElementById('context-menu');
-    if (!menu) return;
-    menu.classList.add('show');
-
-    // Position menu with boundary checking to prevent off-screen rendering
-    // Use clientX/clientY for fixed positioning (viewport coordinates)
-    let left = e.clientX;
-    let top = e.clientY;
-
-    // Wait for menu to be displayed to get its dimensions
-    requestAnimationFrame(() => {
-      const menuRect = menu.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      // Adjust horizontal position if menu would go off right edge
-      if (left + menuRect.width > viewportWidth) {
-        left = viewportWidth - menuRect.width - 5;
-      }
-
-      // Adjust vertical position if menu would go off bottom edge
-      if (top + menuRect.height > viewportHeight) {
-        top = viewportHeight - menuRect.height - 5;
-      }
-
-      // Ensure menu stays within bounds (minimum 5px from edges)
-      left = Math.max(5, left);
-      top = Math.max(5, top);
-
-      menu.style.left = `${left}px`;
-      menu.style.top = `${top}px`;
-    });
-
-    // Update toggle text based on current state
-    const id = item.dataset.id;
-    const component = state.config.components.find(c => c.id === id);
-    const toggleItem = menu.querySelector('[data-action="ctx-toggle"]');
-    if (toggleItem && component) {
-      toggleItem.querySelector('span:nth-child(2)').textContent =
-        component.enabled ? 'Disable Component' : 'Enable Component';
-    }
-  }
-
-  function hideContextMenu(e) {
-    const menu = document.getElementById('context-menu');
-    if (!menu) {
-      contextMenuTarget = null;
-      return;
-    }
-    if (e && e.target.closest('#context-menu')) return;
-    menu.classList.remove('show');
-    contextMenuTarget = null;
-  }
-
-  function handleContextMenuAction(e) {
-    const action = e.target.closest('.context-menu-item')?.dataset.action;
-    if (!action || !contextMenuTarget) return;
-
-    const id = contextMenuTarget.dataset.id;
-    const component = state.config.components.find(c => c.id === id);
-    if (!component) return;
-
-    hideContextMenu();
-
-    switch (action) {
-      case 'ctx-toggle':
-        component.enabled = !component.enabled;
-        renderComponents();
-        updatePreview();
-        saveConfig();
-        break;
-
-      case 'ctx-edit':
-        contextMenuTarget.classList.toggle('expanded');
-        break;
-
-      case 'ctx-move-up':
-        moveComponent(id, -1);
-        break;
-
-      case 'ctx-move-down':
-        moveComponent(id, 1);
-        break;
-
-      case 'ctx-delete':
-        if (confirm(`Delete component "${component.name}"?`)) {
-          state.config.components = state.config.components.filter(c => c.id !== id);
-          renderComponents();
-          updatePreview();
-          saveConfig();
-          showStatus('Component deleted', 'info');
-        }
-        break;
     }
   }
 
@@ -4240,8 +3030,7 @@ So that [benefit/value]
   }
 
   function updatePreview() {
-    const format = document.getElementById('export-format').value;
-    let prompt = composeIntentHeader(format);
+    let prompt = composeIntentHeader();
     const enabledComponents = state.config.components
       .filter(c => c.enabled && c.content)
       .sort((a, b) => a.order - b.order);
@@ -4254,30 +3043,10 @@ So that [benefit/value]
       if (state.intentInput) summaryLines.push(`Context:\n${state.intentInput}`);
       if (intentOutputLabel) summaryLines.push(`Return format: ${intentOutputLabel}`);
 
-      if (format === 'markdown') {
-        prompt += `# Request\n\n${summaryLines.join('\n\n')}`;
-      } else if (format === 'plain') {
-        prompt += `Request:\n${summaryLines.join('\n\n')}`;
-      } else {
-        const title = 'Request';
-        const separator = '='.repeat(title.length + 4);
-        prompt += `${separator}\n# ${title}\n${separator}\n\n${summaryLines.join('\n\n')}`;
-      }
-    } else if (format === 'markdown') {
-      prompt += enabledComponents
-        .map(c => `# ${c.name}\n\n${c.content}`)
-        .join('\n\n---\n\n');
-    } else if (format === 'plain') {
+      prompt += `Request:\n${summaryLines.join('\n\n')}`;
+    } else {
       prompt += enabledComponents
         .map(c => `${c.name}:\n${c.content}`)
-        .join('\n\n');
-    } else {
-      // Structured format (default)
-      prompt += enabledComponents
-        .map(c => {
-          const separator = '='.repeat(c.name.length + 4);
-          return `${separator}\n# ${c.name}\n${separator}\n\n${c.content}`;
-        })
         .join('\n\n');
     }
 
@@ -4287,24 +3056,18 @@ So that [benefit/value]
 
     // Update stats
     const chars = prompt.length;
-    const words = prompt.split(/\s+/).filter(w => w).length;
-    const lines = prompt.split('\n').length;
-    const placeholders = (prompt.match(/\{\{[^}]+\}\}/g) || []).length;
+    const words = countWords(prompt);
 
     document.getElementById('char-count').textContent = `${chars} characters`;
     document.getElementById('word-count').textContent = `${words} words`;
-    document.getElementById('line-count').textContent = `${lines} lines`;
-    document.getElementById('placeholder-count').textContent = `${placeholders} placeholders`;
-
-    // Refresh placeholder panel whenever preview content changes
-    updatePlaceholders();
   }
 
   function handleCopyPrompt() {
-    const textarea = document.getElementById('final-prompt');
-    textarea.select();
-    document.execCommand('copy');
-    showStatus('Prompt copied to clipboard!', 'success');
+    const text = document.getElementById('final-prompt').value;
+    copyToClipboard(text, {
+      onSuccess: () => showStatus('Prompt copied to clipboard!', 'success'),
+      onError: () => showStatus('Failed to copy prompt', 'error')
+    });
   }
 
   function handleSavePrompt() {
@@ -4314,21 +3077,8 @@ So that [benefit/value]
       return;
     }
 
-    const format = document.getElementById('export-format').value;
-    const extension = format === 'markdown' ? 'md' : 'txt';
-
-    const blob = new Blob([prompt], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ai-prompt-${Date.now()}.${extension}`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadAsFile(prompt, `ai-prompt-${Date.now()}.txt`);
     showStatus('Prompt saved to file', 'success');
-  }
-
-  function handleImportProjectFile() {
-    document.getElementById('project-file-input').click();
   }
 
   function handleImportConfig() {
@@ -4362,19 +3112,13 @@ So that [benefit/value]
 
   function handleExportConfig() {
     const json = JSON.stringify(state.config, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `prompt-config-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadAsFile(json, `prompt-config-${Date.now()}.json`, 'application/json');
     showStatus('Configuration exported', 'success');
   }
 
   function handleResetConfig() {
     if (confirm('Reset to default configuration? This will discard all changes.')) {
-      state.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      state.config = deepClone(DEFAULT_CONFIG);
       normalizeComponents();
       renderComponents();
       updatePreview();
@@ -4388,7 +3132,7 @@ So that [benefit/value]
     if (!template) return;
 
     if (confirm(`Load "${template.name}" template? This will replace your current configuration.`)) {
-      state.config.components = JSON.parse(JSON.stringify(template.components));
+      state.config.components = deepClone(template.components);
       normalizeComponents();
       renderComponents();
       updatePreview();
@@ -4398,19 +3142,17 @@ So that [benefit/value]
   }
 
   function saveConfig() {
-    try {
-      localStorage.setItem('ai-prompt-builder-config', JSON.stringify(state.config));
-      localStorage.setItem('ai-prompt-builder-intent', JSON.stringify({
+    saveToolState('ai-prompt-builder', {
+      config: state.config,
+      intent: {
         intentMode: state.intentMode,
         workflowProfile: state.workflowProfile,
         intentGoal: state.intentGoal,
         intentInput: state.intentInput,
         intentOutput: state.intentOutput,
         showRefine: state.showRefine
-      }));
-    } catch (error) {
-      console.error('Failed to save config:', error);
-    }
+      }
+    });
   }
 
   // Debounced versions for better performance
@@ -4419,26 +3161,19 @@ So that [benefit/value]
   const rafUpdatePreview = rafDebounce(updatePreview);
 
   function loadConfig() {
-    try {
-      const saved = localStorage.getItem('ai-prompt-builder-config');
-      if (saved) {
-        state.config = JSON.parse(saved);
+    const saved = loadToolState('ai-prompt-builder');
+    if (saved) {
+      if (saved.config) state.config = saved.config;
+      if (saved.intent) {
+        state.intentMode = saved.intent.intentMode ?? state.intentMode;
+        state.workflowProfile = saved.intent.workflowProfile ?? state.workflowProfile;
+        state.intentGoal = saved.intent.intentGoal ?? state.intentGoal;
+        state.intentInput = saved.intent.intentInput ?? state.intentInput;
+        state.intentOutput = saved.intent.intentOutput ?? state.intentOutput;
+        state.showRefine = saved.intent.showRefine ?? state.showRefine;
       }
-
-      const savedIntent = localStorage.getItem('ai-prompt-builder-intent');
-      if (savedIntent) {
-        const intent = JSON.parse(savedIntent);
-        state.intentMode = intent.intentMode ?? state.intentMode;
-        state.workflowProfile = intent.workflowProfile ?? state.workflowProfile;
-        state.intentGoal = intent.intentGoal ?? state.intentGoal;
-        state.intentInput = intent.intentInput ?? state.intentInput;
-        state.intentOutput = intent.intentOutput ?? state.intentOutput;
-        state.showRefine = intent.showRefine ?? state.showRefine;
-      }
-      ensureIntentState();
-    } catch (error) {
-      console.error('Failed to load config:', error);
     }
+    ensureIntentState();
   }
 
   function showStatus(message, type = 'info') {
@@ -4451,137 +3186,6 @@ So that [benefit/value]
     }, 3000);
   }
 
-  // ============================================================
-  // PLACEHOLDER MANAGEMENT
-  // ============================================================
-
-  function updatePlaceholders() {
-    const placeholders = extractPlaceholders();
-    renderPlaceholders(placeholders);
-  }
-
-  function extractPlaceholders() {
-    const placeholderSet = new Set();
-    const regex = /\{\{([^}]+)\}\}/g;
-
-    state.config.components.forEach(comp => {
-      if (comp.enabled && comp.content) {
-        let match;
-        while ((match = regex.exec(comp.content)) !== null) {
-          placeholderSet.add(match[1].trim());
-        }
-      }
-    });
-
-    return Array.from(placeholderSet).sort();
-  }
-
-  function renderPlaceholders(placeholders) {
-    const list = document.getElementById('placeholders-list');
-    const badge = document.getElementById('placeholder-badge');
-
-    badge.textContent = placeholders.length;
-
-    if (placeholders.length === 0) {
-      list.innerHTML = '<p class="empty-state">No placeholders found. Use {{placeholder}} syntax in your components.</p>';
-      return;
-    }
-
-    list.innerHTML = placeholders.map(placeholder => {
-      const value = state.placeholders[placeholder] || '';
-      const filledClass = value ? 'filled' : '';
-      return `
-        <div class="placeholder-item">
-          <div class="placeholder-name">{{${placeholder}}}</div>
-          <input
-            type="text"
-            class="placeholder-input ${filledClass}"
-            data-placeholder="${placeholder}"
-            value="${value}"
-            placeholder="Enter value..."
-          />
-        </div>
-      `;
-    }).join('');
-  }
-
-  function handlePlaceholderInput(e) {
-    if (e.target.classList.contains('placeholder-input')) {
-      const placeholder = e.target.dataset.placeholder;
-      const value = e.target.value;
-      state.placeholders[placeholder] = value;
-
-      // Update filled class immediately for instant feedback
-      if (value) {
-        e.target.classList.add('filled');
-      } else {
-        e.target.classList.remove('filled');
-      }
-
-      // Debounce the save operation
-      debouncedSavePlaceholders();
-    }
-  }
-
-  function applyPlaceholders() {
-    let replacedCount = 0;
-
-    state.config.components.forEach(comp => {
-      if (comp.enabled && comp.content) {
-        let newContent = comp.content;
-        Object.keys(state.placeholders).forEach(placeholder => {
-          const value = state.placeholders[placeholder];
-          if (value) {
-            const regex = new RegExp(`\\{\\{\\s*${placeholder}\\s*\\}\\}`, 'g');
-            const matches = newContent.match(regex);
-            if (matches) {
-              replacedCount += matches.length;
-              newContent = newContent.replace(regex, value);
-            }
-          }
-        });
-        comp.content = newContent;
-      }
-    });
-
-    if (replacedCount > 0) {
-      renderComponents();
-      updatePreview();
-      saveConfig();
-      showStatus(`Replaced ${replacedCount} placeholder(s)`, 'success');
-    } else {
-      showStatus('No placeholders to replace', 'info');
-    }
-  }
-
-  function clearPlaceholders() {
-    state.placeholders = {};
-    savePlaceholders();
-    renderPlaceholders(extractPlaceholders());
-    showStatus('Placeholder values cleared', 'info');
-  }
-
-  function savePlaceholders() {
-    try {
-      localStorage.setItem('ai-prompt-builder-placeholders', JSON.stringify(state.placeholders));
-    } catch (error) {
-      console.error('Failed to save placeholders:', error);
-    }
-  }
-
-  function loadPlaceholders() {
-    try {
-      const saved = localStorage.getItem('ai-prompt-builder-placeholders');
-      if (saved) {
-        state.placeholders = JSON.parse(saved);
-      }
-    } catch (error) {
-      console.error('Failed to load placeholders:', error);
-    }
-  }
-
-  // Debounced versions for smooth interactions
-  const debouncedSavePlaceholders = debounce(savePlaceholders, 500);
   const debouncedFilterTemplates = debounce(function() { renderTemplates(); }, 200);
 
   // ============================================================
@@ -4679,7 +3283,7 @@ So that [benefit/value]
       name,
       description,
       category,
-      components: JSON.parse(JSON.stringify(state.config.components))
+      components: deepClone(state.config.components)
     };
 
     state.customTemplates.push(template);
@@ -4702,21 +3306,13 @@ So that [benefit/value]
   }
 
   function saveCustomTemplates() {
-    try {
-      localStorage.setItem('ai-prompt-builder-custom-templates', JSON.stringify(state.customTemplates));
-    } catch (error) {
-      console.error('Failed to save custom templates:', error);
-    }
+    saveToolState('ai-prompt-builder-templates', { items: state.customTemplates });
   }
 
   function loadCustomTemplates() {
-    try {
-      const saved = localStorage.getItem('ai-prompt-builder-custom-templates');
-      if (saved) {
-        state.customTemplates = JSON.parse(saved);
-      }
-    } catch (error) {
-      console.error('Failed to load custom templates:', error);
+    const saved = loadToolState('ai-prompt-builder-templates');
+    if (saved?.items) {
+      state.customTemplates = saved.items;
     }
   }
 
@@ -4728,7 +3324,6 @@ So that [benefit/value]
     const modal = document.getElementById('share-modal');
     const link = generateShareLink();
     document.getElementById('share-link').value = link;
-    generateQRCode(link);
     modal.classList.add('show');
   }
 
@@ -4754,9 +3349,10 @@ So that [benefit/value]
 
   function copyShareLink() {
     const input = document.getElementById('share-link');
-    input.select();
-    document.execCommand('copy');
-    showStatus('Share link copied to clipboard!', 'success');
+    copyToClipboard(input.value, {
+      onSuccess: () => showStatus('Share link copied to clipboard!', 'success'),
+      onError: () => showStatus('Failed to copy link', 'error')
+    });
   }
 
   function loadFromURL() {
@@ -4796,53 +3392,6 @@ So that [benefit/value]
     }
   }
 
-  function generateQRCode(text) {
-    const canvas = document.getElementById('qr-canvas');
-    const ctx = canvas.getContext('2d');
-    const size = 200;
-
-    // Simple QR code generation (you can use a library for real implementation)
-    // For now, we'll create a simple text representation
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, size, size);
-
-    ctx.fillStyle = '#000000';
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    // Draw a simple pattern representing QR code
-    const moduleSize = 4;
-    const modules = Math.floor(size / moduleSize);
-
-    // Create a simple deterministic pattern from the text
-    for (let y = 0; y < modules; y++) {
-      for (let x = 0; x < modules; x++) {
-        const index = (y * modules + x) % text.length;
-        const charCode = text.charCodeAt(index);
-        if ((charCode + x + y) % 2 === 0) {
-          ctx.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize);
-        }
-      }
-    }
-
-    // Add "QR Code" label
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(size/2 - 40, size/2 - 10, 80, 20);
-    ctx.fillStyle = '#000000';
-    ctx.font = '12px sans-serif';
-    ctx.fillText('Scan to Import', size/2, size/2);
-  }
-
-  function downloadQRCode() {
-    const canvas = document.getElementById('qr-canvas');
-    const link = document.createElement('a');
-    link.download = 'ai-prompt-builder-qr.png';
-    link.href = canvas.toDataURL();
-    link.click();
-    showStatus('QR code downloaded', 'success');
-  }
-
   // ============================================================
   // COLLAPSIBLE SECTIONS
   // ============================================================
@@ -4877,8 +3426,6 @@ So that [benefit/value]
     });
   }
 
-  // Load placeholders on init
-  loadPlaceholders();
   if (typeof window !== 'undefined' && !window.DevChef) {
     document.addEventListener('DOMContentLoaded', () => {
       const template = document.querySelector('#tool-ui');
