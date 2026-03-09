@@ -13,9 +13,9 @@
   "id": "ai-prompt-builder",
   "name": "AI Prompt Builder",
   "category": "Developer Tools",
-  "description": "Compose structured AI prompts with personas, tech stacks, and templates",
-  "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "composer", "rules", "personas", "templates", "sharing"],
-  "version": "10.0.0"
+  "description": "Compose structured AI prompts with snippet management, personas, tech stacks, and templates",
+  "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "composer", "rules", "personas", "templates", "sharing", "snippets"],
+  "version": "11.0.0"
 }
 </script>
 
@@ -24,7 +24,7 @@
   <div class="tool-container">
     <div class="tool-header">
       <h2 class="tool-title">AI Prompt Builder</h2>
-      <p class="tool-description">Compose structured prompts with selectable personas and tech stack awareness</p>
+      <p class="tool-description">Compose structured prompts with snippet management, personas and tech stack awareness</p>
     </div>
 
     <div class="intent-starter">
@@ -71,80 +71,113 @@
       <div class="intent-status" id="intent-status-chips"></div>
     </div>
 
-    <div class="tool-layout">
-      <!-- Left Panel: Components -->
-      <div class="components-panel">
-        <div class="panel-header">
-          <h3>Prompt Components</h3>
-          <div class="panel-actions">
-            <button id="import-config-btn" class="icon-btn" title="Import Configuration">📥</button>
-            <button id="export-config-btn" class="icon-btn" title="Export Configuration">📤</button>
-            <button id="reset-config-btn" class="icon-btn" title="Reset to Default">🔄</button>
+    <div class="snippet-layout">
+      <!-- Left Sidebar -->
+      <div class="snippet-sidebar">
+        <div class="snippet-sidebar-header">
+          <div class="snippet-view-toggle">
+            <button type="button" class="snippet-view-btn active" data-view="project">By Project</button>
+            <button type="button" class="snippet-view-btn" data-view="tag">By Tag</button>
           </div>
+          <input type="text" id="snippet-search" class="snippet-search" placeholder="Filter snippets..." />
         </div>
 
-        <!-- Quick Actions Toolbar -->
-        <div class="quick-actions-toolbar">
-          <button id="enable-all-btn" class="quick-action-btn" title="Enable All (Ctrl+A)">✓ All</button>
-          <button id="disable-all-btn" class="quick-action-btn" title="Disable All (Ctrl+D)">✗ None</button>
-          <button id="invert-selection-btn" class="quick-action-btn" title="Invert Selection (Ctrl+I)">⇄ Invert</button>
-          <div class="quick-action-divider"></div>
-          <span class="quick-action-hint">💡 Click header to toggle • 1-9 keys • Space • ↑↓ navigate • Esc to close</span>
+        <div class="snippet-compose-info" id="snippet-compose-info">
+          <span>0 snippets in prompt</span>
         </div>
 
-        <div id="components-list" class="components-list">
-          <!-- Components will be rendered here -->
+        <div class="snippet-tree" id="snippet-tree">
+          <!-- Rendered by JS -->
         </div>
 
-        <div class="add-component-section">
-          <input type="text" id="new-component-name" placeholder="New component name..." />
-          <button id="add-component-btn">+ Add Component</button>
-        </div>
-      </div>
-
-      <!-- Right Panel: Preview & Export -->
-      <div class="preview-panel">
-        <div class="panel-header">
-          <h3>Final Prompt</h3>
-          <div class="panel-actions">
-            <button id="share-btn" class="secondary" title="Share Configuration">🔗 Share</button>
-            <button id="copy-prompt-btn" class="primary">📋 Copy</button>
-            <button id="save-prompt-btn" class="secondary">💾 Save</button>
-          </div>
-        </div>
-
-        <div class="preview-area">
-          <textarea id="final-prompt" readonly placeholder="Your composed prompt will appear here..."></textarea>
-        </div>
-
-        <div class="stats-bar">
-          <span id="char-count">0 characters</span>
-          <span id="word-count">0 words</span>
+        <div class="snippet-sidebar-actions">
+          <button id="add-snippet-btn" class="primary snippet-action-btn">+ Snippet</button>
+          <button id="add-project-btn" class="secondary snippet-action-btn">+ Project</button>
         </div>
 
         <div class="templates-section">
           <div class="section-header collapsible" id="templates-header">
             <label class="section-label">Templates</label>
             <div class="template-actions">
-              <button id="save-template-btn" class="icon-btn" title="Save as Template">💾</button>
-              <button class="collapse-btn">▼</button>
+              <button id="save-template-btn" class="icon-btn" title="Save as Template">Save</button>
+              <button class="collapse-btn">&#9660;</button>
             </div>
           </div>
           <div class="templates-content" id="templates-content">
             <div class="template-filter">
               <input type="text" id="template-search" placeholder="Search templates..." />
               <select id="template-category" class="category-select">
-                <option value="">All Categories</option>
-                <option value="development">Development</option>
+                <option value="">All</option>
+                <option value="development">Dev</option>
                 <option value="writing">Writing</option>
                 <option value="analysis">Analysis</option>
-                <option value="documentation">Documentation</option>
+                <option value="documentation">Docs</option>
                 <option value="custom">Custom</option>
               </select>
             </div>
-            <div class="templates-grid" id="templates-grid">
-              <!-- Templates will be rendered here -->
+            <div class="templates-grid" id="templates-grid"></div>
+          </div>
+        </div>
+
+        <div class="snippet-sidebar-footer">
+          <button id="import-config-btn" class="icon-btn" title="Import">Import</button>
+          <button id="export-config-btn" class="icon-btn" title="Export">Export</button>
+        </div>
+      </div>
+
+      <!-- Right Panel: Editor + Preview -->
+      <div class="snippet-editor-panel">
+        <div class="snippet-editor-area" id="snippet-editor-area">
+          <div class="snippet-empty" id="snippet-empty-state">
+            <p>Select a snippet to edit, or create a new one.</p>
+          </div>
+          <div class="snippet-editor-fields" id="snippet-editor-fields" style="display:none;">
+            <div class="snippet-field-row">
+              <label>Name</label>
+              <input type="text" id="snippet-name" placeholder="Snippet name" />
             </div>
+            <div class="snippet-field-row-inline">
+              <div class="snippet-field-row">
+                <label>Project</label>
+                <select id="snippet-project"></select>
+              </div>
+              <div class="snippet-field-row">
+                <label>Component Type</label>
+                <select id="snippet-type"></select>
+              </div>
+            </div>
+            <div class="snippet-field-row">
+              <label>Tags</label>
+              <div class="snippet-tags-selector" id="snippet-tags-selector"></div>
+            </div>
+            <div class="snippet-field-row">
+              <label>Content</label>
+              <textarea id="snippet-content" rows="8" placeholder="Snippet content..."></textarea>
+            </div>
+            <div class="snippet-editor-actions">
+              <label class="snippet-include-label"><input type="checkbox" id="snippet-include-check" /> Include in prompt</label>
+              <button id="snippet-copy-btn" class="secondary">Copy</button>
+              <button id="snippet-duplicate-btn" class="secondary">Duplicate</button>
+              <button id="snippet-delete-btn" class="secondary">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="snippet-preview-section">
+          <div class="snippet-preview-header">
+            <h3>Composed Prompt</h3>
+            <div class="panel-actions">
+              <button id="share-btn" class="secondary" title="Share Configuration">Share</button>
+              <button id="copy-prompt-btn" class="primary">Copy</button>
+              <button id="save-prompt-btn" class="secondary">Save</button>
+            </div>
+          </div>
+          <div class="preview-area">
+            <textarea id="final-prompt" readonly placeholder="Your composed prompt will appear here..."></textarea>
+          </div>
+          <div class="stats-bar">
+            <span id="char-count">0 characters</span>
+            <span id="word-count">0 words</span>
           </div>
         </div>
       </div>
@@ -161,9 +194,7 @@
           <button class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
-          <div class="personas-grid" id="personas-grid">
-            <!-- Personas will be rendered here -->
-          </div>
+          <div class="personas-grid" id="personas-grid"></div>
         </div>
       </div>
     </div>
@@ -179,9 +210,7 @@
           <div class="techstack-search">
             <input type="text" id="techstack-search" placeholder="Search technologies..." />
           </div>
-          <div class="techstack-grid" id="techstack-grid">
-            <!-- Tech stacks will be rendered here -->
-          </div>
+          <div class="techstack-grid" id="techstack-grid"></div>
         </div>
       </div>
     </div>
@@ -198,7 +227,7 @@
             <label class="share-label">Shareable Link</label>
             <div class="share-input-group">
               <input type="text" id="share-link" readonly class="share-link-input" />
-              <button id="copy-link-btn" class="primary">📋 Copy</button>
+              <button id="copy-link-btn" class="primary">Copy</button>
             </div>
             <p class="share-hint">Share this link with others to import your configuration</p>
           </div>
@@ -233,7 +262,7 @@
             </select>
           </div>
           <div class="modal-actions">
-            <button id="save-template-confirm-btn" class="primary">💾 Save Template</button>
+            <button id="save-template-confirm-btn" class="primary">Save Template</button>
             <button class="secondary modal-close">Cancel</button>
           </div>
         </div>
@@ -244,44 +273,34 @@
 
 <!-- Tool Styles -->
 <style>
-  /* ========================================
-     Global Performance Optimizations
-     ======================================== */
-
   * {
-    /* Smooth scrolling for better UX */
     scroll-behavior: smooth;
   }
 
-  /* Use hardware acceleration for better performance */
-  .component-item,
   .modal,
-  .quick-action-btn,
   .icon-btn {
     will-change: transform;
     transform: translateZ(0);
     backface-visibility: hidden;
   }
 
-  /* Optimize text rendering */
   .tool-container {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Subtle pulse animation for loading states */
   @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.7;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
   }
 
   .updating {
     animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+
+  /* ========================================
+     Intent Starter
+     ======================================== */
 
   .intent-starter {
     margin-top: 14px;
@@ -336,11 +355,9 @@
     font-size: 13px;
     letter-spacing: 0.01em;
     border-width: 1.5px;
-    background: linear-gradient(
-      160deg,
+    background: linear-gradient(160deg,
       color-mix(in srgb, var(--bg-primary) 88%, var(--accent) 12%),
-      color-mix(in srgb, var(--bg-primary) 78%, var(--accent) 22%)
-    );
+      color-mix(in srgb, var(--bg-primary) 78%, var(--accent) 22%));
     box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 16%, transparent);
   }
 
@@ -494,55 +511,393 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
   }
 
-  .tool-container[data-intent-refine="closed"] .quick-actions-toolbar,
-  .tool-container[data-intent-refine="closed"] .add-component-section {
+  .tool-container[data-intent-refine="closed"] .snippet-layout {
     display: none;
   }
 
-  .tool-container[data-intent-mode="rewrite"] .component-item[data-id="tech-stack"],
-  .tool-container[data-intent-mode="rewrite"] .component-item[data-id="constraints"],
-  .tool-container[data-intent-mode="analyze"] .component-item[data-id="tech-stack"] {
-    display: none;
-  }
+  /* ========================================
+     Snippet Layout
+     ======================================== */
 
-  .tool-layout {
+  .snippet-layout {
     display: grid;
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-    gap: 20px;
+    grid-template-columns: 300px 1fr;
+    gap: 0;
     margin-top: 20px;
-  }
-
-  .components-panel,
-  .preview-panel {
-    background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     overflow: hidden;
+    min-height: 600px;
+  }
+
+  .snippet-sidebar {
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .snippet-sidebar-header {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-primary);
+  }
+
+  .snippet-view-toggle {
+    display: flex;
+    gap: 0;
+    margin-bottom: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .snippet-view-btn {
+    flex: 1;
+    padding: 6px 10px;
+    border: none;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast);
+  }
+
+  .snippet-view-btn.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  .snippet-search {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .snippet-search:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .snippet-compose-info {
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg-primary));
+  }
+
+  .snippet-tree {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .snippet-project-group {
+    margin-bottom: 6px;
+  }
+
+  .snippet-project-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    user-select: none;
+  }
+
+  .snippet-project-header:hover {
+    background: var(--bg-hover);
+  }
+
+  .snippet-project-header .snippet-group-count {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    opacity: 0.7;
+  }
+
+  .snippet-project-header .snippet-group-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+  }
+
+  .snippet-project-header:hover .snippet-group-actions {
+    opacity: 1;
+  }
+
+  .snippet-group-action-btn {
+    background: transparent;
+    border: none;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: var(--text-secondary);
+  }
+
+  .snippet-group-action-btn:hover {
+    background: var(--bg-primary);
+    color: var(--accent);
+  }
+
+  .snippet-project-items {
+    padding-left: 8px;
+  }
+
+  .snippet-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    transition: var(--transition-fast);
+    border: 1px solid transparent;
+  }
+
+  .snippet-item:hover {
+    background: var(--bg-hover);
+  }
+
+  .snippet-item.selected {
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-primary));
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  .snippet-item input[type="checkbox"] {
+    flex-shrink: 0;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+
+  .snippet-item-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+  }
+
+  .snippet-type-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    font-weight: 600;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .snippet-sidebar-actions {
+    padding: 8px 12px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 6px;
+  }
+
+  .snippet-action-btn {
+    flex: 1;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .snippet-sidebar-footer {
+    padding: 8px 12px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 6px;
+    background: var(--bg-primary);
+  }
+
+  .snippet-sidebar-footer .icon-btn {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+  }
+
+  /* ========================================
+     Snippet Editor Panel
+     ======================================== */
+
+  .snippet-editor-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    overflow: hidden;
+  }
+
+  .snippet-editor-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .snippet-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  .snippet-editor-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .snippet-field-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .snippet-field-row label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .snippet-field-row input,
+  .snippet-field-row select,
+  .snippet-field-row textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+
+  .snippet-field-row textarea {
+    font-family: var(--font-mono);
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.5;
+  }
+
+  .snippet-field-row input:focus,
+  .snippet-field-row select:focus,
+  .snippet-field-row textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  .snippet-field-row-inline {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .snippet-tags-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .snippet-tag-chip {
+    padding: 4px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    transition: var(--transition-fast);
+    user-select: none;
+  }
+
+  .snippet-tag-chip:hover {
+    border-color: var(--accent);
+  }
+
+  .snippet-tag-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .snippet-editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+    flex-wrap: wrap;
+  }
+
+  .snippet-include-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    margin-right: auto;
+  }
+
+  .snippet-include-label input {
+    accent-color: var(--accent);
+  }
+
+  .snippet-editor-actions button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  /* ========================================
+     Preview Section
+     ======================================== */
+
+  .snippet-preview-section {
+    border-top: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
   }
 
-  .components-panel {
-    max-height: calc(100vh - 250px);
-  }
-
-  .preview-panel {
-    min-height: 640px;
-    overflow: visible;
-  }
-
-  .panel-header {
-    padding: 16px;
-    border-bottom: 1px solid var(--border-color);
+  .snippet-preview-header {
+    padding: 12px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--bg-primary);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
   }
 
-  .panel-header h3 {
+  .snippet-preview-header h3 {
     margin: 0;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
   }
@@ -553,459 +908,24 @@
     align-items: center;
   }
 
-  .icon-btn {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    padding: 6px 10px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 14px;
-    transition: background var(--transition-normal),
-                border-color var(--transition-normal),
-                transform var(--transition-fast);
-  }
-
-  .icon-btn:hover {
-    background: var(--bg-secondary);
-    border-color: var(--accent);
-    transform: translateY(-1px);
-  }
-
-  .icon-btn:active {
-    transform: translateY(0);
-  }
-
-  /* Quick Actions Toolbar */
-  .quick-actions-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    background: var(--bg-primary);
-    border-bottom: 1px solid var(--border-color);
-    font-size: 12px;
-  }
-
-  .quick-action-btn {
-    padding: 4px 10px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 500;
-    transition: all var(--transition-fast);
-  }
-
-  .quick-action-btn:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-    transform: translateY(-1px);
-  }
-
-  .quick-action-divider {
-    width: 1px;
-    height: 16px;
-    background: var(--border-color);
-    margin: 0 4px;
-  }
-
-  .quick-action-hint {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-left: auto;
-    font-style: italic;
-  }
-
-  .components-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px;
-    /* Enable smooth momentum scrolling on iOS */
-    -webkit-overflow-scrolling: touch;
-    /* Better scroll performance */
-    scroll-behavior: smooth;
-  }
-
-  .component-item {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    margin-bottom: 12px;
-    overflow: hidden;
-    transition: border-color var(--transition-normal),
-                box-shadow var(--transition-normal),
-                transform var(--transition-fast);
-    position: relative;
-  }
-
-  .component-item::after {
-    content: '';
-    position: absolute;
-    inset: 4px;
-    border-radius: var(--radius-sm);
-    opacity: 0;
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
-    transition: opacity var(--transition-normal);
-    pointer-events: none;
-  }
-
-  .component-item.active {
-    border-color: var(--accent);
-    box-shadow: var(--shadow-lg);
-  }
-
-  .component-item.active::after {
-    opacity: 1;
-  }
-
-  .component-item.active .component-header {
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
-  }
-
-  .component-item.has-options {
-    border-left: 3px solid var(--accent);
-  }
-
-  .component-item.focused {
-    box-shadow: 0 0 0 2px var(--accent), 0 4px 12px rgba(0,0,0,0.1);
-    transform: translateY(-1px);
-  }
-
-  .component-item.selected {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
-  }
-
-  .component-item.active.selected::after {
-    background: color-mix(in srgb, var(--accent) 20%, transparent);
-  }
-
-  .component-item:hover {
-    border-color: var(--accent);
-    transform: translateX(2px);
-  }
-
-  .component-header {
-    padding: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--bg-secondary);
-    cursor: pointer;
-    user-select: none;
-    flex-wrap: wrap;
-  }
-
-  .component-header:hover {
-    background: var(--bg-hover);
-  }
-
-  .component-toggle {
-    width: 18px;
-    height: 18px;
-    border: 2px solid var(--border-color);
-    border-radius: 3px;
-    cursor: pointer;
-    position: relative;
-    flex-shrink: 0;
-    transition: all var(--transition-normal);
-    background: var(--bg-secondary);
-  }
-
-  .component-toggle.checked {
-    background: var(--accent);
-    border-color: var(--accent);
-    box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 35%, transparent);
-  }
-
-  .component-toggle.checked::after {
-    content: '✓';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #071027;
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.65);
-    font-size: 12px;
-    font-weight: bold;
-  }
-
-  .component-name {
-    flex: 1;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--text-primary);
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .component-name-text {
-    font-weight: 500;
-  }
-
-  .component-preview {
-    font-size: 11px;
-    color: var(--text-secondary);
-    font-weight: 400;
-    opacity: 0.7;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 300px;
-  }
-
-  .component-item:not(.active) .component-preview {
-    opacity: 0.5;
-  }
-
-  .component-number {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 3px;
-    background: var(--bg-hover);
-    color: var(--text-secondary);
-    font-size: 10px;
-    font-weight: 600;
-    margin-right: 2px;
-  }
-
-  .component-item.active .component-number {
-    background: var(--accent);
-    color: white;
-  }
-
-  .component-badge {
-    font-size: 11px;
-    padding: 2px 8px;
-    background: color-mix(in srgb, var(--accent) 15%, transparent);
-    color: var(--accent);
-    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-    border-radius: 999px;
-    font-weight: 600;
-  }
-
-  .component-state {
-    font-size: 11px;
-    padding: 2px 10px;
-    border-radius: 999px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border: 1px solid var(--border-color);
-  }
-
-  .component-state.on {
-    background: color-mix(in srgb, var(--accent) 20%, transparent);
-    color: var(--accent);
-    border-color: color-mix(in srgb, var(--accent) 50%, transparent);
-  }
-
-  .component-state.off {
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    border-color: var(--border-color);
-    border-style: dashed;
-  }
-
-  .component-actions {
-    display: flex;
-    gap: 4px;
-    opacity: 0;
-    transition: opacity var(--transition-normal);
-    margin-left: auto;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-  }
-
-  .component-header:hover .component-actions {
-    opacity: 1;
-  }
-
-  .component-pill-group {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-wrap: wrap;
-    flex: 1 1 100%;
-    margin: 6px 0 0 36px;
-    min-width: 0;
-  }
-
-  .component-action {
-    background: transparent;
-    border: none;
-    padding: 4px 8px;
-    cursor: pointer;
-    font-size: 12px;
-    border-radius: 3px;
-    transition: background var(--transition-normal);
-  }
-
-  .component-action:hover {
-    background: var(--bg-primary);
-  }
-
-  .component-body {
-    padding: 12px;
-    display: none;
-  }
-
-  .component-item.expanded .component-body {
-    display: block;
-  }
-
-  .component-body textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
-    font-size: 13px;
-    resize: vertical;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    transition: border-color var(--transition-normal),
-                box-shadow var(--transition-normal);
-  }
-
-  .component-body textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
-  }
-
-  .component-select-btn {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 8px;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: background var(--transition-normal);
-  }
-
-  .component-select-btn:hover {
-    background: var(--accent-hover);
-  }
-
-  .component-option-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  .component-option-group .component-select-btn {
-    width: auto;
-    margin-bottom: 0;
-    white-space: nowrap;
-  }
-
-  .component-select-label {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 12px;
-    color: var(--text-secondary);
-  }
-
-  .component-preset-select {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-size: 13px;
-  }
-
-  .component-preset-select:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  .component-meta {
-    display: flex;
-    gap: 12px;
-    margin-top: 8px;
-    font-size: 12px;
-    color: var(--text-secondary);
-  }
-
-  .add-component-section {
-    padding: 12px;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    gap: 8px;
-  }
-
-  #new-component-name {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-  }
-
-  #new-component-name:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  #add-component-btn {
-    padding: 8px 16px;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: background var(--transition-normal);
-  }
-
-  #add-component-btn:hover {
-    background: var(--accent-hover);
-  }
-
   .preview-area {
-    flex: 1;
-    padding: 16px;
-    overflow: hidden;
+    padding: 12px 16px;
     display: flex;
     flex-direction: column;
   }
 
   #final-prompt {
-    flex: 1;
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     font-family: var(--font-mono);
-    font-size: 13px;
-    line-height: 1.6;
-    min-height: 360px;
+    font-size: 12px;
+    line-height: 1.5;
+    min-height: 180px;
     resize: vertical;
-    background: var(--bg-primary);
+    background: var(--bg-secondary);
     color: var(--text-primary);
-    transition: border-color var(--transition-normal),
-                box-shadow var(--transition-normal);
   }
 
   #final-prompt:focus {
@@ -1015,37 +935,42 @@
   }
 
   .stats-bar {
-    padding: 12px 16px;
+    padding: 8px 16px;
     border-top: 1px solid var(--border-color);
     display: flex;
     gap: 24px;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-secondary);
-    background: var(--bg-primary);
-    flex-wrap: wrap;
+    background: var(--bg-secondary);
   }
 
+  /* ========================================
+     Templates (in sidebar)
+     ======================================== */
+
   .templates-section {
-    padding: 16px;
+    padding: 10px 12px;
     border-top: 1px solid var(--border-color);
   }
 
   .templates-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 8px;
-    margin-top: 12px;
+    grid-template-columns: 1fr;
+    gap: 4px;
+    margin-top: 8px;
   }
 
   .template-btn {
-    padding: 8px 12px;
+    padding: 6px 10px;
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px;
     transition: all var(--transition-normal);
     color: var(--text-primary);
+    text-align: left;
+    position: relative;
   }
 
   .template-btn:hover {
@@ -1053,6 +978,68 @@
     color: white;
     border-color: var(--accent);
   }
+
+  .template-btn.custom-template {
+    border-left: 3px solid var(--accent);
+  }
+
+  .template-btn.custom-template .delete-template-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-size: 10px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+  }
+
+  .template-btn.custom-template:hover .delete-template-btn {
+    opacity: 1;
+  }
+
+  .template-filter {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .template-filter input {
+    flex: 1;
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
+  .template-filter input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .category-select {
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .category-select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  /* ========================================
+     Status Message
+     ======================================== */
 
   .status-message {
     margin-top: 16px;
@@ -1062,9 +1049,7 @@
     display: none;
   }
 
-  .status-message.show {
-    display: block;
-  }
+  .status-message.show { display: block; }
 
   .status-message.success {
     background: color-mix(in srgb, var(--success) 12%, var(--bg-primary));
@@ -1084,23 +1069,21 @@
     border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-color));
   }
 
-  /* Modal Styles */
+  /* ========================================
+     Modals
+     ======================================== */
+
   .modal {
     display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
     align-items: center;
     justify-content: center;
   }
 
-  .modal.show {
-    display: flex;
-  }
+  .modal.show { display: flex; }
 
   .modal-content {
     background: var(--bg-primary);
@@ -1143,9 +1126,7 @@
     transition: background var(--transition-normal);
   }
 
-  .modal-close:hover {
-    background: var(--bg-hover);
-  }
+  .modal-close:hover { background: var(--bg-hover); }
 
   .modal-body {
     padding: 20px;
@@ -1195,9 +1176,7 @@
     color: rgba(255, 255, 255, 0.9);
   }
 
-  .techstack-search {
-    margin-bottom: 16px;
-  }
+  .techstack-search { margin-bottom: 16px; }
 
   .techstack-search input {
     width: 100%;
@@ -1247,34 +1226,25 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     cursor: pointer;
     user-select: none;
   }
 
   .section-header.collapsible:hover {
     background: var(--bg-hover);
-    margin: -4px -8px 12px -8px;
+    margin: -4px -8px 8px -8px;
     padding: 4px 8px;
     border-radius: var(--radius-sm);
   }
 
   .section-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 8px;
-  }
-
-  .count-badge {
-    background: var(--accent);
-    color: white;
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-weight: 500;
   }
 
   .collapse-btn {
@@ -1300,102 +1270,35 @@
     max-height: 0 !important;
   }
 
-  .empty-state {
-    text-align: center;
-    color: var(--text-secondary);
-    font-size: 12px;
-    padding: 20px;
-    font-style: italic;
+  .icon-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 11px;
+    transition: background var(--transition-normal),
+                border-color var(--transition-normal),
+                transform var(--transition-fast);
   }
 
-  /* Template Enhancements */
+  .icon-btn:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .icon-btn:active { transform: translateY(0); }
+
   .template-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
   }
 
-  .template-filter {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .template-filter input {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-  }
-
-  .template-filter input:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  .category-select {
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    font-size: 13px;
-    cursor: pointer;
-  }
-
-  .category-select:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  .template-btn {
-    position: relative;
-  }
-
-  .template-btn .template-category-tag {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    font-size: 9px;
-    padding: 2px 4px;
-    background: var(--bg-secondary);
-    border-radius: 2px;
-    opacity: 0.7;
-  }
-
-  .template-btn.custom-template {
-    border-left: 3px solid var(--accent);
-  }
-
-  .template-btn.custom-template .delete-template-btn {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 3px;
-    padding: 2px 4px;
-    font-size: 10px;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity var(--transition-normal);
-  }
-
-  .template-btn.custom-template:hover .delete-template-btn {
-    opacity: 1;
-  }
-
   /* Share Modal */
-  .share-section {
-    margin-bottom: 24px;
-  }
-
-  .share-section:last-child {
-    margin-bottom: 0;
-  }
+  .share-section { margin-bottom: 24px; }
+  .share-section:last-child { margin-bottom: 0; }
 
   .share-label {
     display: block;
@@ -1434,13 +1337,9 @@
   }
 
   /* Save Template Modal */
-  .modal-small {
-    max-width: 500px;
-  }
+  .modal-small { max-width: 500px; }
 
-  .form-group {
-    margin-bottom: 16px;
-  }
+  .form-group { margin-bottom: 16px; }
 
   .form-group label {
     display: block;
@@ -1473,7 +1372,7 @@
     margin-top: 20px;
   }
 
-  /* Enhanced button styles for better feedback */
+  /* Buttons */
   button {
     transition: background var(--transition-normal),
                 border-color var(--transition-normal),
@@ -1481,9 +1380,7 @@
                 box-shadow var(--transition-normal);
   }
 
-  button:active {
-    transform: scale(0.98);
-  }
+  button:active { transform: scale(0.98); }
 
   button.primary {
     background: var(--accent);
@@ -1507,6 +1404,10 @@
     border-color: var(--accent);
   }
 
+  /* ========================================
+     Responsive
+     ======================================== */
+
   @media (max-width: 1024px) {
     .intent-starter-header {
       align-items: flex-start;
@@ -1529,10 +1430,6 @@
       grid-template-columns: 1fr;
     }
 
-    .tool-layout {
-      grid-template-columns: 1fr;
-    }
-
     .personas-grid {
       grid-template-columns: 1fr;
     }
@@ -1541,65 +1438,43 @@
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     }
   }
+
+  @media (max-width: 900px) {
+    .snippet-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .snippet-sidebar {
+      border-right: none;
+      border-bottom: 1px solid var(--border-color);
+      max-height: 350px;
+    }
+
+    .snippet-field-row-inline {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 
 <!-- Tool Module -->
 <script type="module">
   import { copyToClipboard, debounce, deepClone, downloadAsFile, countWords, saveToolState, loadToolState } from '../core/tool-utils.js';
 
-  // Persona library
+  // ============================================================================
+  // Data Constants
+  // ============================================================================
+
   const PERSONAS = [
-    {
-      id: 'senior-engineer',
-      name: 'Senior Software Engineer',
-      description: 'Expert in modern development practices, design patterns, and clean code principles.',
-      content: 'You are a senior software engineer with 10+ years of experience in modern development practices, design patterns, and clean code principles. You have deep expertise in software architecture, code quality, and best practices.'
-    },
-    {
-      id: 'code-reviewer',
-      name: 'Code Reviewer',
-      description: 'Focused on code quality, security, performance, and maintainability.',
-      content: 'You are a meticulous code reviewer with expertise in identifying code quality issues, security vulnerabilities, performance bottlenecks, and maintainability concerns. You provide constructive feedback focused on best practices.'
-    },
-    {
-      id: 'architect',
-      name: 'Solution Architect',
-      description: 'Designs scalable, maintainable systems with focus on architecture patterns.',
-      content: 'You are a solution architect specializing in designing scalable, maintainable, and robust systems. You have expertise in architectural patterns, system design, microservices, and cloud architecture.'
-    },
-    {
-      id: 'devops-engineer',
-      name: 'DevOps Engineer',
-      description: 'Expert in CI/CD, infrastructure, containers, and automation.',
-      content: 'You are a DevOps engineer with expertise in CI/CD pipelines, infrastructure as code, containerization (Docker, Kubernetes), cloud platforms (AWS, Azure, GCP), and automation.'
-    },
-    {
-      id: 'security-expert',
-      name: 'Security Expert',
-      description: 'Focuses on security best practices, vulnerabilities, and secure coding.',
-      content: 'You are a security expert specializing in application security, secure coding practices, vulnerability assessment, and security best practices. You focus on OWASP top 10, authentication, authorization, and data protection.'
-    },
-    {
-      id: 'tech-educator',
-      name: 'Technical Educator',
-      description: 'Explains complex concepts in simple, understandable terms.',
-      content: 'You are a technical educator who excels at breaking down complex technical concepts into simple, understandable explanations. You use analogies, examples, and step-by-step breakdowns to teach effectively.'
-    },
-    {
-      id: 'technical-writer',
-      name: 'Technical Writer',
-      description: 'Creates clear documentation, API docs, and technical content.',
-      content: 'You are a technical writer specializing in creating clear, comprehensive documentation, API documentation, user guides, and technical content. You understand how to make complex technical information accessible.'
-    },
-    {
-      id: 'content-writer',
-      name: 'Content Writer',
-      description: 'Professional writer for blogs, marketing, and storytelling.',
-      content: 'You are a professional content writer with expertise in technical writing, copywriting, blog posts, marketing content, and storytelling. You adapt tone and style to the target audience.'
-    }
+    { id: 'senior-engineer', name: 'Senior Software Engineer', description: 'Expert in modern development practices, design patterns, and clean code principles.', content: 'You are a senior software engineer with 10+ years of experience in modern development practices, design patterns, and clean code principles. You have deep expertise in software architecture, code quality, and best practices.' },
+    { id: 'code-reviewer', name: 'Code Reviewer', description: 'Focused on code quality, security, performance, and maintainability.', content: 'You are a meticulous code reviewer with expertise in identifying code quality issues, security vulnerabilities, performance bottlenecks, and maintainability concerns. You provide constructive feedback focused on best practices.' },
+    { id: 'architect', name: 'Solution Architect', description: 'Designs scalable, maintainable systems with focus on architecture patterns.', content: 'You are a solution architect specializing in designing scalable, maintainable, and robust systems. You have expertise in architectural patterns, system design, microservices, and cloud architecture.' },
+    { id: 'devops-engineer', name: 'DevOps Engineer', description: 'Expert in CI/CD, infrastructure, containers, and automation.', content: 'You are a DevOps engineer with expertise in CI/CD pipelines, infrastructure as code, containerization (Docker, Kubernetes), cloud platforms (AWS, Azure, GCP), and automation.' },
+    { id: 'security-expert', name: 'Security Expert', description: 'Focuses on security best practices, vulnerabilities, and secure coding.', content: 'You are a security expert specializing in application security, secure coding practices, vulnerability assessment, and security best practices. You focus on OWASP top 10, authentication, authorization, and data protection.' },
+    { id: 'tech-educator', name: 'Technical Educator', description: 'Explains complex concepts in simple, understandable terms.', content: 'You are a technical educator who excels at breaking down complex technical concepts into simple, understandable explanations. You use analogies, examples, and step-by-step breakdowns to teach effectively.' },
+    { id: 'technical-writer', name: 'Technical Writer', description: 'Creates clear documentation, API docs, and technical content.', content: 'You are a technical writer specializing in creating clear, comprehensive documentation, API documentation, user guides, and technical content. You understand how to make complex technical information accessible.' },
+    { id: 'content-writer', name: 'Content Writer', description: 'Professional writer for blogs, marketing, and storytelling.', content: 'You are a professional content writer with expertise in technical writing, copywriting, blog posts, marketing content, and storytelling. You adapt tone and style to the target audience.' }
   ];
 
-  // Technology stack library
   const TECH_STACKS = {
     'Frontend': ['React', 'Vue.js', 'Angular', 'Svelte', 'Next.js', 'Nuxt.js', 'TypeScript', 'JavaScript', 'HTML/CSS', 'Tailwind CSS', 'Bootstrap'],
     'Backend': ['Node.js', 'Python', 'Java', 'Go', 'Rust', 'PHP', 'Ruby', 'C#/.NET', 'Elixir', 'Scala'],
@@ -1613,373 +1488,263 @@
 
   const COMPONENT_PRESETS = {
     'context': [
-      {
-        id: 'project-brief',
-        name: 'Project Brief',
-        content: 'Project: {{project_name}}\nDomain: {{domain}}\nKey requirements: {{requirements}}\nPrimary users: {{primary_users}}\nSuccess metric: {{success_metric}}'
-      },
-      {
-        id: 'codebase-context',
-        name: 'Codebase / Repository Context',
-        content: 'Repository: {{repo_name}}\nLanguages/frameworks: {{tech_stack}}\nArchitecture: {{architecture_pattern}}\nCode standards: {{standards}}\nRelated files: {{related_files}}'
-      },
-      {
-        id: 'user-story-context',
-        name: 'User Story Context',
-        content: 'As a {{user_role}}\nI want {{user_goal}}\nSo that {{user_benefit}}\nAcceptance criteria: {{acceptance_criteria}}'
-      },
+      { id: 'project-brief', name: 'Project Brief', content: 'Project: {{project_name}}\nDomain: {{domain}}\nKey requirements: {{requirements}}\nPrimary users: {{primary_users}}\nSuccess metric: {{success_metric}}' },
+      { id: 'codebase-context', name: 'Codebase / Repository Context', content: 'Repository: {{repo_name}}\nLanguages/frameworks: {{tech_stack}}\nArchitecture: {{architecture_pattern}}\nCode standards: {{standards}}\nRelated files: {{related_files}}' },
+      { id: 'user-story-context', name: 'User Story Context', content: 'As a {{user_role}}\nI want {{user_goal}}\nSo that {{user_benefit}}\nAcceptance criteria: {{acceptance_criteria}}' },
     ],
     'task': [
-      {
-        id: 'feature-task',
-        name: 'Feature Implementation',
-        content: 'Objective: {{feature_summary}}\nCurrent behavior: {{current_behavior}}\nDesired behavior: {{desired_behavior}}\nAcceptance criteria: {{acceptance_criteria}}'
-      },
-      {
-        id: 'bugfix-task',
-        name: 'Bug Fix / Investigation',
-        content: 'Bug: {{bug_summary}}\nSteps to reproduce: {{steps}}\nExpected vs actual: {{expected_vs_actual}}\nDiagnostics collected: {{diagnostics}}'
-      },
-      {
-        id: 'analysis-task',
-        name: 'Analysis / Research Objective',
-        content: 'Dataset or subject: {{subject}}\nQuestions to answer: {{questions}}\nConstraints: {{analysis_constraints}}\nSuccess looks like: {{success_definition}}'
-      },
+      { id: 'feature-task', name: 'Feature Implementation', content: 'Objective: {{feature_summary}}\nCurrent behavior: {{current_behavior}}\nDesired behavior: {{desired_behavior}}\nAcceptance criteria: {{acceptance_criteria}}' },
+      { id: 'bugfix-task', name: 'Bug Fix / Investigation', content: 'Bug: {{bug_summary}}\nSteps to reproduce: {{steps}}\nExpected vs actual: {{expected_vs_actual}}\nDiagnostics collected: {{diagnostics}}' },
+      { id: 'analysis-task', name: 'Analysis / Research Objective', content: 'Dataset or subject: {{subject}}\nQuestions to answer: {{questions}}\nConstraints: {{analysis_constraints}}\nSuccess looks like: {{success_definition}}' },
     ],
     'rules': [
-      {
-        id: 'engineering-best-practices',
-        name: 'Engineering Best Practices',
-        content: `Follow these rules:\n- Cite relevant standards or RFCs when possible\n- Highlight risks, edge cases, and trade-offs\n- Prefer deterministic steps with measurable outcomes\n- Offer testing guidance for every recommendation\n- Keep explanations concise but technically rigorous`
-      },
-      {
-        id: 'security-first',
-        name: 'Security-First Approach',
-        content: `Security guidelines:\n- Follow OWASP Top 10 best practices\n- Never expose sensitive data in logs or errors\n- Validate and sanitize all inputs\n- Use parameterized queries to prevent SQL injection\n- Implement proper authentication and authorization\n- Follow principle of least privilege`
-      },
-      {
-        id: 'clean-code',
-        name: 'Clean Code Principles',
-        content: `Code quality rules:\n- Write self-documenting code with clear naming\n- Keep functions small and focused (single responsibility)\n- Avoid duplication (DRY principle)\n- Prefer composition over inheritance\n- Write tests alongside code\n- Refactor continuously`
-      }
+      { id: 'engineering-best-practices', name: 'Engineering Best Practices', content: 'Follow these rules:\n- Cite relevant standards or RFCs when possible\n- Highlight risks, edge cases, and trade-offs\n- Prefer deterministic steps with measurable outcomes\n- Offer testing guidance for every recommendation\n- Keep explanations concise but technically rigorous' },
+      { id: 'security-first', name: 'Security-First Approach', content: 'Security guidelines:\n- Follow OWASP Top 10 best practices\n- Never expose sensitive data in logs or errors\n- Validate and sanitize all inputs\n- Use parameterized queries to prevent SQL injection\n- Implement proper authentication and authorization\n- Follow principle of least privilege' },
+      { id: 'clean-code', name: 'Clean Code Principles', content: 'Code quality rules:\n- Write self-documenting code with clear naming\n- Keep functions small and focused (single responsibility)\n- Avoid duplication (DRY principle)\n- Prefer composition over inheritance\n- Write tests alongside code\n- Refactor continuously' }
     ],
     'output-format': [
-      {
-        id: 'detailed-solution',
-        name: 'Detailed Solution Outline',
-        content: `Structure your response as:\n1. Brief summary (1-2 sentences)\n2. Detailed explanation with step-by-step breakdown\n3. Code examples with inline comments\n4. Testing approach and edge cases\n5. Best practices and recommendations`
-      },
-      {
-        id: 'step-by-step',
-        name: 'Step-by-Step Guide',
-        content: `Provide a step-by-step guide:\n1. Prerequisites and setup\n2. Step 1: [Action] - [Expected result]\n3. Step 2: [Action] - [Expected result]\n...\nN. Verification steps\nTroubleshooting common issues`
-      },
-      {
-        id: 'code-only',
-        name: 'Code-Focused (Minimal Explanation)',
-        content: `Provide:\n- Working code solution\n- Inline comments explaining key logic\n- Usage example\n- Brief notes on edge cases or gotchas`
-      },
+      { id: 'detailed-solution', name: 'Detailed Solution Outline', content: 'Structure your response as:\n1. Brief summary (1-2 sentences)\n2. Detailed explanation with step-by-step breakdown\n3. Code examples with inline comments\n4. Testing approach and edge cases\n5. Best practices and recommendations' },
+      { id: 'step-by-step', name: 'Step-by-Step Guide', content: 'Provide a step-by-step guide:\n1. Prerequisites and setup\n2. Step 1: [Action] - [Expected result]\n3. Step 2: [Action] - [Expected result]\n...\nN. Verification steps\nTroubleshooting common issues' },
+      { id: 'code-only', name: 'Code-Focused (Minimal Explanation)', content: 'Provide:\n- Working code solution\n- Inline comments explaining key logic\n- Usage example\n- Brief notes on edge cases or gotchas' },
     ],
     'constraints': [
-      {
-        id: 'delivery-constraints',
-        name: 'Delivery Constraints',
-        content: 'Timeline: {{deadline}}\nBudget: {{budget}}\nCritical dependencies: {{dependencies}}\nCompliance requirements: {{compliance}}'
-      },
-      {
-        id: 'technical-constraints',
-        name: 'Technical Constraints',
-        content: 'Technology limitations: {{tech_limits}}\nBrowser/platform support: {{platform_support}}\nPerformance requirements: {{performance_reqs}}\nBackward compatibility: {{compatibility}}\nThird-party dependencies: {{third_party}}'
-      },
-      {
-        id: 'scope-constraints',
-        name: 'Scope Constraints',
-        content: 'In scope: {{in_scope}}\nOut of scope: {{out_of_scope}}\nPhase 1 requirements: {{phase1}}\nFuture enhancements: {{future}}\nNon-goals: {{non_goals}}'
-      },
+      { id: 'delivery-constraints', name: 'Delivery Constraints', content: 'Timeline: {{deadline}}\nBudget: {{budget}}\nCritical dependencies: {{dependencies}}\nCompliance requirements: {{compliance}}' },
+      { id: 'technical-constraints', name: 'Technical Constraints', content: 'Technology limitations: {{tech_limits}}\nBrowser/platform support: {{platform_support}}\nPerformance requirements: {{performance_reqs}}\nBackward compatibility: {{compatibility}}\nThird-party dependencies: {{third_party}}' },
+      { id: 'scope-constraints', name: 'Scope Constraints', content: 'In scope: {{in_scope}}\nOut of scope: {{out_of_scope}}\nPhase 1 requirements: {{phase1}}\nFuture enhancements: {{future}}\nNon-goals: {{non_goals}}' },
     ],
     'examples': [
-      {
-        id: 'before-after',
-        name: 'Before vs After',
-        content: 'Before: {{before_state}}\nAfter: {{after_state}}\nKey improvements: {{improvements}}'
-      },
-      {
-        id: 'case-study',
-        name: 'Case Study',
-        content: 'Scenario: {{scenario}}\nActions taken: {{actions}}\nOutcome: {{outcome}}\nLessons learned: {{lessons}}'
-      },
-      {
-        id: 'code-comparison',
-        name: 'Code Comparison',
-        content: 'Bad approach:\n```{{language}}\n{{bad_code}}\n```\n\nGood approach:\n```{{language}}\n{{good_code}}\n```\n\nWhy it\'s better: {{explanation}}'
-      },
+      { id: 'before-after', name: 'Before vs After', content: 'Before: {{before_state}}\nAfter: {{after_state}}\nKey improvements: {{improvements}}' },
+      { id: 'case-study', name: 'Case Study', content: 'Scenario: {{scenario}}\nActions taken: {{actions}}\nOutcome: {{outcome}}\nLessons learned: {{lessons}}' },
+      { id: 'code-comparison', name: 'Code Comparison', content: 'Bad approach:\n```{{language}}\n{{bad_code}}\n```\n\nGood approach:\n```{{language}}\n{{good_code}}\n```\n\nWhy it\'s better: {{explanation}}' },
     ]
   };
 
-  // Default configuration with enhanced components
-  const DEFAULT_CONFIG = {
-    components: [
-      {
-        id: 'role',
-        name: 'Role / Persona',
-        enabled: true,
-        order: 1,
-        hasOptions: true,
-        selectedPersona: 'senior-engineer',
-        content: PERSONAS[0].content
-      },
-      {
-        id: 'tech-stack',
-        name: 'Technology Stack',
-        enabled: true,
-        order: 2,
-        hasOptions: true,
-        selectedStacks: [],
-        content: 'Technology stack: {{tech_stack}}\n\nPlease provide solutions and examples specific to these technologies.'
-      },
-      {
-        id: 'context',
-        name: 'Context / Background',
-        enabled: true,
-        order: 3,
-        hasOptions: true,
-        selectedPreset: 'project-brief',
-        content: `Project: {{project_name}}
-Domain: {{domain}}
-Key requirements: {{requirements}}
-Primary users: {{primary_users}}
-Success metric: {{success_metric}}`
-      },
-      {
-        id: 'task',
-        name: 'Task / Objective',
-        enabled: true,
-        order: 4,
-        hasOptions: true,
-        selectedPreset: 'feature-task',
-        content: `Objective: {{feature_summary}}
-Current behavior: {{current_behavior}}
-Desired behavior: {{desired_behavior}}
-Acceptance criteria: {{acceptance_criteria}}`
-      },
-      {
-        id: 'rules',
-        name: 'Processing Rules',
-        enabled: true,
-        order: 5,
-        hasOptions: true,
-        selectedPreset: 'engineering-best-practices',
-        content: `Follow these rules:
-- Cite relevant standards or RFCs when possible
-- Highlight risks, edge cases, and trade-offs
-- Prefer deterministic steps with measurable outcomes
-- Offer testing guidance for every recommendation
-- Keep explanations concise but technically rigorous`
-      },
-      {
-        id: 'output-format',
-        name: 'Output Format',
-        enabled: true,
-        order: 6,
-        hasOptions: true,
-        selectedPreset: 'detailed-solution',
-        content: `Structure your response as:
-1. Brief summary (1-2 sentences)
-2. Detailed explanation with step-by-step breakdown
-3. Code examples with inline comments
-4. Testing approach and edge cases
-5. Best practices and recommendations`
-      },
-      {
-        id: 'constraints',
-        name: 'Constraints / Limitations',
-        enabled: false,
-        order: 7,
-        hasOptions: true,
-        selectedPreset: 'delivery-constraints',
-        content: `Timeline: {{deadline}}
-Budget: {{budget}}
-Critical dependencies: {{dependencies}}
-Compliance requirements: {{compliance}}`
-      },
-      {
-        id: 'examples',
-        name: 'Examples / References',
-        enabled: false,
-        order: 8,
-        hasOptions: true,
-        selectedPreset: 'before-after',
-        content: `Before: {{before_state}}
-After: {{after_state}}
-Key improvements: {{improvements}}`
-      }
-    ]
-  };
-
-  // Enhanced templates
   const TEMPLATES = {
     'code-review': {
       name: 'Code Review Assistant',
       category: 'development',
       components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          hasOptions: true,
-          selectedPersona: 'code-reviewer',
-          content: PERSONAS.find(p => p.id === 'code-reviewer').content
-        },
-        {
-          id: 'task',
-          name: 'Code to Review',
-          enabled: true,
-          order: 2,
-          content: '{{code_snippet}}'
-        },
-        {
-          id: 'rules',
-          name: 'Review Criteria',
-          enabled: true,
-          order: 3,
-          content: `Review the code for:
-- Code quality and readability
-- Performance issues and optimizations
-- Security vulnerabilities (OWASP top 10)
-- Best practices adherence
-- Potential bugs and edge cases
-- Maintainability and scalability concerns
-- Test coverage gaps`
-        },
-        {
-          id: 'output-format',
-          name: 'Output Format',
-          enabled: true,
-          order: 4,
-          content: `Structure your review as:
-1. Overall assessment (1-2 sentences)
-2. Critical issues (MUST fix - security, bugs)
-3. Important suggestions (SHOULD fix - performance, best practices)
-4. Minor improvements (COULD fix - style, optimization)
-5. Positive highlights (what's done well)
-6. Refactored code example (if applicable)`
-        }
+        { id: 'role', name: 'Role / Persona', enabled: true, order: 1, hasOptions: true, selectedPersona: 'code-reviewer', content: PERSONAS.find(p => p.id === 'code-reviewer').content },
+        { id: 'task', name: 'Code to Review', enabled: true, order: 2, content: '{{code_snippet}}' },
+        { id: 'rules', name: 'Review Criteria', enabled: true, order: 3, content: 'Review the code for:\n- Code quality and readability\n- Performance issues and optimizations\n- Security vulnerabilities (OWASP top 10)\n- Best practices adherence\n- Potential bugs and edge cases\n- Maintainability and scalability concerns\n- Test coverage gaps' },
+        { id: 'output-format', name: 'Output Format', enabled: true, order: 4, content: 'Structure your review as:\n1. Overall assessment (1-2 sentences)\n2. Critical issues (MUST fix - security, bugs)\n3. Important suggestions (SHOULD fix - performance, best practices)\n4. Minor improvements (COULD fix - style, optimization)\n5. Positive highlights (what\'s done well)\n6. Refactored code example (if applicable)' }
       ]
     },
     'data-analysis': {
       name: 'General Analysis',
       category: 'analysis',
       components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          hasOptions: true,
-          selectedPersona: 'senior-engineer',
-          content: PERSONAS.find(p => p.id === 'senior-engineer').content
-        },
-        {
-          id: 'context',
-          name: 'Dataset Context',
-          enabled: true,
-          order: 2,
-          content: 'Dataset: {{dataset_name}}\nSource: {{data_source}}\nSize: {{record_count}} records\nKey fields: {{field_list}}\nTime period: {{time_period}}'
-        },
-        {
-          id: 'task',
-          name: 'Analysis Objective',
-          enabled: true,
-          order: 3,
-          content: '{{analysis_objective}}'
-        },
-        {
-          id: 'output-format',
-          name: 'Output Format',
-          enabled: true,
-          order: 4,
-          content: `Provide:
-1. Executive summary (key findings in 3-5 bullet points)
-2. Statistical summary (mean, median, std dev, outliers)
-3. Data quality assessment (missing values, anomalies)
-4. Visualization recommendations (chart types, variables)
-5. Actionable insights with business impact
-6. Recommendations for next analysis steps
-7. Python/SQL code snippets for analysis`
-        }
+        { id: 'role', name: 'Role / Persona', enabled: true, order: 1, hasOptions: true, selectedPersona: 'senior-engineer', content: PERSONAS.find(p => p.id === 'senior-engineer').content },
+        { id: 'context', name: 'Dataset Context', enabled: true, order: 2, content: 'Dataset: {{dataset_name}}\nSource: {{data_source}}\nSize: {{record_count}} records\nKey fields: {{field_list}}\nTime period: {{time_period}}' },
+        { id: 'task', name: 'Analysis Objective', enabled: true, order: 3, content: '{{analysis_objective}}' },
+        { id: 'output-format', name: 'Output Format', enabled: true, order: 4, content: 'Provide:\n1. Executive summary (key findings in 3-5 bullet points)\n2. Statistical summary (mean, median, std dev, outliers)\n3. Data quality assessment (missing values, anomalies)\n4. Visualization recommendations (chart types, variables)\n5. Actionable insights with business impact\n6. Recommendations for next analysis steps\n7. Python/SQL code snippets for analysis' }
       ]
     },
     'content-writer': {
       name: 'Content Writer',
       category: 'writing',
       components: [
-        {
-          id: 'role',
-          name: 'Role / Persona',
-          enabled: true,
-          order: 1,
-          hasOptions: true,
-          selectedPersona: 'content-writer',
-          content: PERSONAS.find(p => p.id === 'content-writer').content
-        },
-        {
-          id: 'task',
-          name: 'Writing Brief',
-          enabled: true,
-          order: 2,
-          content: 'Topic: {{topic}}\nTarget audience: {{audience}}\nTone: {{tone}}\nKey message: {{key_message}}'
-        },
-        {
-          id: 'rules',
-          name: 'Writing Guidelines',
-          enabled: true,
-          order: 3,
-          content: `Guidelines:
-- Use clear, engaging language appropriate for {{audience}}
-- Maintain {{tone}} tone throughout
-- Include concrete examples and case studies
-- Break up text with subheadings and bullet points
-- Use active voice and strong verbs
-- End with clear call-to-action or key takeaways`
-        },
-        {
-          id: 'constraints',
-          name: 'Constraints',
-          enabled: true,
-          order: 4,
-          content: 'Word count: {{word_count}}\nSEO keywords: {{keywords}}\nContent type: {{content_type}}'
-        }
+        { id: 'role', name: 'Role / Persona', enabled: true, order: 1, hasOptions: true, selectedPersona: 'content-writer', content: PERSONAS.find(p => p.id === 'content-writer').content },
+        { id: 'task', name: 'Writing Brief', enabled: true, order: 2, content: 'Topic: {{topic}}\nTarget audience: {{audience}}\nTone: {{tone}}\nKey message: {{key_message}}' },
+        { id: 'rules', name: 'Writing Guidelines', enabled: true, order: 3, content: 'Guidelines:\n- Use clear, engaging language appropriate for {{audience}}\n- Maintain {{tone}} tone throughout\n- Include concrete examples and case studies\n- Break up text with subheadings and bullet points\n- Use active voice and strong verbs\n- End with clear call-to-action or key takeaways' },
+        { id: 'constraints', name: 'Constraints', enabled: true, order: 4, content: 'Word count: {{word_count}}\nSEO keywords: {{keywords}}\nContent type: {{content_type}}' }
       ]
     },
   };
 
+  const COMPONENT_TYPES = [
+    { id: 'persona', label: 'Persona' },
+    { id: 'context', label: 'Context' },
+    { id: 'task', label: 'Task' },
+    { id: 'rules', label: 'Rules' },
+    { id: 'output-format', label: 'Output Format' },
+    { id: 'constraints', label: 'Constraints' },
+    { id: 'examples', label: 'Examples' }
+  ];
+
+  const USE_CASE_TAGS = [
+    { id: 'coding', label: 'Coding' },
+    { id: 'writing', label: 'Writing' },
+    { id: 'analysis', label: 'Analysis' },
+    { id: 'debugging', label: 'Debugging' },
+    { id: 'review', label: 'Review' },
+    { id: 'planning', label: 'Planning' },
+    { id: 'documentation', label: 'Documentation' }
+  ];
+
+  const COMPONENT_TYPE_ORDER = ['persona', 'context', 'task', 'rules', 'output-format', 'constraints', 'examples'];
+
+  const LEGACY_ID_TO_TYPE = {
+    'role': 'persona',
+    'tech-stack': 'context',
+    'context': 'context',
+    'task': 'task',
+    'rules': 'rules',
+    'output-format': 'output-format',
+    'constraints': 'constraints',
+    'examples': 'examples'
+  };
+
   // ============================================================================
-  // Performance Utilities
+  // Snippet Manager
   // ============================================================================
 
-  /**
-   * Request animation frame wrapper for smooth DOM updates
-   */
-  function rafDebounce(func) {
-    let rafId = null;
-    return function executedFunction(...args) {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
+  class SnippetManager {
+    constructor(storageKey) {
+      this.storageKey = storageKey;
+      this.projects = ['General'];
+      this.snippets = [];
+      this.enabledIds = [];
+      this.selectedId = null;
+      this.viewMode = 'project';
+      this.filterText = '';
+    }
+
+    load() {
+      const saved = loadToolState(this.storageKey);
+      if (saved) {
+        this.projects = saved.projects || ['General'];
+        this.snippets = saved.snippets || [];
+        this.enabledIds = saved.enabledIds || [];
       }
-      rafId = requestAnimationFrame(() => {
-        func(...args);
-        rafId = null;
+    }
+
+    save() {
+      saveToolState(this.storageKey, {
+        projects: this.projects,
+        snippets: this.snippets,
+        enabledIds: this.enabledIds
       });
-    };
+    }
+
+    createSnippet(overrides = {}) {
+      const snippet = {
+        id: 'snip-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+        name: overrides.name || 'New Snippet',
+        content: overrides.content || '',
+        project: overrides.project || this.projects[0] || 'General',
+        componentType: overrides.componentType || 'task',
+        tags: overrides.tags || [],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      this.snippets.push(snippet);
+      this.save();
+      return snippet;
+    }
+
+    updateSnippet(id, updates) {
+      const snippet = this.snippets.find(s => s.id === id);
+      if (snippet) {
+        Object.assign(snippet, updates, { updatedAt: Date.now() });
+        this.save();
+      }
+      return snippet;
+    }
+
+    deleteSnippet(id) {
+      this.snippets = this.snippets.filter(s => s.id !== id);
+      this.enabledIds = this.enabledIds.filter(eid => eid !== id);
+      if (this.selectedId === id) this.selectedId = null;
+      this.save();
+    }
+
+    duplicateSnippet(id) {
+      const original = this.snippets.find(s => s.id === id);
+      if (!original) return null;
+      return this.createSnippet({
+        name: original.name + ' (copy)',
+        content: original.content,
+        project: original.project,
+        componentType: original.componentType,
+        tags: [...original.tags]
+      });
+    }
+
+    addProject(name) {
+      if (name && !this.projects.includes(name)) {
+        this.projects.push(name);
+        this.save();
+      }
+    }
+
+    deleteProject(name) {
+      if (name === 'General') return;
+      this.projects = this.projects.filter(p => p !== name);
+      this.snippets.forEach(s => { if (s.project === name) s.project = 'General'; });
+      this.save();
+    }
+
+    toggleEnabled(id) {
+      const idx = this.enabledIds.indexOf(id);
+      if (idx > -1) this.enabledIds.splice(idx, 1);
+      else this.enabledIds.push(id);
+      this.save();
+    }
+
+    isEnabled(id) {
+      return this.enabledIds.includes(id);
+    }
+
+    getEnabledSnippets() {
+      return this.snippets
+        .filter(s => this.enabledIds.includes(s.id))
+        .sort((a, b) => COMPONENT_TYPE_ORDER.indexOf(a.componentType) - COMPONENT_TYPE_ORDER.indexOf(b.componentType));
+    }
+
+    getByProject() {
+      const groups = {};
+      this.projects.forEach(p => { groups[p] = []; });
+      this.getFiltered().forEach(s => {
+        if (!groups[s.project]) groups[s.project] = [];
+        groups[s.project].push(s);
+      });
+      return groups;
+    }
+
+    getByTag() {
+      const groups = {};
+      USE_CASE_TAGS.forEach(t => { groups[t.label] = []; });
+      groups['Untagged'] = [];
+      this.getFiltered().forEach(s => {
+        if (!s.tags || s.tags.length === 0) {
+          groups['Untagged'].push(s);
+        } else {
+          s.tags.forEach(tag => {
+            const tagLabel = USE_CASE_TAGS.find(t => t.id === tag)?.label || tag;
+            if (!groups[tagLabel]) groups[tagLabel] = [];
+            groups[tagLabel].push(s);
+          });
+        }
+      });
+      return groups;
+    }
+
+    getFiltered() {
+      if (!this.filterText) return this.snippets;
+      const q = this.filterText.toLowerCase();
+      return this.snippets.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.content.toLowerCase().includes(q) ||
+        s.project.toLowerCase().includes(q)
+      );
+    }
+
+    getSelected() {
+      return this.snippets.find(s => s.id === this.selectedId) || null;
+    }
   }
 
+  // ============================================================================
+  // State
+  // ============================================================================
+
+  let snippetMgr = new SnippetManager('ai-prompt-builder-snippets');
+
   let state = {
-    config: deepClone(DEFAULT_CONFIG),
+    config: { components: [] },
     currentModal: null,
     customTemplates: [],
-    focusedIndex: -1,
-    selectedComponents: new Set(),
     intentMode: 'create',
     workflowProfile: 'balanced',
     intentGoal: '',
@@ -1997,19 +1762,177 @@ Key improvements: {{improvements}}`
     { id: 'steps', label: 'step-by-step plan' },
     { id: 'json', label: 'structured JSON' }
   ];
+
   const DEFAULT_OUTPUT_BY_MODE = {
     create: 'steps',
     analyze: 'summary',
     rewrite: 'bullets',
     plan: 'checklist'
   };
+
   const WORKFLOW_PROFILES = ['rapid', 'balanced', 'deep'];
-  const CORE_COMPONENT_IDS = ['role', 'tech-stack', 'context', 'task', 'rules', 'output-format', 'constraints', 'examples'];
-  const WORKFLOW_COMPONENTS = {
-    rapid: new Set(['role', 'task', 'output-format']),
-    balanced: new Set(['role', 'context', 'task', 'rules', 'output-format']),
-    deep: new Set(CORE_COMPONENT_IDS)
-  };
+
+  // ============================================================================
+  // Migration
+  // ============================================================================
+
+  function migrateComponentsToSnippets() {
+    if (snippetMgr.snippets.length > 0) return;
+
+    // Try legacy migration first
+    const saved = loadToolState('ai-prompt-builder');
+    if (saved?.config?.components?.length) {
+      const components = saved.config.components;
+      components.forEach(comp => {
+        if (!comp.content) return;
+        const componentType = LEGACY_ID_TO_TYPE[comp.id] || 'task';
+        const snippet = snippetMgr.createSnippet({
+          name: comp.name || comp.id,
+          content: comp.content,
+          project: 'General',
+          componentType: componentType,
+          tags: []
+        });
+        if (comp.enabled) {
+          snippetMgr.enabledIds.push(snippet.id);
+        }
+      });
+      snippetMgr.save();
+      return;
+    }
+
+    // Seed defaults
+    seedDefaultSnippets(snippetMgr);
+  }
+
+  function seedDefaultSnippets(mgr) {
+    // --- Project: Code Development ---
+    mgr.addProject('Code Development');
+
+    mgr.createSnippet({
+      name: 'Senior Engineer Persona',
+      content: 'You are a senior software engineer with 10+ years of experience in modern development practices, design patterns, and clean code principles. You write production-ready, well-tested code with clear documentation.',
+      project: 'Code Development',
+      componentType: 'persona',
+      tags: ['coding']
+    });
+
+    mgr.createSnippet({
+      name: 'Feature Implementation Task',
+      content: 'Implement the following feature:\n\nRequirement: {{requirement}}\nAcceptance criteria: {{criteria}}\n\nProvide:\n1. Implementation plan with file changes\n2. Complete working code\n3. Unit tests covering happy path and edge cases\n4. Brief explanation of design decisions',
+      project: 'Code Development',
+      componentType: 'task',
+      tags: ['coding', 'planning']
+    });
+
+    mgr.createSnippet({
+      name: 'Code Review Checklist',
+      content: 'Review this code for:\n- Correctness: Does it handle all edge cases?\n- Security: Any injection, XSS, or auth issues?\n- Performance: N+1 queries, unnecessary allocations, blocking calls?\n- Readability: Clear naming, small functions, minimal nesting?\n- Tests: Adequate coverage? Missing scenarios?\n\nRate severity: CRITICAL / IMPORTANT / SUGGESTION\nProvide specific line-level feedback with fixes.',
+      project: 'Code Development',
+      componentType: 'rules',
+      tags: ['coding', 'review']
+    });
+
+    mgr.createSnippet({
+      name: 'Code Output Format',
+      content: 'Structure your response as:\n1. Brief summary (1-2 sentences)\n2. Implementation with complete code blocks (include file paths)\n3. Tests with assertions\n4. Edge cases and potential issues\n5. Run/build instructions if applicable',
+      project: 'Code Development',
+      componentType: 'output-format',
+      tags: ['coding']
+    });
+
+    // --- Project: Writing & Analysis ---
+    mgr.addProject('Writing & Analysis');
+
+    mgr.createSnippet({
+      name: 'Technical Writer Persona',
+      content: 'You are an experienced technical writer who creates clear, well-structured documentation. You understand developer audiences and write concise prose that balances depth with readability. You use examples liberally.',
+      project: 'Writing & Analysis',
+      componentType: 'persona',
+      tags: ['writing', 'documentation']
+    });
+
+    mgr.createSnippet({
+      name: 'Research Synthesis Task',
+      content: 'Analyze the provided material and produce:\n\n1. Executive summary (3-5 key findings)\n2. Evidence-backed analysis with citations\n3. Contradictions or gaps in the data\n4. Actionable recommendations ranked by impact\n5. Open questions for further investigation',
+      project: 'Writing & Analysis',
+      componentType: 'task',
+      tags: ['analysis', 'writing']
+    });
+
+    mgr.createSnippet({
+      name: 'Decision Brief Template',
+      content: 'Create a decision brief:\n\nProblem: {{problem_statement}}\n\nOptions (at least 3):\n- For each: Description, Pros, Cons, Effort, Risk\n\nRecommendation: State clearly with rationale\nSecond-order effects: What changes downstream?\nReversibility: How easy to undo if wrong?',
+      project: 'Writing & Analysis',
+      componentType: 'task',
+      tags: ['analysis', 'planning']
+    });
+
+    mgr.createSnippet({
+      name: 'Writing Quality Rules',
+      content: 'Follow these writing guidelines:\n- Lead with the most important information\n- Use active voice and concrete language\n- Keep paragraphs to 3-4 sentences max\n- Use bullet points for lists of 3+ items\n- Define acronyms on first use\n- Include examples for abstract concepts\n- End sections with key takeaways',
+      project: 'Writing & Analysis',
+      componentType: 'rules',
+      tags: ['writing']
+    });
+
+    // --- Project: Debugging & Ops ---
+    mgr.addProject('Debugging & Ops');
+
+    mgr.createSnippet({
+      name: 'Debug Partner Persona',
+      content: 'You are a seasoned debugger who approaches problems methodically. You form hypotheses, design experiments to test them, and narrow down root causes systematically. You never guess — you verify.',
+      project: 'Debugging & Ops',
+      componentType: 'persona',
+      tags: ['debugging', 'coding']
+    });
+
+    mgr.createSnippet({
+      name: 'Bug Investigation Task',
+      content: 'Investigate this issue:\n\nSymptom: {{symptom}}\nSteps to reproduce: {{steps}}\nExpected vs actual behavior: {{diff}}\n\nProvide:\n1. Likely root causes ranked by probability\n2. Diagnostic steps to confirm each hypothesis\n3. Targeted fix with minimal blast radius\n4. Regression test to prevent recurrence\n5. Related areas to check for similar issues',
+      project: 'Debugging & Ops',
+      componentType: 'task',
+      tags: ['debugging']
+    });
+
+    mgr.createSnippet({
+      name: 'Incident Response Context',
+      content: 'Environment: {{environment}}\nService: {{service_name}}\nSeverity: {{severity}}\nImpact: {{user_impact}}\nTimeline: {{when_started}}\nRecent changes: {{recent_deployments}}\n\nConstraints:\n- Minimize downtime over perfect fix\n- Document all changes for post-mortem\n- Communicate status every 15 minutes',
+      project: 'Debugging & Ops',
+      componentType: 'context',
+      tags: ['debugging', 'planning']
+    });
+
+    mgr.createSnippet({
+      name: 'Ops Safety Constraints',
+      content: 'Operational constraints:\n- Never run destructive commands without confirmation\n- Always back up before modifying data\n- Test changes in staging first when possible\n- Log all manual interventions with timestamps\n- Prefer rollback over forward-fix under time pressure\n- Escalate if root cause is unclear after 30 minutes',
+      project: 'Debugging & Ops',
+      componentType: 'constraints',
+      tags: ['debugging', 'coding']
+    });
+
+    mgr.save();
+  }
+
+  // ============================================================================
+  // Intent Logic
+  // ============================================================================
+
+  function ensureIntentState() {
+    if (!INTENT_MODES.includes(state.intentMode)) state.intentMode = 'create';
+    if (!WORKFLOW_PROFILES.includes(state.workflowProfile)) state.workflowProfile = 'balanced';
+    if (typeof state.intentGoal !== 'string') state.intentGoal = '';
+    if (typeof state.intentInput !== 'string') state.intentInput = '';
+    if (!INTENT_OUTPUT_OPTIONS.some(o => o.id === state.intentOutput)) {
+      state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
+    }
+    state.showRefine = Boolean(state.showRefine);
+  }
+
+  function getIntentOutputLabel() {
+    const selected = INTENT_OUTPUT_OPTIONS.find(o => o.id === state.intentOutput);
+    return selected?.label || state.intentOutput;
+  }
 
   function clearIntentFields() {
     state.intentGoal = '';
@@ -2024,10 +1947,7 @@ Key improvements: {{improvements}}`
   async function pasteIntentContext() {
     try {
       const text = await navigator.clipboard.readText();
-      if (!text) {
-        showStatus('Clipboard is empty', 'info');
-        return;
-      }
+      if (!text) { showStatus('Clipboard is empty', 'info'); return; }
       state.intentInput = text;
       renderIntentControls();
       updatePreview();
@@ -2038,48 +1958,6 @@ Key improvements: {{improvements}}`
     }
   }
 
-  function normalizeComponents() {
-    if (!state.config || !Array.isArray(state.config.components)) {
-      state.config = deepClone(DEFAULT_CONFIG);
-    }
-
-    state.config.components.forEach((component, index) => {
-      if (typeof component.order !== 'number') {
-        component.order = index + 1;
-      }
-
-      if (component.id === 'role') {
-        component.hasOptions = true;
-        component.selectedPersona = resolvePersonaSelection(component);
-      } else if (component.id === 'tech-stack') {
-        component.hasOptions = true;
-        component.selectedStacks = component.selectedStacks || [];
-      } else {
-        const presets = COMPONENT_PRESETS[component.id] || [];
-        if (presets.length) {
-          component.hasOptions = true;
-          component.selectedPreset = resolvePresetSelection(component, presets);
-        }
-      }
-    });
-  }
-
-  function ensureIntentState() {
-    if (!INTENT_MODES.includes(state.intentMode)) state.intentMode = 'create';
-    if (!WORKFLOW_PROFILES.includes(state.workflowProfile)) state.workflowProfile = 'balanced';
-    if (typeof state.intentGoal !== 'string') state.intentGoal = '';
-    if (typeof state.intentInput !== 'string') state.intentInput = '';
-    if (!INTENT_OUTPUT_OPTIONS.some((option) => option.id === state.intentOutput)) {
-      state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
-    }
-    state.showRefine = Boolean(state.showRefine);
-  }
-
-  function getIntentOutputLabel() {
-    const selected = INTENT_OUTPUT_OPTIONS.find((option) => option.id === state.intentOutput);
-    return selected?.label || state.intentOutput;
-  }
-
   function applyWorkflowProfile(profile, options = {}) {
     const { silent = false } = options;
     if (!WORKFLOW_PROFILES.includes(profile)) return;
@@ -2087,17 +1965,9 @@ Key improvements: {{improvements}}`
     state.workflowProfile = profile;
     state.showRefine = profile !== 'rapid';
 
-    const enabledCoreComponents = WORKFLOW_COMPONENTS[profile] || WORKFLOW_COMPONENTS.balanced;
-    if (state.config?.components?.length) {
-      state.config.components.forEach((component) => {
-        if (CORE_COMPONENT_IDS.includes(component.id)) {
-          component.enabled = enabledCoreComponents.has(component.id);
-        }
-      });
-    }
-
-    renderComponents();
     renderIntentControls();
+    renderSnippetTree();
+    renderSnippetEditor();
     updatePreview();
     saveConfig();
     if (!silent) {
@@ -2113,12 +1983,12 @@ Key improvements: {{improvements}}`
       container.dataset.intentRefine = state.showRefine ? 'open' : 'closed';
     }
 
-    document.querySelectorAll('.intent-mode-btn').forEach((button) => {
-      button.classList.toggle('active', button.dataset.intentMode === state.intentMode);
+    document.querySelectorAll('.intent-mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.intentMode === state.intentMode);
     });
 
-    document.querySelectorAll('[data-workflow-profile]').forEach((button) => {
-      button.classList.toggle('active', button.dataset.workflowProfile === state.workflowProfile);
+    document.querySelectorAll('[data-workflow-profile]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.workflowProfile === state.workflowProfile);
     });
 
     const goalInput = document.getElementById('intent-goal');
@@ -2127,8 +1997,8 @@ Key improvements: {{improvements}}`
     const inputArea = document.getElementById('intent-input');
     if (inputArea) inputArea.value = state.intentInput;
 
-    document.querySelectorAll('[data-intent-output]').forEach((button) => {
-      button.classList.toggle('active', button.dataset.intentOutput === state.intentOutput);
+    document.querySelectorAll('[data-intent-output]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.intentOutput === state.intentOutput);
     });
 
     const refineToggle = document.getElementById('intent-refine-toggle');
@@ -2153,888 +2023,127 @@ Key improvements: {{improvements}}`
     return `Intent:\nMode: ${state.intentMode}\n\n`;
   }
 
-  export function init(context) {
-    console.log('AI Prompt Builder v10 initialized');
+  // ============================================================================
+  // Snippet Tree Rendering
+  // ============================================================================
 
-    // Load saved configuration and custom templates
-    loadConfig();
-    loadCustomTemplates();
-    normalizeComponents();
-    ensureIntentState();
-    applyWorkflowProfile(state.workflowProfile, { silent: true });
+  function renderSnippetTree() {
+    const tree = document.getElementById('snippet-tree');
+    if (!tree) return;
 
-    // Check for shared config in URL
-    loadFromURL();
+    const groups = snippetMgr.viewMode === 'project'
+      ? snippetMgr.getByProject()
+      : snippetMgr.getByTag();
 
-    // Render components and templates
-    renderComponents();
-    renderTemplates();
-    renderIntentControls();
-    updatePreview();
-
-    // Event listeners
-    setupEventListeners();
-    setupModals();
-    setupCollapsibles();
-  }
-
-  export function cleanup(context) {
-    console.log('AI Prompt Builder cleanup');
-    saveConfig();
-
-    // Remove global event listeners to prevent memory leaks
-    document.removeEventListener('keydown', handleKeyboardShortcuts);
-  }
-
-  function setupEventListeners() {
-    const intentModeGroup = document.getElementById('intent-mode-group');
-    if (intentModeGroup) {
-      intentModeGroup.addEventListener('click', (e) => {
-        const button = e.target.closest('.intent-mode-btn');
-        if (!button) return;
-        state.intentMode = button.dataset.intentMode;
-        state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
-        renderIntentControls();
-        updatePreview();
-        saveConfig();
-      });
-    }
-
-    const intentWorkflowGroup = document.getElementById('intent-workflow-group');
-    if (intentWorkflowGroup) {
-      intentWorkflowGroup.addEventListener('click', (e) => {
-        const button = e.target.closest('[data-workflow-profile]');
-        if (!button) return;
-        applyWorkflowProfile(button.dataset.workflowProfile);
-      });
-    }
-
-    const intentOutputOptions = document.getElementById('intent-output-options');
-    if (intentOutputOptions) {
-      intentOutputOptions.addEventListener('click', (e) => {
-        const button = e.target.closest('[data-intent-output]');
-        if (!button) return;
-        state.intentOutput = button.dataset.intentOutput;
-        renderIntentControls();
-        updatePreview();
-        saveConfig();
-      });
-    }
-
-    const refineToggle = document.getElementById('intent-refine-toggle');
-    if (refineToggle) {
-      refineToggle.addEventListener('click', () => {
-        state.showRefine = !state.showRefine;
-        renderIntentControls();
-        saveConfig();
-      });
-    }
-
-    const pasteIntentBtn = document.getElementById('intent-paste-btn');
-    if (pasteIntentBtn) {
-      pasteIntentBtn.addEventListener('click', () => {
-        pasteIntentContext();
-      });
-    }
-
-    const clearIntentBtn = document.getElementById('intent-clear-btn');
-    if (clearIntentBtn) {
-      clearIntentBtn.addEventListener('click', () => {
-        clearIntentFields();
-      });
-    }
-
-    ['intent-goal', 'intent-input'].forEach((id) => {
-      const input = document.getElementById(id);
-      if (!input) return;
-      input.addEventListener('input', (e) => {
-        if (id === 'intent-goal') state.intentGoal = e.target.value;
-        if (id === 'intent-input') state.intentInput = e.target.value;
-        updatePreview();
-        debouncedSaveConfig();
-      });
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (!e.altKey || e.ctrlKey || e.metaKey) return;
-      const targetTag = e.target?.tagName;
-      const isTypingField = targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT';
-
-      if (e.key >= '1' && e.key <= '4') {
-        e.preventDefault();
-        const modeByIndex = ['create', 'analyze', 'rewrite', 'plan'];
-        state.intentMode = modeByIndex[Number(e.key) - 1] || state.intentMode;
-        state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode] || state.intentOutput;
-        renderIntentControls();
-        updatePreview();
-        saveConfig();
-        return;
-      }
-
-      if (e.key >= '5' && e.key <= '7') {
-        e.preventDefault();
-        const profileByIndex = ['rapid', 'balanced', 'deep'];
-        const profile = profileByIndex[Number(e.key) - 5];
-        if (profile) applyWorkflowProfile(profile);
-        return;
-      }
-
-      if (e.key.toLowerCase() === 'r') {
-        e.preventDefault();
-        state.showRefine = !state.showRefine;
-        renderIntentControls();
-        saveConfig();
-        return;
-      }
-
-      if (e.key.toLowerCase() === 'v') {
-        e.preventDefault();
-        pasteIntentContext();
-        return;
-      }
-
-      if (e.key === 'Backspace' && !isTypingField) {
-        e.preventDefault();
-        clearIntentFields();
-      }
-    });
-
-    document.getElementById('add-component-btn').addEventListener('click', handleAddComponent);
-    document.getElementById('new-component-name').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') handleAddComponent();
-    });
-
-    document.getElementById('copy-prompt-btn').addEventListener('click', handleCopyPrompt);
-    document.getElementById('save-prompt-btn').addEventListener('click', handleSavePrompt);
-    document.getElementById('import-config-btn').addEventListener('click', handleImportConfig);
-    document.getElementById('export-config-btn').addEventListener('click', handleExportConfig);
-    document.getElementById('reset-config-btn').addEventListener('click', handleResetConfig);
-    document.getElementById('share-btn').addEventListener('click', handleShare);
-
-    // Template management
-    document.getElementById('save-template-btn').addEventListener('click', showSaveTemplateModal);
-    document.getElementById('save-template-confirm-btn').addEventListener('click', handleSaveCustomTemplate);
-    document.getElementById('template-search').addEventListener('input', filterTemplates);
-    document.getElementById('template-category').addEventListener('change', filterTemplates);
-    document.getElementById('templates-grid').addEventListener('click', handleTemplateClick);
-
-    // Share modal
-    document.getElementById('copy-link-btn').addEventListener('click', copyShareLink);
-
-    // Component list delegation
-    document.getElementById('components-list').addEventListener('click', handleComponentClick);
-    document.getElementById('components-list').addEventListener('input', handleComponentInput);
-    document.getElementById('components-list').addEventListener('change', handleComponentPresetChange);
-
-    // Quick actions toolbar
-    document.getElementById('enable-all-btn').addEventListener('click', enableAllComponents);
-    document.getElementById('disable-all-btn').addEventListener('click', disableAllComponents);
-    document.getElementById('invert-selection-btn').addEventListener('click', invertComponentSelection);
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', handleKeyboardShortcuts);
-
-    // Component focus handling
-    document.getElementById('components-list').addEventListener('focusin', handleComponentFocus);
-  }
-
-  function setupModals() {
-    // Close modals on background click or close button
-    document.querySelectorAll('.modal').forEach(modal => {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal || e.target.classList.contains('modal-close')) {
-          closeModal();
-        }
-      });
-    });
-
-    // Tech stack search
-    document.getElementById('techstack-search').addEventListener('input', (e) => {
-      filterTechStacks(e.target.value);
-    });
-  }
-
-  function showPersonaModal(componentId) {
-    const modal = document.getElementById('persona-modal');
-    const grid = document.getElementById('personas-grid');
-
-    const component = state.config.components.find(c => c.id === componentId);
-    const selectedPersona = component?.selectedPersona || 'senior-engineer';
-
-    grid.innerHTML = PERSONAS.map(persona => `
-      <div class="persona-card ${persona.id === selectedPersona ? 'selected' : ''}" data-persona="${persona.id}">
-        <div class="persona-name">${persona.name}</div>
-        <div class="persona-description">${persona.description}</div>
-      </div>
-    `).join('');
-
-    grid.addEventListener('click', (e) => {
-      const card = e.target.closest('.persona-card');
-      if (card) {
-        const personaId = card.dataset.persona;
-        selectPersona(componentId, personaId);
-        closeModal();
-      }
-    });
-
-    state.currentModal = { type: 'persona', componentId };
-    modal.classList.add('show');
-  }
-
-  function showTechStackModal(componentId) {
-    const modal = document.getElementById('techstack-modal');
-    const grid = document.getElementById('techstack-grid');
-
-    const component = state.config.components.find(c => c.id === componentId);
-    const selectedStacks = component?.selectedStacks || [];
-
-    renderTechStackGrid(grid, selectedStacks);
-
-    grid.addEventListener('click', (e) => {
-      const item = e.target.closest('.techstack-item');
-      if (item) {
-        const tech = item.dataset.tech;
-        toggleTechStack(componentId, tech);
-      }
-    });
-
-    state.currentModal = { type: 'techstack', componentId };
-    modal.classList.add('show');
-  }
-
-  function renderTechStackGrid(grid, selectedStacks, filter = '') {
     let html = '';
+    for (const [groupName, items] of Object.entries(groups)) {
+      const isProject = snippetMgr.viewMode === 'project';
+      const canDelete = isProject && groupName !== 'General';
+      const deleteBtn = canDelete
+        ? `<span class="snippet-group-actions"><button class="snippet-group-action-btn" data-delete-project="${groupName}" title="Delete project">x</button></span>`
+        : '';
 
-    Object.entries(TECH_STACKS).forEach(([category, technologies]) => {
-      const filtered = technologies.filter(tech =>
-        tech.toLowerCase().includes(filter.toLowerCase())
-      );
-
-      if (filtered.length > 0) {
-        filtered.forEach(tech => {
-          const selected = selectedStacks.includes(tech) ? 'selected' : '';
-          html += `<div class="techstack-item ${selected}" data-tech="${tech}">${tech}</div>`;
-        });
-      }
-    });
-
-    grid.innerHTML = html || '<p style="text-align: center; color: var(--text-secondary);">No technologies found</p>';
-  }
-
-  function filterTechStacks(query) {
-    const component = state.config.components.find(c => c.id === state.currentModal?.componentId);
-    const selectedStacks = component?.selectedStacks || [];
-    const grid = document.getElementById('techstack-grid');
-    renderTechStackGrid(grid, selectedStacks, query);
-  }
-
-  function selectPersona(componentId, personaId) {
-    const component = state.config.components.find(c => c.id === componentId);
-    const persona = PERSONAS.find(p => p.id === personaId);
-
-    if (component && persona) {
-      component.selectedPersona = personaId;
-      component.content = persona.content;
-      renderComponents();
-      updatePreview();
-      saveConfig();
-      showStatus(`Persona changed to: ${persona.name}`, 'success');
-    }
-  }
-
-  function toggleTechStack(componentId, tech) {
-    const component = state.config.components.find(c => c.id === componentId);
-    if (!component) return;
-
-    if (!component.selectedStacks) {
-      component.selectedStacks = [];
-    }
-
-    const index = component.selectedStacks.indexOf(tech);
-    if (index > -1) {
-      component.selectedStacks.splice(index, 1);
-    } else {
-      component.selectedStacks.push(tech);
-    }
-
-    // Update content
-    const stackList = component.selectedStacks.join(', ') || '{{tech_stack}}';
-    component.content = `Technology stack: ${stackList}\n\nPlease provide solutions and examples specific to these technologies.`;
-
-    // Re-render grid
-    const grid = document.getElementById('techstack-grid');
-    renderTechStackGrid(grid, component.selectedStacks);
-
-    renderComponents();
-    updatePreview();
-    saveConfig();
-  }
-
-  function closeModal() {
-    document.querySelectorAll('.modal').forEach(modal => {
-      modal.classList.remove('show');
-    });
-    state.currentModal = null;
-  }
-
-  function renderComponents() {
-    const list = document.getElementById('components-list');
-    const components = state.config.components.sort((a, b) => a.order - b.order);
-
-    list.innerHTML = components.map((comp, index) => {
-      let badge = '';
-      if (comp.id === 'role' && comp.selectedPersona) {
-        const persona = PERSONAS.find(p => p.id === comp.selectedPersona);
-        badge = `<span class="component-badge">${persona?.name || 'Default'}</span>`;
-      } else if (comp.id === 'tech-stack' && comp.selectedStacks?.length > 0) {
-        badge = `<span class="component-badge">${comp.selectedStacks.length} selected</span>`;
-      }
-
-      // Generate preview text (first 60 characters)
-      const contentPreview = (comp.content || '').trim().split('\n')[0].substring(0, 60);
-      const preview = contentPreview ? `<div class="component-preview">${contentPreview}${contentPreview.length >= 60 ? '...' : ''}</div>` : '';
-
-      const optionsHtml = renderComponentOptions(comp);
-      const hasOptions = optionsHtml.trim().length > 0;
-
-      const stateLabel = comp.enabled ? 'Enabled' : 'Disabled';
-      const stateClass = comp.enabled ? 'on' : 'off';
-
-      // Keyboard shortcut number (1-9)
-      const keyNumber = index < 9 ? index + 1 : '';
-
-      const pillGroup = `
-        <div class="component-pill-group">
-          ${badge}
-          <span class="component-state ${stateClass}">${stateLabel}</span>
+      html += `<div class="snippet-project-group">
+        <div class="snippet-project-header" data-group="${groupName}">
+          <span>${groupName} <span class="snippet-group-count">(${items.length})</span></span>
+          ${deleteBtn}
         </div>
-      `;
+        <div class="snippet-project-items">`;
 
-      return `
-        <div class="component-item ${comp.enabled ? 'active' : ''} ${hasOptions ? 'has-options' : ''}" data-id="${comp.id}" data-index="${index}" tabindex="0">
-          <div class="component-header" data-action="header-click">
-            ${keyNumber ? `<span class="component-number">${keyNumber}</span>` : ''}
-            <div class="component-toggle ${comp.enabled ? 'checked' : ''}" data-action="toggle"></div>
-            <div class="component-name">
-              <div class="component-name-text">${comp.name}</div>
-              ${preview}
-            </div>
-            <div class="component-actions">
-              <button class="component-action" data-action="edit" title="Edit (Enter)">✏️</button>
-              <button class="component-action" data-action="move-up" title="Move Up (Ctrl+↑)">&uarr;</button>
-              <button class="component-action" data-action="move-down" title="Move Down (Ctrl+↓)">&darr;</button>
-              <button class="component-action" data-action="delete" title="Delete (Del)">🗑️</button>
-            </div>
-            ${pillGroup}
-          </div>
-          <div class="component-body">
-            ${optionsHtml}
-            <textarea data-id="${comp.id}" placeholder="Enter content for ${comp.name}...">${comp.content || ''}</textarea>
-            <div class="component-meta">
-              <span>${(comp.content || '').length} characters</span>
-              <span>${(comp.content || '').split(/\s+/).filter(w => w).length} words</span>
-            </div>
-          </div>
-        </div>
-      `;
+      items.forEach(snippet => {
+        const isEnabled = snippetMgr.isEnabled(snippet.id);
+        const isSelected = snippetMgr.selectedId === snippet.id;
+        const typeLabel = COMPONENT_TYPES.find(t => t.id === snippet.componentType)?.label || snippet.componentType;
+
+        html += `<div class="snippet-item ${isSelected ? 'selected' : ''}" data-snippet-id="${snippet.id}">
+          <input type="checkbox" ${isEnabled ? 'checked' : ''} data-toggle-id="${snippet.id}" title="Include in prompt" />
+          <span class="snippet-item-name">${escapeHtml(snippet.name)}</span>
+          <span class="snippet-type-badge">${typeLabel}</span>
+        </div>`;
+      });
+
+      html += `</div></div>`;
+    }
+
+    if (!html.trim() || snippetMgr.snippets.length === 0) {
+      html = '<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:12px;font-style:italic;">No snippets yet. Create one to get started.</div>';
+    }
+
+    tree.innerHTML = html;
+
+    // Update compose info
+    const composeInfo = document.getElementById('snippet-compose-info');
+    if (composeInfo) {
+      const count = snippetMgr.getEnabledSnippets().length;
+      composeInfo.innerHTML = `<span>${count} snippet${count !== 1 ? 's' : ''} in prompt</span>`;
+    }
+
+    // Update view toggle buttons
+    document.querySelectorAll('.snippet-view-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.view === snippetMgr.viewMode);
+    });
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // ============================================================================
+  // Snippet Editor Rendering
+  // ============================================================================
+
+  function renderSnippetEditor() {
+    const emptyState = document.getElementById('snippet-empty-state');
+    const editorFields = document.getElementById('snippet-editor-fields');
+    if (!emptyState || !editorFields) return;
+
+    const snippet = snippetMgr.getSelected();
+    if (!snippet) {
+      emptyState.style.display = '';
+      editorFields.style.display = 'none';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+    editorFields.style.display = '';
+
+    document.getElementById('snippet-name').value = snippet.name;
+
+    // Project dropdown
+    const projectSelect = document.getElementById('snippet-project');
+    projectSelect.innerHTML = snippetMgr.projects.map(p =>
+      `<option value="${escapeHtml(p)}" ${p === snippet.project ? 'selected' : ''}>${escapeHtml(p)}</option>`
+    ).join('');
+
+    // Component type dropdown
+    const typeSelect = document.getElementById('snippet-type');
+    typeSelect.innerHTML = COMPONENT_TYPES.map(t =>
+      `<option value="${t.id}" ${t.id === snippet.componentType ? 'selected' : ''}>${t.label}</option>`
+    ).join('');
+
+    // Tags
+    const tagsContainer = document.getElementById('snippet-tags-selector');
+    tagsContainer.innerHTML = USE_CASE_TAGS.map(t => {
+      const active = (snippet.tags || []).includes(t.id) ? 'active' : '';
+      return `<span class="snippet-tag-chip ${active}" data-tag-id="${t.id}">${t.label}</span>`;
     }).join('');
 
-    // Re-apply focus if there was a focused item
-    if (state.focusedIndex !== undefined && state.focusedIndex >= 0) {
-      const items = list.querySelectorAll('.component-item');
-      if (items[state.focusedIndex]) {
-        items[state.focusedIndex].classList.add('focused');
-      }
-    }
+    // Content
+    document.getElementById('snippet-content').value = snippet.content;
+
+    // Include checkbox
+    document.getElementById('snippet-include-check').checked = snippetMgr.isEnabled(snippet.id);
   }
 
-  function renderComponentOptions(comp) {
-    const parts = [];
-
-    if (comp.id === 'tech-stack') {
-      parts.push('<button class="component-select-btn" data-action="select-techstack">?? Select Technologies</button>');
-    }
-
-    if (comp.id === 'role') {
-      const selectedPersona = resolvePersonaSelection(comp);
-      const personaOptions = PERSONAS.map(persona => `<option value="${persona.id}" ${persona.id === selectedPersona ? 'selected' : ''}>${persona.name}</option>`).join('');
-      parts.push(`
-        <div class="component-option-group">
-          <label class="component-select-label">
-            <span>Persona preset</span>
-            <select class="component-preset-select" data-component-id="${comp.id}">
-              <option value="custom" ${selectedPersona === 'custom' ? 'selected' : ''}>Custom persona</option>
-              ${personaOptions}
-            </select>
-          </label>
-          <button class="component-select-btn" data-action="select-persona">?? Persona Library</button>
-        </div>
-      `);
-    }
-
-    const presets = COMPONENT_PRESETS[comp.id] || [];
-    if (presets.length && comp.id !== 'role') {
-      const selectedPreset = resolvePresetSelection(comp, presets);
-      const presetOptions = presets.map(p => `<option value="${p.id}" ${p.id === selectedPreset ? 'selected' : ''}>${p.name}</option>`).join('');
-      parts.push(`
-        <div class="component-option-group">
-          <label class="component-select-label">
-            <span>Select ${comp.name}</span>
-            <select class="component-preset-select" data-component-id="${comp.id}">
-              <option value="custom" ${selectedPreset === 'custom' ? 'selected' : ''}>Custom</option>
-              ${presetOptions}
-            </select>
-          </label>
-        </div>
-      `);
-    }
-
-    return parts.join('');
-  }
-
-  function resolvePersonaSelection(component) {
-    const personaExists = PERSONAS.some(p => p.id === component.selectedPersona);
-    if (component.selectedPersona && personaExists) {
-      return component.selectedPersona;
-    }
-
-    const match = PERSONAS.find(p => (p.content || '').trim() === (component.content || '').trim());
-    if (match) {
-      component.selectedPersona = match.id;
-      return match.id;
-    }
-
-    return 'custom';
-  }
-
-  function resolvePresetSelection(component, presets) {
-    if (!presets.length) {
-      return 'custom';
-    }
-
-    if (component.selectedPreset && component.selectedPreset !== 'custom') {
-      const exists = presets.some(p => p.id === component.selectedPreset);
-      if (exists) {
-        return component.selectedPreset;
-      }
-    }
-
-    const normalizedContent = (component.content || '').trim();
-    const match = presets.find(p => (p.content || '').trim() === normalizedContent);
-    if (match) {
-      component.selectedPreset = match.id;
-      return match.id;
-    }
-
-    return 'custom';
-  }
-
-  function handleComponentClick(e) {
-    const action = e.target.dataset.action;
-    const item = e.target.closest('.component-item');
-    if (!item) return;
-
-    const id = item.dataset.id;
-    const index = parseInt(item.dataset.index);
-    const component = state.config.components.find(c => c.id === id);
-
-    if (!component) return;
-
-    // Handle header click (click anywhere on header to toggle, except on action buttons)
-    if (action === 'header-click' && !e.target.closest('.component-actions') && !e.target.closest('.component-action')) {
-      // Support multi-select with Shift/Ctrl
-      if (e.shiftKey || e.ctrlKey || e.metaKey) {
-        item.classList.toggle('selected');
-        if (!state.selectedComponents) state.selectedComponents = new Set();
-
-        if (item.classList.contains('selected')) {
-          state.selectedComponents.add(id);
-        } else {
-          state.selectedComponents.delete(id);
-        }
-        return;
-      }
-
-      // Normal toggle
-      component.enabled = !component.enabled;
-      renderComponents();
-      updatePreview();
-      saveConfig();
-      return;
-    }
-
-    // Handle specific actions
-    switch (action) {
-      case 'toggle':
-        component.enabled = !component.enabled;
-        renderComponents();
-        updatePreview();
-        saveConfig();
-        break;
-
-      case 'edit':
-        item.classList.toggle('expanded');
-        e.stopPropagation();
-        break;
-
-      case 'select-persona':
-        showPersonaModal(id);
-        e.stopPropagation();
-        break;
-
-      case 'select-techstack':
-        showTechStackModal(id);
-        e.stopPropagation();
-        break;
-
-      case 'move-up':
-        moveComponent(id, -1);
-        e.stopPropagation();
-        break;
-
-      case 'move-down':
-        moveComponent(id, 1);
-        e.stopPropagation();
-        break;
-
-      case 'delete':
-        if (confirm(`Delete component "${component.name}"?`)) {
-          state.config.components = state.config.components.filter(c => c.id !== id);
-          renderComponents();
-          updatePreview();
-          saveConfig();
-          showStatus('Component deleted', 'info');
-        }
-        e.stopPropagation();
-        break;
-    }
-  }
-
-  // Bulk Operations
-  function enableAllComponents() {
-    state.config.components.forEach(comp => comp.enabled = true);
-    renderComponents();
-    updatePreview();
-    saveConfig();
-    showStatus('All components enabled', 'success');
-  }
-
-  function disableAllComponents() {
-    state.config.components.forEach(comp => comp.enabled = false);
-    renderComponents();
-    updatePreview();
-    saveConfig();
-    showStatus('All components disabled', 'success');
-  }
-
-  function invertComponentSelection() {
-    state.config.components.forEach(comp => comp.enabled = !comp.enabled);
-    renderComponents();
-    updatePreview();
-    saveConfig();
-    showStatus('Component selection inverted', 'success');
-  }
-
-  // Keyboard Navigation
-  function handleKeyboardShortcuts(e) {
-    // Ignore if typing in input/textarea
-    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.isContentEditable) {
-      return;
-    }
-
-    const components = state.config.components.sort((a, b) => a.order - b.order);
-    const list = document.getElementById('components-list');
-    if (!list) return;
-    const items = Array.from(list.querySelectorAll('.component-item'));
-    const focusedItem = items.find(item => item.classList.contains('focused'));
-    const focusedIndex = focusedItem ? parseInt(focusedItem.dataset.index) : -1;
-
-    // Number keys 1-9 toggle components
-    if (e.key >= '1' && e.key <= '9') {
-      const index = parseInt(e.key) - 1;
-      if (index < components.length) {
-        components[index].enabled = !components[index].enabled;
-        renderComponents();
-        updatePreview();
-        saveConfig();
-      }
-      return;
-    }
-
-    // Arrow key navigation
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const nextIndex = focusedIndex < items.length - 1 ? focusedIndex + 1 : 0;
-      setFocusedComponent(nextIndex);
-      return;
-    }
-
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const prevIndex = focusedIndex > 0 ? focusedIndex - 1 : items.length - 1;
-      setFocusedComponent(prevIndex);
-      return;
-    }
-
-    // Space or Enter to toggle focused component
-    if ((e.key === ' ' || e.key === 'Enter') && focusedIndex >= 0) {
-      e.preventDefault();
-      const component = components[focusedIndex];
-      if (e.key === 'Enter') {
-        // Enter expands/collapses
-        items[focusedIndex].classList.toggle('expanded');
-      } else {
-        // Space toggles enabled state
-        component.enabled = !component.enabled;
-        renderComponents();
-        updatePreview();
-        saveConfig();
-      }
-      return;
-    }
-
-    // Delete key to delete focused component
-    if (e.key === 'Delete' && focusedIndex >= 0) {
-      const component = components[focusedIndex];
-      if (confirm(`Delete component "${component.name}"?`)) {
-        state.config.components = state.config.components.filter(c => c.id !== component.id);
-        renderComponents();
-        updatePreview();
-        saveConfig();
-        showStatus('Component deleted', 'info');
-      }
-      return;
-    }
-
-    // Escape key to collapse expanded components
-    if (e.key === 'Escape') {
-      // Collapse all expanded components
-      const expandedComponents = list.querySelectorAll('.component-item.expanded');
-      if (expandedComponents.length > 0) {
-        expandedComponents.forEach(comp => comp.classList.remove('expanded'));
-        return;
-      }
-
-      // Clear focus if no other action taken
-      items.forEach(item => item.classList.remove('focused'));
-      state.focusedIndex = -1;
-      return;
-    }
-
-    // Ctrl/Cmd shortcuts
-    if (e.ctrlKey || e.metaKey) {
-      // Ctrl+A: Enable all
-      if (e.key === 'a') {
-        e.preventDefault();
-        enableAllComponents();
-        return;
-      }
-
-      // Ctrl+D: Disable all
-      if (e.key === 'd') {
-        e.preventDefault();
-        disableAllComponents();
-        return;
-      }
-
-      // Ctrl+I: Invert selection
-      if (e.key === 'i') {
-        e.preventDefault();
-        invertComponentSelection();
-        return;
-      }
-
-      // Ctrl+Arrow to move components
-      if (e.key === 'ArrowUp' && focusedIndex >= 0) {
-        e.preventDefault();
-        const component = components[focusedIndex];
-        moveComponent(component.id, -1);
-        state.focusedIndex = Math.max(0, focusedIndex - 1);
-        return;
-      }
-
-      if (e.key === 'ArrowDown' && focusedIndex >= 0) {
-        e.preventDefault();
-        const component = components[focusedIndex];
-        moveComponent(component.id, 1);
-        state.focusedIndex = Math.min(components.length - 1, focusedIndex + 1);
-        return;
-      }
-    }
-  }
-
-  function setFocusedComponent(index) {
-    const list = document.getElementById('components-list');
-    const items = Array.from(list.querySelectorAll('.component-item'));
-
-    // Remove focus from all items
-    items.forEach(item => item.classList.remove('focused'));
-
-    // Add focus to target item
-    if (items[index]) {
-      items[index].classList.add('focused');
-      items[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      state.focusedIndex = index;
-    }
-  }
-
-  function handleComponentFocus(e) {
-    const item = e.target.closest('.component-item');
-    if (item) {
-      const index = parseInt(item.dataset.index);
-      setFocusedComponent(index);
-    }
-  }
-
-  function handleComponentPresetChange(e) {
-    const select = e.target.closest('.component-preset-select');
-    if (!select) return;
-
-    const componentId = select.dataset.componentId;
-    const component = state.config.components.find(c => c.id === componentId);
-    if (!component) return;
-
-    if (componentId === 'role') {
-      if (select.value === 'custom') {
-        component.selectedPersona = 'custom';
-        renderComponents();
-        updatePreview();
-        saveConfig();
-        return;
-      }
-      selectPersona(componentId, select.value);
-      return;
-    }
-
-    if (select.value === 'custom') {
-      component.selectedPreset = 'custom';
-      saveConfig();
-      return;
-    }
-
-    const presets = COMPONENT_PRESETS[componentId] || [];
-    const preset = presets.find(p => p.id === select.value);
-    if (!preset) return;
-
-    component.selectedPreset = preset.id;
-    component.content = preset.content;
-    renderComponents();
-    updatePreview();
-    saveConfig();
-    showStatus(`${component.name} preset applied: ${preset.name}`, 'success');
-  }
-
-  function handleComponentInput(e) {
-    if (e.target.tagName === 'TEXTAREA') {
-      const id = e.target.dataset.id;
-      const component = state.config.components.find(c => c.id === id);
-      if (component) {
-        component.content = e.target.value;
-
-        if (component.id === 'role') {
-          if (component.selectedPersona && component.selectedPersona !== 'custom') {
-            const persona = PERSONAS.find(p => p.id === component.selectedPersona);
-            if (!persona || persona.content !== component.content) {
-              component.selectedPersona = 'custom';
-              syncComponentPresetSelect(component.id, 'custom', e.target);
-            }
-          }
-        } else {
-          const presets = COMPONENT_PRESETS[component.id] || [];
-          if (component.selectedPreset && component.selectedPreset !== 'custom') {
-            const preset = presets.find(p => p.id === component.selectedPreset);
-            if (!preset || preset.content !== component.content) {
-              component.selectedPreset = 'custom';
-              syncComponentPresetSelect(component.id, 'custom', e.target);
-            }
-          }
-        }
-
-        // Update meta info immediately for instant feedback
-        const meta = e.target.nextElementSibling;
-        if (meta) {
-          const chars = e.target.value.length;
-          const words = e.target.value.split(/\s+/).filter(w => w).length;
-          meta.innerHTML = `
-            <span>${chars} characters</span>
-            <span>${words} words</span>
-          `;
-        }
-
-        // Debounce expensive operations for smooth typing
-        debouncedUpdatePreview();
-        debouncedSaveConfig();
-      }
-    }
-  }
-
-  function syncComponentPresetSelect(componentId, value, inputElement) {
-    const container = inputElement.closest('.component-item');
-    if (!container) return;
-    const select = container.querySelector(`.component-preset-select[data-component-id="${componentId}"]`);
-    if (select) {
-      select.value = value;
-    }
-  }
-
-  function moveComponent(id, direction) {
-    const index = state.config.components.findIndex(c => c.id === id);
-    if (index === -1) return;
-
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= state.config.components.length) return;
-
-    // Swap
-    [state.config.components[index], state.config.components[newIndex]] =
-    [state.config.components[newIndex], state.config.components[index]];
-
-    // Update orders
-    state.config.components.forEach((comp, idx) => {
-      comp.order = idx + 1;
-    });
-
-    renderComponents();
-    updatePreview();
-    saveConfig();
-  }
-
-  function handleAddComponent() {
-    const input = document.getElementById('new-component-name');
-    const name = input.value.trim();
-
-    if (!name) {
-      showStatus('Please enter a component name', 'error');
-      return;
-    }
-
-    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-    if (state.config.components.find(c => c.id === id)) {
-      showStatus('Component with this name already exists', 'error');
-      return;
-    }
-
-    state.config.components.push({
-      id,
-      name,
-      enabled: true,
-      order: state.config.components.length + 1,
-      content: ''
-    });
-
-    input.value = '';
-    renderComponents();
-    updatePreview();
-    saveConfig();
-    showStatus(`Component "${name}" added`, 'success');
-  }
+  // ============================================================================
+  // Preview
+  // ============================================================================
 
   function updatePreview() {
     let prompt = composeIntentHeader();
-    const enabledComponents = state.config.components
-      .filter(c => c.enabled && c.content)
-      .sort((a, b) => a.order - b.order);
-    const intentOutput = INTENT_OUTPUT_OPTIONS.find((option) => option.id === state.intentOutput);
+    const intentOutput = INTENT_OUTPUT_OPTIONS.find(o => o.id === state.intentOutput);
     const intentOutputLabel = intentOutput?.label || state.intentOutput;
 
     if (!state.showRefine) {
@@ -3042,104 +2151,41 @@ Key improvements: {{improvements}}`
       summaryLines.push(state.intentGoal || 'Help me with this request.');
       if (state.intentInput) summaryLines.push(`Context:\n${state.intentInput}`);
       if (intentOutputLabel) summaryLines.push(`Return format: ${intentOutputLabel}`);
-
       prompt += `Request:\n${summaryLines.join('\n\n')}`;
     } else {
-      prompt += enabledComponents
-        .map(c => `${c.name}:\n${c.content}`)
-        .join('\n\n');
+      const enabled = snippetMgr.getEnabledSnippets();
+      if (enabled.length > 0) {
+        prompt += enabled
+          .map(s => {
+            const typeLabel = COMPONENT_TYPES.find(t => t.id === s.componentType)?.label || s.componentType;
+            return `${typeLabel} - ${s.name}:\n${s.content}`;
+          })
+          .join('\n\n');
+      } else {
+        const summaryLines = [];
+        summaryLines.push(state.intentGoal || 'Help me with this request.');
+        if (state.intentInput) summaryLines.push(`Context:\n${state.intentInput}`);
+        if (intentOutputLabel) summaryLines.push(`Return format: ${intentOutputLabel}`);
+        prompt += `Request:\n${summaryLines.join('\n\n')}`;
+      }
     }
 
     const textarea = document.getElementById('final-prompt');
-    textarea.value = prompt;
+    if (textarea) textarea.value = prompt;
+
     renderIntentControls();
 
-    // Update stats
     const chars = prompt.length;
     const words = countWords(prompt);
-
-    document.getElementById('char-count').textContent = `${chars} characters`;
-    document.getElementById('word-count').textContent = `${words} words`;
+    const charEl = document.getElementById('char-count');
+    const wordEl = document.getElementById('word-count');
+    if (charEl) charEl.textContent = `${chars} characters`;
+    if (wordEl) wordEl.textContent = `${words} words`;
   }
 
-  function handleCopyPrompt() {
-    const text = document.getElementById('final-prompt').value;
-    copyToClipboard(text, {
-      onSuccess: () => showStatus('Prompt copied to clipboard!', 'success'),
-      onError: () => showStatus('Failed to copy prompt', 'error')
-    });
-  }
-
-  function handleSavePrompt() {
-    const prompt = document.getElementById('final-prompt').value;
-    if (!prompt) {
-      showStatus('No prompt to save', 'error');
-      return;
-    }
-
-    downloadAsFile(prompt, `ai-prompt-${Date.now()}.txt`);
-    showStatus('Prompt saved to file', 'success');
-  }
-
-  function handleImportConfig() {
-    const input = document.getElementById('file-input');
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const config = JSON.parse(event.target.result);
-          if (!config.components || !Array.isArray(config.components)) {
-            throw new Error('Invalid configuration format');
-          }
-          state.config = config;
-          normalizeComponents();
-          renderComponents();
-          updatePreview();
-          saveConfig();
-          showStatus('Configuration imported successfully', 'success');
-        } catch (error) {
-          showStatus(`Import failed: ${error.message}`, 'error');
-        }
-      };
-      reader.readAsText(file);
-      input.value = '';
-    };
-    input.click();
-  }
-
-  function handleExportConfig() {
-    const json = JSON.stringify(state.config, null, 2);
-    downloadAsFile(json, `prompt-config-${Date.now()}.json`, 'application/json');
-    showStatus('Configuration exported', 'success');
-  }
-
-  function handleResetConfig() {
-    if (confirm('Reset to default configuration? This will discard all changes.')) {
-      state.config = deepClone(DEFAULT_CONFIG);
-      normalizeComponents();
-      renderComponents();
-      updatePreview();
-      saveConfig();
-      showStatus('Configuration reset to defaults', 'info');
-    }
-  }
-
-  function loadTemplate(templateId) {
-    const template = TEMPLATES[templateId];
-    if (!template) return;
-
-    if (confirm(`Load "${template.name}" template? This will replace your current configuration.`)) {
-      state.config.components = deepClone(template.components);
-      normalizeComponents();
-      renderComponents();
-      updatePreview();
-      saveConfig();
-      showStatus(`Template "${template.name}" loaded`, 'success');
-    }
-  }
+  // ============================================================================
+  // Config Save/Load
+  // ============================================================================
 
   function saveConfig() {
     saveToolState('ai-prompt-builder', {
@@ -3155,10 +2201,9 @@ Key improvements: {{improvements}}`
     });
   }
 
-  // Debounced versions for better performance
   const debouncedUpdatePreview = debounce(updatePreview, 150);
   const debouncedSaveConfig = debounce(saveConfig, 500);
-  const rafUpdatePreview = rafDebounce(updatePreview);
+  const debouncedRenderTree = debounce(renderSnippetTree, 100);
 
   function loadConfig() {
     const saved = loadToolState('ai-prompt-builder');
@@ -3178,48 +2223,39 @@ Key improvements: {{improvements}}`
 
   function showStatus(message, type = 'info') {
     const statusEl = document.getElementById('status-message');
+    if (!statusEl) return;
     statusEl.textContent = message;
     statusEl.className = `status-message show ${type}`;
-
-    setTimeout(() => {
-      statusEl.classList.remove('show');
-    }, 3000);
+    setTimeout(() => { statusEl.classList.remove('show'); }, 3000);
   }
+
+  // ============================================================================
+  // Templates
+  // ============================================================================
 
   const debouncedFilterTemplates = debounce(function() { renderTemplates(); }, 200);
 
-  // ============================================================
-  // TEMPLATE MANAGEMENT
-  // ============================================================
-
   function renderTemplates() {
     const grid = document.getElementById('templates-grid');
+    if (!grid) return;
     const allTemplates = { ...TEMPLATES };
-
-    // Add custom templates
-    state.customTemplates.forEach(template => {
-      allTemplates[template.id] = template;
-    });
+    state.customTemplates.forEach(t => { allTemplates[t.id] = t; });
 
     const filtered = filterTemplatesBySearch(allTemplates);
 
     grid.innerHTML = Object.entries(filtered).map(([id, template]) => {
       const isCustom = state.customTemplates.some(t => t.id === id);
       const customClass = isCustom ? 'custom-template' : '';
-      const deleteBtn = isCustom ? `<button class="delete-template-btn" data-template="${id}">×</button>` : '';
-
-      return `
-        <button class="template-btn ${customClass}" data-template="${id}">
-          ${template.name}
-          ${deleteBtn}
-        </button>
-      `;
+      const deleteBtn = isCustom ? `<button class="delete-template-btn" data-template="${id}">x</button>` : '';
+      return `<button class="template-btn ${customClass}" data-template="${id}">${template.name}${deleteBtn}</button>`;
     }).join('');
   }
 
   function filterTemplatesBySearch(templates) {
-    const search = document.getElementById('template-search').value.toLowerCase();
-    const category = document.getElementById('template-category').value;
+    const searchEl = document.getElementById('template-search');
+    const catEl = document.getElementById('template-category');
+    const search = searchEl ? searchEl.value.toLowerCase() : '';
+    const category = catEl ? catEl.value : '';
 
     return Object.fromEntries(
       Object.entries(templates).filter(([id, template]) => {
@@ -3230,24 +2266,55 @@ Key improvements: {{improvements}}`
     );
   }
 
-  function filterTemplates() {
-    debouncedFilterTemplates();
-  }
+  function filterTemplates() { debouncedFilterTemplates(); }
 
   function handleTemplateClick(e) {
     const deleteBtn = e.target.closest('.delete-template-btn');
     if (deleteBtn) {
       e.stopPropagation();
-      const templateId = deleteBtn.dataset.template;
-      deleteCustomTemplate(templateId);
+      deleteCustomTemplate(deleteBtn.dataset.template);
       return;
     }
-
     const templateBtn = e.target.closest('.template-btn');
     if (templateBtn) {
-      const templateId = templateBtn.dataset.template;
-      loadTemplate(templateId);
+      loadTemplate(templateBtn.dataset.template);
     }
+  }
+
+  function loadTemplate(templateId) {
+    const template = TEMPLATES[templateId] || state.customTemplates.find(t => t.id === templateId);
+    if (!template) return;
+
+    if (!confirm(`Load "${template.name}" template? This creates a project and snippets.`)) return;
+
+    const projectName = template.name;
+    snippetMgr.addProject(projectName);
+
+    const components = template.components || [];
+    const newIds = [];
+    components.forEach(comp => {
+      if (!comp.content) return;
+      const componentType = LEGACY_ID_TO_TYPE[comp.id] || comp.id || 'task';
+      const snippet = snippetMgr.createSnippet({
+        name: comp.name || comp.id,
+        content: comp.content,
+        project: projectName,
+        componentType: COMPONENT_TYPES.some(t => t.id === componentType) ? componentType : 'task',
+        tags: []
+      });
+      newIds.push(snippet.id);
+    });
+
+    // Enable all new snippets
+    newIds.forEach(id => {
+      if (!snippetMgr.isEnabled(id)) snippetMgr.toggleEnabled(id);
+    });
+    snippetMgr.save();
+
+    renderSnippetTree();
+    renderSnippetEditor();
+    updatePreview();
+    showStatus(`Template "${template.name}" loaded as project`, 'success');
   }
 
   function showSaveTemplateModal() {
@@ -3263,29 +2330,26 @@ Key improvements: {{improvements}}`
     const description = document.getElementById('template-description').value.trim();
     const category = document.getElementById('template-category-select').value;
 
-    if (!name) {
-      showStatus('Please enter a template name', 'error');
-      return;
-    }
+    if (!name) { showStatus('Please enter a template name', 'error'); return; }
 
     const id = 'custom-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-    // Check if template already exists
     if (state.customTemplates.some(t => t.id === id)) {
-      if (!confirm('A template with this name already exists. Overwrite?')) {
-        return;
-      }
+      if (!confirm('A template with this name already exists. Overwrite?')) return;
       state.customTemplates = state.customTemplates.filter(t => t.id !== id);
     }
 
-    const template = {
-      id,
-      name,
-      description,
-      category,
-      components: deepClone(state.config.components)
-    };
+    // Build components from enabled snippets
+    const enabled = snippetMgr.getEnabledSnippets();
+    const components = enabled.map((s, i) => ({
+      id: s.componentType,
+      name: s.name,
+      enabled: true,
+      order: i + 1,
+      content: s.content
+    }));
 
+    const template = { id, name, description, category, components };
     state.customTemplates.push(template);
     saveCustomTemplates();
     renderTemplates();
@@ -3296,7 +2360,6 @@ Key improvements: {{improvements}}`
   function deleteCustomTemplate(id) {
     const template = state.customTemplates.find(t => t.id === id);
     if (!template) return;
-
     if (confirm(`Delete template "${template.name}"?`)) {
       state.customTemplates = state.customTemplates.filter(t => t.id !== id);
       saveCustomTemplates();
@@ -3311,14 +2374,107 @@ Key improvements: {{improvements}}`
 
   function loadCustomTemplates() {
     const saved = loadToolState('ai-prompt-builder-templates');
-    if (saved?.items) {
-      state.customTemplates = saved.items;
-    }
+    if (saved?.items) state.customTemplates = saved.items;
   }
 
-  // ============================================================
-  // SHARING & COLLABORATION
-  // ============================================================
+  // ============================================================================
+  // Modals (Persona, TechStack, Share)
+  // ============================================================================
+
+  function showPersonaModal() {
+    const modal = document.getElementById('persona-modal');
+    const grid = document.getElementById('personas-grid');
+    const snippet = snippetMgr.getSelected();
+    const currentContent = snippet?.content || '';
+
+    const matchedPersona = PERSONAS.find(p => p.content === currentContent);
+    const selectedId = matchedPersona?.id || '';
+
+    grid.innerHTML = PERSONAS.map(persona => `
+      <div class="persona-card ${persona.id === selectedId ? 'selected' : ''}" data-persona="${persona.id}">
+        <div class="persona-name">${persona.name}</div>
+        <div class="persona-description">${persona.description}</div>
+      </div>
+    `).join('');
+
+    grid.onclick = (e) => {
+      const card = e.target.closest('.persona-card');
+      if (card) {
+        const persona = PERSONAS.find(p => p.id === card.dataset.persona);
+        if (persona && snippet) {
+          snippetMgr.updateSnippet(snippet.id, { content: persona.content, name: persona.name });
+          renderSnippetEditor();
+          renderSnippetTree();
+          updatePreview();
+        }
+        closeModal();
+      }
+    };
+
+    modal.classList.add('show');
+  }
+
+  function showTechStackModal() {
+    const modal = document.getElementById('techstack-modal');
+    const grid = document.getElementById('techstack-grid');
+    const snippet = snippetMgr.getSelected();
+
+    // Parse selected stacks from content
+    const selectedStacks = [];
+    if (snippet?.content) {
+      const match = snippet.content.match(/Technology stack: (.+)/);
+      if (match && match[1] && !match[1].includes('{{')) {
+        match[1].split(',').forEach(s => {
+          const trimmed = s.trim();
+          if (trimmed) selectedStacks.push(trimmed);
+        });
+      }
+    }
+
+    renderTechStackGrid(grid, selectedStacks);
+
+    grid.onclick = (e) => {
+      const item = e.target.closest('.techstack-item');
+      if (!item || !snippet) return;
+      const tech = item.dataset.tech;
+      const idx = selectedStacks.indexOf(tech);
+      if (idx > -1) selectedStacks.splice(idx, 1);
+      else selectedStacks.push(tech);
+
+      const stackList = selectedStacks.length > 0 ? selectedStacks.join(', ') : '{{tech_stack}}';
+      snippetMgr.updateSnippet(snippet.id, {
+        content: `Technology stack: ${stackList}\n\nPlease provide solutions and examples specific to these technologies.`
+      });
+
+      renderTechStackGrid(grid, selectedStacks);
+      renderSnippetEditor();
+      renderSnippetTree();
+      updatePreview();
+    };
+
+    modal.classList.add('show');
+  }
+
+  function renderTechStackGrid(grid, selectedStacks, filter = '') {
+    let html = '';
+    Object.entries(TECH_STACKS).forEach(([category, technologies]) => {
+      const filtered = technologies.filter(tech => tech.toLowerCase().includes(filter.toLowerCase()));
+      filtered.forEach(tech => {
+        const selected = selectedStacks.includes(tech) ? 'selected' : '';
+        html += `<div class="techstack-item ${selected}" data-tech="${tech}">${tech}</div>`;
+      });
+    });
+    grid.innerHTML = html || '<p style="text-align:center;color:var(--text-secondary);">No technologies found</p>';
+  }
+
+  function closeModal() {
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+    state.currentModal = null;
+  }
+
+  // ============================================================================
+  // Share
+  // ============================================================================
 
   function handleShare() {
     const modal = document.getElementById('share-modal');
@@ -3328,8 +2484,10 @@ Key improvements: {{improvements}}`
   }
 
   function generateShareLink() {
-    const config = {
-      components: state.config.components,
+    const data = {
+      snippets: snippetMgr.snippets,
+      projects: snippetMgr.projects,
+      enabledIds: snippetMgr.enabledIds,
       intent: {
         intentMode: state.intentMode,
         workflowProfile: state.workflowProfile,
@@ -3338,110 +2496,559 @@ Key improvements: {{improvements}}`
         intentOutput: state.intentOutput,
         showRefine: state.showRefine
       },
-      version: '10.0.0'
+      version: '11.0.0'
     };
-
-    const json = JSON.stringify(config);
+    const json = JSON.stringify(data);
     const base64 = btoa(unescape(encodeURIComponent(json)));
-    const url = window.location.href.split('#')[0] + '#share=' + base64;
-    return url;
+    return window.location.href.split('#')[0] + '#share=' + base64;
   }
 
   function copyShareLink() {
     const input = document.getElementById('share-link');
     copyToClipboard(input.value, {
-      onSuccess: () => showStatus('Share link copied to clipboard!', 'success'),
+      onSuccess: () => showStatus('Share link copied!', 'success'),
       onError: () => showStatus('Failed to copy link', 'error')
     });
   }
 
   function loadFromURL() {
     const hash = window.location.hash;
-    if (hash.startsWith('#share=')) {
-      try {
-        const base64 = hash.substring(7);
-        const json = decodeURIComponent(escape(atob(base64)));
-        const config = JSON.parse(json);
+    if (!hash.startsWith('#share=')) return;
+    try {
+      const base64 = hash.substring(7);
+      const json = decodeURIComponent(escape(atob(base64)));
+      const data = JSON.parse(json);
 
-        if (config.components && Array.isArray(config.components)) {
-          if (confirm('Load shared configuration? This will replace your current configuration.')) {
-            state.config.components = config.components;
-            if (config.intent) {
-              state.intentMode = config.intent.intentMode ?? state.intentMode;
-              state.workflowProfile = config.intent.workflowProfile ?? state.workflowProfile;
-              state.intentGoal = config.intent.intentGoal ?? state.intentGoal;
-              state.intentInput = config.intent.intentInput ?? state.intentInput;
-              state.intentOutput = config.intent.intentOutput ?? state.intentOutput;
-              state.showRefine = config.intent.showRefine ?? state.showRefine;
-            }
-            normalizeComponents();
-            ensureIntentState();
-            applyWorkflowProfile(state.workflowProfile, { silent: true });
-            renderComponents();
-            renderIntentControls();
-            updatePreview();
-            saveConfig();
-            showStatus('Configuration loaded from shared link', 'success');
-            window.location.hash = '';
+      if (data.snippets && Array.isArray(data.snippets)) {
+        if (confirm('Load shared configuration? This will replace your current snippets.')) {
+          snippetMgr.snippets = data.snippets;
+          snippetMgr.projects = data.projects || ['General'];
+          snippetMgr.enabledIds = data.enabledIds || [];
+          snippetMgr.save();
+
+          if (data.intent) {
+            state.intentMode = data.intent.intentMode ?? state.intentMode;
+            state.workflowProfile = data.intent.workflowProfile ?? state.workflowProfile;
+            state.intentGoal = data.intent.intentGoal ?? state.intentGoal;
+            state.intentInput = data.intent.intentInput ?? state.intentInput;
+            state.intentOutput = data.intent.intentOutput ?? state.intentOutput;
+            state.showRefine = data.intent.showRefine ?? state.showRefine;
           }
+          ensureIntentState();
+          renderSnippetTree();
+          renderSnippetEditor();
+          renderIntentControls();
+          updatePreview();
+          saveConfig();
+          showStatus('Configuration loaded from shared link', 'success');
+          window.location.hash = '';
         }
-      } catch (error) {
-        console.error('Failed to load from URL:', error);
-        showStatus('Invalid share link', 'error');
+      } else if (data.components && Array.isArray(data.components)) {
+        // Legacy share link support
+        if (confirm('Load shared configuration (legacy format)?')) {
+          data.components.forEach(comp => {
+            if (!comp.content) return;
+            const componentType = LEGACY_ID_TO_TYPE[comp.id] || 'task';
+            const snippet = snippetMgr.createSnippet({
+              name: comp.name || comp.id,
+              content: comp.content,
+              project: 'Imported',
+              componentType: componentType
+            });
+            if (comp.enabled) snippetMgr.toggleEnabled(snippet.id);
+          });
+          snippetMgr.addProject('Imported');
+          snippetMgr.save();
+          renderSnippetTree();
+          renderSnippetEditor();
+          updatePreview();
+          showStatus('Legacy config imported as snippets', 'success');
+          window.location.hash = '';
+        }
       }
+    } catch (error) {
+      console.error('Failed to load from URL:', error);
+      showStatus('Invalid share link', 'error');
     }
   }
 
-  // ============================================================
-  // COLLAPSIBLE SECTIONS
-  // ============================================================
+  // ============================================================================
+  // Import / Export
+  // ============================================================================
+
+  function handleImportConfig() {
+    const input = document.getElementById('file-input');
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          if (data.snippets && Array.isArray(data.snippets)) {
+            snippetMgr.snippets = data.snippets;
+            snippetMgr.projects = data.projects || ['General'];
+            snippetMgr.enabledIds = data.enabledIds || [];
+            snippetMgr.selectedId = null;
+            snippetMgr.save();
+          } else if (data.components && Array.isArray(data.components)) {
+            // Legacy import
+            data.components.forEach(comp => {
+              if (!comp.content) return;
+              const componentType = LEGACY_ID_TO_TYPE[comp.id] || 'task';
+              const snippet = snippetMgr.createSnippet({
+                name: comp.name || comp.id,
+                content: comp.content,
+                project: 'Imported',
+                componentType: componentType
+              });
+              if (comp.enabled) snippetMgr.toggleEnabled(snippet.id);
+            });
+            snippetMgr.addProject('Imported');
+            snippetMgr.save();
+          } else {
+            throw new Error('Invalid configuration format');
+          }
+          renderSnippetTree();
+          renderSnippetEditor();
+          updatePreview();
+          showStatus('Configuration imported successfully', 'success');
+        } catch (error) {
+          showStatus(`Import failed: ${error.message}`, 'error');
+        }
+      };
+      reader.readAsText(file);
+      input.value = '';
+    };
+    input.click();
+  }
+
+  function handleExportConfig() {
+    const data = {
+      projects: snippetMgr.projects,
+      snippets: snippetMgr.snippets,
+      enabledIds: snippetMgr.enabledIds,
+      version: '11.0.0'
+    };
+    const json = JSON.stringify(data, null, 2);
+    downloadAsFile(json, `prompt-snippets-${Date.now()}.json`, 'application/json');
+    showStatus('Snippets exported', 'success');
+  }
+
+  function handleCopyPrompt() {
+    const text = document.getElementById('final-prompt').value;
+    copyToClipboard(text, {
+      onSuccess: () => showStatus('Prompt copied to clipboard!', 'success'),
+      onError: () => showStatus('Failed to copy prompt', 'error')
+    });
+  }
+
+  function handleSavePrompt() {
+    const prompt = document.getElementById('final-prompt').value;
+    if (!prompt) { showStatus('No prompt to save', 'error'); return; }
+    downloadAsFile(prompt, `ai-prompt-${Date.now()}.txt`);
+    showStatus('Prompt saved to file', 'success');
+  }
+
+  // ============================================================================
+  // Collapsible Sections
+  // ============================================================================
 
   function setupCollapsibles() {
     const headers = document.querySelectorAll('.section-header.collapsible');
     headers.forEach(header => {
       header.addEventListener('click', (e) => {
-        // Don't toggle if clicking on a button inside the header
-        if (e.target.closest('button:not(.collapse-btn)')) {
-          return;
-        }
-
+        if (e.target.closest('button:not(.collapse-btn)')) return;
         header.classList.toggle('collapsed');
         const content = header.nextElementSibling;
         if (content) {
-          if (header.classList.contains('collapsed')) {
-            content.style.maxHeight = '0';
-          } else {
-            content.style.maxHeight = content.scrollHeight + 'px';
-          }
+          content.style.maxHeight = header.classList.contains('collapsed') ? '0' : content.scrollHeight + 'px';
         }
       });
-
-      // Set initial max-height for non-collapsed sections
       if (!header.classList.contains('collapsed')) {
         const content = header.nextElementSibling;
-        if (content) {
-          content.style.maxHeight = content.scrollHeight + 'px';
-        }
+        if (content) content.style.maxHeight = content.scrollHeight + 'px';
       }
     });
   }
+
+  // ============================================================================
+  // Event Listeners
+  // ============================================================================
+
+  function setupEventListeners() {
+    // Intent mode group
+    const intentModeGroup = document.getElementById('intent-mode-group');
+    if (intentModeGroup) {
+      intentModeGroup.addEventListener('click', (e) => {
+        const button = e.target.closest('.intent-mode-btn');
+        if (!button) return;
+        state.intentMode = button.dataset.intentMode;
+        state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
+        renderIntentControls();
+        updatePreview();
+        saveConfig();
+      });
+    }
+
+    // Workflow group
+    const intentWorkflowGroup = document.getElementById('intent-workflow-group');
+    if (intentWorkflowGroup) {
+      intentWorkflowGroup.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-workflow-profile]');
+        if (!button) return;
+        applyWorkflowProfile(button.dataset.workflowProfile);
+      });
+    }
+
+    // Output options
+    const intentOutputOptions = document.getElementById('intent-output-options');
+    if (intentOutputOptions) {
+      intentOutputOptions.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-intent-output]');
+        if (!button) return;
+        state.intentOutput = button.dataset.intentOutput;
+        renderIntentControls();
+        updatePreview();
+        saveConfig();
+      });
+    }
+
+    // Refine toggle
+    const refineToggle = document.getElementById('intent-refine-toggle');
+    if (refineToggle) {
+      refineToggle.addEventListener('click', () => {
+        state.showRefine = !state.showRefine;
+        renderIntentControls();
+        saveConfig();
+      });
+    }
+
+    // Paste / Clear intent
+    document.getElementById('intent-paste-btn')?.addEventListener('click', pasteIntentContext);
+    document.getElementById('intent-clear-btn')?.addEventListener('click', clearIntentFields);
+
+    // Intent text fields
+    ['intent-goal', 'intent-input'].forEach(id => {
+      const input = document.getElementById(id);
+      if (!input) return;
+      input.addEventListener('input', (e) => {
+        if (id === 'intent-goal') state.intentGoal = e.target.value;
+        if (id === 'intent-input') state.intentInput = e.target.value;
+        updatePreview();
+        debouncedSaveConfig();
+      });
+    });
+
+    // Alt-key shortcuts for intent
+    document.addEventListener('keydown', (e) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey) return;
+
+      if (e.key >= '1' && e.key <= '4') {
+        e.preventDefault();
+        const modeByIndex = ['create', 'analyze', 'rewrite', 'plan'];
+        state.intentMode = modeByIndex[Number(e.key) - 1] || state.intentMode;
+        state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode] || state.intentOutput;
+        renderIntentControls(); updatePreview(); saveConfig();
+        return;
+      }
+      if (e.key >= '5' && e.key <= '7') {
+        e.preventDefault();
+        const profileByIndex = ['rapid', 'balanced', 'deep'];
+        const profile = profileByIndex[Number(e.key) - 5];
+        if (profile) applyWorkflowProfile(profile);
+        return;
+      }
+      if (e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        state.showRefine = !state.showRefine;
+        renderIntentControls(); saveConfig();
+        return;
+      }
+      if (e.key.toLowerCase() === 'v') {
+        e.preventDefault();
+        pasteIntentContext();
+        return;
+      }
+      const targetTag = e.target?.tagName;
+      const isTypingField = targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT';
+      if (e.key === 'Backspace' && !isTypingField) {
+        e.preventDefault();
+        clearIntentFields();
+      }
+    });
+
+    // Snippet sidebar: view toggle
+    document.querySelectorAll('.snippet-view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        snippetMgr.viewMode = btn.dataset.view;
+        renderSnippetTree();
+      });
+    });
+
+    // Snippet search
+    const snippetSearch = document.getElementById('snippet-search');
+    if (snippetSearch) {
+      snippetSearch.addEventListener('input', (e) => {
+        snippetMgr.filterText = e.target.value;
+        debouncedRenderTree();
+      });
+    }
+
+    // Snippet tree: click delegation
+    const snippetTree = document.getElementById('snippet-tree');
+    if (snippetTree) {
+      snippetTree.addEventListener('click', (e) => {
+        // Delete project button
+        const delProjectBtn = e.target.closest('[data-delete-project]');
+        if (delProjectBtn) {
+          e.stopPropagation();
+          const name = delProjectBtn.dataset.deleteProject;
+          if (confirm(`Delete project "${name}"? Snippets will move to General.`)) {
+            snippetMgr.deleteProject(name);
+            renderSnippetTree();
+            renderSnippetEditor();
+            updatePreview();
+          }
+          return;
+        }
+
+        // Checkbox toggle
+        const checkbox = e.target.closest('input[data-toggle-id]');
+        if (checkbox) {
+          e.stopPropagation();
+          snippetMgr.toggleEnabled(checkbox.dataset.toggleId);
+          snippetMgr.save();
+          renderSnippetTree();
+          renderSnippetEditor();
+          updatePreview();
+          return;
+        }
+
+        // Snippet item click (select for editing)
+        const item = e.target.closest('.snippet-item');
+        if (item) {
+          snippetMgr.selectedId = item.dataset.snippetId;
+          renderSnippetTree();
+          renderSnippetEditor();
+          return;
+        }
+      });
+    }
+
+    // Add snippet
+    document.getElementById('add-snippet-btn')?.addEventListener('click', () => {
+      const snippet = snippetMgr.createSnippet();
+      snippetMgr.selectedId = snippet.id;
+      renderSnippetTree();
+      renderSnippetEditor();
+      // Focus name field
+      setTimeout(() => { document.getElementById('snippet-name')?.focus(); }, 50);
+    });
+
+    // Add project
+    document.getElementById('add-project-btn')?.addEventListener('click', () => {
+      const name = prompt('New project name:');
+      if (name?.trim()) {
+        snippetMgr.addProject(name.trim());
+        renderSnippetTree();
+        showStatus(`Project "${name.trim()}" added`, 'success');
+      }
+    });
+
+    // Editor fields
+    const snippetName = document.getElementById('snippet-name');
+    if (snippetName) {
+      snippetName.addEventListener('input', (e) => {
+        const s = snippetMgr.getSelected();
+        if (s) { snippetMgr.updateSnippet(s.id, { name: e.target.value }); debouncedRenderTree(); debouncedUpdatePreview(); }
+      });
+    }
+
+    const snippetProject = document.getElementById('snippet-project');
+    if (snippetProject) {
+      snippetProject.addEventListener('change', (e) => {
+        const s = snippetMgr.getSelected();
+        if (s) { snippetMgr.updateSnippet(s.id, { project: e.target.value }); renderSnippetTree(); }
+      });
+    }
+
+    const snippetType = document.getElementById('snippet-type');
+    if (snippetType) {
+      snippetType.addEventListener('change', (e) => {
+        const s = snippetMgr.getSelected();
+        if (s) { snippetMgr.updateSnippet(s.id, { componentType: e.target.value }); renderSnippetTree(); debouncedUpdatePreview(); }
+      });
+    }
+
+    // Tags
+    const tagsSelector = document.getElementById('snippet-tags-selector');
+    if (tagsSelector) {
+      tagsSelector.addEventListener('click', (e) => {
+        const chip = e.target.closest('.snippet-tag-chip');
+        if (!chip) return;
+        const tagId = chip.dataset.tagId;
+        const s = snippetMgr.getSelected();
+        if (!s) return;
+        const tags = s.tags || [];
+        const idx = tags.indexOf(tagId);
+        if (idx > -1) tags.splice(idx, 1);
+        else tags.push(tagId);
+        snippetMgr.updateSnippet(s.id, { tags });
+        renderSnippetEditor();
+        renderSnippetTree();
+      });
+    }
+
+    const snippetContent = document.getElementById('snippet-content');
+    if (snippetContent) {
+      snippetContent.addEventListener('input', (e) => {
+        const s = snippetMgr.getSelected();
+        if (s) { snippetMgr.updateSnippet(s.id, { content: e.target.value }); debouncedUpdatePreview(); }
+      });
+    }
+
+    // Include checkbox in editor
+    const includeCheck = document.getElementById('snippet-include-check');
+    if (includeCheck) {
+      includeCheck.addEventListener('change', () => {
+        const s = snippetMgr.getSelected();
+        if (s) {
+          snippetMgr.toggleEnabled(s.id);
+          renderSnippetTree();
+          updatePreview();
+        }
+      });
+    }
+
+    // Editor action buttons
+    document.getElementById('snippet-copy-btn')?.addEventListener('click', () => {
+      const s = snippetMgr.getSelected();
+      if (s) {
+        copyToClipboard(s.content, {
+          onSuccess: () => showStatus('Snippet copied!', 'success'),
+          onError: () => showStatus('Failed to copy', 'error')
+        });
+      }
+    });
+
+    document.getElementById('snippet-duplicate-btn')?.addEventListener('click', () => {
+      const s = snippetMgr.getSelected();
+      if (s) {
+        const dup = snippetMgr.duplicateSnippet(s.id);
+        if (dup) {
+          snippetMgr.selectedId = dup.id;
+          renderSnippetTree();
+          renderSnippetEditor();
+          showStatus('Snippet duplicated', 'success');
+        }
+      }
+    });
+
+    document.getElementById('snippet-delete-btn')?.addEventListener('click', () => {
+      const s = snippetMgr.getSelected();
+      if (s && confirm(`Delete snippet "${s.name}"?`)) {
+        snippetMgr.deleteSnippet(s.id);
+        renderSnippetTree();
+        renderSnippetEditor();
+        updatePreview();
+        showStatus('Snippet deleted', 'info');
+      }
+    });
+
+    // Preview buttons
+    document.getElementById('copy-prompt-btn')?.addEventListener('click', handleCopyPrompt);
+    document.getElementById('save-prompt-btn')?.addEventListener('click', handleSavePrompt);
+    document.getElementById('share-btn')?.addEventListener('click', handleShare);
+
+    // Import / Export
+    document.getElementById('import-config-btn')?.addEventListener('click', handleImportConfig);
+    document.getElementById('export-config-btn')?.addEventListener('click', handleExportConfig);
+
+    // Template management
+    document.getElementById('save-template-btn')?.addEventListener('click', showSaveTemplateModal);
+    document.getElementById('save-template-confirm-btn')?.addEventListener('click', handleSaveCustomTemplate);
+    document.getElementById('template-search')?.addEventListener('input', filterTemplates);
+    document.getElementById('template-category')?.addEventListener('change', filterTemplates);
+    document.getElementById('templates-grid')?.addEventListener('click', handleTemplateClick);
+
+    // Share modal
+    document.getElementById('copy-link-btn')?.addEventListener('click', copyShareLink);
+
+    // Tech stack search
+    document.getElementById('techstack-search')?.addEventListener('input', (e) => {
+      const snippet = snippetMgr.getSelected();
+      const selectedStacks = [];
+      if (snippet?.content) {
+        const match = snippet.content.match(/Technology stack: (.+)/);
+        if (match && match[1] && !match[1].includes('{{')) {
+          match[1].split(',').forEach(s => { const t = s.trim(); if (t) selectedStacks.push(t); });
+        }
+      }
+      const grid = document.getElementById('techstack-grid');
+      renderTechStackGrid(grid, selectedStacks, e.target.value);
+    });
+  }
+
+  function setupModals() {
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target.classList.contains('modal-close')) {
+          closeModal();
+        }
+      });
+    });
+  }
+
+  // ============================================================================
+  // Init / Cleanup
+  // ============================================================================
+
+  export function init(context) {
+    console.log('AI Prompt Builder v11 (snippets) initialized');
+
+    loadConfig();
+    loadCustomTemplates();
+    ensureIntentState();
+
+    snippetMgr.load();
+    migrateComponentsToSnippets();
+
+    loadFromURL();
+
+    renderSnippetTree();
+    renderSnippetEditor();
+    renderTemplates();
+    renderIntentControls();
+    updatePreview();
+
+    setupEventListeners();
+    setupModals();
+    setupCollapsibles();
+  }
+
+  export function cleanup(context) {
+    console.log('AI Prompt Builder cleanup');
+    saveConfig();
+    snippetMgr.save();
+  }
+
+  // ============================================================================
+  // Standalone mode
+  // ============================================================================
 
   if (typeof window !== 'undefined' && !window.DevChef) {
     document.addEventListener('DOMContentLoaded', () => {
       const template = document.querySelector('#tool-ui');
       if (!template) return;
-
       document.body.innerHTML = template.innerHTML;
-
       const standaloneContext = {
-        input: '',
-        output: '',
+        input: '', output: '',
         setInput(value) { this.input = value; },
         setOutput(value) { this.output = value; },
         getInput() { return this.input; },
         getOutput() { return this.output; }
       };
-
       init(standaloneContext);
     });
   }

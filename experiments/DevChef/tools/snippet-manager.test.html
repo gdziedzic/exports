@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SnippetManager Tests</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #0d1117; color: #c9d1d9; }
+    h1 { font-size: 22px; margin-bottom: 24px; }
+    .suite { margin-bottom: 24px; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+    .suite-header { padding: 12px 16px; background: #161b22; font-weight: 700; font-size: 14px; border-bottom: 1px solid #30363d; }
+    .test { padding: 8px 16px; font-size: 13px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #21262d; }
+    .test:last-child { border-bottom: none; }
+    .pass { color: #3fb950; } .pass::before { content: "PASS"; font-weight: 700; }
+    .fail { color: #f85149; } .fail::before { content: "FAIL"; font-weight: 700; }
+    .test-name { flex: 1; }
+    .test-error { color: #f85149; font-size: 11px; font-family: monospace; margin-top: 4px; }
+    .summary { padding: 16px; font-size: 15px; font-weight: 700; border-radius: 8px; margin-top: 16px; }
+    .summary.all-pass { background: #0d1f0d; border: 1px solid #3fb950; color: #3fb950; }
+    .summary.has-fail { background: #1f0d0d; border: 1px solid #f85149; color: #f85149; }
+  </style>
+</head>
+<body>
+  <h1>SnippetManager Unit Tests</h1>
+  <div id="results"></div>
+  <div id="summary"></div>
+
+<script type="module">
+  // ============================================================================
+  // Minimal test harness
+  // ============================================================================
+  const suites = [];
+  let currentSuite = null;
+
+  function describe(name, fn) {
+    currentSuite = { name, tests: [] };
+    suites.push(currentSuite);
+    fn();
+    currentSuite = null;
+  }
+
+  function it(name, fn) {
+    const test = { name, passed: false, error: null };
+    try {
+      fn();
+      test.passed = true;
+    } catch (e) {
+      test.error = e.message;
+    }
+    currentSuite.tests.push(test);
+  }
+
+  function assert(condition, msg) {
+    if (!condition) throw new Error(msg || 'Assertion failed');
+  }
+
+  function assertEqual(actual, expected, msg) {
+    if (actual !== expected) throw new Error(msg || `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+  }
+
+  function assertDeepEqual(actual, expected, msg) {
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+      throw new Error(msg || `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+    }
+  }
+
+  // ============================================================================
+  // Mock localStorage for isolated testing
+  // ============================================================================
+  const mockStorage = {};
+
+  function loadToolState(key) {
+    const raw = mockStorage[key];
+    return raw ? JSON.parse(raw) : null;
+  }
+
+  function saveToolState(key, data) {
+    mockStorage[key] = JSON.stringify(data);
+  }
+
+  function clearMockStorage() {
+    Object.keys(mockStorage).forEach(k => delete mockStorage[k]);
+  }
+
+  // ============================================================================
+  // Constants (same as in both tools)
+  // ============================================================================
+  const COMPONENT_TYPES = [
+    { id: 'persona', label: 'Persona' }, { id: 'context', label: 'Context' },
+    { id: 'task', label: 'Task' }, { id: 'rules', label: 'Rules' },
+    { id: 'output-format', label: 'Output Format' }, { id: 'constraints', label: 'Constraints' },
+    { id: 'examples', label: 'Examples' }
+  ];
+
+  const USE_CASE_TAGS = [
+    { id: 'coding', label: 'Coding' }, { id: 'writing', label: 'Writing' },
+    { id: 'analysis', label: 'Analysis' }, { id: 'debugging', label: 'Debugging' },
+    { id: 'review', label: 'Review' }, { id: 'planning', label: 'Planning' },
+    { id: 'documentation', label: 'Documentation' }
+  ];
+
+  const COMPONENT_TYPE_ORDER = ['persona', 'context', 'task', 'rules', 'output-format', 'constraints', 'examples'];
+
+  // ============================================================================
+  // SnippetManager class (extracted for testing)
+  // ============================================================================
+  class SnippetManager {
+    constructor(storageKey) {
+      this.storageKey = storageKey;
+      this.projects = ['General'];
+      this.snippets = [];
+      this.enabledIds = [];
+      this.selectedId = null;
+      this.viewMode = 'project';
+      this.filterText = '';
+    }
+
+    load() {
+      const saved = loadToolState(this.storageKey);
+      if (saved) {
+        this.projects = saved.projects || ['General'];
+        this.snippets = saved.snippets || [];
+        this.enabledIds = saved.enabledIds || [];
+      }
+    }
+
+    save() {
+      saveToolState(this.storageKey, {
+        projects: this.projects,
+        snippets: this.snippets,
+        enabledIds: this.enabledIds
+      });
+    }
+
+    createSnippet(overrides = {}) {
+      const snippet = {
+        id: 'snip-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+        name: overrides.name || 'New Snippet',
+        content: overrides.content || '',
+        project: overrides.project || this.projects[0] || 'General',
+        componentType: overrides.componentType || 'task',
+        tags: overrides.tags || [],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      this.snippets.push(snippet);
+      this.save();
+      return snippet;
+    }
+
+    updateSnippet(id, updates) {
+      const snippet = this.snippets.find(s => s.id === id);
+      if (snippet) {
+        Object.assign(snippet, updates, { updatedAt: Date.now() });
+        this.save();
+      }
+      return snippet;
+    }
+
+    deleteSnippet(id) {
+      this.snippets = this.snippets.filter(s => s.id !== id);
+      this.enabledIds = this.enabledIds.filter(eid => eid !== id);
+      if (this.selectedId === id) this.selectedId = null;
+      this.save();
+    }
+
+    duplicateSnippet(id) {
+      const original = this.snippets.find(s => s.id === id);
+      if (!original) return null;
+      return this.createSnippet({
+        name: original.name + ' (copy)',
+        content: original.content,
+        project: original.project,
+        componentType: original.componentType,
+        tags: [...original.tags]
+      });
+    }
+
+    addProject(name) {
+      if (name && !this.projects.includes(name)) {
+        this.projects.push(name);
+        this.save();
+      }
+    }
+
+    deleteProject(name) {
+      if (name === 'General') return;
+      this.projects = this.projects.filter(p => p !== name);
+      this.snippets.forEach(s => { if (s.project === name) s.project = 'General'; });
+      this.save();
+    }
+
+    toggleEnabled(id) {
+      const idx = this.enabledIds.indexOf(id);
+      if (idx > -1) this.enabledIds.splice(idx, 1);
+      else this.enabledIds.push(id);
+      this.save();
+    }
+
+    getEnabledSnippets() {
+      return this.snippets
+        .filter(s => this.enabledIds.includes(s.id))
+        .sort((a, b) => COMPONENT_TYPE_ORDER.indexOf(a.componentType) - COMPONENT_TYPE_ORDER.indexOf(b.componentType));
+    }
+
+    getByProject() {
+      const groups = {};
+      this.projects.forEach(p => { groups[p] = []; });
+      this.getFiltered().forEach(s => {
+        if (!groups[s.project]) groups[s.project] = [];
+        groups[s.project].push(s);
+      });
+      return groups;
+    }
+
+    getByTag() {
+      const groups = {};
+      USE_CASE_TAGS.forEach(t => { groups[t.label] = []; });
+      groups['Untagged'] = [];
+      this.getFiltered().forEach(s => {
+        if (!s.tags || s.tags.length === 0) {
+          groups['Untagged'].push(s);
+        } else {
+          s.tags.forEach(tag => {
+            const tagLabel = USE_CASE_TAGS.find(t => t.id === tag)?.label || tag;
+            if (!groups[tagLabel]) groups[tagLabel] = [];
+            groups[tagLabel].push(s);
+          });
+        }
+      });
+      return groups;
+    }
+
+    getFiltered() {
+      if (!this.filterText) return this.snippets;
+      const q = this.filterText.toLowerCase();
+      return this.snippets.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.content.toLowerCase().includes(q) ||
+        s.project.toLowerCase().includes(q)
+      );
+    }
+  }
+
+  // ============================================================================
+  // seedDefaultSnippets (same as in both tools)
+  // ============================================================================
+  function seedDefaultSnippets(mgr) {
+    mgr.addProject('Code Development');
+
+    mgr.createSnippet({ name: 'Senior Engineer Persona', content: 'You are a senior software engineer with 10+ years of experience in modern development practices, design patterns, and clean code principles. You write production-ready, well-tested code with clear documentation.', project: 'Code Development', componentType: 'persona', tags: ['coding'] });
+    mgr.createSnippet({ name: 'Feature Implementation Task', content: 'Implement the following feature:\n\nRequirement: {{requirement}}\nAcceptance criteria: {{criteria}}\n\nProvide:\n1. Implementation plan with file changes\n2. Complete working code\n3. Unit tests covering happy path and edge cases\n4. Brief explanation of design decisions', project: 'Code Development', componentType: 'task', tags: ['coding', 'planning'] });
+    mgr.createSnippet({ name: 'Code Review Checklist', content: 'Review this code for:\n- Correctness: Does it handle all edge cases?\n- Security: Any injection, XSS, or auth issues?\n- Performance: N+1 queries, unnecessary allocations, blocking calls?\n- Readability: Clear naming, small functions, minimal nesting?\n- Tests: Adequate coverage? Missing scenarios?\n\nRate severity: CRITICAL / IMPORTANT / SUGGESTION\nProvide specific line-level feedback with fixes.', project: 'Code Development', componentType: 'rules', tags: ['coding', 'review'] });
+    mgr.createSnippet({ name: 'Code Output Format', content: 'Structure your response as:\n1. Brief summary (1-2 sentences)\n2. Implementation with complete code blocks (include file paths)\n3. Tests with assertions\n4. Edge cases and potential issues\n5. Run/build instructions if applicable', project: 'Code Development', componentType: 'output-format', tags: ['coding'] });
+
+    mgr.addProject('Writing & Analysis');
+
+    mgr.createSnippet({ name: 'Technical Writer Persona', content: 'You are an experienced technical writer who creates clear, well-structured documentation. You understand developer audiences and write concise prose that balances depth with readability. You use examples liberally.', project: 'Writing & Analysis', componentType: 'persona', tags: ['writing', 'documentation'] });
+    mgr.createSnippet({ name: 'Research Synthesis Task', content: 'Analyze the provided material and produce:\n\n1. Executive summary (3-5 key findings)\n2. Evidence-backed analysis with citations\n3. Contradictions or gaps in the data\n4. Actionable recommendations ranked by impact\n5. Open questions for further investigation', project: 'Writing & Analysis', componentType: 'task', tags: ['analysis', 'writing'] });
+    mgr.createSnippet({ name: 'Decision Brief Template', content: 'Create a decision brief:\n\nProblem: {{problem_statement}}\n\nOptions (at least 3):\n- For each: Description, Pros, Cons, Effort, Risk\n\nRecommendation: State clearly with rationale\nSecond-order effects: What changes downstream?\nReversibility: How easy to undo if wrong?', project: 'Writing & Analysis', componentType: 'task', tags: ['analysis', 'planning'] });
+    mgr.createSnippet({ name: 'Writing Quality Rules', content: 'Follow these writing guidelines:\n- Lead with the most important information\n- Use active voice and concrete language\n- Keep paragraphs to 3-4 sentences max\n- Use bullet points for lists of 3+ items\n- Define acronyms on first use\n- Include examples for abstract concepts\n- End sections with key takeaways', project: 'Writing & Analysis', componentType: 'rules', tags: ['writing'] });
+
+    mgr.addProject('Debugging & Ops');
+
+    mgr.createSnippet({ name: 'Debug Partner Persona', content: 'You are a seasoned debugger who approaches problems methodically. You form hypotheses, design experiments to test them, and narrow down root causes systematically. You never guess — you verify.', project: 'Debugging & Ops', componentType: 'persona', tags: ['debugging', 'coding'] });
+    mgr.createSnippet({ name: 'Bug Investigation Task', content: 'Investigate this issue:\n\nSymptom: {{symptom}}\nSteps to reproduce: {{steps}}\nExpected vs actual behavior: {{diff}}\n\nProvide:\n1. Likely root causes ranked by probability\n2. Diagnostic steps to confirm each hypothesis\n3. Targeted fix with minimal blast radius\n4. Regression test to prevent recurrence\n5. Related areas to check for similar issues', project: 'Debugging & Ops', componentType: 'task', tags: ['debugging'] });
+    mgr.createSnippet({ name: 'Incident Response Context', content: 'Environment: {{environment}}\nService: {{service_name}}\nSeverity: {{severity}}\nImpact: {{user_impact}}\nTimeline: {{when_started}}\nRecent changes: {{recent_deployments}}\n\nConstraints:\n- Minimize downtime over perfect fix\n- Document all changes for post-mortem\n- Communicate status every 15 minutes', project: 'Debugging & Ops', componentType: 'context', tags: ['debugging', 'planning'] });
+    mgr.createSnippet({ name: 'Ops Safety Constraints', content: 'Operational constraints:\n- Never run destructive commands without confirmation\n- Always back up before modifying data\n- Test changes in staging first when possible\n- Log all manual interventions with timestamps\n- Prefer rollback over forward-fix under time pressure\n- Escalate if root cause is unclear after 30 minutes', project: 'Debugging & Ops', componentType: 'constraints', tags: ['debugging', 'coding'] });
+
+    mgr.save();
+  }
+
+  // ============================================================================
+  // TESTS
+  // ============================================================================
+
+  // --- Create ---
+  describe('createSnippet', () => {
+    it('creates a snippet with default values', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-create-defaults');
+      const s = mgr.createSnippet();
+      assertEqual(s.name, 'New Snippet');
+      assertEqual(s.content, '');
+      assertEqual(s.project, 'General');
+      assertEqual(s.componentType, 'task');
+      assertDeepEqual(s.tags, []);
+      assert(s.id.startsWith('snip-'), 'ID should start with snip-');
+      assert(typeof s.createdAt === 'number', 'createdAt should be a number');
+      assert(typeof s.updatedAt === 'number', 'updatedAt should be a number');
+    });
+
+    it('creates a snippet with overrides', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-create-overrides');
+      const s = mgr.createSnippet({
+        name: 'My Snippet',
+        content: 'Hello world',
+        project: 'TestProject',
+        componentType: 'persona',
+        tags: ['coding', 'review']
+      });
+      assertEqual(s.name, 'My Snippet');
+      assertEqual(s.content, 'Hello world');
+      assertEqual(s.project, 'TestProject');
+      assertEqual(s.componentType, 'persona');
+      assertDeepEqual(s.tags, ['coding', 'review']);
+    });
+
+    it('adds snippet to internal array', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-create-array');
+      assertEqual(mgr.snippets.length, 0);
+      mgr.createSnippet({ name: 'A' });
+      assertEqual(mgr.snippets.length, 1);
+      mgr.createSnippet({ name: 'B' });
+      assertEqual(mgr.snippets.length, 2);
+    });
+
+    it('generates unique IDs for each snippet', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-create-unique');
+      const a = mgr.createSnippet({ name: 'A' });
+      const b = mgr.createSnippet({ name: 'B' });
+      assert(a.id !== b.id, 'IDs should be unique');
+    });
+
+    it('persists to storage on create', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-create-persist');
+      mgr.createSnippet({ name: 'Persisted' });
+      const saved = loadToolState('test-create-persist');
+      assertEqual(saved.snippets.length, 1);
+      assertEqual(saved.snippets[0].name, 'Persisted');
+    });
+
+    it('uses first project as default when project not specified', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-create-default-project');
+      mgr.addProject('Custom');
+      const s = mgr.createSnippet({ name: 'Test' });
+      assertEqual(s.project, 'General', 'Should default to first project');
+    });
+  });
+
+  // --- Update ---
+  describe('updateSnippet', () => {
+    it('updates name and content', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-update');
+      const s = mgr.createSnippet({ name: 'Original', content: 'old' });
+      mgr.updateSnippet(s.id, { name: 'Updated', content: 'new' });
+      const updated = mgr.snippets.find(x => x.id === s.id);
+      assertEqual(updated.name, 'Updated');
+      assertEqual(updated.content, 'new');
+    });
+
+    it('sets updatedAt timestamp', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-update-ts');
+      const s = mgr.createSnippet({ name: 'Test' });
+      const originalUpdatedAt = s.updatedAt;
+      // Small delay to ensure timestamp differs
+      mgr.updateSnippet(s.id, { name: 'Changed' });
+      assert(mgr.snippets[0].updatedAt >= originalUpdatedAt, 'updatedAt should be >= original');
+    });
+
+    it('returns null for non-existent ID', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-update-missing');
+      const result = mgr.updateSnippet('non-existent', { name: 'X' });
+      assertEqual(result, undefined);
+    });
+
+    it('persists updates to storage', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-update-persist');
+      const s = mgr.createSnippet({ name: 'Before' });
+      mgr.updateSnippet(s.id, { name: 'After' });
+      const saved = loadToolState('test-update-persist');
+      assertEqual(saved.snippets[0].name, 'After');
+    });
+  });
+
+  // --- Delete ---
+  describe('deleteSnippet', () => {
+    it('removes snippet from array', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-delete');
+      const s = mgr.createSnippet({ name: 'ToDelete' });
+      assertEqual(mgr.snippets.length, 1);
+      mgr.deleteSnippet(s.id);
+      assertEqual(mgr.snippets.length, 0);
+    });
+
+    it('removes from enabledIds', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-delete-enabled');
+      const s = mgr.createSnippet({ name: 'Enabled' });
+      mgr.toggleEnabled(s.id);
+      assert(mgr.enabledIds.includes(s.id));
+      mgr.deleteSnippet(s.id);
+      assert(!mgr.enabledIds.includes(s.id));
+    });
+
+    it('clears selectedId if deleting selected snippet', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-delete-selected');
+      const s = mgr.createSnippet({ name: 'Selected' });
+      mgr.selectedId = s.id;
+      mgr.deleteSnippet(s.id);
+      assertEqual(mgr.selectedId, null);
+    });
+
+    it('does not affect other snippets', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-delete-others');
+      const a = mgr.createSnippet({ name: 'Keep' });
+      const b = mgr.createSnippet({ name: 'Delete' });
+      mgr.deleteSnippet(b.id);
+      assertEqual(mgr.snippets.length, 1);
+      assertEqual(mgr.snippets[0].name, 'Keep');
+    });
+  });
+
+  // --- Duplicate ---
+  describe('duplicateSnippet', () => {
+    it('creates copy with "(copy)" suffix', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-dup');
+      const s = mgr.createSnippet({ name: 'Original', content: 'hello', componentType: 'persona', tags: ['coding'] });
+      const dup = mgr.duplicateSnippet(s.id);
+      assertEqual(dup.name, 'Original (copy)');
+      assertEqual(dup.content, 'hello');
+      assertEqual(dup.componentType, 'persona');
+      assertDeepEqual(dup.tags, ['coding']);
+      assert(dup.id !== s.id, 'Duplicate should have new ID');
+    });
+
+    it('returns null for non-existent ID', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-dup-missing');
+      assertEqual(mgr.duplicateSnippet('fake'), null);
+    });
+
+    it('does not share tag arrays by reference', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-dup-ref');
+      const s = mgr.createSnippet({ name: 'A', tags: ['coding'] });
+      const dup = mgr.duplicateSnippet(s.id);
+      dup.tags.push('writing');
+      assert(!s.tags.includes('writing'), 'Original tags should not be mutated');
+    });
+  });
+
+  // --- Projects ---
+  describe('Project management', () => {
+    it('starts with General project', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-proj-default');
+      assertDeepEqual(mgr.projects, ['General']);
+    });
+
+    it('adds new projects', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-proj-add');
+      mgr.addProject('MyProject');
+      assert(mgr.projects.includes('MyProject'));
+      assertEqual(mgr.projects.length, 2);
+    });
+
+    it('prevents duplicate projects', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-proj-dup');
+      mgr.addProject('Foo');
+      mgr.addProject('Foo');
+      assertEqual(mgr.projects.filter(p => p === 'Foo').length, 1);
+    });
+
+    it('does not delete General project', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-proj-no-del-general');
+      mgr.deleteProject('General');
+      assert(mgr.projects.includes('General'));
+    });
+
+    it('moves snippets to General when project is deleted', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-proj-del-move');
+      mgr.addProject('Temp');
+      const s = mgr.createSnippet({ name: 'Orphan', project: 'Temp' });
+      mgr.deleteProject('Temp');
+      assertEqual(mgr.snippets.find(x => x.id === s.id).project, 'General');
+    });
+  });
+
+  // --- Enable/Disable ---
+  describe('toggleEnabled / getEnabledSnippets', () => {
+    it('enables a snippet', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-enable');
+      const s = mgr.createSnippet({ name: 'Test' });
+      mgr.toggleEnabled(s.id);
+      assert(mgr.enabledIds.includes(s.id));
+    });
+
+    it('disables an already enabled snippet', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-disable');
+      const s = mgr.createSnippet({ name: 'Test' });
+      mgr.toggleEnabled(s.id);
+      mgr.toggleEnabled(s.id);
+      assert(!mgr.enabledIds.includes(s.id));
+    });
+
+    it('getEnabledSnippets returns only enabled ones', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-get-enabled');
+      const a = mgr.createSnippet({ name: 'A' });
+      const b = mgr.createSnippet({ name: 'B' });
+      mgr.toggleEnabled(a.id);
+      const enabled = mgr.getEnabledSnippets();
+      assertEqual(enabled.length, 1);
+      assertEqual(enabled[0].name, 'A');
+    });
+
+    it('getEnabledSnippets sorts by component type order', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-sort-enabled');
+      const rules = mgr.createSnippet({ name: 'Rules', componentType: 'rules' });
+      const persona = mgr.createSnippet({ name: 'Persona', componentType: 'persona' });
+      const task = mgr.createSnippet({ name: 'Task', componentType: 'task' });
+      mgr.toggleEnabled(rules.id);
+      mgr.toggleEnabled(persona.id);
+      mgr.toggleEnabled(task.id);
+      const enabled = mgr.getEnabledSnippets();
+      assertEqual(enabled[0].componentType, 'persona');
+      assertEqual(enabled[1].componentType, 'task');
+      assertEqual(enabled[2].componentType, 'rules');
+    });
+  });
+
+  // --- Grouping ---
+  describe('getByProject / getByTag', () => {
+    it('groups snippets by project', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-by-project');
+      mgr.addProject('Alpha');
+      mgr.createSnippet({ name: 'A1', project: 'General' });
+      mgr.createSnippet({ name: 'A2', project: 'Alpha' });
+      mgr.createSnippet({ name: 'A3', project: 'Alpha' });
+      const groups = mgr.getByProject();
+      assertEqual(groups['General'].length, 1);
+      assertEqual(groups['Alpha'].length, 2);
+    });
+
+    it('groups snippets by tag', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-by-tag');
+      mgr.createSnippet({ name: 'Coder', tags: ['coding'] });
+      mgr.createSnippet({ name: 'Writer', tags: ['writing'] });
+      mgr.createSnippet({ name: 'Both', tags: ['coding', 'writing'] });
+      mgr.createSnippet({ name: 'None', tags: [] });
+      const groups = mgr.getByTag();
+      assertEqual(groups['Coding'].length, 2);
+      assertEqual(groups['Writing'].length, 2);
+      assertEqual(groups['Untagged'].length, 1);
+    });
+  });
+
+  // --- Filtering ---
+  describe('getFiltered', () => {
+    it('returns all snippets when no filter', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-filter-none');
+      mgr.createSnippet({ name: 'A' });
+      mgr.createSnippet({ name: 'B' });
+      mgr.filterText = '';
+      assertEqual(mgr.getFiltered().length, 2);
+    });
+
+    it('filters by name', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-filter-name');
+      mgr.createSnippet({ name: 'Feature Task' });
+      mgr.createSnippet({ name: 'Bug Fix' });
+      mgr.filterText = 'feature';
+      assertEqual(mgr.getFiltered().length, 1);
+      assertEqual(mgr.getFiltered()[0].name, 'Feature Task');
+    });
+
+    it('filters by content', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-filter-content');
+      mgr.createSnippet({ name: 'A', content: 'Review this code' });
+      mgr.createSnippet({ name: 'B', content: 'Write documentation' });
+      mgr.filterText = 'code';
+      assertEqual(mgr.getFiltered().length, 1);
+    });
+
+    it('filters by project name', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-filter-project');
+      mgr.createSnippet({ name: 'A', project: 'Backend' });
+      mgr.createSnippet({ name: 'B', project: 'Frontend' });
+      mgr.filterText = 'backend';
+      assertEqual(mgr.getFiltered().length, 1);
+    });
+
+    it('is case insensitive', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-filter-case');
+      mgr.createSnippet({ name: 'UPPERCASE' });
+      mgr.filterText = 'uppercase';
+      assertEqual(mgr.getFiltered().length, 1);
+    });
+  });
+
+  // --- Persistence ---
+  describe('Persistence (save/load)', () => {
+    it('persists and loads snippets across instances', () => {
+      clearMockStorage();
+      const mgr1 = new SnippetManager('test-persist');
+      mgr1.addProject('Saved');
+      mgr1.createSnippet({ name: 'Persistent', project: 'Saved', componentType: 'persona', tags: ['coding'] });
+      mgr1.toggleEnabled(mgr1.snippets[0].id);
+
+      const mgr2 = new SnippetManager('test-persist');
+      mgr2.load();
+      assertEqual(mgr2.snippets.length, 1);
+      assertEqual(mgr2.snippets[0].name, 'Persistent');
+      assertEqual(mgr2.snippets[0].project, 'Saved');
+      assertEqual(mgr2.snippets[0].componentType, 'persona');
+      assert(mgr2.projects.includes('Saved'));
+      assert(mgr2.enabledIds.includes(mgr2.snippets[0].id));
+    });
+
+    it('handles empty storage gracefully', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-empty-load');
+      mgr.load();
+      assertDeepEqual(mgr.projects, ['General']);
+      assertEqual(mgr.snippets.length, 0);
+      assertEqual(mgr.enabledIds.length, 0);
+    });
+  });
+
+  // --- seedDefaultSnippets ---
+  describe('seedDefaultSnippets', () => {
+    it('creates 3 projects', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-seed-projects');
+      seedDefaultSnippets(mgr);
+      assert(mgr.projects.includes('Code Development'));
+      assert(mgr.projects.includes('Writing & Analysis'));
+      assert(mgr.projects.includes('Debugging & Ops'));
+    });
+
+    it('creates 12 snippets total (4 per project)', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-seed-count');
+      seedDefaultSnippets(mgr);
+      assertEqual(mgr.snippets.length, 12);
+
+      const byProject = mgr.getByProject();
+      assertEqual(byProject['Code Development'].length, 4);
+      assertEqual(byProject['Writing & Analysis'].length, 4);
+      assertEqual(byProject['Debugging & Ops'].length, 4);
+    });
+
+    it('each snippet has valid componentType', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-seed-types');
+      seedDefaultSnippets(mgr);
+      const validTypes = COMPONENT_TYPES.map(t => t.id);
+      mgr.snippets.forEach(s => {
+        assert(validTypes.includes(s.componentType), `Invalid componentType: ${s.componentType} on ${s.name}`);
+      });
+    });
+
+    it('each snippet has at least one tag', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-seed-tags');
+      seedDefaultSnippets(mgr);
+      const validTags = USE_CASE_TAGS.map(t => t.id);
+      mgr.snippets.forEach(s => {
+        assert(s.tags.length > 0, `Snippet "${s.name}" has no tags`);
+        s.tags.forEach(tag => {
+          assert(validTags.includes(tag), `Invalid tag "${tag}" on snippet "${s.name}"`);
+        });
+      });
+    });
+
+    it('each snippet has non-empty name and content', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-seed-content');
+      seedDefaultSnippets(mgr);
+      mgr.snippets.forEach(s => {
+        assert(s.name.length > 0, 'Snippet name should be non-empty');
+        assert(s.content.length > 0, 'Snippet content should be non-empty');
+      });
+    });
+
+    it('has variety of component types across projects', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-seed-variety');
+      seedDefaultSnippets(mgr);
+      // Each project should have a persona
+      const projects = ['Code Development', 'Writing & Analysis', 'Debugging & Ops'];
+      projects.forEach(proj => {
+        const projectSnippets = mgr.snippets.filter(s => s.project === proj);
+        assert(projectSnippets.some(s => s.componentType === 'persona'), `${proj} should have a persona snippet`);
+        assert(projectSnippets.some(s => s.componentType === 'task'), `${proj} should have a task snippet`);
+      });
+    });
+
+    it('persists all data to storage', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-seed-persist');
+      seedDefaultSnippets(mgr);
+      const saved = loadToolState('test-seed-persist');
+      assertEqual(saved.snippets.length, 12);
+      assert(saved.projects.includes('Code Development'));
+    });
+  });
+
+  // --- Adding new snippets to existing data ---
+  describe('Adding snippets to seeded data', () => {
+    it('can add a snippet to an existing project', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-add-existing');
+      seedDefaultSnippets(mgr);
+      const before = mgr.snippets.length;
+      mgr.createSnippet({ name: 'New One', project: 'Code Development', componentType: 'examples', tags: ['coding'] });
+      assertEqual(mgr.snippets.length, before + 1);
+      const byProject = mgr.getByProject();
+      assertEqual(byProject['Code Development'].length, 5);
+    });
+
+    it('can add a snippet to a new project', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-add-new-proj');
+      seedDefaultSnippets(mgr);
+      mgr.addProject('My Custom');
+      mgr.createSnippet({ name: 'Custom Snippet', project: 'My Custom', componentType: 'task', tags: ['planning'] });
+      const byProject = mgr.getByProject();
+      assertEqual(byProject['My Custom'].length, 1);
+    });
+
+    it('new snippet appears in tag grouping', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-add-tag-group');
+      seedDefaultSnippets(mgr);
+      mgr.createSnippet({ name: 'Doc Snippet', project: 'General', componentType: 'task', tags: ['documentation'] });
+      const byTag = mgr.getByTag();
+      assert(byTag['Documentation'].some(s => s.name === 'Doc Snippet'));
+    });
+
+    it('new snippet can be enabled and appears in composed output', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-add-enable');
+      seedDefaultSnippets(mgr);
+      const s = mgr.createSnippet({ name: 'Active', content: 'Do this thing', componentType: 'task' });
+      mgr.toggleEnabled(s.id);
+      const enabled = mgr.getEnabledSnippets();
+      assert(enabled.some(e => e.name === 'Active'));
+    });
+
+    it('new snippet gets unique ID distinct from seeds', () => {
+      clearMockStorage();
+      const mgr = new SnippetManager('test-add-unique-id');
+      seedDefaultSnippets(mgr);
+      const existingIds = new Set(mgr.snippets.map(s => s.id));
+      const newSnippet = mgr.createSnippet({ name: 'Brand New' });
+      assert(!existingIds.has(newSnippet.id), 'New snippet ID should be unique from seeds');
+    });
+
+    it('survives save/load cycle with mixed seed and user snippets', () => {
+      clearMockStorage();
+      const mgr1 = new SnippetManager('test-add-persist');
+      seedDefaultSnippets(mgr1);
+      mgr1.createSnippet({ name: 'User Custom', project: 'General', componentType: 'rules', tags: ['review'] });
+      mgr1.toggleEnabled(mgr1.snippets[mgr1.snippets.length - 1].id);
+
+      const mgr2 = new SnippetManager('test-add-persist');
+      mgr2.load();
+      assertEqual(mgr2.snippets.length, 13);
+      assert(mgr2.snippets.some(s => s.name === 'User Custom'));
+      assertEqual(mgr2.enabledIds.length, 1);
+    });
+  });
+
+  // ============================================================================
+  // Render results
+  // ============================================================================
+  let totalPass = 0, totalFail = 0;
+  const resultsEl = document.getElementById('results');
+
+  suites.forEach(suite => {
+    let html = `<div class="suite"><div class="suite-header">${suite.name}</div>`;
+    suite.tests.forEach(test => {
+      if (test.passed) {
+        totalPass++;
+        html += `<div class="test"><span class="pass"></span><span class="test-name">${test.name}</span></div>`;
+      } else {
+        totalFail++;
+        html += `<div class="test"><span class="fail"></span><span class="test-name">${test.name}</span><div class="test-error">${test.error}</div></div>`;
+      }
+    });
+    html += '</div>';
+    resultsEl.innerHTML += html;
+  });
+
+  const summaryEl = document.getElementById('summary');
+  summaryEl.className = `summary ${totalFail > 0 ? 'has-fail' : 'all-pass'}`;
+  summaryEl.textContent = `${totalPass} passed, ${totalFail} failed — ${totalPass + totalFail} total`;
+</script>
+</body>
+</html>

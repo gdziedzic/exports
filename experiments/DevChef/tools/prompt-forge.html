@@ -15,7 +15,7 @@
   "description": "Assemble AI prompts with presets, recipes, and one-click templates",
   "category": "AI",
   "keywords": ["prompt", "ai", "builder", "template", "recipe"],
-  "version": "10.0.0"
+  "version": "11.0.0"
 }
 </script>
 
@@ -61,14 +61,22 @@
           </div>
         </div>
 
-        <!-- My Templates -->
+        <!-- Snippet Browser -->
         <div class="forge-panel">
           <div class="forge-panel-header">
-            <span class="forge-panel-title">My Templates</span>
-            <button class="forge-btn forge-btn-sm" id="newTemplateBtn">+ Save</button>
+            <span class="forge-panel-title">Snippets</span>
+            <button class="forge-btn forge-btn-sm" id="forgeNewSnippetBtn">+ New</button>
           </div>
           <div class="forge-panel-body">
-            <div class="forge-history-list" id="templateList"></div>
+            <div class="forge-snippet-browser">
+              <div class="forge-snippet-view-toggle">
+                <button class="forge-snippet-view-btn active" data-view="project">By Project</button>
+                <button class="forge-snippet-view-btn" data-view="tag">By Tag</button>
+              </div>
+              <input type="text" class="forge-snippet-search" id="forgeSnippetSearch" placeholder="Filter snippets..." />
+              <div class="forge-snippet-tree" id="forgeSnippetTree"></div>
+              <button class="forge-btn forge-btn-sm" id="forgeNewProjectBtn" style="margin-top:6px;width:100%">+ Project</button>
+            </div>
           </div>
         </div>
 
@@ -146,178 +154,13 @@
           </div>
         </div>
 
-        <!-- Role Section -->
-        <div class="forge-section-card" id="roleCard">
+        <!-- Snippet Editor -->
+        <div class="forge-section-card" id="forgeSnippetEditorCard" style="display:none">
           <div class="forge-section-header">
-            <h3><span>🎭</span> Role & Voice</h3>
-            <div class="forge-section-toggle">
-              <span class="forge-section-tag">Preset</span>
-              <div class="forge-section-check checked" data-section-toggle="includeRole" title="Include in prompt">✓</div>
-            </div>
+            <h3><span>📝</span> Snippet Editor</h3>
           </div>
-          <div class="forge-section-body" id="roleSection">
-            <div class="forge-form-row">
-              <div class="forge-form-group">
-                <label>Persona</label>
-                <select id="personaSelect"></select>
-              </div>
-              <div class="forge-form-group">
-                <label>Voice</label>
-                <select id="voiceSelect"></select>
-              </div>
-            </div>
-            <div class="forge-form-row forge-form-row-single forge-override-field" id="customPersonaRow">
-              <div class="forge-form-group">
-                <label>Custom Persona</label>
-                <textarea id="customPersona" placeholder="Describe your custom persona..."></textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Task Section -->
-        <div class="forge-section-card" id="taskCard">
-          <div class="forge-section-header">
-            <h3><span>🎯</span> Task & Output</h3>
-            <div class="forge-section-toggle">
-              <span class="forge-section-tag">Pattern</span>
-              <div class="forge-section-check checked" data-section-toggle="includeTask" title="Include in prompt">✓</div>
-            </div>
-          </div>
-          <div class="forge-section-body" id="taskSection">
-            <div class="forge-form-row">
-              <div class="forge-form-group">
-                <label>Task Pattern</label>
-                <select id="patternSelect"></select>
-              </div>
-              <div class="forge-form-group">
-                <label>Output Format</label>
-                <select id="formatSelect"></select>
-              </div>
-            </div>
-            <div class="forge-form-row">
-              <div class="forge-form-group">
-                <label>Tone</label>
-                <select id="toneSelect"></select>
-              </div>
-              <div class="forge-form-group">
-                <label>Audience</label>
-                <select id="audienceSelect"></select>
-              </div>
-            </div>
-            <div class="forge-form-row forge-form-row-single forge-override-field" id="customAudienceRow">
-              <div class="forge-form-group">
-                <label>Custom Audience</label>
-                <input id="customAudience" placeholder="Describe your audience..." />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Objective Section -->
-        <div class="forge-section-card" id="objectiveCard">
-          <div class="forge-section-header">
-            <h3><span>🎯</span> Objective & Deliverable</h3>
-            <div class="forge-section-toggle">
-              <span class="forge-section-tag">Goal</span>
-              <div class="forge-section-check checked" data-section-toggle="includeObjective" title="Include in prompt">✓</div>
-            </div>
-          </div>
-          <div class="forge-section-body" id="objectiveSection">
-            <div class="forge-form-row">
-              <div class="forge-form-group">
-                <label>Objective ⭐</label>
-                <select id="objectiveSelect"></select>
-              </div>
-              <div class="forge-form-group">
-                <label>Deliverable ⭐</label>
-                <select id="deliverableSelect"></select>
-              </div>
-            </div>
-            <div class="forge-form-row forge-override-field" id="customObjDelRow">
-              <div class="forge-form-group">
-                <label>Custom Objective</label>
-                <textarea id="customObjective" placeholder="What does success look like?"></textarea>
-              </div>
-              <div class="forge-form-group">
-                <label>Custom Deliverable</label>
-                <textarea id="customDeliverable" placeholder="What artifact to produce?"></textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Context Section -->
-        <div class="forge-section-card forge-disabled" id="contextCard">
-          <div class="forge-section-header">
-            <h3><span>📋</span> Context & Inputs</h3>
-            <div class="forge-section-toggle">
-              <span class="forge-section-tag">Optional</span>
-              <div class="forge-section-check" data-section-toggle="includeContext" title="Include in prompt">✓</div>
-            </div>
-          </div>
-          <div class="forge-section-body" id="contextSection">
-            <div class="forge-form-row forge-form-row-single">
-              <div class="forge-form-group">
-                <label>Context Preset</label>
-                <select id="contextSelect"></select>
-              </div>
-            </div>
-            <div class="forge-form-row">
-              <div class="forge-form-group">
-                <label>Custom Context</label>
-                <textarea id="customContext" placeholder="Background, constraints, prior attempts..."></textarea>
-              </div>
-              <div class="forge-form-group">
-                <label>Inputs Provided</label>
-                <textarea id="inputsProvided" placeholder="Links, data, prior work..."></textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dev Section -->
-        <div class="forge-section-card forge-disabled" id="devCard">
-          <div class="forge-section-header">
-            <h3><span>💻</span> Development Context</h3>
-            <div class="forge-section-toggle">
-              <span class="forge-section-tag">For code</span>
-              <div class="forge-section-check" data-section-toggle="includeDev" title="Include in prompt">✓</div>
-            </div>
-          </div>
-          <div class="forge-section-body" id="devSection">
-            <div class="forge-form-row forge-form-row-triple">
-              <div class="forge-form-group">
-                <label>Tech Stack</label>
-                <select id="techStackSelect"></select>
-              </div>
-              <div class="forge-form-group">
-                <label>Framework</label>
-                <select id="frameworkSelect"></select>
-              </div>
-              <div class="forge-form-group">
-                <label>Task Type</label>
-                <select id="devTaskSelect"></select>
-              </div>
-            </div>
-            <div class="forge-form-row forge-form-row-single forge-override-field" id="customStackRow">
-              <div class="forge-form-group">
-                <label>Custom Stack Details</label>
-                <input id="customStack" placeholder="Additional stack details..." />
-              </div>
-            </div>
-            <div class="forge-form-row forge-form-row-single">
-              <div class="forge-form-group">
-                <label>Constraints Preset</label>
-                <select id="constraintsSelect"></select>
-              </div>
-            </div>
-            <div class="forge-form-row forge-form-row-single forge-override-field" id="customConstraintsRow">
-              <div class="forge-form-group">
-                <label>Custom Constraints</label>
-                <textarea id="customConstraints" placeholder="Tests, perf, security requirements..."></textarea>
-              </div>
-            </div>
+          <div class="forge-section-body" id="forgeSnippetEditorBody">
+            <!-- Rendered dynamically -->
           </div>
         </div>
 
@@ -801,17 +644,8 @@
     50% { transform: translateY(-1px); }
   }
 
-  .forge-builder:not(.refine-open) #roleCard,
-  .forge-builder:not(.refine-open) #taskCard,
-  .forge-builder:not(.refine-open) #objectiveCard,
-  .forge-builder:not(.refine-open) #contextCard,
-  .forge-builder:not(.refine-open) #devCard,
+  .forge-builder:not(.refine-open) #forgeSnippetEditorCard,
   .forge-builder:not(.refine-open) #modifiersCard {
-    display: none;
-  }
-
-  .forge-builder[data-intent-mode="analyze"] #devCard,
-  .forge-builder[data-intent-mode="rewrite"] #devCard {
     display: none;
   }
 
@@ -1002,13 +836,6 @@
   }
 
   .forge-form-group select { cursor: pointer; }
-
-  .forge-override-field {
-    margin-top: 6px;
-    display: none;
-  }
-
-  .forge-override-field.show { display: block; }
 
   /* Toggle Chips */
   .forge-toggle-grid {
@@ -1231,27 +1058,82 @@
     color: var(--text-secondary);
   }
 
+  /* Snippet Browser */
+  .forge-snippet-browser { display: flex; flex-direction: column; gap: 8px; }
+  .forge-snippet-view-toggle { display: flex; gap: 4px; }
+  .forge-snippet-view-btn {
+    flex: 1; padding: 5px 8px; font-size: 10px; font-weight: 600;
+    border: 1px solid var(--border-color); background: var(--bg-tertiary);
+    color: var(--text-secondary); border-radius: var(--radius-md); cursor: pointer;
+    transition: all var(--transition-fast); text-align: center;
+  }
+  .forge-snippet-view-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .forge-snippet-search {
+    width: 100%; padding: 6px 10px; font-size: 11px;
+    border: 1px solid var(--border-color); border-radius: var(--radius-md);
+    background: var(--bg-tertiary); color: var(--text-primary);
+  }
+  .forge-snippet-search:focus { outline: none; border-color: var(--accent); }
+  .forge-snippet-tree { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+  .forge-snippet-group-header {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-secondary); padding: 6px 4px 2px; cursor: pointer; user-select: none;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .forge-snippet-group-header:hover { color: var(--text-primary); }
+  .forge-snippet-item {
+    display: flex; align-items: center; gap: 6px; padding: 5px 8px;
+    border-radius: var(--radius-md); cursor: pointer; font-size: 11px;
+    transition: all var(--transition-fast); border: 1px solid transparent;
+  }
+  .forge-snippet-item:hover { background: var(--bg-tertiary); border-color: var(--border-color); }
+  .forge-snippet-item.selected { background: var(--accent-light); border-color: var(--accent); }
+  .forge-snippet-item input[type="checkbox"] { margin: 0; cursor: pointer; accent-color: var(--accent); }
+  .forge-snippet-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .forge-snippet-item-badge {
+    font-size: 8px; padding: 1px 5px; border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .forge-snippet-editor-fields { display: flex; flex-direction: column; gap: 10px; }
+  .forge-snippet-field-row-inline { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .forge-snippet-tags-selector { display: flex; flex-wrap: wrap; gap: 5px; }
+  .forge-snippet-tag-chip {
+    padding: 3px 8px; font-size: 10px; font-weight: 600;
+    border: 1px solid var(--border-color); border-radius: 999px;
+    background: var(--bg-tertiary); color: var(--text-secondary);
+    cursor: pointer; transition: all var(--transition-fast);
+  }
+  .forge-snippet-tag-chip:hover { border-color: var(--accent); }
+  .forge-snippet-tag-chip.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .forge-snippet-editor-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid var(--border-color); }
+  .forge-snippet-empty { text-align: center; padding: 24px; color: var(--text-secondary); font-size: 12px; }
+
   /* Scrollbar */
   .forge-recipe-list::-webkit-scrollbar,
   .forge-history-list::-webkit-scrollbar,
-  .forge-output-body::-webkit-scrollbar {
+  .forge-output-body::-webkit-scrollbar,
+  .forge-snippet-tree::-webkit-scrollbar {
     width: 5px;
     height: 5px;
   }
   .forge-recipe-list::-webkit-scrollbar-track,
   .forge-history-list::-webkit-scrollbar-track,
-  .forge-output-body::-webkit-scrollbar-track {
+  .forge-output-body::-webkit-scrollbar-track,
+  .forge-snippet-tree::-webkit-scrollbar-track {
     background: transparent;
   }
   .forge-recipe-list::-webkit-scrollbar-thumb,
   .forge-history-list::-webkit-scrollbar-thumb,
-  .forge-output-body::-webkit-scrollbar-thumb {
+  .forge-output-body::-webkit-scrollbar-thumb,
+  .forge-snippet-tree::-webkit-scrollbar-thumb {
     background: var(--border-color);
     border-radius: 3px;
   }
   .forge-recipe-list::-webkit-scrollbar-thumb:hover,
   .forge-history-list::-webkit-scrollbar-thumb:hover,
-  .forge-output-body::-webkit-scrollbar-thumb:hover {
+  .forge-output-body::-webkit-scrollbar-thumb:hover,
+  .forge-snippet-tree::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
   }
 
@@ -1370,7 +1252,6 @@ const CONTEXTS = [
   { id: 'custom', label: '✏️ Custom...', text: '' }
 ];
 
-
 const TECH_STACKS = [
   { id: 'html_single', label: 'HTML/CSS/JS (single file)', text: 'HTML, CSS, JavaScript in a single file.' },
   { id: 'html_multi', label: 'HTML + CSS + JS (separate)', text: 'HTML, CSS, JavaScript in separate files.' },
@@ -1410,7 +1291,6 @@ const DEV_TASKS = [
   { id: 'ops', label: '🏗️ Ops/Infra', text: 'Infrastructure or DevOps work.' }
 ];
 
-
 const CONSTRAINTS = [
   { id: 'none', label: 'No constraints', text: '' },
   { id: 'minimal_deps', label: 'Minimal dependencies', text: 'Prefer stdlib, avoid new deps.' },
@@ -1421,7 +1301,6 @@ const CONSTRAINTS = [
   { id: 'accessible', label: 'Accessibility required', text: 'Must meet WCAG standards.' },
   { id: 'custom', label: '✏️ Custom...', text: '' }
 ];
-
 
 const GUARDRAILS = [
   { id: 'sources', label: 'Cite sources', text: 'Use provided materials; flag unknowns.' },
@@ -1455,7 +1334,6 @@ const QUICK_FIRES = [
   { id: 'debug', icon: '🐛', label: 'Debug', key: '2', recipe: { pattern: 'debug', persona: 'senior_dev', devTask: 'bugfix', guardrails: ['assumptions', 'hallucination'], boosters: ['reasoning', 'edge'] }},
   { id: 'review', icon: '👁️', label: 'Review', key: '3', recipe: { pattern: 'review', persona: 'code_reviewer', devTask: 'review', guardrails: ['security'], boosters: ['alternatives', 'tests'] }},
   { id: 'spec', icon: '📝', label: 'Spec', key: '4', recipe: { pattern: 'spec', persona: 'architect', devTask: 'spec', guardrails: ['assumptions'], boosters: ['edge', 'selfcheck'] }},
-
   { id: 'refactor', icon: '🔧', label: 'Refactor', key: '5', recipe: { pattern: 'refactor', persona: 'senior_dev', devTask: 'refactor', guardrails: ['backwards'], boosters: ['tests', 'edge'] }},
   { id: 'decision', icon: '⚖️', label: 'Decision', key: '6', recipe: { pattern: 'decision', persona: 'architect', guardrails: ['sources', 'assumptions'], boosters: ['alternatives', 'reasoning'] }},
   { id: 'docs', icon: '📄', label: 'Docs', key: '7', recipe: { pattern: 'research', persona: 'tech_writer', guardrails: ['assumptions'], boosters: ['selfcheck', 'followup'] }},
@@ -1497,6 +1375,116 @@ const DEFAULT_OUTPUT_BY_MODE = {
 
 const WORKFLOW_PROFILES = ['rapid', 'balanced', 'deep'];
 
+// ============ SNIPPET SYSTEM ============
+const COMPONENT_TYPES = [
+  { id: 'persona', label: 'Persona' }, { id: 'context', label: 'Context' },
+  { id: 'task', label: 'Task' }, { id: 'rules', label: 'Rules' },
+  { id: 'output-format', label: 'Output Format' }, { id: 'constraints', label: 'Constraints' },
+  { id: 'examples', label: 'Examples' }
+];
+const USE_CASE_TAGS = [
+  { id: 'coding', label: 'Coding' }, { id: 'writing', label: 'Writing' },
+  { id: 'analysis', label: 'Analysis' }, { id: 'debugging', label: 'Debugging' },
+  { id: 'review', label: 'Review' }, { id: 'planning', label: 'Planning' },
+  { id: 'documentation', label: 'Documentation' }
+];
+const COMPONENT_TYPE_ORDER = ['persona', 'context', 'task', 'rules', 'output-format', 'constraints', 'examples'];
+
+class SnippetManager {
+  constructor(storageKey) {
+    this.storageKey = storageKey;
+    this.projects = ['General'];
+    this.snippets = [];
+    this.enabledIds = [];
+    this.selectedId = null;
+    this.viewMode = 'project';
+    this.filterText = '';
+  }
+  load() {
+    const saved = loadToolState(this.storageKey);
+    if (saved) {
+      this.projects = saved.projects || ['General'];
+      this.snippets = saved.snippets || [];
+      this.enabledIds = saved.enabledIds || [];
+    }
+  }
+  save() {
+    saveToolState(this.storageKey, { projects: this.projects, snippets: this.snippets, enabledIds: this.enabledIds });
+  }
+  createSnippet(overrides = {}) {
+    const s = {
+      id: 'snip-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+      name: overrides.name || 'New Snippet', content: overrides.content || '',
+      project: overrides.project || this.projects[0] || 'General',
+      componentType: overrides.componentType || 'task', tags: overrides.tags || [],
+      createdAt: Date.now(), updatedAt: Date.now()
+    };
+    this.snippets.push(s);
+    this.save();
+    return s;
+  }
+  updateSnippet(id, updates) {
+    const s = this.snippets.find(x => x.id === id);
+    if (s) { Object.assign(s, updates, { updatedAt: Date.now() }); this.save(); }
+    return s;
+  }
+  deleteSnippet(id) {
+    this.snippets = this.snippets.filter(x => x.id !== id);
+    this.enabledIds = this.enabledIds.filter(x => x !== id);
+    if (this.selectedId === id) this.selectedId = null;
+    this.save();
+  }
+  duplicateSnippet(id) {
+    const o = this.snippets.find(x => x.id === id);
+    if (!o) return null;
+    return this.createSnippet({ name: o.name + ' (copy)', content: o.content, project: o.project, componentType: o.componentType, tags: [...o.tags] });
+  }
+  addProject(name) {
+    if (name && !this.projects.includes(name)) { this.projects.push(name); this.save(); }
+  }
+  deleteProject(name) {
+    if (name === 'General') return;
+    this.projects = this.projects.filter(p => p !== name);
+    this.snippets.forEach(s => { if (s.project === name) s.project = 'General'; });
+    this.save();
+  }
+  toggleEnabled(id) {
+    const idx = this.enabledIds.indexOf(id);
+    if (idx > -1) this.enabledIds.splice(idx, 1); else this.enabledIds.push(id);
+    this.save();
+  }
+  getEnabledSnippets() {
+    return this.snippets.filter(s => this.enabledIds.includes(s.id))
+      .sort((a, b) => COMPONENT_TYPE_ORDER.indexOf(a.componentType) - COMPONENT_TYPE_ORDER.indexOf(b.componentType));
+  }
+  getByProject() {
+    const groups = {};
+    this.projects.forEach(p => { groups[p] = []; });
+    this.getFiltered().forEach(s => {
+      if (!groups[s.project]) groups[s.project] = [];
+      groups[s.project].push(s);
+    });
+    return groups;
+  }
+  getByTag() {
+    const groups = {};
+    USE_CASE_TAGS.forEach(t => { groups[t.label] = []; });
+    groups['Untagged'] = [];
+    this.getFiltered().forEach(s => {
+      if (!s.tags || !s.tags.length) { groups['Untagged'].push(s); }
+      else { s.tags.forEach(tag => { const lbl = USE_CASE_TAGS.find(t => t.id === tag)?.label || tag; if (!groups[lbl]) groups[lbl] = []; groups[lbl].push(s); }); }
+    });
+    return groups;
+  }
+  getFiltered() {
+    if (!this.filterText) return this.snippets;
+    const q = this.filterText.toLowerCase();
+    return this.snippets.filter(s => s.name.toLowerCase().includes(q) || s.content.toLowerCase().includes(q) || s.project.toLowerCase().includes(q));
+  }
+}
+
+const snippetMgr = new SnippetManager('prompt-forge-snippets');
+
 // ============ STATE ============
 let state = {
   intentMode: 'create',
@@ -1505,23 +1493,9 @@ let state = {
   intentInput: '',
   intentOutputFormat: 'steps',
   showRefine: false,
-  persona: 'senior_dev', voice: 'neutral', customPersona: '',
-  pattern: 'feature', format: 'steps', tone: 'precise',
-  audience: 'senior_dev', customAudience: '',
-  objective: 'ship_feature', customObjective: '',
-  deliverable: 'pr', customDeliverable: '',
-  context: 'none', customContext: '',
-  inputsProvided: '',
-  techStack: 'html_single', framework: 'none', customStack: '',
-  devTask: 'feature', constraints: 'tested', customConstraints: '',
   extraInstructions: '',
   guardrails: ['assumptions'],
   boosters: ['edge', 'tests'],
-  includeRole: true,
-  includeTask: true,
-  includeObjective: true,
-  includeContext: false,
-  includeDev: false,
   includeGuardrails: true
 };
 
@@ -1534,7 +1508,9 @@ export const DevChefTool = {
 
   init(container, context) {
     this.container = container;
+    snippetMgr.load();
     loadFromStorage();
+    migratePresetsToSnippets();
     renderAll();
     attachListeners();
     updatePrompt();
@@ -1558,7 +1534,15 @@ function loadFromStorage() {
   if (saved) {
     if (saved.templates) templates = saved.templates;
     if (saved.history) history = saved.history;
-    if (saved.lastState) state = { ...state, ...saved.lastState };
+    if (saved.lastState) {
+      // Only load keys that exist in current state shape
+      const validKeys = Object.keys(state);
+      const filtered = {};
+      validKeys.forEach(k => {
+        if (saved.lastState.hasOwnProperty(k)) filtered[k] = saved.lastState[k];
+      });
+      state = { ...state, ...filtered };
+    }
   }
 }
 
@@ -1572,7 +1556,6 @@ function saveToStorage() {
 
 function renderAll() {
   ensureIntentState();
-  renderSelects();
   renderQuickFire();
   renderRecipes();
   renderGuardrails();
@@ -1581,37 +1564,200 @@ function renderAll() {
   renderTemplates();
   renderHistory();
   renderIntentControls();
-  updateCustomVisibility();
-  updateSectionVisibility();
+  renderSnippetTree();
+  renderSnippetEditor();
+}
+
+// ============ SNIPPET FUNCTIONS ============
+function renderSnippetTree() {
+  const tree = $('forgeSnippetTree');
+  if (!tree) return;
+  const groups = snippetMgr.viewMode === 'project' ? snippetMgr.getByProject() : snippetMgr.getByTag();
+  let html = '';
+  for (const [groupName, items] of Object.entries(groups)) {
+    if (items.length === 0 && snippetMgr.filterText) continue;
+    html += `<div class="forge-snippet-group-header" data-group="${groupName}">
+      <span>${groupName}</span><span style="font-size:9px">${items.length}</span>
+    </div>`;
+    items.forEach(s => {
+      const checked = snippetMgr.enabledIds.includes(s.id) ? 'checked' : '';
+      const selected = snippetMgr.selectedId === s.id ? 'selected' : '';
+      const typeLabel = COMPONENT_TYPES.find(t => t.id === s.componentType)?.label || s.componentType;
+      html += `<div class="forge-snippet-item ${selected}" data-snippet-id="${s.id}">
+        <input type="checkbox" ${checked} data-snippet-check="${s.id}" />
+        <span class="forge-snippet-item-name">${s.name}</span>
+        <span class="forge-snippet-item-badge">${typeLabel}</span>
+      </div>`;
+    });
+  }
+  if (!html) html = '<div class="forge-snippet-empty">No snippets yet</div>';
+  tree.innerHTML = html;
+
+  // Update view toggle
+  document.querySelectorAll('.forge-snippet-view-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === snippetMgr.viewMode);
+  });
+}
+
+function renderSnippetEditor() {
+  const card = $('forgeSnippetEditorCard');
+  const body = $('forgeSnippetEditorBody');
+  if (!card || !body) return;
+  const s = snippetMgr.snippets.find(x => x.id === snippetMgr.selectedId);
+  if (!s) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+  const projectOptions = snippetMgr.projects.map(p => `<option value="${p}" ${p === s.project ? 'selected' : ''}>${p}</option>`).join('');
+  const typeOptions = COMPONENT_TYPES.map(t => `<option value="${t.id}" ${t.id === s.componentType ? 'selected' : ''}>${t.label}</option>`).join('');
+  const tagChips = USE_CASE_TAGS.map(t => `<span class="forge-snippet-tag-chip ${(s.tags || []).includes(t.id) ? 'active' : ''}" data-tag="${t.id}">${t.label}</span>`).join('');
+  const isEnabled = snippetMgr.enabledIds.includes(s.id);
+  body.innerHTML = `<div class="forge-snippet-editor-fields">
+    <div class="forge-form-group"><label>Name</label><input id="forgeSnipName" value="${s.name.replace(/"/g, '&quot;')}" /></div>
+    <div class="forge-snippet-field-row-inline">
+      <div class="forge-form-group"><label>Project</label><select id="forgeSnipProject">${projectOptions}</select></div>
+      <div class="forge-form-group"><label>Component Type</label><select id="forgeSnipType">${typeOptions}</select></div>
+    </div>
+    <div class="forge-form-group"><label>Tags</label><div class="forge-snippet-tags-selector" id="forgeSnipTags">${tagChips}</div></div>
+    <div class="forge-form-group"><label>Content</label><textarea id="forgeSnipContent" style="min-height:120px">${s.content.replace(/</g, '&lt;')}</textarea></div>
+    <div class="forge-snippet-editor-actions">
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" id="forgeSnipEnabled" ${isEnabled ? 'checked' : ''} /> Include in prompt</label>
+      <button class="forge-btn forge-btn-sm" id="forgeSnipCopy">Copy</button>
+      <button class="forge-btn forge-btn-sm" id="forgeSnipDuplicate">Duplicate</button>
+      <button class="forge-btn forge-btn-sm" id="forgeSnipDelete" style="color:var(--error)">Delete</button>
+    </div>
+  </div>`;
+}
+
+function enableOrCreateSnippet(name, content, componentType) {
+  let s = snippetMgr.snippets.find(x => x.name === name && x.componentType === componentType);
+  if (!s) {
+    s = snippetMgr.createSnippet({ name, content, componentType });
+  } else {
+    snippetMgr.updateSnippet(s.id, { content });
+  }
+  if (!snippetMgr.enabledIds.includes(s.id)) {
+    snippetMgr.enabledIds.push(s.id);
+  }
+  return s;
+}
+
+function migratePresetsToSnippets() {
+  if (snippetMgr.snippets.length > 0) return;
+  seedDefaultSnippets(snippetMgr);
+}
+
+function seedDefaultSnippets(mgr) {
+  // --- Project: Code Development ---
+  mgr.addProject('Code Development');
+
+  mgr.createSnippet({
+    name: 'Senior Engineer Persona',
+    content: 'You are a senior software engineer with 10+ years of experience in modern development practices, design patterns, and clean code principles. You write production-ready, well-tested code with clear documentation.',
+    project: 'Code Development',
+    componentType: 'persona',
+    tags: ['coding']
+  });
+
+  mgr.createSnippet({
+    name: 'Feature Implementation Task',
+    content: 'Implement the following feature:\n\nRequirement: {{requirement}}\nAcceptance criteria: {{criteria}}\n\nProvide:\n1. Implementation plan with file changes\n2. Complete working code\n3. Unit tests covering happy path and edge cases\n4. Brief explanation of design decisions',
+    project: 'Code Development',
+    componentType: 'task',
+    tags: ['coding', 'planning']
+  });
+
+  mgr.createSnippet({
+    name: 'Code Review Checklist',
+    content: 'Review this code for:\n- Correctness: Does it handle all edge cases?\n- Security: Any injection, XSS, or auth issues?\n- Performance: N+1 queries, unnecessary allocations, blocking calls?\n- Readability: Clear naming, small functions, minimal nesting?\n- Tests: Adequate coverage? Missing scenarios?\n\nRate severity: CRITICAL / IMPORTANT / SUGGESTION\nProvide specific line-level feedback with fixes.',
+    project: 'Code Development',
+    componentType: 'rules',
+    tags: ['coding', 'review']
+  });
+
+  mgr.createSnippet({
+    name: 'Code Output Format',
+    content: 'Structure your response as:\n1. Brief summary (1-2 sentences)\n2. Implementation with complete code blocks (include file paths)\n3. Tests with assertions\n4. Edge cases and potential issues\n5. Run/build instructions if applicable',
+    project: 'Code Development',
+    componentType: 'output-format',
+    tags: ['coding']
+  });
+
+  // --- Project: Writing & Analysis ---
+  mgr.addProject('Writing & Analysis');
+
+  mgr.createSnippet({
+    name: 'Technical Writer Persona',
+    content: 'You are an experienced technical writer who creates clear, well-structured documentation. You understand developer audiences and write concise prose that balances depth with readability. You use examples liberally.',
+    project: 'Writing & Analysis',
+    componentType: 'persona',
+    tags: ['writing', 'documentation']
+  });
+
+  mgr.createSnippet({
+    name: 'Research Synthesis Task',
+    content: 'Analyze the provided material and produce:\n\n1. Executive summary (3-5 key findings)\n2. Evidence-backed analysis with citations\n3. Contradictions or gaps in the data\n4. Actionable recommendations ranked by impact\n5. Open questions for further investigation',
+    project: 'Writing & Analysis',
+    componentType: 'task',
+    tags: ['analysis', 'writing']
+  });
+
+  mgr.createSnippet({
+    name: 'Decision Brief Template',
+    content: 'Create a decision brief:\n\nProblem: {{problem_statement}}\n\nOptions (at least 3):\n- For each: Description, Pros, Cons, Effort, Risk\n\nRecommendation: State clearly with rationale\nSecond-order effects: What changes downstream?\nReversibility: How easy to undo if wrong?',
+    project: 'Writing & Analysis',
+    componentType: 'task',
+    tags: ['analysis', 'planning']
+  });
+
+  mgr.createSnippet({
+    name: 'Writing Quality Rules',
+    content: 'Follow these writing guidelines:\n- Lead with the most important information\n- Use active voice and concrete language\n- Keep paragraphs to 3-4 sentences max\n- Use bullet points for lists of 3+ items\n- Define acronyms on first use\n- Include examples for abstract concepts\n- End sections with key takeaways',
+    project: 'Writing & Analysis',
+    componentType: 'rules',
+    tags: ['writing']
+  });
+
+  // --- Project: Debugging & Ops ---
+  mgr.addProject('Debugging & Ops');
+
+  mgr.createSnippet({
+    name: 'Debug Partner Persona',
+    content: 'You are a seasoned debugger who approaches problems methodically. You form hypotheses, design experiments to test them, and narrow down root causes systematically. You never guess — you verify.',
+    project: 'Debugging & Ops',
+    componentType: 'persona',
+    tags: ['debugging', 'coding']
+  });
+
+  mgr.createSnippet({
+    name: 'Bug Investigation Task',
+    content: 'Investigate this issue:\n\nSymptom: {{symptom}}\nSteps to reproduce: {{steps}}\nExpected vs actual behavior: {{diff}}\n\nProvide:\n1. Likely root causes ranked by probability\n2. Diagnostic steps to confirm each hypothesis\n3. Targeted fix with minimal blast radius\n4. Regression test to prevent recurrence\n5. Related areas to check for similar issues',
+    project: 'Debugging & Ops',
+    componentType: 'task',
+    tags: ['debugging']
+  });
+
+  mgr.createSnippet({
+    name: 'Incident Response Context',
+    content: 'Environment: {{environment}}\nService: {{service_name}}\nSeverity: {{severity}}\nImpact: {{user_impact}}\nTimeline: {{when_started}}\nRecent changes: {{recent_deployments}}\n\nConstraints:\n- Minimize downtime over perfect fix\n- Document all changes for post-mortem\n- Communicate status every 15 minutes',
+    project: 'Debugging & Ops',
+    componentType: 'context',
+    tags: ['debugging', 'planning']
+  });
+
+  mgr.createSnippet({
+    name: 'Ops Safety Constraints',
+    content: 'Operational constraints:\n- Never run destructive commands without confirmation\n- Always back up before modifying data\n- Test changes in staging first when possible\n- Log all manual interventions with timestamps\n- Prefer rollback over forward-fix under time pressure\n- Escalate if root cause is unclear after 30 minutes',
+    project: 'Debugging & Ops',
+    componentType: 'constraints',
+    tags: ['debugging', 'coding']
+  });
+
+  mgr.save();
 }
 
 // ============ RENDER FUNCTIONS ============
-function renderSelects() {
-  fillSelect('personaSelect', PERSONAS, state.persona);
-  fillSelect('voiceSelect', VOICES, state.voice);
-  fillSelect('patternSelect', PATTERNS, state.pattern);
-  fillSelect('formatSelect', FORMATS, state.format);
-  fillSelect('toneSelect', TONES, state.tone);
-  fillSelect('audienceSelect', AUDIENCES, state.audience);
-  fillSelect('objectiveSelect', OBJECTIVES, state.objective);
-  fillSelect('deliverableSelect', DELIVERABLES, state.deliverable);
-  fillSelect('contextSelect', CONTEXTS, state.context);
-  fillSelect('techStackSelect', TECH_STACKS, state.techStack);
-  fillSelect('frameworkSelect', FRAMEWORKS, state.framework);
-  fillSelect('devTaskSelect', DEV_TASKS, state.devTask);
-  fillSelect('constraintsSelect', CONSTRAINTS, state.constraints);
-
-  $('customPersona').value = state.customPersona || '';
-  $('customAudience').value = state.customAudience || '';
-  $('customObjective').value = state.customObjective || '';
-  $('customDeliverable').value = state.customDeliverable || '';
-  $('customContext').value = state.customContext || '';
-  $('inputsProvided').value = state.inputsProvided || '';
-  $('customStack').value = state.customStack || '';
-  $('customConstraints').value = state.customConstraints || '';
-  $('extraInstructions').value = state.extraInstructions || '';
-}
-
 function ensureIntentState() {
   if (!INTENT_MODES.some(mode => mode.id === state.intentMode)) {
     state.intentMode = 'create';
@@ -1663,6 +1809,9 @@ function renderIntentControls() {
     toggleRefineBtn.textContent = state.showRefine ? 'Hide refine' : 'Refine options';
   }
 
+  const extraEl = $('extraInstructions');
+  if (extraEl) extraEl.value = state.extraInstructions || '';
+
   const intentStatusChips = $('intentStatusChips');
   if (intentStatusChips) {
     intentStatusChips.innerHTML = `
@@ -1673,14 +1822,6 @@ function renderIntentControls() {
       <span class="forge-intent-chip">Shortcuts <strong>Alt+1..7 / Alt+R / Alt+V</strong></span>
     `;
   }
-}
-
-function fillSelect(id, options, selectedValue) {
-  const sel = $(id);
-  if (!sel) return;
-  sel.innerHTML = options.map(o =>
-    `<option value="${o.id}" ${o.id === selectedValue ? 'selected' : ''}>${o.label}</option>`
-  ).join('');
 }
 
 function renderQuickFire() {
@@ -1742,22 +1883,7 @@ function renderClauses() {
 }
 
 function renderTemplates() {
-  const list = $('templateList');
-  if (!list) return;
-  const names = Object.keys(templates);
-  if (!names.length) {
-    list.innerHTML = '<div style="color: var(--text-secondary); font-size: 11px; padding: 6px;">No templates yet</div>';
-    return;
-  }
-  list.innerHTML = names.map(name => `
-    <div class="forge-history-item" data-template="${name}">
-      <span class="forge-history-name" title="${name}">${name}</span>
-      <div class="forge-history-actions">
-        <button class="forge-btn forge-btn-icon forge-btn-sm" data-update-template="${name}" title="Update with current">↻</button>
-        <button class="forge-btn forge-btn-icon forge-btn-sm" data-delete-template="${name}" title="Delete">✕</button>
-      </div>
-    </div>
-  `).join('');
+  // Templates are now saved as snippets, but keep template list for backward compat
 }
 
 function renderHistory() {
@@ -1785,7 +1911,6 @@ function attachListeners() {
       state.intentMode = button.dataset.intentMode;
       state.intentOutputFormat = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
       renderIntentControls();
-      updateSectionVisibility();
       updatePrompt();
     });
   }
@@ -1841,37 +1966,14 @@ function attachListeners() {
     });
   });
 
-  // Selects
-  const selects = ['personaSelect', 'voiceSelect', 'patternSelect', 'formatSelect', 'toneSelect',
-    'audienceSelect', 'objectiveSelect', 'deliverableSelect', 'contextSelect',
-    'techStackSelect', 'frameworkSelect', 'devTaskSelect',
-    'constraintsSelect'];
-
-  selects.forEach(id => {
-    const el = $(id);
-    if (el) {
-      el.addEventListener('change', e => {
-        const key = id.replace('Select', '');
-        state[key] = e.target.value;
-        updateCustomVisibility();
-        updatePrompt();
-      });
-    }
-  });
-
-  // Text inputs
-  const inputs = ['customPersona', 'customAudience', 'customObjective', 'customDeliverable',
-    'customContext', 'inputsProvided', 'customStack', 'customConstraints', 'extraInstructions'];
-
-  inputs.forEach(id => {
-    const el = $(id);
-    if (el) {
-      el.addEventListener('input', e => {
-        state[id] = e.target.value;
-        updatePrompt();
-      });
-    }
-  });
+  // Extra instructions
+  const extraEl = $('extraInstructions');
+  if (extraEl) {
+    extraEl.addEventListener('input', e => {
+      state.extraInstructions = e.target.value;
+      updatePrompt();
+    });
+  }
 
   // Quick Fire
   const qfGrid = $('quickFireGrid');
@@ -1926,34 +2028,16 @@ function attachListeners() {
     });
   }
 
-  // Templates
-  const templateList = $('templateList');
-  if (templateList) {
-    templateList.addEventListener('click', e => {
-      const del = e.target.closest('[data-delete-template]');
-      if (del) {
-        e.stopPropagation();
-        if (confirm(`Delete "${del.dataset.deleteTemplate}"?`)) {
-          delete templates[del.dataset.deleteTemplate];
-          saveToStorage();
-          renderTemplates();
-          showToast('Deleted!');
-        }
-        return;
-      }
-      const upd = e.target.closest('[data-update-template]');
-      if (upd) {
-        e.stopPropagation();
-        const name = upd.dataset.updateTemplate;
-        templates[name] = { ...state };
-        saveToStorage();
-        showToast(`Updated: ${name}`);
-        return;
-      }
-      const item = e.target.closest('.forge-history-item');
-      if (item && item.dataset.template) loadTemplate(item.dataset.template);
+  // Section toggles (guardrails only now)
+  document.querySelectorAll('[data-section-toggle]').forEach(toggle => {
+    toggle.addEventListener('click', e => {
+      e.stopPropagation();
+      const key = toggle.dataset.sectionToggle;
+      state[key] = !state[key];
+      updateSectionVisibility();
+      updatePrompt();
     });
-  }
+  });
 
   // History
   const historyList = $('historyList');
@@ -1961,12 +2045,17 @@ function attachListeners() {
     historyList.addEventListener('click', e => {
       const item = e.target.closest('.forge-history-item');
       if (item && history[item.dataset.history]) {
-        state = { ...state, ...history[item.dataset.history].state };
-        renderSelects();
+        const savedState = history[item.dataset.history].state;
+        // Only load valid keys
+        const validKeys = Object.keys(state);
+        validKeys.forEach(k => {
+          if (savedState.hasOwnProperty(k)) state[k] = savedState[k];
+        });
+        renderSnippetTree();
+        renderSnippetEditor();
         renderGuardrails();
         renderBoosters();
-        updateCustomVisibility();
-        updateSectionVisibility();
+        renderIntentControls();
         updatePrompt();
       }
     });
@@ -2029,29 +2118,32 @@ function attachListeners() {
         const importInput = $('importInput');
         if (!importInput) return;
         const data = JSON.parse(importInput.value);
+        if (data.snippets) {
+          // Import snippet data
+          data.snippets.forEach(s => {
+            if (!snippetMgr.snippets.find(x => x.id === s.id)) {
+              snippetMgr.snippets.push(s);
+            }
+          });
+          if (data.projects) {
+            data.projects.forEach(p => snippetMgr.addProject(p));
+          }
+          snippetMgr.save();
+          renderSnippetTree();
+        }
         const incoming = data.templates || data;
-        Object.assign(templates, incoming);
+        if (typeof incoming === 'object' && !Array.isArray(incoming)) {
+          Object.assign(templates, incoming);
+        }
         saveToStorage();
-        renderTemplates();
         closeModal('importModal');
         importInput.value = '';
-        showToast('Templates imported!');
+        showToast('Imported!');
       } catch (e) {
         alert('Invalid JSON');
       }
     });
   }
-
-  // Section toggles
-  document.querySelectorAll('[data-section-toggle]').forEach(toggle => {
-    toggle.addEventListener('click', e => {
-      e.stopPropagation();
-      const key = toggle.dataset.sectionToggle;
-      state[key] = !state[key];
-      updateSectionVisibility();
-      updatePrompt();
-    });
-  });
 
   // Close modal on overlay click
   document.querySelectorAll('.forge-modal-overlay').forEach(overlay => {
@@ -2060,6 +2152,115 @@ function attachListeners() {
         overlay.classList.remove('active');
       }
     });
+  });
+
+  // Snippet browser
+  const snippetTree = $('forgeSnippetTree');
+  if (snippetTree) {
+    snippetTree.addEventListener('click', e => {
+      const checkEl = e.target.closest('[data-snippet-check]');
+      if (checkEl) {
+        e.stopPropagation();
+        snippetMgr.toggleEnabled(checkEl.dataset.snippetCheck);
+        renderSnippetTree();
+        updatePrompt();
+        return;
+      }
+      const item = e.target.closest('.forge-snippet-item');
+      if (item) {
+        snippetMgr.selectedId = item.dataset.snippetId;
+        renderSnippetTree();
+        renderSnippetEditor();
+      }
+    });
+  }
+
+  const viewToggle = document.querySelector('.forge-snippet-view-toggle');
+  if (viewToggle) {
+    viewToggle.addEventListener('click', e => {
+      const btn = e.target.closest('.forge-snippet-view-btn');
+      if (btn) { snippetMgr.viewMode = btn.dataset.view; renderSnippetTree(); }
+    });
+  }
+
+  const snippetSearch = $('forgeSnippetSearch');
+  if (snippetSearch) {
+    snippetSearch.addEventListener('input', e => { snippetMgr.filterText = e.target.value; renderSnippetTree(); });
+  }
+
+  const newSnippetBtn = $('forgeNewSnippetBtn');
+  if (newSnippetBtn) {
+    newSnippetBtn.addEventListener('click', () => {
+      const s = snippetMgr.createSnippet();
+      snippetMgr.selectedId = s.id;
+      renderSnippetTree();
+      renderSnippetEditor();
+    });
+  }
+
+  const newProjectBtn = $('forgeNewProjectBtn');
+  if (newProjectBtn) {
+    newProjectBtn.addEventListener('click', () => {
+      const name = prompt('Project name:');
+      if (name) { snippetMgr.addProject(name); renderSnippetTree(); }
+    });
+  }
+
+  // Snippet editor delegation
+  document.addEventListener('click', e => {
+    const editorBody = $('forgeSnippetEditorBody');
+    if (!editorBody || !editorBody.contains(e.target)) return;
+    const s = snippetMgr.snippets.find(x => x.id === snippetMgr.selectedId);
+    if (!s) return;
+
+    if (e.target.id === 'forgeSnipEnabled') {
+      snippetMgr.toggleEnabled(s.id);
+      renderSnippetTree();
+      updatePrompt();
+      return;
+    }
+    if (e.target.id === 'forgeSnipCopy') {
+      copyToClipboard(s.content, { onSuccess: () => showToast('Copied!') });
+      return;
+    }
+    if (e.target.id === 'forgeSnipDuplicate') {
+      const dup = snippetMgr.duplicateSnippet(s.id);
+      if (dup) { snippetMgr.selectedId = dup.id; renderSnippetTree(); renderSnippetEditor(); showToast('Duplicated!'); }
+      return;
+    }
+    if (e.target.id === 'forgeSnipDelete') {
+      if (confirm(`Delete "${s.name}"?`)) { snippetMgr.deleteSnippet(s.id); renderSnippetTree(); renderSnippetEditor(); updatePrompt(); showToast('Deleted'); }
+      return;
+    }
+    const tag = e.target.closest('.forge-snippet-tag-chip');
+    if (tag) {
+      const tagId = tag.dataset.tag;
+      const tags = s.tags || [];
+      const idx = tags.indexOf(tagId);
+      if (idx > -1) tags.splice(idx, 1); else tags.push(tagId);
+      snippetMgr.updateSnippet(s.id, { tags });
+      renderSnippetEditor();
+    }
+  });
+
+  document.addEventListener('input', e => {
+    const editorBody = $('forgeSnippetEditorBody');
+    if (!editorBody || !editorBody.contains(e.target)) return;
+    const s = snippetMgr.snippets.find(x => x.id === snippetMgr.selectedId);
+    if (!s) return;
+
+    if (e.target.id === 'forgeSnipName') { snippetMgr.updateSnippet(s.id, { name: e.target.value }); renderSnippetTree(); }
+    if (e.target.id === 'forgeSnipContent') { snippetMgr.updateSnippet(s.id, { content: e.target.value }); updatePrompt(); }
+  });
+
+  document.addEventListener('change', e => {
+    const editorBody = $('forgeSnippetEditorBody');
+    if (!editorBody || !editorBody.contains(e.target)) return;
+    const s = snippetMgr.snippets.find(x => x.id === snippetMgr.selectedId);
+    if (!s) return;
+
+    if (e.target.id === 'forgeSnipProject') { snippetMgr.updateSnippet(s.id, { project: e.target.value }); renderSnippetTree(); }
+    if (e.target.id === 'forgeSnipType') { snippetMgr.updateSnippet(s.id, { componentType: e.target.value }); renderSnippetTree(); updatePrompt(); }
   });
 
   // Keyboard shortcuts
@@ -2076,7 +2277,6 @@ function attachListeners() {
         state.intentMode = modeByIndex[Number(e.key) - 1] || state.intentMode;
         state.intentOutputFormat = DEFAULT_OUTPUT_BY_MODE[state.intentMode] || state.intentOutputFormat;
         renderIntentControls();
-        updateSectionVisibility();
         updatePrompt();
         return;
       }
@@ -2171,27 +2371,12 @@ function applyWorkflowProfile(profile) {
 
   if (profile === 'rapid') {
     state.showRefine = false;
-    state.includeRole = true;
-    state.includeTask = true;
-    state.includeObjective = true;
-    state.includeContext = false;
-    state.includeDev = false;
     state.includeGuardrails = false;
   } else if (profile === 'balanced') {
     state.showRefine = true;
-    state.includeRole = true;
-    state.includeTask = true;
-    state.includeObjective = true;
-    state.includeContext = true;
-    state.includeDev = false;
     state.includeGuardrails = true;
   } else {
     state.showRefine = true;
-    state.includeRole = true;
-    state.includeTask = true;
-    state.includeObjective = true;
-    state.includeContext = true;
-    state.includeDev = true;
     state.includeGuardrails = true;
   }
 
@@ -2200,42 +2385,14 @@ function applyWorkflowProfile(profile) {
   updatePrompt();
 }
 
-function updateCustomVisibility() {
-  const customPersonaRow = $('customPersonaRow');
-  if (customPersonaRow) customPersonaRow.classList.toggle('show', state.persona === 'custom');
-
-  const customAudienceRow = $('customAudienceRow');
-  if (customAudienceRow) customAudienceRow.classList.toggle('show', state.audience === 'custom');
-
-  const customObjDelRow = $('customObjDelRow');
-  if (customObjDelRow) customObjDelRow.classList.toggle('show', state.objective === 'custom' || state.deliverable === 'custom');
-
-  const customStackRow = $('customStackRow');
-  if (customStackRow) customStackRow.classList.toggle('show', state.techStack === 'custom' || state.framework === 'custom');
-
-  const customConstraintsRow = $('customConstraintsRow');
-  if (customConstraintsRow) customConstraintsRow.classList.toggle('show', state.constraints === 'custom');
-}
-
 function updateSectionVisibility() {
   renderIntentControls();
-  const sections = [
-    { key: 'includeRole', cardId: 'roleCard' },
-    { key: 'includeTask', cardId: 'taskCard' },
-    { key: 'includeObjective', cardId: 'objectiveCard' },
-    { key: 'includeContext', cardId: 'contextCard' },
-    { key: 'includeDev', cardId: 'devCard' },
-    { key: 'includeGuardrails', cardId: 'modifiersCard' }
-  ];
-
-  sections.forEach(({ key, cardId }) => {
-    const card = $(cardId);
-    const toggle = document.querySelector(`[data-section-toggle="${key}"]`);
-    if (card && toggle) {
-      card.classList.toggle('forge-disabled', !state[key]);
-      toggle.classList.toggle('checked', state[key]);
-    }
-  });
+  const card = $('modifiersCard');
+  const toggle = document.querySelector('[data-section-toggle="includeGuardrails"]');
+  if (card && toggle) {
+    card.classList.toggle('forge-disabled', !state.includeGuardrails);
+    toggle.classList.toggle('checked', state.includeGuardrails);
+  }
 }
 
 // ============ ACTIONS ============
@@ -2249,7 +2406,34 @@ function applyQuickFire(id) {
 
   state.showRefine = true;
   state.workflowProfile = 'deep';
-  applyConfig(qf.recipe);
+
+  // Clear enabled snippets
+  snippetMgr.enabledIds = [];
+
+  const r = qf.recipe;
+  if (r.persona) {
+    const p = PERSONAS.find(x => x.id === r.persona);
+    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'persona');
+  }
+  if (r.pattern) {
+    const p = PATTERNS.find(x => x.id === r.pattern);
+    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'task');
+  }
+  if (r.devTask) {
+    const d = DEV_TASKS.find(x => x.id === r.devTask);
+    if (d && d.text) enableOrCreateSnippet(d.label, d.text, 'context');
+  }
+  if (r.guardrails) state.guardrails = [...r.guardrails];
+  if (r.boosters) state.boosters = [...r.boosters];
+  state.includeGuardrails = true;
+
+  snippetMgr.save();
+  renderSnippetTree();
+  renderSnippetEditor();
+  renderGuardrails();
+  renderBoosters();
+  renderIntentControls();
+  updatePrompt();
   showToast(`${qf.label} mode!`);
 }
 
@@ -2263,34 +2447,76 @@ function applyRecipe(id) {
 
   state.showRefine = true;
   state.workflowProfile = 'deep';
-  applyConfig(recipe.config);
-  showToast(`${recipe.name} recipe!`);
-}
 
-function applyConfig(config) {
-  Object.keys(config).forEach(key => {
-    if (key === 'guardrails' || key === 'boosters') {
-      state[key] = [...config[key]];
-    } else if (state.hasOwnProperty(key)) {
-      state[key] = config[key];
-    }
-  });
-  renderSelects();
+  // Clear enabled snippets
+  snippetMgr.enabledIds = [];
+
+  const c = recipe.config;
+  if (c.persona) {
+    const p = PERSONAS.find(x => x.id === c.persona);
+    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'persona');
+  }
+  if (c.voice) {
+    const v = VOICES.find(x => x.id === c.voice);
+    if (v && v.text) enableOrCreateSnippet(v.label, v.text, 'persona');
+  }
+  if (c.pattern) {
+    const p = PATTERNS.find(x => x.id === c.pattern);
+    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'task');
+  }
+  if (c.objective) {
+    const o = OBJECTIVES.find(x => x.id === c.objective);
+    if (o && o.text) enableOrCreateSnippet(o.label, o.text, 'rules');
+  }
+  if (c.deliverable) {
+    const d = DELIVERABLES.find(x => x.id === c.deliverable);
+    if (d && d.text) enableOrCreateSnippet(d.label, d.text, 'output-format');
+  }
+  if (c.devTask) {
+    const d = DEV_TASKS.find(x => x.id === c.devTask);
+    if (d && d.text) enableOrCreateSnippet(d.label, d.text, 'context');
+  }
+  if (c.guardrails) state.guardrails = [...c.guardrails];
+  if (c.boosters) state.boosters = [...c.boosters];
+  state.includeGuardrails = true;
+
+  snippetMgr.save();
+  renderSnippetTree();
+  renderSnippetEditor();
   renderGuardrails();
   renderBoosters();
-  updateCustomVisibility();
-  updateSectionVisibility();
+  renderIntentControls();
   updatePrompt();
+  showToast(`${recipe.name} recipe!`);
 }
 
 function loadTemplate(name) {
   if (!templates[name]) return;
-  state = { ...state, ...templates[name] };
-  renderSelects();
+  const t = templates[name];
+  // Migrate old template fields to snippets
+  const validKeys = Object.keys(state);
+  validKeys.forEach(k => {
+    if (t.hasOwnProperty(k)) state[k] = t[k];
+  });
+  // Convert old state fields to snippets if present
+  if (t.persona && t.persona !== 'custom') {
+    const p = PERSONAS.find(x => x.id === t.persona);
+    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'persona');
+  }
+  if (t.pattern && t.pattern !== 'custom') {
+    const p = PATTERNS.find(x => x.id === t.pattern);
+    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'task');
+  }
+  if (t.objective && t.objective !== 'custom') {
+    const o = OBJECTIVES.find(x => x.id === t.objective);
+    if (o && o.text) enableOrCreateSnippet(o.label, o.text, 'rules');
+  }
+  snippetMgr.save();
+  renderSnippetTree();
+  renderSnippetEditor();
   renderGuardrails();
   renderBoosters();
-  updateCustomVisibility();
-  updateSectionVisibility();
+  renderIntentControls();
   updatePrompt();
   showToast(`Loaded: ${name}`);
 }
@@ -2303,31 +2529,31 @@ function clearAll() {
     intentInput: '',
     intentOutputFormat: 'steps',
     showRefine: false,
-    persona: 'senior_dev', voice: 'neutral', customPersona: '',
-    pattern: 'feature', format: 'steps', tone: 'precise',
-    audience: 'senior_dev', customAudience: '',
-    objective: 'ship_feature', customObjective: '',
-    deliverable: 'pr', customDeliverable: '',
-    context: 'none', customContext: '',
-    inputsProvided: '',
-    techStack: 'html_single', framework: 'none', customStack: '',
-    devTask: 'feature', constraints: 'tested', customConstraints: '',
     extraInstructions: '',
-    guardrails: [], boosters: [],
-    includeRole: true, includeTask: true, includeObjective: true,
-    includeContext: false, includeDev: false, includeGuardrails: true
+    guardrails: [],
+    boosters: [],
+    includeGuardrails: true
   };
-  renderSelects();
+  snippetMgr.enabledIds = [];
+  snippetMgr.selectedId = null;
+  snippetMgr.save();
+  renderSnippetTree();
+  renderSnippetEditor();
   renderGuardrails();
   renderBoosters();
-  updateCustomVisibility();
-  updateSectionVisibility();
+  renderIntentControls();
   updatePrompt();
   showToast('Cleared!');
 }
 
 function exportTemplates() {
-  const data = JSON.stringify({ templates, lastState: state }, null, 2);
+  const data = JSON.stringify({
+    templates,
+    lastState: state,
+    snippets: snippetMgr.snippets,
+    projects: snippetMgr.projects,
+    enabledIds: snippetMgr.enabledIds
+  }, null, 2);
   downloadAsFile(data, 'prompt-forge-templates.json', 'application/json');
   showToast('Exported!');
 }
@@ -2340,22 +2566,16 @@ function updatePrompt() {
     if (prompt.trim()) {
       outputPre.innerHTML = highlightPrompt(prompt);
     } else {
-      outputPre.innerHTML = '<span style="color: var(--text-secondary);">Enable sections and configure options to build your prompt.</span>';
+      outputPre.innerHTML = '<span style="color: var(--text-secondary);">Enable snippets and configure options to build your prompt.</span>';
     }
   }
   updateScore();
   saveToStorage();
 }
 
-function getText(list, id, customValue) {
-  if (id === 'custom') return customValue || '';
-  const item = list.find(x => x.id === id);
-  return item?.text || item?.label || '';
-}
-
 function assemblePrompt() {
   const lines = [];
-  const selectedIntentOutput = INTENT_OUTPUT_OPTIONS.find(option => option.id === state.intentOutputFormat);
+  const selectedIntentOutput = INTENT_OUTPUT_OPTIONS.find(o => o.id === state.intentOutputFormat);
   const outputLabel = selectedIntentOutput?.label || state.intentOutputFormat;
 
   if (state.intentMode) {
@@ -2372,107 +2592,51 @@ function assemblePrompt() {
     return lines.join('\n').trim();
   }
 
-  // Role
-  if (state.includeRole) {
-    const personaText = getText(PERSONAS, state.persona, state.customPersona);
-    const voiceText = getText(VOICES, state.voice, '');
-    if (personaText) {
-      lines.push('--- ROLE ---');
-      lines.push(personaText);
-      if (voiceText) lines.push(`Voice: ${voiceText}`);
+  // Enabled snippets
+  const enabled = snippetMgr.getEnabledSnippets();
+  if (enabled.length) {
+    enabled.forEach(s => {
+      const typeLabel = COMPONENT_TYPES.find(t => t.id === s.componentType)?.label || s.componentType;
+      lines.push(`--- ${typeLabel.toUpperCase()} ---`);
+      lines.push(s.content);
       lines.push('');
-    }
+    });
   }
 
-  // Task
-  if (state.includeTask) {
-    const patternText = getText(PATTERNS, state.pattern, '');
-    const formatText = getText(FORMATS, state.format, '');
-    const toneText = getText(TONES, state.tone, '');
-    const audienceText = getText(AUDIENCES, state.audience, state.customAudience);
-
-    if (patternText || formatText) {
-      lines.push('--- TASK ---');
-      if (patternText) lines.push(`Pattern: ${patternText}`);
-      if (formatText) lines.push(`Output: ${formatText}`);
-      if (toneText) lines.push(`Tone: ${toneText}`);
-      if (audienceText) lines.push(`Audience: ${audienceText}`);
-      lines.push('');
-    }
+  // Intent fields
+  if (state.intentGoal) {
+    lines.push('--- GOAL ---');
+    lines.push(state.intentGoal);
+    lines.push('');
+  }
+  if (state.intentInput) {
+    lines.push('--- CONTEXT ---');
+    lines.push(state.intentInput);
+    lines.push('');
+  }
+  if (outputLabel) {
+    lines.push(`Output format: ${outputLabel}`);
+    lines.push('');
   }
 
-  // Objective
-  if (state.includeObjective) {
-    const objectiveText = getText(OBJECTIVES, state.objective, state.customObjective);
-    const deliverableText = getText(DELIVERABLES, state.deliverable, state.customDeliverable);
-    if (objectiveText || deliverableText) {
-      lines.push('--- OBJECTIVE ---');
-      if (objectiveText) lines.push(`Goal: ${objectiveText}`);
-      if (deliverableText) lines.push(`Deliverable: ${deliverableText}`);
-      lines.push('');
-    }
-  }
-
-  // Context
-  if (state.includeContext) {
-    const contextText = getText(CONTEXTS, state.context, state.customContext);
-    if (contextText || state.inputsProvided) {
-      lines.push('--- CONTEXT ---');
-      if (contextText) lines.push(`Background: ${contextText}`);
-      if (state.inputsProvided) lines.push(`Inputs: ${state.inputsProvided}`);
-      lines.push('');
-    }
-  }
-
-  // Dev
-  if (state.includeDev) {
-    const stackText = getText(TECH_STACKS, state.techStack, state.customStack);
-    const frameworkText = getText(FRAMEWORKS, state.framework, '');
-    const taskText = getText(DEV_TASKS, state.devTask, '');
-    const constraintsText = getText(CONSTRAINTS, state.constraints, state.customConstraints);
-
-    if (stackText || taskText) {
-      lines.push('--- DEV CONTEXT ---');
-      if (stackText) lines.push(`Stack: ${stackText}`);
-      if (frameworkText) lines.push(`Framework: ${frameworkText}`);
-      if (taskText) lines.push(`Task: ${taskText}`);
-      if (constraintsText) lines.push(`Constraints: ${constraintsText}`);
-      lines.push('');
-    }
-  }
-
-  // Guardrails
+  // Guardrails (kept toggle-based)
   if (state.includeGuardrails && state.guardrails.length) {
     lines.push('--- GUARDRAILS ---');
-    state.guardrails.forEach(id => {
-      const g = GUARDRAILS.find(x => x.id === id);
-      if (g) lines.push(`• ${g.label}: ${g.text}`);
-    });
+    state.guardrails.forEach(id => { const g = GUARDRAILS.find(x => x.id === id); if (g) lines.push(`• ${g.label}: ${g.text}`); });
     lines.push('');
   }
-
-  // Boosters
   if (state.includeGuardrails && state.boosters.length) {
     lines.push('--- QUALITY BOOSTERS ---');
-    state.boosters.forEach(id => {
-      const b = BOOSTERS.find(x => x.id === id);
-      if (b) lines.push(`• ${b.label}: ${b.text}`);
-    });
+    state.boosters.forEach(id => { const b = BOOSTERS.find(x => x.id === id); if (b) lines.push(`• ${b.label}: ${b.text}`); });
     lines.push('');
   }
-
-  // Extra
   if (state.extraInstructions) {
     lines.push('--- INSTRUCTIONS ---');
     lines.push(state.extraInstructions);
     lines.push('');
   }
 
-  // Remove trailing empty lines
-  while (lines.length && lines[lines.length - 1] === '') {
-    lines.pop();
-  }
-
+  while (lines.length && lines[lines.length - 1] === '') lines.pop();
   return lines.join('\n');
 }
 
@@ -2483,14 +2647,17 @@ function highlightPrompt(text) {
 function updateScore() {
   let score = 0;
   const tips = [];
+  const enabled = snippetMgr.getEnabledSnippets();
+  const hasType = type => enabled.some(s => s.componentType === type);
 
-  if (state.objective !== 'none' && state.objective) score += 25; else tips.push('Add objective');
-  if (state.deliverable !== 'none' && state.deliverable) score += 25; else tips.push('Add deliverable');
-  if (state.persona) score += 15;
-  if (state.pattern) score += 10;
-  if (state.audience) score += 5;
+  if (hasType('persona')) score += 15; else tips.push('Add persona');
+  if (hasType('task')) score += 25; else tips.push('Add task');
+  if (hasType('rules') || hasType('output-format')) score += 20; else tips.push('Add rules/format');
+  if (hasType('context')) score += 10;
+  if (hasType('constraints')) score += 5;
   if (state.guardrails.length) score += 10;
   if (state.boosters.length) score += 10;
+  if (state.intentGoal) score += 5;
 
   score = Math.min(100, score);
 
@@ -2517,7 +2684,7 @@ function copyPrompt() {
   copyToClipboard(text, {
     onSuccess: () => {
       history.unshift({
-        name: PATTERNS.find(p => p.id === state.pattern)?.label || 'Prompt',
+        name: state.intentGoal ? state.intentGoal.substring(0, 30) : 'Prompt',
         time: Date.now(),
         state: { ...state }
       });
@@ -2560,7 +2727,6 @@ function saveCurrentTemplate() {
   if (name) {
     templates[name] = { ...state };
     saveToStorage();
-    renderTemplates();
     closeModal('saveModal');
     input.value = '';
     showToast(`Saved: ${name}`);
