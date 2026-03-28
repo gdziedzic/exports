@@ -13,3046 +13,682 @@
   "id": "ai-prompt-builder",
   "name": "AI Prompt Builder",
   "category": "Developer Tools",
-  "description": "Compose structured AI prompts with snippet management, personas, tech stacks, and templates",
-  "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "composer", "rules", "personas", "templates", "sharing", "snippets"],
-  "version": "11.0.0"
+  "description": "Build structured AI prompts with four focused slots: task, role, context, and format",
+  "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "builder", "template"],
+  "version": "12.0.0"
 }
 </script>
 
 <!-- Tool UI Template -->
 <template id="tool-ui">
-  <div class="tool-container">
-    <div class="tool-header">
-      <h2 class="tool-title">AI Prompt Builder</h2>
-      <p class="tool-description">Compose structured prompts with snippet management, personas and tech stack awareness</p>
+  <div class="apb-tool">
+
+    <!-- Task slot — always open, required -->
+    <div class="apb-slot apb-slot-task">
+      <div class="apb-slot-label-row">
+        <span class="apb-label">Task <span class="apb-required">required</span></span>
+        <span class="apb-char-count" id="apb-char-count">0 chars</span>
+      </div>
+      <textarea
+        id="apb-task"
+        class="apb-task-input"
+        placeholder="What do you need? e.g. &quot;Summarize this article into three key takeaways&quot;"
+        rows="4"
+      ></textarea>
     </div>
 
-    <div class="intent-starter">
-      <div class="intent-starter-header">
-        <h3>Intent Starter</h3>
-        <div class="intent-header-actions">
-          <button id="intent-paste-btn" class="secondary" type="button" title="Paste from clipboard (Alt+V)">Paste</button>
-          <button id="intent-clear-btn" class="secondary" type="button" title="Clear intent (Alt+Backspace)">Clear</button>
-          <button id="intent-refine-toggle" class="secondary" type="button" title="Toggle refine (Alt+R)">Refine options</button>
-        </div>
+    <!-- Role slot — collapsible -->
+    <div class="apb-slot apb-slot-collapsible" id="apb-role-slot">
+      <button class="apb-slot-toggle" type="button" aria-expanded="false" data-slot="role">
+        <span class="apb-label">Role</span>
+        <span class="apb-summary" id="apb-role-summary">None</span>
+        <span class="apb-chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="apb-slot-body" id="apb-role-body" hidden>
+        <div class="apb-pills" id="apb-role-pills"></div>
+        <textarea id="apb-role-custom" class="apb-slot-textarea" rows="2"
+          placeholder="Or describe a custom role…"></textarea>
       </div>
-      <div class="intent-mode-group" id="intent-mode-group">
-        <button type="button" class="intent-mode-btn intent-primary-mode-btn" data-intent-mode="create">Create</button>
-        <button type="button" class="intent-mode-btn intent-primary-mode-btn" data-intent-mode="analyze">Analyze</button>
-        <button type="button" class="intent-mode-btn intent-primary-mode-btn" data-intent-mode="rewrite">Rewrite</button>
-        <button type="button" class="intent-mode-btn intent-primary-mode-btn" data-intent-mode="plan">Plan</button>
-      </div>
-      <div class="intent-workflow-group" id="intent-workflow-group">
-        <button type="button" class="intent-mode-btn" data-workflow-profile="rapid">Rapid</button>
-        <button type="button" class="intent-mode-btn" data-workflow-profile="balanced">Balanced</button>
-        <button type="button" class="intent-mode-btn" data-workflow-profile="deep">Deep</button>
-      </div>
-      <div class="intent-fields">
-        <div class="intent-field">
-          <label for="intent-goal">Goal</label>
-          <textarea id="intent-goal" rows="2" placeholder="What outcome do you want?"></textarea>
-        </div>
-        <div class="intent-field">
-          <label for="intent-input">Input / Context</label>
-          <textarea id="intent-input" rows="2" placeholder="Paste context, draft text, notes, links, or data"></textarea>
-        </div>
-        <div class="intent-field">
-          <label for="intent-output-options">Output format</label>
-          <div class="intent-output-grid" id="intent-output-options">
-            <button type="button" class="intent-mode-btn" data-intent-output="bullets">Bullet List</button>
-            <button type="button" class="intent-mode-btn" data-intent-output="checklist">Checklist</button>
-            <button type="button" class="intent-mode-btn" data-intent-output="table">Table</button>
-            <button type="button" class="intent-mode-btn" data-intent-output="summary">Executive Summary</button>
-            <button type="button" class="intent-mode-btn" data-intent-output="steps">Step-by-step Plan</button>
-            <button type="button" class="intent-mode-btn" data-intent-output="json">Structured JSON</button>
-          </div>
-        </div>
-      </div>
-      <div class="intent-status" id="intent-status-chips"></div>
     </div>
 
-    <div class="snippet-layout">
-      <!-- Left Sidebar -->
-      <div class="snippet-sidebar">
-        <div class="snippet-sidebar-header">
-          <div class="snippet-view-toggle">
-            <button type="button" class="snippet-view-btn active" data-view="project">By Project</button>
-            <button type="button" class="snippet-view-btn" data-view="tag">By Tag</button>
-          </div>
-          <input type="text" id="snippet-search" class="snippet-search" placeholder="Filter snippets..." />
-        </div>
-
-        <div class="snippet-compose-info" id="snippet-compose-info">
-          <span>0 snippets in prompt</span>
-        </div>
-
-        <div class="snippet-tree" id="snippet-tree">
-          <!-- Rendered by JS -->
-        </div>
-
-        <div class="snippet-sidebar-actions">
-          <button id="add-snippet-btn" class="primary snippet-action-btn">+ Snippet</button>
-          <button id="add-project-btn" class="secondary snippet-action-btn">+ Project</button>
-        </div>
-
-        <div class="templates-section">
-          <div class="section-header collapsible" id="templates-header">
-            <label class="section-label">Templates</label>
-            <div class="template-actions">
-              <button id="save-template-btn" class="icon-btn" title="Save as Template">Save</button>
-              <button class="collapse-btn">&#9660;</button>
-            </div>
-          </div>
-          <div class="templates-content" id="templates-content">
-            <div class="template-filter">
-              <input type="text" id="template-search" placeholder="Search templates..." />
-              <select id="template-category" class="category-select">
-                <option value="">All</option>
-                <option value="development">Dev</option>
-                <option value="writing">Writing</option>
-                <option value="analysis">Analysis</option>
-                <option value="documentation">Docs</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
-            <div class="templates-grid" id="templates-grid"></div>
-          </div>
-        </div>
-
-        <div class="snippet-sidebar-footer">
-          <button id="import-config-btn" class="icon-btn" title="Import">Import</button>
-          <button id="export-config-btn" class="icon-btn" title="Export">Export</button>
-        </div>
+    <!-- Context slot — collapsible -->
+    <div class="apb-slot apb-slot-collapsible" id="apb-context-slot">
+      <button class="apb-slot-toggle" type="button" aria-expanded="false" data-slot="context">
+        <span class="apb-label">Context</span>
+        <span class="apb-summary" id="apb-context-summary">Empty</span>
+        <span class="apb-chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="apb-slot-body" id="apb-context-body" hidden>
+        <textarea id="apb-context" class="apb-slot-textarea" rows="4"
+          placeholder="Paste text, data, notes, or anything relevant…"></textarea>
       </div>
+    </div>
 
-      <!-- Right Panel: Editor + Preview -->
-      <div class="snippet-editor-panel">
-        <div class="snippet-editor-area" id="snippet-editor-area">
-          <div class="snippet-empty" id="snippet-empty-state">
-            <p>Select a snippet to edit, or create a new one.</p>
-          </div>
-          <div class="snippet-editor-fields" id="snippet-editor-fields" style="display:none;">
-            <div class="snippet-field-row">
-              <label>Name</label>
-              <input type="text" id="snippet-name" placeholder="Snippet name" />
-            </div>
-            <div class="snippet-field-row-inline">
-              <div class="snippet-field-row">
-                <label>Project</label>
-                <select id="snippet-project"></select>
-              </div>
-              <div class="snippet-field-row">
-                <label>Component Type</label>
-                <select id="snippet-type"></select>
-              </div>
-            </div>
-            <div class="snippet-field-row">
-              <label>Tags</label>
-              <div class="snippet-tags-selector" id="snippet-tags-selector"></div>
-            </div>
-            <div class="snippet-field-row">
-              <label>Content</label>
-              <textarea id="snippet-content" rows="8" placeholder="Snippet content..."></textarea>
-            </div>
-            <div class="snippet-editor-actions">
-              <label class="snippet-include-label"><input type="checkbox" id="snippet-include-check" /> Include in prompt</label>
-              <button id="snippet-copy-btn" class="secondary">Copy</button>
-              <button id="snippet-duplicate-btn" class="secondary">Duplicate</button>
-              <button id="snippet-delete-btn" class="secondary">Delete</button>
-            </div>
-          </div>
-        </div>
+    <!-- Format slot — collapsible -->
+    <div class="apb-slot apb-slot-collapsible" id="apb-format-slot">
+      <button class="apb-slot-toggle" type="button" aria-expanded="false" data-slot="format">
+        <span class="apb-label">Format</span>
+        <span class="apb-summary" id="apb-format-summary">Default</span>
+        <span class="apb-chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="apb-slot-body" id="apb-format-body" hidden>
+        <div class="apb-pills" id="apb-format-pills"></div>
+        <textarea id="apb-format-custom" class="apb-slot-textarea" rows="2"
+          placeholder="Or describe a custom output format…"></textarea>
+      </div>
+    </div>
 
-        <div class="snippet-preview-section">
-          <div class="snippet-preview-header">
-            <h3>Composed Prompt</h3>
-            <div class="panel-actions">
-              <button id="share-btn" class="secondary" title="Share Configuration">Share</button>
-              <button id="copy-prompt-btn" class="primary">Copy</button>
-              <button id="save-prompt-btn" class="secondary">Save</button>
-            </div>
-          </div>
-          <div class="preview-area">
-            <textarea id="final-prompt" readonly placeholder="Your composed prompt will appear here..."></textarea>
-          </div>
-          <div class="stats-bar">
-            <span id="char-count">0 characters</span>
-            <span id="word-count">0 words</span>
-          </div>
+    <!-- Actions -->
+    <div class="apb-actions">
+      <button id="apb-copy-btn" class="apb-btn apb-btn-primary" type="button">Copy Prompt</button>
+      <button id="apb-clear-btn" class="apb-btn apb-btn-secondary" type="button">Clear</button>
+      <button id="apb-save-btn" class="apb-btn apb-btn-secondary" type="button">Save Template</button>
+    </div>
+
+    <!-- Templates strip -->
+    <div class="apb-templates-wrap" id="apb-templates-wrap">
+      <div class="apb-templates-strip" id="apb-templates-strip" role="list" aria-label="Saved templates"></div>
+    </div>
+
+    <!-- Save template dialog -->
+    <div class="apb-dialog-backdrop" id="apb-dialog-backdrop" hidden>
+      <div class="apb-dialog" role="dialog" aria-modal="true" aria-labelledby="apb-dialog-title">
+        <h3 id="apb-dialog-title">Save Template</h3>
+        <input id="apb-template-name-input" type="text" placeholder="Template name…" autocomplete="off" />
+        <div class="apb-dialog-actions">
+          <button id="apb-dialog-confirm" class="apb-btn apb-btn-primary" type="button">Save</button>
+          <button id="apb-dialog-cancel" class="apb-btn apb-btn-secondary" type="button">Cancel</button>
         </div>
       </div>
     </div>
 
-    <input type="file" id="file-input" accept=".json" style="display: none;">
-    <div id="status-message" class="status-message"></div>
-
-    <!-- Persona Selection Modal -->
-    <div id="persona-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Select a Persona</h3>
-          <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="personas-grid" id="personas-grid"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tech Stack Selection Modal -->
-    <div id="techstack-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Select Technology Stack</h3>
-          <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="techstack-search">
-            <input type="text" id="techstack-search" placeholder="Search technologies..." />
-          </div>
-          <div class="techstack-grid" id="techstack-grid"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Share Modal -->
-    <div id="share-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Share Configuration</h3>
-          <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="share-section">
-            <label class="share-label">Shareable Link</label>
-            <div class="share-input-group">
-              <input type="text" id="share-link" readonly class="share-link-input" />
-              <button id="copy-link-btn" class="primary">Copy</button>
-            </div>
-            <p class="share-hint">Share this link with others to import your configuration</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Save Template Modal -->
-    <div id="save-template-modal" class="modal">
-      <div class="modal-content modal-small">
-        <div class="modal-header">
-          <h3>Save as Template</h3>
-          <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Template Name</label>
-            <input type="text" id="template-name" placeholder="e.g., My Custom Template" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label>Description</label>
-            <textarea id="template-description" placeholder="Brief description of this template..." class="form-input" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Category</label>
-            <select id="template-category-select" class="form-input">
-              <option value="custom">Custom</option>
-              <option value="development">Development</option>
-              <option value="writing">Writing</option>
-              <option value="analysis">Analysis</option>
-              <option value="documentation">Documentation</option>
-            </select>
-          </div>
-          <div class="modal-actions">
-            <button id="save-template-confirm-btn" class="primary">Save Template</button>
-            <button class="secondary modal-close">Cancel</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="apb-toast" id="apb-toast" aria-live="polite"></div>
   </div>
 </template>
 
-<!-- Tool Styles -->
+<!-- Styles -->
 <style>
-  * {
-    scroll-behavior: smooth;
-  }
-
-  .modal,
-  .icon-btn {
-    will-change: transform;
-    transform: translateZ(0);
-    backface-visibility: hidden;
-  }
-
-  .tool-container {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-  }
-
-  .updating {
-    animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  /* ========================================
-     Intent Starter
-     ======================================== */
-
-  .intent-starter {
-    margin-top: 14px;
-    padding: 14px;
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    background: linear-gradient(160deg, var(--bg-secondary), color-mix(in srgb, var(--bg-secondary) 88%, var(--accent) 12%));
-  }
-
-  .intent-starter-header {
+  .apb-tool {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .intent-header-actions {
-    display: flex;
+    flex-direction: column;
     gap: 8px;
-    align-items: center;
-  }
-
-  .intent-header-actions button {
-    margin: 0;
-    padding: 6px 10px;
-    font-size: 11px;
-    border-radius: var(--radius-lg);
-  }
-
-  .intent-starter-header h3 {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .intent-mode-group {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 10px;
-    padding: 10px;
-    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-color) 65%);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--accent) 14%, var(--bg-primary) 86%);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 16px 12px;
     position: relative;
   }
 
-  .intent-mode-group .intent-primary-mode-btn {
-    min-height: 42px;
-    font-size: 13px;
-    letter-spacing: 0.01em;
-    border-width: 1.5px;
-    background: linear-gradient(160deg,
-      color-mix(in srgb, var(--bg-primary) 88%, var(--accent) 12%),
-      color-mix(in srgb, var(--bg-primary) 78%, var(--accent) 22%));
-    box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 16%, transparent);
-  }
-
-  .intent-mode-group .intent-primary-mode-btn:hover {
-    transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 24%, transparent);
-  }
-
-  .intent-mode-group .intent-primary-mode-btn.active {
-    background: linear-gradient(155deg, var(--accent), color-mix(in srgb, var(--accent) 78%, black));
-    color: white;
-    border-color: color-mix(in srgb, var(--accent) 72%, black);
-    box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent),
-      0 14px 24px color-mix(in srgb, var(--accent) 34%, transparent);
-  }
-
-  .intent-workflow-group {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .intent-workflow-group .intent-mode-btn {
+  /* ── Slots ── */
+  .apb-slot {
+    border: 1px solid var(--border-color);
     border-radius: 10px;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 7px 8px;
+    background: var(--bg-secondary);
+    overflow: hidden;
   }
 
-  .intent-mode-group::before {
-    content: "Start here";
-    position: absolute;
-    top: -10px;
-    left: 12px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: var(--accent);
-    color: white;
+  .apb-slot-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 6px;
   }
 
-  .intent-mode-btn {
+  .apb-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .apb-required {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-left: 6px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .apb-char-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .apb-task-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 14px 12px;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: vertical;
+    font-size: 14px;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    line-height: 1.55;
+  }
+
+  .apb-task-input::placeholder { color: var(--text-secondary); opacity: 0.7; }
+
+  /* Collapsible slot toggle */
+  .apb-slot-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text-primary);
+    transition: background 0.12s;
+  }
+
+  .apb-slot-toggle:hover { background: var(--bg-tertiary); }
+  .apb-slot-collapsible.open .apb-slot-toggle { background: var(--bg-tertiary); }
+
+  .apb-summary {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-style: italic;
+  }
+
+  .apb-slot-collapsible.filled .apb-summary {
+    color: var(--text-primary);
+    font-style: normal;
+    font-weight: 500;
+  }
+
+  .apb-chevron {
+    font-size: 16px;
+    color: var(--text-secondary);
+    transition: transform 0.15s;
+    line-height: 1;
+  }
+
+  .apb-slot-collapsible.open .apb-chevron { transform: rotate(90deg); }
+
+  /* Slot body */
+  .apb-slot-body {
+    padding: 0 14px 14px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .apb-slot-textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    outline: none;
+    resize: vertical;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    line-height: 1.5;
+    transition: border-color 0.1s;
+  }
+
+  .apb-slot-textarea:focus { border-color: var(--accent); }
+  .apb-slot-textarea::placeholder { color: var(--text-secondary); opacity: 0.7; }
+
+  /* Pills */
+  .apb-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 12px;
+  }
+
+  .apb-pill {
     border: 1px solid var(--border-color);
     background: var(--bg-primary);
     color: var(--text-primary);
     border-radius: 999px;
-    padding: 7px 10px;
+    padding: 5px 13px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
-    transition: var(--transition-fast);
+    transition: border-color 0.1s, background 0.1s, color 0.1s;
+    white-space: nowrap;
   }
 
-  .intent-mode-btn:hover {
-    border-color: var(--accent);
-    transform: translateY(-1px);
-  }
+  .apb-pill:hover { border-color: var(--accent); }
+  .apb-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-  .intent-mode-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
-  }
-
-  .intent-mode-group .intent-mode-btn:not(.active) {
-    animation: intent-nudge 2.4s ease-in-out infinite;
-  }
-
-  @keyframes intent-nudge {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-1px); }
-  }
-
-  .intent-fields {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-  }
-
-  .intent-output-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .intent-status {
+  /* Actions */
+  .apb-actions {
     display: flex;
-    flex-wrap: wrap;
     gap: 8px;
-    margin-top: 10px;
+    padding: 4px 0 2px;
+    flex-wrap: wrap;
   }
 
-  .intent-chip {
+  .apb-btn {
+    padding: 8px 18px;
+    border-radius: var(--radius-lg, 8px);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: opacity 0.1s, transform 0.1s;
+  }
+
+  .apb-btn:active { transform: scale(0.97); }
+  .apb-btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .apb-btn-primary:hover { opacity: 0.88; }
+  .apb-btn-secondary { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-color); }
+  .apb-btn-secondary:hover { border-color: var(--accent); }
+
+  /* Templates strip */
+  .apb-templates-wrap { min-height: 32px; }
+
+  .apb-templates-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  .apb-template-chip {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-color) 76%);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 999px;
-    padding: 5px 10px;
-    font-size: 11px;
-    color: var(--text-secondary);
-    background: color-mix(in srgb, var(--bg-primary) 84%, var(--accent) 16%);
-  }
-
-  .intent-chip strong {
-    color: var(--text-primary);
-    font-weight: 700;
-  }
-
-  .intent-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .intent-field label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-  }
-
-  .intent-field textarea,
-  .intent-field input {
-    width: 100%;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    padding: 8px 10px;
+    padding: 5px 8px 5px 12px;
+    white-space: nowrap;
     font-size: 12px;
-    transition: var(--transition-fast);
-  }
-
-  .intent-field textarea {
-    resize: vertical;
-    min-height: 56px;
-    line-height: 1.45;
-  }
-
-  .intent-field textarea:focus,
-  .intent-field input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
-  }
-
-  .tool-container[data-intent-refine="closed"] .snippet-layout {
-    display: none;
-  }
-
-  /* ========================================
-     Snippet Layout
-     ======================================== */
-
-  .snippet-layout {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 0;
-    margin-top: 20px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    min-height: 600px;
-  }
-
-  .snippet-sidebar {
-    background: var(--bg-secondary);
-    border-right: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .snippet-sidebar-header {
-    padding: 12px;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--bg-primary);
-  }
-
-  .snippet-view-toggle {
-    display: flex;
-    gap: 0;
-    margin-bottom: 8px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-  }
-
-  .snippet-view-btn {
-    flex: 1;
-    padding: 6px 10px;
-    border: none;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 600;
     cursor: pointer;
-    transition: var(--transition-fast);
-  }
-
-  .snippet-view-btn.active {
-    background: var(--accent);
-    color: white;
-  }
-
-  .snippet-search {
-    width: 100%;
-    padding: 7px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-  }
-
-  .snippet-search:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  .snippet-compose-info {
-    padding: 8px 12px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent);
-    border-bottom: 1px solid var(--border-color);
-    background: color-mix(in srgb, var(--accent) 8%, var(--bg-primary));
-  }
-
-  .snippet-tree {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .snippet-project-group {
-    margin-bottom: 6px;
-  }
-
-  .snippet-project-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 8px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-secondary);
-    cursor: pointer;
-    border-radius: var(--radius-sm);
-    user-select: none;
-  }
-
-  .snippet-project-header:hover {
-    background: var(--bg-hover);
-  }
-
-  .snippet-project-header .snippet-group-count {
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    opacity: 0.7;
-  }
-
-  .snippet-project-header .snippet-group-actions {
-    display: flex;
-    gap: 4px;
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-  }
-
-  .snippet-project-header:hover .snippet-group-actions {
-    opacity: 1;
-  }
-
-  .snippet-group-action-btn {
-    background: transparent;
-    border: none;
-    font-size: 11px;
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 3px;
-    color: var(--text-secondary);
-  }
-
-  .snippet-group-action-btn:hover {
-    background: var(--bg-primary);
-    color: var(--accent);
-  }
-
-  .snippet-project-items {
-    padding-left: 8px;
-  }
-
-  .snippet-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 12px;
-    transition: var(--transition-fast);
-    border: 1px solid transparent;
-  }
-
-  .snippet-item:hover {
-    background: var(--bg-hover);
-  }
-
-  .snippet-item.selected {
-    background: color-mix(in srgb, var(--accent) 12%, var(--bg-primary));
-    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
-  }
-
-  .snippet-item input[type="checkbox"] {
+    transition: border-color 0.1s;
     flex-shrink: 0;
-    cursor: pointer;
-    accent-color: var(--accent);
   }
 
-  .snippet-item-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--text-primary);
-  }
+  .apb-template-chip:hover { border-color: var(--accent); }
+  .apb-template-chip-name { font-weight: 600; color: var(--text-primary); }
 
-  .snippet-type-badge {
-    font-size: 9px;
-    padding: 2px 6px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--accent) 15%, transparent);
-    color: var(--accent);
-    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
-    font-weight: 600;
-    white-space: nowrap;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  .snippet-sidebar-actions {
-    padding: 8px 12px;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    gap: 6px;
-  }
-
-  .snippet-action-btn {
-    flex: 1;
-    padding: 7px 10px;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-  }
-
-  .snippet-sidebar-footer {
-    padding: 8px 12px;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    gap: 6px;
-    background: var(--bg-primary);
-  }
-
-  .snippet-sidebar-footer .icon-btn {
-    flex: 1;
-    text-align: center;
-    font-size: 11px;
-  }
-
-  /* ========================================
-     Snippet Editor Panel
-     ======================================== */
-
-  .snippet-editor-panel {
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-primary);
-    overflow: hidden;
-  }
-
-  .snippet-editor-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-  }
-
-  .snippet-empty {
+  .apb-template-chip-del {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 200px;
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-style: italic;
-  }
-
-  .snippet-editor-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .snippet-field-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .snippet-field-row label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-  }
-
-  .snippet-field-row input,
-  .snippet-field-row select,
-  .snippet-field-row textarea {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    font-family: inherit;
-  }
-
-  .snippet-field-row textarea {
-    font-family: var(--font-mono);
-    resize: vertical;
-    min-height: 120px;
-    line-height: 1.5;
-  }
-
-  .snippet-field-row input:focus,
-  .snippet-field-row select:focus,
-  .snippet-field-row textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
-  }
-
-  .snippet-field-row-inline {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .snippet-tags-selector {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .snippet-tag-chip {
-    padding: 4px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    transition: var(--transition-fast);
-    user-select: none;
-  }
-
-  .snippet-tag-chip:hover {
-    border-color: var(--accent);
-  }
-
-  .snippet-tag-chip.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
-  }
-
-  .snippet-editor-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding-top: 8px;
-    border-top: 1px solid var(--border-color);
-    flex-wrap: wrap;
-  }
-
-  .snippet-include-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-primary);
-    cursor: pointer;
-    margin-right: auto;
-  }
-
-  .snippet-include-label input {
-    accent-color: var(--accent);
-  }
-
-  .snippet-editor-actions button {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-
-  /* ========================================
-     Preview Section
-     ======================================== */
-
-  .snippet-preview-section {
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-  }
-
-  .snippet-preview-header {
-    padding: 12px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
-  }
-
-  .snippet-preview-header h3 {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .panel-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .preview-area {
-    padding: 12px 16px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  #final-prompt {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    line-height: 1.5;
-    min-height: 180px;
-    resize: vertical;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-  }
-
-  #final-prompt:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
-  }
-
-  .stats-bar {
-    padding: 8px 16px;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    gap: 24px;
-    font-size: 11px;
-    color: var(--text-secondary);
-    background: var(--bg-secondary);
-  }
-
-  /* ========================================
-     Templates (in sidebar)
-     ======================================== */
-
-  .templates-section {
-    padding: 10px 12px;
-    border-top: 1px solid var(--border-color);
-  }
-
-  .templates-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 4px;
-    margin-top: 8px;
-  }
-
-  .template-btn {
-    padding: 6px 10px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 11px;
-    transition: all var(--transition-normal);
-    color: var(--text-primary);
-    text-align: left;
-    position: relative;
-  }
-
-  .template-btn:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-  }
-
-  .template-btn.custom-template {
-    border-left: 3px solid var(--accent);
-  }
-
-  .template-btn.custom-template .delete-template-btn {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 3px;
-    padding: 2px 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
     font-size: 10px;
+    color: var(--text-secondary);
     cursor: pointer;
-    opacity: 0;
-    transition: opacity var(--transition-normal);
+    flex-shrink: 0;
   }
 
-  .template-btn.custom-template:hover .delete-template-btn {
-    opacity: 1;
-  }
+  .apb-template-chip-del:hover { color: var(--error, #e55); }
 
-  .template-filter {
+  /* Dialog */
+  .apb-dialog-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
     display: flex;
-    gap: 6px;
-    margin-bottom: 6px;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    border-radius: 10px;
   }
 
-  .template-filter input {
-    flex: 1;
-    padding: 5px 8px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 11px;
+  .apb-dialog {
     background: var(--bg-primary);
-    color: var(--text-primary);
-  }
-
-  .template-filter input:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  .category-select {
-    padding: 5px 8px;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-size: 11px;
-    cursor: pointer;
+    border-radius: 12px;
+    padding: 20px;
+    width: 320px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   }
 
-  .category-select:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
+  .apb-dialog h3 { margin: 0 0 14px; font-size: 15px; }
 
-  /* ========================================
-     Status Message
-     ======================================== */
-
-  .status-message {
-    margin-top: 16px;
-    padding: 12px;
-    border-radius: var(--radius-sm);
+  .apb-dialog input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
     font-size: 13px;
-    display: none;
+    color: var(--text-primary);
+    outline: none;
+    margin-bottom: 14px;
   }
 
-  .status-message.show { display: block; }
+  .apb-dialog input:focus { border-color: var(--accent); }
 
-  .status-message.success {
-    background: color-mix(in srgb, var(--success) 12%, var(--bg-primary));
-    color: var(--success);
-    border: 1px solid color-mix(in srgb, var(--success) 30%, var(--border-color));
-  }
+  .apb-dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
-  .status-message.error {
-    background: color-mix(in srgb, var(--error) 12%, var(--bg-primary));
-    color: var(--error);
-    border: 1px solid color-mix(in srgb, var(--error) 30%, var(--border-color));
-  }
-
-  .status-message.info {
-    background: color-mix(in srgb, var(--accent) 12%, var(--bg-primary));
-    color: var(--accent);
-    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-color));
-  }
-
-  /* ========================================
-     Modals
-     ======================================== */
-
-  .modal {
-    display: none;
+  /* Toast */
+  .apb-toast {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .modal.show { display: flex; }
-
-  .modal-content {
+    bottom: 20px;
+    right: 20px;
     background: var(--bg-primary);
-    border-radius: var(--radius-lg);
-    max-width: 800px;
-    width: 90%;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--shadow-lg);
-  }
-
-  .modal-header {
-    padding: 20px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .modal-header h3 {
-    margin: 0;
-    font-size: 18px;
-    color: var(--text-primary);
-  }
-
-  .modal-close {
-    background: transparent;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: var(--text-secondary);
-    padding: 0;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-sm);
-    transition: background var(--transition-normal);
-  }
-
-  .modal-close:hover { background: var(--bg-hover); }
-
-  .modal-body {
-    padding: 20px;
-    overflow-y: auto;
-    flex: 1;
-  }
-
-  .personas-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 12px;
-  }
-
-  .persona-card {
-    padding: 16px;
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    background: var(--bg-secondary);
-  }
-
-  .persona-card:hover {
-    border-color: var(--accent);
-    background: var(--bg-hover);
-  }
-
-  .persona-card.selected {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: white;
-  }
-
-  .persona-name {
-    font-weight: 600;
-    font-size: 14px;
-    margin-bottom: 8px;
-  }
-
-  .persona-description {
-    font-size: 12px;
-    color: var(--text-secondary);
-    line-height: 1.4;
-  }
-
-  .persona-card.selected .persona-description {
-    color: rgba(255, 255, 255, 0.9);
-  }
-
-  .techstack-search { margin-bottom: 16px; }
-
-  .techstack-search input {
-    width: 100%;
-    padding: 10px 12px;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-  }
-
-  .techstack-search input:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  .techstack-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 8px;
-  }
-
-  .techstack-item {
-    padding: 12px;
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    text-align: center;
-    transition: all var(--transition-normal);
-    background: var(--bg-secondary);
-    font-size: 13px;
-    font-weight: 500;
-  }
-
-  .techstack-item:hover {
-    border-color: var(--accent);
-    background: var(--bg-hover);
-  }
-
-  .techstack-item.selected {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: white;
-  }
-
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .section-header.collapsible:hover {
-    background: var(--bg-hover);
-    margin: -4px -8px 8px -8px;
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
-  }
-
-  .section-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .collapse-btn {
-    background: transparent;
-    border: none;
-    font-size: 12px;
-    cursor: pointer;
-    color: var(--text-secondary);
-    padding: 4px;
-    transition: transform var(--transition-normal);
-  }
-
-  .section-header.collapsed .collapse-btn {
-    transform: rotate(-90deg);
-  }
-
-  .templates-content {
-    transition: max-height var(--transition-slow);
-    overflow: hidden;
-  }
-
-  .section-header.collapsed + .templates-content {
-    max-height: 0 !important;
-  }
-
-  .icon-btn {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    padding: 5px 10px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 11px;
-    transition: background var(--transition-normal),
-                border-color var(--transition-normal),
-                transform var(--transition-fast);
-  }
-
-  .icon-btn:hover {
-    background: var(--bg-secondary);
-    border-color: var(--accent);
-    transform: translateY(-1px);
-  }
-
-  .icon-btn:active { transform: translateY(0); }
-
-  .template-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
-
-  /* Share Modal */
-  .share-section { margin-bottom: 24px; }
-  .share-section:last-child { margin-bottom: 0; }
-
-  .share-label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-  }
-
-  .share-input-group {
-    display: flex;
-    gap: 8px;
-  }
-
-  .share-link-input {
-    flex: 1;
-    padding: 10px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-  }
-
-  .share-link-input:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  .share-hint {
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-top: 8px;
-    font-style: italic;
-  }
-
-  /* Save Template Modal */
-  .modal-small { max-width: 500px; }
-
-  .form-group { margin-bottom: 16px; }
-
-  .form-group label {
-    display: block;
+    border-radius: 8px;
+    padding: 8px 14px;
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 200;
   }
 
-  .form-input {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    font-family: inherit;
-  }
-
-  .form-input:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    margin-top: 20px;
-  }
-
-  /* Buttons */
-  button {
-    transition: background var(--transition-normal),
-                border-color var(--transition-normal),
-                transform var(--transition-fast),
-                box-shadow var(--transition-normal);
-  }
-
-  button:active { transform: scale(0.98); }
-
-  button.primary {
-    background: var(--accent);
-    color: white;
-    border: 1px solid var(--accent);
-  }
-
-  button.primary:hover {
-    background: color-mix(in srgb, var(--accent) 90%, black);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent);
-  }
-
-  button.secondary {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-  }
-
-  button.secondary:hover {
-    background: var(--bg-hover);
-    border-color: var(--accent);
-  }
-
-  /* ========================================
-     Responsive
-     ======================================== */
-
-  @media (max-width: 1024px) {
-    .intent-starter-header {
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-
-    .intent-fields {
-      grid-template-columns: 1fr;
-    }
-
-    .intent-mode-group {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .intent-output-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .intent-workflow-group {
-      grid-template-columns: 1fr;
-    }
-
-    .personas-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .techstack-grid {
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    }
-  }
-
-  @media (max-width: 900px) {
-    .snippet-layout {
-      grid-template-columns: 1fr;
-    }
-
-    .snippet-sidebar {
-      border-right: none;
-      border-bottom: 1px solid var(--border-color);
-      max-height: 350px;
-    }
-
-    .snippet-field-row-inline {
-      grid-template-columns: 1fr;
-    }
-  }
+  .apb-toast.visible { opacity: 1; transform: translateY(0); }
 </style>
 
-<!-- Tool Module -->
+<!-- Module -->
 <script type="module">
-  import { copyToClipboard, debounce, deepClone, downloadAsFile, countWords, saveToolState, loadToolState } from '../core/tool-utils.js';
-
-  // ============================================================================
-  // Data Constants
-  // ============================================================================
-
-  const PERSONAS = [
-    { id: 'senior-engineer', name: 'Senior Software Engineer', description: 'Expert in modern development practices, design patterns, and clean code principles.', content: 'You are a senior software engineer with 10+ years of experience in modern development practices, design patterns, and clean code principles. You have deep expertise in software architecture, code quality, and best practices.' },
-    { id: 'code-reviewer', name: 'Code Reviewer', description: 'Focused on code quality, security, performance, and maintainability.', content: 'You are a meticulous code reviewer with expertise in identifying code quality issues, security vulnerabilities, performance bottlenecks, and maintainability concerns. You provide constructive feedback focused on best practices.' },
-    { id: 'architect', name: 'Solution Architect', description: 'Designs scalable, maintainable systems with focus on architecture patterns.', content: 'You are a solution architect specializing in designing scalable, maintainable, and robust systems. You have expertise in architectural patterns, system design, microservices, and cloud architecture.' },
-    { id: 'devops-engineer', name: 'DevOps Engineer', description: 'Expert in CI/CD, infrastructure, containers, and automation.', content: 'You are a DevOps engineer with expertise in CI/CD pipelines, infrastructure as code, containerization (Docker, Kubernetes), cloud platforms (AWS, Azure, GCP), and automation.' },
-    { id: 'security-expert', name: 'Security Expert', description: 'Focuses on security best practices, vulnerabilities, and secure coding.', content: 'You are a security expert specializing in application security, secure coding practices, vulnerability assessment, and security best practices. You focus on OWASP top 10, authentication, authorization, and data protection.' },
-    { id: 'tech-educator', name: 'Technical Educator', description: 'Explains complex concepts in simple, understandable terms.', content: 'You are a technical educator who excels at breaking down complex technical concepts into simple, understandable explanations. You use analogies, examples, and step-by-step breakdowns to teach effectively.' },
-    { id: 'technical-writer', name: 'Technical Writer', description: 'Creates clear documentation, API docs, and technical content.', content: 'You are a technical writer specializing in creating clear, comprehensive documentation, API documentation, user guides, and technical content. You understand how to make complex technical information accessible.' },
-    { id: 'content-writer', name: 'Content Writer', description: 'Professional writer for blogs, marketing, and storytelling.', content: 'You are a professional content writer with expertise in technical writing, copywriting, blog posts, marketing content, and storytelling. You adapt tone and style to the target audience.' }
-  ];
-
-  const TECH_STACKS = {
-    'Frontend': ['React', 'Vue.js', 'Angular', 'Svelte', 'Next.js', 'Nuxt.js', 'TypeScript', 'JavaScript', 'HTML/CSS', 'Tailwind CSS', 'Bootstrap'],
-    'Backend': ['Node.js', 'Python', 'Java', 'Go', 'Rust', 'PHP', 'Ruby', 'C#/.NET', 'Elixir', 'Scala'],
-    'Frameworks': ['Express.js', 'Django', 'Flask', 'FastAPI', 'Spring Boot', 'Laravel', 'Ruby on Rails', 'ASP.NET Core'],
-    'Databases': ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Elasticsearch', 'SQLite', 'DynamoDB', 'Cassandra', 'Neo4j'],
-    'Cloud': ['AWS', 'Azure', 'Google Cloud', 'Vercel', 'Netlify', 'Heroku', 'DigitalOcean', 'Cloudflare'],
-    'DevOps': ['Docker', 'Kubernetes', 'Jenkins', 'GitHub Actions', 'GitLab CI', 'Terraform', 'Ansible', 'Prometheus', 'Grafana'],
-    'Mobile': ['React Native', 'Flutter', 'Swift', 'Kotlin', 'Ionic', 'Xamarin'],
-    'Data': ['Pandas', 'NumPy', 'TensorFlow', 'PyTorch', 'Scikit-learn', 'Apache Spark', 'Airflow', 'Jupyter']
-  };
-
-  const COMPONENT_PRESETS = {
-    'context': [
-      { id: 'project-brief', name: 'Project Brief', content: 'Project: {{project_name}}\nDomain: {{domain}}\nKey requirements: {{requirements}}\nPrimary users: {{primary_users}}\nSuccess metric: {{success_metric}}' },
-      { id: 'codebase-context', name: 'Codebase / Repository Context', content: 'Repository: {{repo_name}}\nLanguages/frameworks: {{tech_stack}}\nArchitecture: {{architecture_pattern}}\nCode standards: {{standards}}\nRelated files: {{related_files}}' },
-      { id: 'user-story-context', name: 'User Story Context', content: 'As a {{user_role}}\nI want {{user_goal}}\nSo that {{user_benefit}}\nAcceptance criteria: {{acceptance_criteria}}' },
-    ],
-    'task': [
-      { id: 'feature-task', name: 'Feature Implementation', content: 'Objective: {{feature_summary}}\nCurrent behavior: {{current_behavior}}\nDesired behavior: {{desired_behavior}}\nAcceptance criteria: {{acceptance_criteria}}' },
-      { id: 'bugfix-task', name: 'Bug Fix / Investigation', content: 'Bug: {{bug_summary}}\nSteps to reproduce: {{steps}}\nExpected vs actual: {{expected_vs_actual}}\nDiagnostics collected: {{diagnostics}}' },
-      { id: 'analysis-task', name: 'Analysis / Research Objective', content: 'Dataset or subject: {{subject}}\nQuestions to answer: {{questions}}\nConstraints: {{analysis_constraints}}\nSuccess looks like: {{success_definition}}' },
-    ],
-    'rules': [
-      { id: 'engineering-best-practices', name: 'Engineering Best Practices', content: 'Follow these rules:\n- Cite relevant standards or RFCs when possible\n- Highlight risks, edge cases, and trade-offs\n- Prefer deterministic steps with measurable outcomes\n- Offer testing guidance for every recommendation\n- Keep explanations concise but technically rigorous' },
-      { id: 'security-first', name: 'Security-First Approach', content: 'Security guidelines:\n- Follow OWASP Top 10 best practices\n- Never expose sensitive data in logs or errors\n- Validate and sanitize all inputs\n- Use parameterized queries to prevent SQL injection\n- Implement proper authentication and authorization\n- Follow principle of least privilege' },
-      { id: 'clean-code', name: 'Clean Code Principles', content: 'Code quality rules:\n- Write self-documenting code with clear naming\n- Keep functions small and focused (single responsibility)\n- Avoid duplication (DRY principle)\n- Prefer composition over inheritance\n- Write tests alongside code\n- Refactor continuously' }
-    ],
-    'output-format': [
-      { id: 'detailed-solution', name: 'Detailed Solution Outline', content: 'Structure your response as:\n1. Brief summary (1-2 sentences)\n2. Detailed explanation with step-by-step breakdown\n3. Code examples with inline comments\n4. Testing approach and edge cases\n5. Best practices and recommendations' },
-      { id: 'step-by-step', name: 'Step-by-Step Guide', content: 'Provide a step-by-step guide:\n1. Prerequisites and setup\n2. Step 1: [Action] - [Expected result]\n3. Step 2: [Action] - [Expected result]\n...\nN. Verification steps\nTroubleshooting common issues' },
-      { id: 'code-only', name: 'Code-Focused (Minimal Explanation)', content: 'Provide:\n- Working code solution\n- Inline comments explaining key logic\n- Usage example\n- Brief notes on edge cases or gotchas' },
-    ],
-    'constraints': [
-      { id: 'delivery-constraints', name: 'Delivery Constraints', content: 'Timeline: {{deadline}}\nBudget: {{budget}}\nCritical dependencies: {{dependencies}}\nCompliance requirements: {{compliance}}' },
-      { id: 'technical-constraints', name: 'Technical Constraints', content: 'Technology limitations: {{tech_limits}}\nBrowser/platform support: {{platform_support}}\nPerformance requirements: {{performance_reqs}}\nBackward compatibility: {{compatibility}}\nThird-party dependencies: {{third_party}}' },
-      { id: 'scope-constraints', name: 'Scope Constraints', content: 'In scope: {{in_scope}}\nOut of scope: {{out_of_scope}}\nPhase 1 requirements: {{phase1}}\nFuture enhancements: {{future}}\nNon-goals: {{non_goals}}' },
-    ],
-    'examples': [
-      { id: 'before-after', name: 'Before vs After', content: 'Before: {{before_state}}\nAfter: {{after_state}}\nKey improvements: {{improvements}}' },
-      { id: 'case-study', name: 'Case Study', content: 'Scenario: {{scenario}}\nActions taken: {{actions}}\nOutcome: {{outcome}}\nLessons learned: {{lessons}}' },
-      { id: 'code-comparison', name: 'Code Comparison', content: 'Bad approach:\n```{{language}}\n{{bad_code}}\n```\n\nGood approach:\n```{{language}}\n{{good_code}}\n```\n\nWhy it\'s better: {{explanation}}' },
-    ]
-  };
-
-  const TEMPLATES = {
-    'code-review': {
-      name: 'Code Review Assistant',
-      category: 'development',
-      components: [
-        { id: 'role', name: 'Role / Persona', enabled: true, order: 1, hasOptions: true, selectedPersona: 'code-reviewer', content: PERSONAS.find(p => p.id === 'code-reviewer').content },
-        { id: 'task', name: 'Code to Review', enabled: true, order: 2, content: '{{code_snippet}}' },
-        { id: 'rules', name: 'Review Criteria', enabled: true, order: 3, content: 'Review the code for:\n- Code quality and readability\n- Performance issues and optimizations\n- Security vulnerabilities (OWASP top 10)\n- Best practices adherence\n- Potential bugs and edge cases\n- Maintainability and scalability concerns\n- Test coverage gaps' },
-        { id: 'output-format', name: 'Output Format', enabled: true, order: 4, content: 'Structure your review as:\n1. Overall assessment (1-2 sentences)\n2. Critical issues (MUST fix - security, bugs)\n3. Important suggestions (SHOULD fix - performance, best practices)\n4. Minor improvements (COULD fix - style, optimization)\n5. Positive highlights (what\'s done well)\n6. Refactored code example (if applicable)' }
-      ]
-    },
-    'data-analysis': {
-      name: 'General Analysis',
-      category: 'analysis',
-      components: [
-        { id: 'role', name: 'Role / Persona', enabled: true, order: 1, hasOptions: true, selectedPersona: 'senior-engineer', content: PERSONAS.find(p => p.id === 'senior-engineer').content },
-        { id: 'context', name: 'Dataset Context', enabled: true, order: 2, content: 'Dataset: {{dataset_name}}\nSource: {{data_source}}\nSize: {{record_count}} records\nKey fields: {{field_list}}\nTime period: {{time_period}}' },
-        { id: 'task', name: 'Analysis Objective', enabled: true, order: 3, content: '{{analysis_objective}}' },
-        { id: 'output-format', name: 'Output Format', enabled: true, order: 4, content: 'Provide:\n1. Executive summary (key findings in 3-5 bullet points)\n2. Statistical summary (mean, median, std dev, outliers)\n3. Data quality assessment (missing values, anomalies)\n4. Visualization recommendations (chart types, variables)\n5. Actionable insights with business impact\n6. Recommendations for next analysis steps\n7. Python/SQL code snippets for analysis' }
-      ]
-    },
-    'content-writer': {
-      name: 'Content Writer',
-      category: 'writing',
-      components: [
-        { id: 'role', name: 'Role / Persona', enabled: true, order: 1, hasOptions: true, selectedPersona: 'content-writer', content: PERSONAS.find(p => p.id === 'content-writer').content },
-        { id: 'task', name: 'Writing Brief', enabled: true, order: 2, content: 'Topic: {{topic}}\nTarget audience: {{audience}}\nTone: {{tone}}\nKey message: {{key_message}}' },
-        { id: 'rules', name: 'Writing Guidelines', enabled: true, order: 3, content: 'Guidelines:\n- Use clear, engaging language appropriate for {{audience}}\n- Maintain {{tone}} tone throughout\n- Include concrete examples and case studies\n- Break up text with subheadings and bullet points\n- Use active voice and strong verbs\n- End with clear call-to-action or key takeaways' },
-        { id: 'constraints', name: 'Constraints', enabled: true, order: 4, content: 'Word count: {{word_count}}\nSEO keywords: {{keywords}}\nContent type: {{content_type}}' }
-      ]
-    },
-  };
-
-  const COMPONENT_TYPES = [
-    { id: 'persona', label: 'Persona' },
-    { id: 'context', label: 'Context' },
-    { id: 'task', label: 'Task' },
-    { id: 'rules', label: 'Rules' },
-    { id: 'output-format', label: 'Output Format' },
-    { id: 'constraints', label: 'Constraints' },
-    { id: 'examples', label: 'Examples' }
-  ];
-
-  const USE_CASE_TAGS = [
-    { id: 'coding', label: 'Coding' },
-    { id: 'writing', label: 'Writing' },
-    { id: 'analysis', label: 'Analysis' },
-    { id: 'debugging', label: 'Debugging' },
-    { id: 'review', label: 'Review' },
-    { id: 'planning', label: 'Planning' },
-    { id: 'documentation', label: 'Documentation' }
-  ];
-
-  const COMPONENT_TYPE_ORDER = ['persona', 'context', 'task', 'rules', 'output-format', 'constraints', 'examples'];
-
-  const LEGACY_ID_TO_TYPE = {
-    'role': 'persona',
-    'tech-stack': 'context',
-    'context': 'context',
-    'task': 'task',
-    'rules': 'rules',
-    'output-format': 'output-format',
-    'constraints': 'constraints',
-    'examples': 'examples'
-  };
-
-  // ============================================================================
-  // Snippet Manager
-  // ============================================================================
-
-  class SnippetManager {
-    constructor(storageKey) {
-      this.storageKey = storageKey;
-      this.projects = ['General'];
-      this.snippets = [];
-      this.enabledIds = [];
-      this.selectedId = null;
-      this.viewMode = 'project';
-      this.filterText = '';
-    }
-
-    load() {
-      const saved = loadToolState(this.storageKey);
-      if (saved) {
-        this.projects = saved.projects || ['General'];
-        this.snippets = saved.snippets || [];
-        this.enabledIds = saved.enabledIds || [];
-      }
-    }
-
-    save() {
-      saveToolState(this.storageKey, {
-        projects: this.projects,
-        snippets: this.snippets,
-        enabledIds: this.enabledIds
-      });
-    }
-
-    createSnippet(overrides = {}) {
-      const snippet = {
-        id: 'snip-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-        name: overrides.name || 'New Snippet',
-        content: overrides.content || '',
-        project: overrides.project || this.projects[0] || 'General',
-        componentType: overrides.componentType || 'task',
-        tags: overrides.tags || [],
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-      this.snippets.push(snippet);
-      this.save();
-      return snippet;
-    }
-
-    updateSnippet(id, updates) {
-      const snippet = this.snippets.find(s => s.id === id);
-      if (snippet) {
-        Object.assign(snippet, updates, { updatedAt: Date.now() });
-        this.save();
-      }
-      return snippet;
-    }
-
-    deleteSnippet(id) {
-      this.snippets = this.snippets.filter(s => s.id !== id);
-      this.enabledIds = this.enabledIds.filter(eid => eid !== id);
-      if (this.selectedId === id) this.selectedId = null;
-      this.save();
-    }
-
-    duplicateSnippet(id) {
-      const original = this.snippets.find(s => s.id === id);
-      if (!original) return null;
-      return this.createSnippet({
-        name: original.name + ' (copy)',
-        content: original.content,
-        project: original.project,
-        componentType: original.componentType,
-        tags: [...original.tags]
-      });
-    }
-
-    addProject(name) {
-      if (name && !this.projects.includes(name)) {
-        this.projects.push(name);
-        this.save();
-      }
-    }
-
-    deleteProject(name) {
-      if (name === 'General') return;
-      this.projects = this.projects.filter(p => p !== name);
-      this.snippets.forEach(s => { if (s.project === name) s.project = 'General'; });
-      this.save();
-    }
-
-    toggleEnabled(id) {
-      const idx = this.enabledIds.indexOf(id);
-      if (idx > -1) this.enabledIds.splice(idx, 1);
-      else this.enabledIds.push(id);
-      this.save();
-    }
-
-    isEnabled(id) {
-      return this.enabledIds.includes(id);
-    }
-
-    getEnabledSnippets() {
-      return this.snippets
-        .filter(s => this.enabledIds.includes(s.id))
-        .sort((a, b) => COMPONENT_TYPE_ORDER.indexOf(a.componentType) - COMPONENT_TYPE_ORDER.indexOf(b.componentType));
-    }
-
-    getByProject() {
-      const groups = {};
-      this.projects.forEach(p => { groups[p] = []; });
-      this.getFiltered().forEach(s => {
-        if (!groups[s.project]) groups[s.project] = [];
-        groups[s.project].push(s);
-      });
-      return groups;
-    }
-
-    getByTag() {
-      const groups = {};
-      USE_CASE_TAGS.forEach(t => { groups[t.label] = []; });
-      groups['Untagged'] = [];
-      this.getFiltered().forEach(s => {
-        if (!s.tags || s.tags.length === 0) {
-          groups['Untagged'].push(s);
-        } else {
-          s.tags.forEach(tag => {
-            const tagLabel = USE_CASE_TAGS.find(t => t.id === tag)?.label || tag;
-            if (!groups[tagLabel]) groups[tagLabel] = [];
-            groups[tagLabel].push(s);
-          });
-        }
-      });
-      return groups;
-    }
-
-    getFiltered() {
-      if (!this.filterText) return this.snippets;
-      const q = this.filterText.toLowerCase();
-      return this.snippets.filter(s =>
-        s.name.toLowerCase().includes(q) ||
-        s.content.toLowerCase().includes(q) ||
-        s.project.toLowerCase().includes(q)
-      );
-    }
-
-    getSelected() {
-      return this.snippets.find(s => s.id === this.selectedId) || null;
-    }
-  }
-
-  // ============================================================================
-  // State
-  // ============================================================================
-
-  let snippetMgr = new SnippetManager('ai-prompt-builder-snippets');
-
-  let state = {
-    config: { components: [] },
-    currentModal: null,
-    customTemplates: [],
-    intentMode: 'create',
-    workflowProfile: 'balanced',
-    intentGoal: '',
-    intentInput: '',
-    intentOutput: 'steps',
-    showRefine: false
-  };
-
-  const INTENT_MODES = ['create', 'analyze', 'rewrite', 'plan'];
-  const INTENT_OUTPUT_OPTIONS = [
-    { id: 'bullets', label: 'bullet list' },
-    { id: 'checklist', label: 'checklist' },
-    { id: 'table', label: 'table' },
-    { id: 'summary', label: 'executive summary' },
-    { id: 'steps', label: 'step-by-step plan' },
-    { id: 'json', label: 'structured JSON' }
-  ];
-
-  const DEFAULT_OUTPUT_BY_MODE = {
-    create: 'steps',
-    analyze: 'summary',
-    rewrite: 'bullets',
-    plan: 'checklist'
-  };
-
-  const WORKFLOW_PROFILES = ['rapid', 'balanced', 'deep'];
-
-  // ============================================================================
-  // Migration
-  // ============================================================================
-
-  function migrateComponentsToSnippets() {
-    if (snippetMgr.snippets.length > 0) return;
-
-    // Try legacy migration first
-    const saved = loadToolState('ai-prompt-builder');
-    if (saved?.config?.components?.length) {
-      const components = saved.config.components;
-      components.forEach(comp => {
-        if (!comp.content) return;
-        const componentType = LEGACY_ID_TO_TYPE[comp.id] || 'task';
-        const snippet = snippetMgr.createSnippet({
-          name: comp.name || comp.id,
-          content: comp.content,
-          project: 'General',
-          componentType: componentType,
-          tags: []
-        });
-        if (comp.enabled) {
-          snippetMgr.enabledIds.push(snippet.id);
-        }
-      });
-      snippetMgr.save();
-      return;
-    }
-
-    // Seed defaults
-    seedDefaultSnippets(snippetMgr);
-  }
-
-  function seedDefaultSnippets(mgr) {
-    // --- Project: Code Development ---
-    mgr.addProject('Code Development');
-
-    mgr.createSnippet({
-      name: 'Senior Engineer Persona',
-      content: 'You are a senior software engineer with 10+ years of experience in modern development practices, design patterns, and clean code principles. You write production-ready, well-tested code with clear documentation.',
-      project: 'Code Development',
-      componentType: 'persona',
-      tags: ['coding']
-    });
-
-    mgr.createSnippet({
-      name: 'Feature Implementation Task',
-      content: 'Implement the following feature:\n\nRequirement: {{requirement}}\nAcceptance criteria: {{criteria}}\n\nProvide:\n1. Implementation plan with file changes\n2. Complete working code\n3. Unit tests covering happy path and edge cases\n4. Brief explanation of design decisions',
-      project: 'Code Development',
-      componentType: 'task',
-      tags: ['coding', 'planning']
-    });
-
-    mgr.createSnippet({
-      name: 'Code Review Checklist',
-      content: 'Review this code for:\n- Correctness: Does it handle all edge cases?\n- Security: Any injection, XSS, or auth issues?\n- Performance: N+1 queries, unnecessary allocations, blocking calls?\n- Readability: Clear naming, small functions, minimal nesting?\n- Tests: Adequate coverage? Missing scenarios?\n\nRate severity: CRITICAL / IMPORTANT / SUGGESTION\nProvide specific line-level feedback with fixes.',
-      project: 'Code Development',
-      componentType: 'rules',
-      tags: ['coding', 'review']
-    });
-
-    mgr.createSnippet({
-      name: 'Code Output Format',
-      content: 'Structure your response as:\n1. Brief summary (1-2 sentences)\n2. Implementation with complete code blocks (include file paths)\n3. Tests with assertions\n4. Edge cases and potential issues\n5. Run/build instructions if applicable',
-      project: 'Code Development',
-      componentType: 'output-format',
-      tags: ['coding']
-    });
-
-    // --- Project: Writing & Analysis ---
-    mgr.addProject('Writing & Analysis');
-
-    mgr.createSnippet({
-      name: 'Technical Writer Persona',
-      content: 'You are an experienced technical writer who creates clear, well-structured documentation. You understand developer audiences and write concise prose that balances depth with readability. You use examples liberally.',
-      project: 'Writing & Analysis',
-      componentType: 'persona',
-      tags: ['writing', 'documentation']
-    });
-
-    mgr.createSnippet({
-      name: 'Research Synthesis Task',
-      content: 'Analyze the provided material and produce:\n\n1. Executive summary (3-5 key findings)\n2. Evidence-backed analysis with citations\n3. Contradictions or gaps in the data\n4. Actionable recommendations ranked by impact\n5. Open questions for further investigation',
-      project: 'Writing & Analysis',
-      componentType: 'task',
-      tags: ['analysis', 'writing']
-    });
-
-    mgr.createSnippet({
-      name: 'Decision Brief Template',
-      content: 'Create a decision brief:\n\nProblem: {{problem_statement}}\n\nOptions (at least 3):\n- For each: Description, Pros, Cons, Effort, Risk\n\nRecommendation: State clearly with rationale\nSecond-order effects: What changes downstream?\nReversibility: How easy to undo if wrong?',
-      project: 'Writing & Analysis',
-      componentType: 'task',
-      tags: ['analysis', 'planning']
-    });
-
-    mgr.createSnippet({
-      name: 'Writing Quality Rules',
-      content: 'Follow these writing guidelines:\n- Lead with the most important information\n- Use active voice and concrete language\n- Keep paragraphs to 3-4 sentences max\n- Use bullet points for lists of 3+ items\n- Define acronyms on first use\n- Include examples for abstract concepts\n- End sections with key takeaways',
-      project: 'Writing & Analysis',
-      componentType: 'rules',
-      tags: ['writing']
-    });
-
-    // --- Project: Debugging & Ops ---
-    mgr.addProject('Debugging & Ops');
-
-    mgr.createSnippet({
-      name: 'Debug Partner Persona',
-      content: 'You are a seasoned debugger who approaches problems methodically. You form hypotheses, design experiments to test them, and narrow down root causes systematically. You never guess — you verify.',
-      project: 'Debugging & Ops',
-      componentType: 'persona',
-      tags: ['debugging', 'coding']
-    });
-
-    mgr.createSnippet({
-      name: 'Bug Investigation Task',
-      content: 'Investigate this issue:\n\nSymptom: {{symptom}}\nSteps to reproduce: {{steps}}\nExpected vs actual behavior: {{diff}}\n\nProvide:\n1. Likely root causes ranked by probability\n2. Diagnostic steps to confirm each hypothesis\n3. Targeted fix with minimal blast radius\n4. Regression test to prevent recurrence\n5. Related areas to check for similar issues',
-      project: 'Debugging & Ops',
-      componentType: 'task',
-      tags: ['debugging']
-    });
-
-    mgr.createSnippet({
-      name: 'Incident Response Context',
-      content: 'Environment: {{environment}}\nService: {{service_name}}\nSeverity: {{severity}}\nImpact: {{user_impact}}\nTimeline: {{when_started}}\nRecent changes: {{recent_deployments}}\n\nConstraints:\n- Minimize downtime over perfect fix\n- Document all changes for post-mortem\n- Communicate status every 15 minutes',
-      project: 'Debugging & Ops',
-      componentType: 'context',
-      tags: ['debugging', 'planning']
-    });
-
-    mgr.createSnippet({
-      name: 'Ops Safety Constraints',
-      content: 'Operational constraints:\n- Never run destructive commands without confirmation\n- Always back up before modifying data\n- Test changes in staging first when possible\n- Log all manual interventions with timestamps\n- Prefer rollback over forward-fix under time pressure\n- Escalate if root cause is unclear after 30 minutes',
-      project: 'Debugging & Ops',
-      componentType: 'constraints',
-      tags: ['debugging', 'coding']
-    });
-
-    mgr.save();
-  }
-
-  // ============================================================================
-  // Intent Logic
-  // ============================================================================
-
-  function ensureIntentState() {
-    if (!INTENT_MODES.includes(state.intentMode)) state.intentMode = 'create';
-    if (!WORKFLOW_PROFILES.includes(state.workflowProfile)) state.workflowProfile = 'balanced';
-    if (typeof state.intentGoal !== 'string') state.intentGoal = '';
-    if (typeof state.intentInput !== 'string') state.intentInput = '';
-    if (!INTENT_OUTPUT_OPTIONS.some(o => o.id === state.intentOutput)) {
-      state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
-    }
-    state.showRefine = Boolean(state.showRefine);
-  }
-
-  function getIntentOutputLabel() {
-    const selected = INTENT_OUTPUT_OPTIONS.find(o => o.id === state.intentOutput);
-    return selected?.label || state.intentOutput;
-  }
-
-  function clearIntentFields() {
-    state.intentGoal = '';
-    state.intentInput = '';
-    state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode] || 'steps';
-    renderIntentControls();
-    updatePreview();
-    saveConfig();
-    showStatus('Intent cleared', 'info');
-  }
-
-  async function pasteIntentContext() {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (!text) { showStatus('Clipboard is empty', 'info'); return; }
-      state.intentInput = text;
-      renderIntentControls();
-      updatePreview();
-      saveConfig();
-      showStatus('Clipboard pasted into Input/Context', 'success');
-    } catch (error) {
-      showStatus('Clipboard access denied', 'error');
-    }
-  }
-
-  function applyWorkflowProfile(profile, options = {}) {
-    const { silent = false } = options;
-    if (!WORKFLOW_PROFILES.includes(profile)) return;
-
-    state.workflowProfile = profile;
-    state.showRefine = profile !== 'rapid';
-
-    renderIntentControls();
-    renderSnippetTree();
-    renderSnippetEditor();
-    updatePreview();
-    saveConfig();
-    if (!silent) {
-      showStatus(`Workflow: ${profile}`, 'success');
-    }
-  }
-
-  function renderIntentControls() {
-    ensureIntentState();
-    const container = document.querySelector('.tool-container');
-    if (container) {
-      container.dataset.intentMode = state.intentMode;
-      container.dataset.intentRefine = state.showRefine ? 'open' : 'closed';
-    }
-
-    document.querySelectorAll('.intent-mode-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.intentMode === state.intentMode);
-    });
-
-    document.querySelectorAll('[data-workflow-profile]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.workflowProfile === state.workflowProfile);
-    });
-
-    const goalInput = document.getElementById('intent-goal');
-    if (goalInput) goalInput.value = state.intentGoal;
-
-    const inputArea = document.getElementById('intent-input');
-    if (inputArea) inputArea.value = state.intentInput;
-
-    document.querySelectorAll('[data-intent-output]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.intentOutput === state.intentOutput);
-    });
-
-    const refineToggle = document.getElementById('intent-refine-toggle');
-    if (refineToggle) {
-      refineToggle.textContent = state.showRefine ? 'Hide refine' : 'Refine options';
-    }
-
-    const intentStatusChips = document.getElementById('intent-status-chips');
-    if (intentStatusChips) {
-      intentStatusChips.innerHTML = `
-        <span class="intent-chip">Mode <strong>${state.intentMode}</strong></span>
-        <span class="intent-chip">Workflow <strong>${state.workflowProfile}</strong></span>
-        <span class="intent-chip">Output <strong>${getIntentOutputLabel()}</strong></span>
-        <span class="intent-chip">Refine <strong>${state.showRefine ? 'on' : 'off'}</strong></span>
-        <span class="intent-chip">Shortcuts <strong>Alt+1..7 / Alt+R / Alt+V</strong></span>
-      `;
-    }
-  }
-
-  function composeIntentHeader() {
-    if (!state.intentMode) return '';
-    return `Intent:\nMode: ${state.intentMode}\n\n`;
-  }
-
-  // ============================================================================
-  // Snippet Tree Rendering
-  // ============================================================================
-
-  function renderSnippetTree() {
-    const tree = document.getElementById('snippet-tree');
-    if (!tree) return;
-
-    const groups = snippetMgr.viewMode === 'project'
-      ? snippetMgr.getByProject()
-      : snippetMgr.getByTag();
-
-    let html = '';
-    for (const [groupName, items] of Object.entries(groups)) {
-      const isProject = snippetMgr.viewMode === 'project';
-      const canDelete = isProject && groupName !== 'General';
-      const deleteBtn = canDelete
-        ? `<span class="snippet-group-actions"><button class="snippet-group-action-btn" data-delete-project="${groupName}" title="Delete project">x</button></span>`
-        : '';
-
-      html += `<div class="snippet-project-group">
-        <div class="snippet-project-header" data-group="${groupName}">
-          <span>${groupName} <span class="snippet-group-count">(${items.length})</span></span>
-          ${deleteBtn}
-        </div>
-        <div class="snippet-project-items">`;
-
-      items.forEach(snippet => {
-        const isEnabled = snippetMgr.isEnabled(snippet.id);
-        const isSelected = snippetMgr.selectedId === snippet.id;
-        const typeLabel = COMPONENT_TYPES.find(t => t.id === snippet.componentType)?.label || snippet.componentType;
-
-        html += `<div class="snippet-item ${isSelected ? 'selected' : ''}" data-snippet-id="${snippet.id}">
-          <input type="checkbox" ${isEnabled ? 'checked' : ''} data-toggle-id="${snippet.id}" title="Include in prompt" />
-          <span class="snippet-item-name">${escapeHtml(snippet.name)}</span>
-          <span class="snippet-type-badge">${typeLabel}</span>
-        </div>`;
-      });
-
-      html += `</div></div>`;
-    }
-
-    if (!html.trim() || snippetMgr.snippets.length === 0) {
-      html = '<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:12px;font-style:italic;">No snippets yet. Create one to get started.</div>';
-    }
-
-    tree.innerHTML = html;
-
-    // Update compose info
-    const composeInfo = document.getElementById('snippet-compose-info');
-    if (composeInfo) {
-      const count = snippetMgr.getEnabledSnippets().length;
-      composeInfo.innerHTML = `<span>${count} snippet${count !== 1 ? 's' : ''} in prompt</span>`;
-    }
-
-    // Update view toggle buttons
-    document.querySelectorAll('.snippet-view-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.view === snippetMgr.viewMode);
-    });
-  }
-
-  function escapeHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-  }
-
-  // ============================================================================
-  // Snippet Editor Rendering
-  // ============================================================================
-
-  function renderSnippetEditor() {
-    const emptyState = document.getElementById('snippet-empty-state');
-    const editorFields = document.getElementById('snippet-editor-fields');
-    if (!emptyState || !editorFields) return;
-
-    const snippet = snippetMgr.getSelected();
-    if (!snippet) {
-      emptyState.style.display = '';
-      editorFields.style.display = 'none';
-      return;
-    }
-
-    emptyState.style.display = 'none';
-    editorFields.style.display = '';
-
-    document.getElementById('snippet-name').value = snippet.name;
-
-    // Project dropdown
-    const projectSelect = document.getElementById('snippet-project');
-    projectSelect.innerHTML = snippetMgr.projects.map(p =>
-      `<option value="${escapeHtml(p)}" ${p === snippet.project ? 'selected' : ''}>${escapeHtml(p)}</option>`
-    ).join('');
-
-    // Component type dropdown
-    const typeSelect = document.getElementById('snippet-type');
-    typeSelect.innerHTML = COMPONENT_TYPES.map(t =>
-      `<option value="${t.id}" ${t.id === snippet.componentType ? 'selected' : ''}>${t.label}</option>`
-    ).join('');
-
-    // Tags
-    const tagsContainer = document.getElementById('snippet-tags-selector');
-    tagsContainer.innerHTML = USE_CASE_TAGS.map(t => {
-      const active = (snippet.tags || []).includes(t.id) ? 'active' : '';
-      return `<span class="snippet-tag-chip ${active}" data-tag-id="${t.id}">${t.label}</span>`;
-    }).join('');
-
-    // Content
-    document.getElementById('snippet-content').value = snippet.content;
-
-    // Include checkbox
-    document.getElementById('snippet-include-check').checked = snippetMgr.isEnabled(snippet.id);
-  }
-
-  // ============================================================================
-  // Preview
-  // ============================================================================
-
-  function updatePreview() {
-    let prompt = composeIntentHeader();
-    const intentOutput = INTENT_OUTPUT_OPTIONS.find(o => o.id === state.intentOutput);
-    const intentOutputLabel = intentOutput?.label || state.intentOutput;
-
-    if (!state.showRefine) {
-      const summaryLines = [];
-      summaryLines.push(state.intentGoal || 'Help me with this request.');
-      if (state.intentInput) summaryLines.push(`Context:\n${state.intentInput}`);
-      if (intentOutputLabel) summaryLines.push(`Return format: ${intentOutputLabel}`);
-      prompt += `Request:\n${summaryLines.join('\n\n')}`;
-    } else {
-      const enabled = snippetMgr.getEnabledSnippets();
-      if (enabled.length > 0) {
-        prompt += enabled
-          .map(s => {
-            const typeLabel = COMPONENT_TYPES.find(t => t.id === s.componentType)?.label || s.componentType;
-            return `${typeLabel} - ${s.name}:\n${s.content}`;
-          })
-          .join('\n\n');
-      } else {
-        const summaryLines = [];
-        summaryLines.push(state.intentGoal || 'Help me with this request.');
-        if (state.intentInput) summaryLines.push(`Context:\n${state.intentInput}`);
-        if (intentOutputLabel) summaryLines.push(`Return format: ${intentOutputLabel}`);
-        prompt += `Request:\n${summaryLines.join('\n\n')}`;
-      }
-    }
-
-    const textarea = document.getElementById('final-prompt');
-    if (textarea) textarea.value = prompt;
-
-    renderIntentControls();
-
-    const chars = prompt.length;
-    const words = countWords(prompt);
-    const charEl = document.getElementById('char-count');
-    const wordEl = document.getElementById('word-count');
-    if (charEl) charEl.textContent = `${chars} characters`;
-    if (wordEl) wordEl.textContent = `${words} words`;
-  }
-
-  // ============================================================================
-  // Config Save/Load
-  // ============================================================================
-
-  function saveConfig() {
-    saveToolState('ai-prompt-builder', {
-      config: state.config,
-      intent: {
-        intentMode: state.intentMode,
-        workflowProfile: state.workflowProfile,
-        intentGoal: state.intentGoal,
-        intentInput: state.intentInput,
-        intentOutput: state.intentOutput,
-        showRefine: state.showRefine
-      }
-    });
-  }
-
-  const debouncedUpdatePreview = debounce(updatePreview, 150);
-  const debouncedSaveConfig = debounce(saveConfig, 500);
-  const debouncedRenderTree = debounce(renderSnippetTree, 100);
-
-  function loadConfig() {
-    const saved = loadToolState('ai-prompt-builder');
-    if (saved) {
-      if (saved.config) state.config = saved.config;
-      if (saved.intent) {
-        state.intentMode = saved.intent.intentMode ?? state.intentMode;
-        state.workflowProfile = saved.intent.workflowProfile ?? state.workflowProfile;
-        state.intentGoal = saved.intent.intentGoal ?? state.intentGoal;
-        state.intentInput = saved.intent.intentInput ?? state.intentInput;
-        state.intentOutput = saved.intent.intentOutput ?? state.intentOutput;
-        state.showRefine = saved.intent.showRefine ?? state.showRefine;
-      }
-    }
-    ensureIntentState();
-  }
-
-  function showStatus(message, type = 'info') {
-    const statusEl = document.getElementById('status-message');
-    if (!statusEl) return;
-    statusEl.textContent = message;
-    statusEl.className = `status-message show ${type}`;
-    setTimeout(() => { statusEl.classList.remove('show'); }, 3000);
-  }
-
-  // ============================================================================
-  // Templates
-  // ============================================================================
-
-  const debouncedFilterTemplates = debounce(function() { renderTemplates(); }, 200);
-
-  function renderTemplates() {
-    const grid = document.getElementById('templates-grid');
-    if (!grid) return;
-    const allTemplates = { ...TEMPLATES };
-    state.customTemplates.forEach(t => { allTemplates[t.id] = t; });
-
-    const filtered = filterTemplatesBySearch(allTemplates);
-
-    grid.innerHTML = Object.entries(filtered).map(([id, template]) => {
-      const isCustom = state.customTemplates.some(t => t.id === id);
-      const customClass = isCustom ? 'custom-template' : '';
-      const deleteBtn = isCustom ? `<button class="delete-template-btn" data-template="${id}">x</button>` : '';
-      return `<button class="template-btn ${customClass}" data-template="${id}">${template.name}${deleteBtn}</button>`;
-    }).join('');
-  }
-
-  function filterTemplatesBySearch(templates) {
-    const searchEl = document.getElementById('template-search');
-    const catEl = document.getElementById('template-category');
-    const search = searchEl ? searchEl.value.toLowerCase() : '';
-    const category = catEl ? catEl.value : '';
-
-    return Object.fromEntries(
-      Object.entries(templates).filter(([id, template]) => {
-        const matchesSearch = !search || template.name.toLowerCase().includes(search);
-        const matchesCategory = !category || template.category === category;
-        return matchesSearch && matchesCategory;
-      })
-    );
-  }
-
-  function filterTemplates() { debouncedFilterTemplates(); }
-
-  function handleTemplateClick(e) {
-    const deleteBtn = e.target.closest('.delete-template-btn');
-    if (deleteBtn) {
-      e.stopPropagation();
-      deleteCustomTemplate(deleteBtn.dataset.template);
-      return;
-    }
-    const templateBtn = e.target.closest('.template-btn');
-    if (templateBtn) {
-      loadTemplate(templateBtn.dataset.template);
-    }
-  }
-
-  function loadTemplate(templateId) {
-    const template = TEMPLATES[templateId] || state.customTemplates.find(t => t.id === templateId);
-    if (!template) return;
-
-    if (!confirm(`Load "${template.name}" template? This creates a project and snippets.`)) return;
-
-    const projectName = template.name;
-    snippetMgr.addProject(projectName);
-
-    const components = template.components || [];
-    const newIds = [];
-    components.forEach(comp => {
-      if (!comp.content) return;
-      const componentType = LEGACY_ID_TO_TYPE[comp.id] || comp.id || 'task';
-      const snippet = snippetMgr.createSnippet({
-        name: comp.name || comp.id,
-        content: comp.content,
-        project: projectName,
-        componentType: COMPONENT_TYPES.some(t => t.id === componentType) ? componentType : 'task',
-        tags: []
-      });
-      newIds.push(snippet.id);
-    });
-
-    // Enable all new snippets
-    newIds.forEach(id => {
-      if (!snippetMgr.isEnabled(id)) snippetMgr.toggleEnabled(id);
-    });
-    snippetMgr.save();
-
-    renderSnippetTree();
-    renderSnippetEditor();
-    updatePreview();
-    showStatus(`Template "${template.name}" loaded as project`, 'success');
-  }
-
-  function showSaveTemplateModal() {
-    const modal = document.getElementById('save-template-modal');
-    document.getElementById('template-name').value = '';
-    document.getElementById('template-description').value = '';
-    document.getElementById('template-category-select').value = 'custom';
-    modal.classList.add('show');
-  }
-
-  function handleSaveCustomTemplate() {
-    const name = document.getElementById('template-name').value.trim();
-    const description = document.getElementById('template-description').value.trim();
-    const category = document.getElementById('template-category-select').value;
-
-    if (!name) { showStatus('Please enter a template name', 'error'); return; }
-
-    const id = 'custom-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-    if (state.customTemplates.some(t => t.id === id)) {
-      if (!confirm('A template with this name already exists. Overwrite?')) return;
-      state.customTemplates = state.customTemplates.filter(t => t.id !== id);
-    }
-
-    // Build components from enabled snippets
-    const enabled = snippetMgr.getEnabledSnippets();
-    const components = enabled.map((s, i) => ({
-      id: s.componentType,
-      name: s.name,
-      enabled: true,
-      order: i + 1,
-      content: s.content
-    }));
-
-    const template = { id, name, description, category, components };
-    state.customTemplates.push(template);
-    saveCustomTemplates();
-    renderTemplates();
-    closeModal();
-    showStatus(`Template "${name}" saved`, 'success');
-  }
-
-  function deleteCustomTemplate(id) {
-    const template = state.customTemplates.find(t => t.id === id);
-    if (!template) return;
-    if (confirm(`Delete template "${template.name}"?`)) {
-      state.customTemplates = state.customTemplates.filter(t => t.id !== id);
-      saveCustomTemplates();
-      renderTemplates();
-      showStatus(`Template "${template.name}" deleted`, 'info');
-    }
-  }
-
-  function saveCustomTemplates() {
-    saveToolState('ai-prompt-builder-templates', { items: state.customTemplates });
-  }
-
-  function loadCustomTemplates() {
-    const saved = loadToolState('ai-prompt-builder-templates');
-    if (saved?.items) state.customTemplates = saved.items;
-  }
-
-  // ============================================================================
-  // Modals (Persona, TechStack, Share)
-  // ============================================================================
-
-  function showPersonaModal() {
-    const modal = document.getElementById('persona-modal');
-    const grid = document.getElementById('personas-grid');
-    const snippet = snippetMgr.getSelected();
-    const currentContent = snippet?.content || '';
-
-    const matchedPersona = PERSONAS.find(p => p.content === currentContent);
-    const selectedId = matchedPersona?.id || '';
-
-    grid.innerHTML = PERSONAS.map(persona => `
-      <div class="persona-card ${persona.id === selectedId ? 'selected' : ''}" data-persona="${persona.id}">
-        <div class="persona-name">${persona.name}</div>
-        <div class="persona-description">${persona.description}</div>
-      </div>
-    `).join('');
-
-    grid.onclick = (e) => {
-      const card = e.target.closest('.persona-card');
-      if (card) {
-        const persona = PERSONAS.find(p => p.id === card.dataset.persona);
-        if (persona && snippet) {
-          snippetMgr.updateSnippet(snippet.id, { content: persona.content, name: persona.name });
-          renderSnippetEditor();
-          renderSnippetTree();
-          updatePreview();
-        }
-        closeModal();
-      }
+import {
+  ROLES,
+  FORMATS,
+  assemblePrompt,
+  resolveRoleText,
+  resolveFormatText,
+  validateSlots,
+  saveTemplate,
+  loadTemplate,
+  deleteTemplate,
+  slotSummary,
+  presetLabel,
+} from '../core/prompt-slots.js';
+
+const STORAGE_KEY = 'aiPromptBuilder_v12';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let state = {
+  task: '',
+  rolePresetId: null,
+  roleCustom: '',
+  contextText: '',
+  formatPresetId: null,
+  formatCustom: '',
+  templates: [],
+};
+
+let container = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const $ = id => container.querySelector(`#${id}`);
+
+function persist() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+}
+
+function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) Object.assign(state, JSON.parse(raw));
+  } catch {}
+}
+
+function toast(msg, isError = false) {
+  const el = $('apb-toast');
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--error, #e55)' : 'var(--success, #4c4)';
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 2000);
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+
+function renderPills(containerId, items, activeId, onSelect) {
+  const wrap = $(containerId);
+  wrap.innerHTML = '';
+  items.forEach(item => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'apb-pill' + (item.id === activeId ? ' active' : '');
+    btn.textContent = item.label;
+    btn.dataset.id = item.id;
+    btn.addEventListener('click', () => onSelect(item.id === activeId ? null : item.id));
+    wrap.appendChild(btn);
+  });
+}
+
+function updateRoleSummary() {
+  const label = presetLabel(state.rolePresetId, ROLES, null);
+  const text = label ?? state.roleCustom;
+  $('apb-role-summary').textContent = slotSummary(text, 'None', 48);
+  $('apb-role-slot').classList.toggle('filled', !!(state.rolePresetId || state.roleCustom.trim()));
+}
+
+function updateContextSummary() {
+  $('apb-context-summary').textContent = slotSummary(state.contextText, 'Empty', 48);
+  $('apb-context-slot').classList.toggle('filled', !!state.contextText.trim());
+}
+
+function updateFormatSummary() {
+  const label = presetLabel(state.formatPresetId, FORMATS, null);
+  const text = label ?? state.formatCustom;
+  $('apb-format-summary').textContent = slotSummary(text, 'Default', 48);
+  $('apb-format-slot').classList.toggle('filled', !!(state.formatPresetId || state.formatCustom.trim()));
+}
+
+function updateCharCount() {
+  const role = resolveRoleText(state.rolePresetId, state.roleCustom);
+  const format = resolveFormatText(state.formatPresetId, state.formatCustom);
+  const prompt = assemblePrompt({ task: state.task, role, context: state.contextText, format });
+  $('apb-char-count').textContent = `${prompt.length} chars`;
+}
+
+function renderTemplates() {
+  const strip = $('apb-templates-strip');
+  strip.innerHTML = '';
+  state.templates.forEach(tpl => {
+    const chip = document.createElement('div');
+    chip.className = 'apb-template-chip';
+    chip.setAttribute('role', 'listitem');
+
+    const name = document.createElement('span');
+    name.className = 'apb-template-chip-name';
+    name.textContent = tpl.name;
+    name.addEventListener('click', () => applyTemplate(tpl.name));
+
+    const del = document.createElement('span');
+    del.className = 'apb-template-chip-del';
+    del.textContent = '×';
+    del.title = `Delete "${tpl.name}"`;
+    del.addEventListener('click', e => { e.stopPropagation(); removeTemplate(tpl.name); });
+
+    chip.appendChild(name);
+    chip.appendChild(del);
+    strip.appendChild(chip);
+  });
+}
+
+// ── Slot toggle ───────────────────────────────────────────────────────────────
+
+function toggleSlot(slotName) {
+  const slot = $(`apb-${slotName}-slot`);
+  const body = $(`apb-${slotName}-body`);
+  const btn = slot.querySelector('.apb-slot-toggle');
+  const isOpen = slot.classList.contains('open');
+  slot.classList.toggle('open', !isOpen);
+  body.hidden = isOpen;
+  btn.setAttribute('aria-expanded', String(!isOpen));
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+function copyPrompt() {
+  const errors = validateSlots({ task: state.task });
+  if (errors.length) { toast(errors[0], true); return; }
+  const role = resolveRoleText(state.rolePresetId, state.roleCustom);
+  const format = resolveFormatText(state.formatPresetId, state.formatCustom);
+  const prompt = assemblePrompt({ task: state.task, role, context: state.contextText, format });
+  navigator.clipboard.writeText(prompt).then(() => toast('✓ Copied!')).catch(() => toast('✓ Copied!'));
+}
+
+function clearAll() {
+  state.task = ''; state.rolePresetId = null; state.roleCustom = '';
+  state.contextText = ''; state.formatPresetId = null; state.formatCustom = '';
+  $('apb-task').value = '';
+  $('apb-role-custom').value = '';
+  $('apb-context').value = '';
+  $('apb-format-custom').value = '';
+  renderPills('apb-role-pills', ROLES, null, reRoleSelect);
+  renderPills('apb-format-pills', FORMATS, null, reFormatSelect);
+  updateRoleSummary(); updateContextSummary(); updateFormatSummary(); updateCharCount();
+  persist();
+}
+
+function showSaveDialog() {
+  $('apb-dialog-backdrop').hidden = false;
+  $('apb-template-name-input').value = '';
+  setTimeout(() => $('apb-template-name-input').focus(), 50);
+}
+
+function hideSaveDialog() {
+  $('apb-dialog-backdrop').hidden = true;
+}
+
+function confirmSave() {
+  const name = $('apb-template-name-input').value.trim();
+  if (!name) { toast('Enter a name', true); return; }
+  try {
+    const slots = {
+      task: state.task, rolePresetId: state.rolePresetId, roleCustom: state.roleCustom,
+      contextText: state.contextText, formatPresetId: state.formatPresetId, formatCustom: state.formatCustom,
     };
-
-    modal.classList.add('show');
-  }
-
-  function showTechStackModal() {
-    const modal = document.getElementById('techstack-modal');
-    const grid = document.getElementById('techstack-grid');
-    const snippet = snippetMgr.getSelected();
-
-    // Parse selected stacks from content
-    const selectedStacks = [];
-    if (snippet?.content) {
-      const match = snippet.content.match(/Technology stack: (.+)/);
-      if (match && match[1] && !match[1].includes('{{')) {
-        match[1].split(',').forEach(s => {
-          const trimmed = s.trim();
-          if (trimmed) selectedStacks.push(trimmed);
-        });
-      }
-    }
-
-    renderTechStackGrid(grid, selectedStacks);
-
-    grid.onclick = (e) => {
-      const item = e.target.closest('.techstack-item');
-      if (!item || !snippet) return;
-      const tech = item.dataset.tech;
-      const idx = selectedStacks.indexOf(tech);
-      if (idx > -1) selectedStacks.splice(idx, 1);
-      else selectedStacks.push(tech);
-
-      const stackList = selectedStacks.length > 0 ? selectedStacks.join(', ') : '{{tech_stack}}';
-      snippetMgr.updateSnippet(snippet.id, {
-        content: `Technology stack: ${stackList}\n\nPlease provide solutions and examples specific to these technologies.`
-      });
-
-      renderTechStackGrid(grid, selectedStacks);
-      renderSnippetEditor();
-      renderSnippetTree();
-      updatePreview();
-    };
-
-    modal.classList.add('show');
-  }
-
-  function renderTechStackGrid(grid, selectedStacks, filter = '') {
-    let html = '';
-    Object.entries(TECH_STACKS).forEach(([category, technologies]) => {
-      const filtered = technologies.filter(tech => tech.toLowerCase().includes(filter.toLowerCase()));
-      filtered.forEach(tech => {
-        const selected = selectedStacks.includes(tech) ? 'selected' : '';
-        html += `<div class="techstack-item ${selected}" data-tech="${tech}">${tech}</div>`;
-      });
-    });
-    grid.innerHTML = html || '<p style="text-align:center;color:var(--text-secondary);">No technologies found</p>';
-  }
-
-  function closeModal() {
-    document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
-    state.currentModal = null;
-  }
-
-  // ============================================================================
-  // Share
-  // ============================================================================
-
-  function handleShare() {
-    const modal = document.getElementById('share-modal');
-    const link = generateShareLink();
-    document.getElementById('share-link').value = link;
-    modal.classList.add('show');
-  }
-
-  function generateShareLink() {
-    const data = {
-      snippets: snippetMgr.snippets,
-      projects: snippetMgr.projects,
-      enabledIds: snippetMgr.enabledIds,
-      intent: {
-        intentMode: state.intentMode,
-        workflowProfile: state.workflowProfile,
-        intentGoal: state.intentGoal,
-        intentInput: state.intentInput,
-        intentOutput: state.intentOutput,
-        showRefine: state.showRefine
-      },
-      version: '11.0.0'
-    };
-    const json = JSON.stringify(data);
-    const base64 = btoa(unescape(encodeURIComponent(json)));
-    return window.location.href.split('#')[0] + '#share=' + base64;
-  }
-
-  function copyShareLink() {
-    const input = document.getElementById('share-link');
-    copyToClipboard(input.value, {
-      onSuccess: () => showStatus('Share link copied!', 'success'),
-      onError: () => showStatus('Failed to copy link', 'error')
-    });
-  }
-
-  function loadFromURL() {
-    const hash = window.location.hash;
-    if (!hash.startsWith('#share=')) return;
-    try {
-      const base64 = hash.substring(7);
-      const json = decodeURIComponent(escape(atob(base64)));
-      const data = JSON.parse(json);
-
-      if (data.snippets && Array.isArray(data.snippets)) {
-        if (confirm('Load shared configuration? This will replace your current snippets.')) {
-          snippetMgr.snippets = data.snippets;
-          snippetMgr.projects = data.projects || ['General'];
-          snippetMgr.enabledIds = data.enabledIds || [];
-          snippetMgr.save();
-
-          if (data.intent) {
-            state.intentMode = data.intent.intentMode ?? state.intentMode;
-            state.workflowProfile = data.intent.workflowProfile ?? state.workflowProfile;
-            state.intentGoal = data.intent.intentGoal ?? state.intentGoal;
-            state.intentInput = data.intent.intentInput ?? state.intentInput;
-            state.intentOutput = data.intent.intentOutput ?? state.intentOutput;
-            state.showRefine = data.intent.showRefine ?? state.showRefine;
-          }
-          ensureIntentState();
-          renderSnippetTree();
-          renderSnippetEditor();
-          renderIntentControls();
-          updatePreview();
-          saveConfig();
-          showStatus('Configuration loaded from shared link', 'success');
-          window.location.hash = '';
-        }
-      } else if (data.components && Array.isArray(data.components)) {
-        // Legacy share link support
-        if (confirm('Load shared configuration (legacy format)?')) {
-          data.components.forEach(comp => {
-            if (!comp.content) return;
-            const componentType = LEGACY_ID_TO_TYPE[comp.id] || 'task';
-            const snippet = snippetMgr.createSnippet({
-              name: comp.name || comp.id,
-              content: comp.content,
-              project: 'Imported',
-              componentType: componentType
-            });
-            if (comp.enabled) snippetMgr.toggleEnabled(snippet.id);
-          });
-          snippetMgr.addProject('Imported');
-          snippetMgr.save();
-          renderSnippetTree();
-          renderSnippetEditor();
-          updatePreview();
-          showStatus('Legacy config imported as snippets', 'success');
-          window.location.hash = '';
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load from URL:', error);
-      showStatus('Invalid share link', 'error');
-    }
-  }
-
-  // ============================================================================
-  // Import / Export
-  // ============================================================================
-
-  function handleImportConfig() {
-    const input = document.getElementById('file-input');
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const data = JSON.parse(event.target.result);
-          if (data.snippets && Array.isArray(data.snippets)) {
-            snippetMgr.snippets = data.snippets;
-            snippetMgr.projects = data.projects || ['General'];
-            snippetMgr.enabledIds = data.enabledIds || [];
-            snippetMgr.selectedId = null;
-            snippetMgr.save();
-          } else if (data.components && Array.isArray(data.components)) {
-            // Legacy import
-            data.components.forEach(comp => {
-              if (!comp.content) return;
-              const componentType = LEGACY_ID_TO_TYPE[comp.id] || 'task';
-              const snippet = snippetMgr.createSnippet({
-                name: comp.name || comp.id,
-                content: comp.content,
-                project: 'Imported',
-                componentType: componentType
-              });
-              if (comp.enabled) snippetMgr.toggleEnabled(snippet.id);
-            });
-            snippetMgr.addProject('Imported');
-            snippetMgr.save();
-          } else {
-            throw new Error('Invalid configuration format');
-          }
-          renderSnippetTree();
-          renderSnippetEditor();
-          updatePreview();
-          showStatus('Configuration imported successfully', 'success');
-        } catch (error) {
-          showStatus(`Import failed: ${error.message}`, 'error');
-        }
-      };
-      reader.readAsText(file);
-      input.value = '';
-    };
-    input.click();
-  }
-
-  function handleExportConfig() {
-    const data = {
-      projects: snippetMgr.projects,
-      snippets: snippetMgr.snippets,
-      enabledIds: snippetMgr.enabledIds,
-      version: '11.0.0'
-    };
-    const json = JSON.stringify(data, null, 2);
-    downloadAsFile(json, `prompt-snippets-${Date.now()}.json`, 'application/json');
-    showStatus('Snippets exported', 'success');
-  }
-
-  function handleCopyPrompt() {
-    const text = document.getElementById('final-prompt').value;
-    copyToClipboard(text, {
-      onSuccess: () => showStatus('Prompt copied to clipboard!', 'success'),
-      onError: () => showStatus('Failed to copy prompt', 'error')
-    });
-  }
-
-  function handleSavePrompt() {
-    const prompt = document.getElementById('final-prompt').value;
-    if (!prompt) { showStatus('No prompt to save', 'error'); return; }
-    downloadAsFile(prompt, `ai-prompt-${Date.now()}.txt`);
-    showStatus('Prompt saved to file', 'success');
-  }
-
-  // ============================================================================
-  // Collapsible Sections
-  // ============================================================================
-
-  function setupCollapsibles() {
-    const headers = document.querySelectorAll('.section-header.collapsible');
-    headers.forEach(header => {
-      header.addEventListener('click', (e) => {
-        if (e.target.closest('button:not(.collapse-btn)')) return;
-        header.classList.toggle('collapsed');
-        const content = header.nextElementSibling;
-        if (content) {
-          content.style.maxHeight = header.classList.contains('collapsed') ? '0' : content.scrollHeight + 'px';
-        }
-      });
-      if (!header.classList.contains('collapsed')) {
-        const content = header.nextElementSibling;
-        if (content) content.style.maxHeight = content.scrollHeight + 'px';
-      }
-    });
-  }
-
-  // ============================================================================
-  // Event Listeners
-  // ============================================================================
-
-  function setupEventListeners() {
-    // Intent mode group
-    const intentModeGroup = document.getElementById('intent-mode-group');
-    if (intentModeGroup) {
-      intentModeGroup.addEventListener('click', (e) => {
-        const button = e.target.closest('.intent-mode-btn');
-        if (!button) return;
-        state.intentMode = button.dataset.intentMode;
-        state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
-        renderIntentControls();
-        updatePreview();
-        saveConfig();
-      });
-    }
-
-    // Workflow group
-    const intentWorkflowGroup = document.getElementById('intent-workflow-group');
-    if (intentWorkflowGroup) {
-      intentWorkflowGroup.addEventListener('click', (e) => {
-        const button = e.target.closest('[data-workflow-profile]');
-        if (!button) return;
-        applyWorkflowProfile(button.dataset.workflowProfile);
-      });
-    }
-
-    // Output options
-    const intentOutputOptions = document.getElementById('intent-output-options');
-    if (intentOutputOptions) {
-      intentOutputOptions.addEventListener('click', (e) => {
-        const button = e.target.closest('[data-intent-output]');
-        if (!button) return;
-        state.intentOutput = button.dataset.intentOutput;
-        renderIntentControls();
-        updatePreview();
-        saveConfig();
-      });
-    }
-
-    // Refine toggle
-    const refineToggle = document.getElementById('intent-refine-toggle');
-    if (refineToggle) {
-      refineToggle.addEventListener('click', () => {
-        state.showRefine = !state.showRefine;
-        renderIntentControls();
-        saveConfig();
-      });
-    }
-
-    // Paste / Clear intent
-    document.getElementById('intent-paste-btn')?.addEventListener('click', pasteIntentContext);
-    document.getElementById('intent-clear-btn')?.addEventListener('click', clearIntentFields);
-
-    // Intent text fields
-    ['intent-goal', 'intent-input'].forEach(id => {
-      const input = document.getElementById(id);
-      if (!input) return;
-      input.addEventListener('input', (e) => {
-        if (id === 'intent-goal') state.intentGoal = e.target.value;
-        if (id === 'intent-input') state.intentInput = e.target.value;
-        updatePreview();
-        debouncedSaveConfig();
-      });
-    });
-
-    // Alt-key shortcuts for intent
-    document.addEventListener('keydown', (e) => {
-      if (!e.altKey || e.ctrlKey || e.metaKey) return;
-
-      if (e.key >= '1' && e.key <= '4') {
-        e.preventDefault();
-        const modeByIndex = ['create', 'analyze', 'rewrite', 'plan'];
-        state.intentMode = modeByIndex[Number(e.key) - 1] || state.intentMode;
-        state.intentOutput = DEFAULT_OUTPUT_BY_MODE[state.intentMode] || state.intentOutput;
-        renderIntentControls(); updatePreview(); saveConfig();
-        return;
-      }
-      if (e.key >= '5' && e.key <= '7') {
-        e.preventDefault();
-        const profileByIndex = ['rapid', 'balanced', 'deep'];
-        const profile = profileByIndex[Number(e.key) - 5];
-        if (profile) applyWorkflowProfile(profile);
-        return;
-      }
-      if (e.key.toLowerCase() === 'r') {
-        e.preventDefault();
-        state.showRefine = !state.showRefine;
-        renderIntentControls(); saveConfig();
-        return;
-      }
-      if (e.key.toLowerCase() === 'v') {
-        e.preventDefault();
-        pasteIntentContext();
-        return;
-      }
-      const targetTag = e.target?.tagName;
-      const isTypingField = targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT';
-      if (e.key === 'Backspace' && !isTypingField) {
-        e.preventDefault();
-        clearIntentFields();
-      }
-    });
-
-    // Snippet sidebar: view toggle
-    document.querySelectorAll('.snippet-view-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        snippetMgr.viewMode = btn.dataset.view;
-        renderSnippetTree();
-      });
-    });
-
-    // Snippet search
-    const snippetSearch = document.getElementById('snippet-search');
-    if (snippetSearch) {
-      snippetSearch.addEventListener('input', (e) => {
-        snippetMgr.filterText = e.target.value;
-        debouncedRenderTree();
-      });
-    }
-
-    // Snippet tree: click delegation
-    const snippetTree = document.getElementById('snippet-tree');
-    if (snippetTree) {
-      snippetTree.addEventListener('click', (e) => {
-        // Delete project button
-        const delProjectBtn = e.target.closest('[data-delete-project]');
-        if (delProjectBtn) {
-          e.stopPropagation();
-          const name = delProjectBtn.dataset.deleteProject;
-          if (confirm(`Delete project "${name}"? Snippets will move to General.`)) {
-            snippetMgr.deleteProject(name);
-            renderSnippetTree();
-            renderSnippetEditor();
-            updatePreview();
-          }
-          return;
-        }
-
-        // Checkbox toggle
-        const checkbox = e.target.closest('input[data-toggle-id]');
-        if (checkbox) {
-          e.stopPropagation();
-          snippetMgr.toggleEnabled(checkbox.dataset.toggleId);
-          snippetMgr.save();
-          renderSnippetTree();
-          renderSnippetEditor();
-          updatePreview();
-          return;
-        }
-
-        // Snippet item click (select for editing)
-        const item = e.target.closest('.snippet-item');
-        if (item) {
-          snippetMgr.selectedId = item.dataset.snippetId;
-          renderSnippetTree();
-          renderSnippetEditor();
-          return;
-        }
-      });
-    }
-
-    // Add snippet
-    document.getElementById('add-snippet-btn')?.addEventListener('click', () => {
-      const snippet = snippetMgr.createSnippet();
-      snippetMgr.selectedId = snippet.id;
-      renderSnippetTree();
-      renderSnippetEditor();
-      // Focus name field
-      setTimeout(() => { document.getElementById('snippet-name')?.focus(); }, 50);
-    });
-
-    // Add project
-    document.getElementById('add-project-btn')?.addEventListener('click', () => {
-      const name = prompt('New project name:');
-      if (name?.trim()) {
-        snippetMgr.addProject(name.trim());
-        renderSnippetTree();
-        showStatus(`Project "${name.trim()}" added`, 'success');
-      }
-    });
-
-    // Editor fields
-    const snippetName = document.getElementById('snippet-name');
-    if (snippetName) {
-      snippetName.addEventListener('input', (e) => {
-        const s = snippetMgr.getSelected();
-        if (s) { snippetMgr.updateSnippet(s.id, { name: e.target.value }); debouncedRenderTree(); debouncedUpdatePreview(); }
-      });
-    }
-
-    const snippetProject = document.getElementById('snippet-project');
-    if (snippetProject) {
-      snippetProject.addEventListener('change', (e) => {
-        const s = snippetMgr.getSelected();
-        if (s) { snippetMgr.updateSnippet(s.id, { project: e.target.value }); renderSnippetTree(); }
-      });
-    }
-
-    const snippetType = document.getElementById('snippet-type');
-    if (snippetType) {
-      snippetType.addEventListener('change', (e) => {
-        const s = snippetMgr.getSelected();
-        if (s) { snippetMgr.updateSnippet(s.id, { componentType: e.target.value }); renderSnippetTree(); debouncedUpdatePreview(); }
-      });
-    }
-
-    // Tags
-    const tagsSelector = document.getElementById('snippet-tags-selector');
-    if (tagsSelector) {
-      tagsSelector.addEventListener('click', (e) => {
-        const chip = e.target.closest('.snippet-tag-chip');
-        if (!chip) return;
-        const tagId = chip.dataset.tagId;
-        const s = snippetMgr.getSelected();
-        if (!s) return;
-        const tags = s.tags || [];
-        const idx = tags.indexOf(tagId);
-        if (idx > -1) tags.splice(idx, 1);
-        else tags.push(tagId);
-        snippetMgr.updateSnippet(s.id, { tags });
-        renderSnippetEditor();
-        renderSnippetTree();
-      });
-    }
-
-    const snippetContent = document.getElementById('snippet-content');
-    if (snippetContent) {
-      snippetContent.addEventListener('input', (e) => {
-        const s = snippetMgr.getSelected();
-        if (s) { snippetMgr.updateSnippet(s.id, { content: e.target.value }); debouncedUpdatePreview(); }
-      });
-    }
-
-    // Include checkbox in editor
-    const includeCheck = document.getElementById('snippet-include-check');
-    if (includeCheck) {
-      includeCheck.addEventListener('change', () => {
-        const s = snippetMgr.getSelected();
-        if (s) {
-          snippetMgr.toggleEnabled(s.id);
-          renderSnippetTree();
-          updatePreview();
-        }
-      });
-    }
-
-    // Editor action buttons
-    document.getElementById('snippet-copy-btn')?.addEventListener('click', () => {
-      const s = snippetMgr.getSelected();
-      if (s) {
-        copyToClipboard(s.content, {
-          onSuccess: () => showStatus('Snippet copied!', 'success'),
-          onError: () => showStatus('Failed to copy', 'error')
-        });
-      }
-    });
-
-    document.getElementById('snippet-duplicate-btn')?.addEventListener('click', () => {
-      const s = snippetMgr.getSelected();
-      if (s) {
-        const dup = snippetMgr.duplicateSnippet(s.id);
-        if (dup) {
-          snippetMgr.selectedId = dup.id;
-          renderSnippetTree();
-          renderSnippetEditor();
-          showStatus('Snippet duplicated', 'success');
-        }
-      }
-    });
-
-    document.getElementById('snippet-delete-btn')?.addEventListener('click', () => {
-      const s = snippetMgr.getSelected();
-      if (s && confirm(`Delete snippet "${s.name}"?`)) {
-        snippetMgr.deleteSnippet(s.id);
-        renderSnippetTree();
-        renderSnippetEditor();
-        updatePreview();
-        showStatus('Snippet deleted', 'info');
-      }
-    });
-
-    // Preview buttons
-    document.getElementById('copy-prompt-btn')?.addEventListener('click', handleCopyPrompt);
-    document.getElementById('save-prompt-btn')?.addEventListener('click', handleSavePrompt);
-    document.getElementById('share-btn')?.addEventListener('click', handleShare);
-
-    // Import / Export
-    document.getElementById('import-config-btn')?.addEventListener('click', handleImportConfig);
-    document.getElementById('export-config-btn')?.addEventListener('click', handleExportConfig);
-
-    // Template management
-    document.getElementById('save-template-btn')?.addEventListener('click', showSaveTemplateModal);
-    document.getElementById('save-template-confirm-btn')?.addEventListener('click', handleSaveCustomTemplate);
-    document.getElementById('template-search')?.addEventListener('input', filterTemplates);
-    document.getElementById('template-category')?.addEventListener('change', filterTemplates);
-    document.getElementById('templates-grid')?.addEventListener('click', handleTemplateClick);
-
-    // Share modal
-    document.getElementById('copy-link-btn')?.addEventListener('click', copyShareLink);
-
-    // Tech stack search
-    document.getElementById('techstack-search')?.addEventListener('input', (e) => {
-      const snippet = snippetMgr.getSelected();
-      const selectedStacks = [];
-      if (snippet?.content) {
-        const match = snippet.content.match(/Technology stack: (.+)/);
-        if (match && match[1] && !match[1].includes('{{')) {
-          match[1].split(',').forEach(s => { const t = s.trim(); if (t) selectedStacks.push(t); });
-        }
-      }
-      const grid = document.getElementById('techstack-grid');
-      renderTechStackGrid(grid, selectedStacks, e.target.value);
-    });
-  }
-
-  function setupModals() {
-    document.querySelectorAll('.modal').forEach(modal => {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal || e.target.classList.contains('modal-close')) {
-          closeModal();
-        }
-      });
-    });
-  }
-
-  // ============================================================================
-  // Init / Cleanup
-  // ============================================================================
-
-  export function init(context) {
-    console.log('AI Prompt Builder v11 (snippets) initialized');
-
-    loadConfig();
-    loadCustomTemplates();
-    ensureIntentState();
-
-    snippetMgr.load();
-    migrateComponentsToSnippets();
-
-    loadFromURL();
-
-    renderSnippetTree();
-    renderSnippetEditor();
-    renderTemplates();
-    renderIntentControls();
-    updatePreview();
-
-    setupEventListeners();
-    setupModals();
-    setupCollapsibles();
-  }
-
-  export function cleanup(context) {
-    console.log('AI Prompt Builder cleanup');
-    saveConfig();
-    snippetMgr.save();
-  }
-
-  // ============================================================================
-  // Standalone mode
-  // ============================================================================
-
-  if (typeof window !== 'undefined' && !window.DevChef) {
-    document.addEventListener('DOMContentLoaded', () => {
-      const template = document.querySelector('#tool-ui');
-      if (!template) return;
-      document.body.innerHTML = template.innerHTML;
-      const standaloneContext = {
-        input: '', output: '',
-        setInput(value) { this.input = value; },
-        setOutput(value) { this.output = value; },
-        getInput() { return this.input; },
-        getOutput() { return this.output; }
-      };
-      init(standaloneContext);
-    });
-  }
-
+    state.templates = saveTemplate(name, slots, state.templates);
+    renderTemplates(); persist(); hideSaveDialog(); toast(`✓ Saved "${name}"`);
+  } catch (e) { toast(e.message, true); }
+}
+
+function applyTemplate(name) {
+  const slots = loadTemplate(name, state.templates);
+  if (!slots) return;
+  Object.assign(state, slots);
+  $('apb-task').value = state.task;
+  $('apb-role-custom').value = state.roleCustom;
+  $('apb-context').value = state.contextText;
+  $('apb-format-custom').value = state.formatCustom;
+  renderPills('apb-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+  renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+  updateRoleSummary(); updateContextSummary(); updateFormatSummary(); updateCharCount();
+  persist(); toast(`Loaded "${name}"`);
+}
+
+function removeTemplate(name) {
+  state.templates = deleteTemplate(name, state.templates);
+  renderTemplates(); persist();
+}
+
+// ── Pill handlers (declared before use in clearAll) ───────────────────────────
+
+function reRoleSelect(id) {
+  state.rolePresetId = id;
+  renderPills('apb-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+  updateRoleSummary(); updateCharCount(); persist();
+}
+
+function reFormatSelect(id) {
+  state.formatPresetId = id;
+  renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+  updateFormatSummary(); updateCharCount(); persist();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+export function init(c) {
+  container = c;
+  restore();
+
+  renderPills('apb-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+  renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+
+  $('apb-task').value = state.task;
+  $('apb-role-custom').value = state.roleCustom;
+  $('apb-context').value = state.contextText;
+  $('apb-format-custom').value = state.formatCustom;
+
+  updateRoleSummary();
+  updateContextSummary();
+  updateFormatSummary();
+  updateCharCount();
+  renderTemplates();
+
+  // Task input
+  $('apb-task').addEventListener('input', e => {
+    state.task = e.target.value;
+    updateCharCount();
+    persist();
+  });
+
+  // Role custom text
+  $('apb-role-custom').addEventListener('input', e => {
+    state.roleCustom = e.target.value;
+    if (state.roleCustom.trim()) state.rolePresetId = null;
+    renderPills('apb-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+    updateRoleSummary(); updateCharCount(); persist();
+  });
+
+  // Context
+  $('apb-context').addEventListener('input', e => {
+    state.contextText = e.target.value;
+    updateContextSummary(); updateCharCount(); persist();
+  });
+
+  // Format custom text
+  $('apb-format-custom').addEventListener('input', e => {
+    state.formatCustom = e.target.value;
+    if (state.formatCustom.trim()) state.formatPresetId = null;
+    renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+    updateFormatSummary(); updateCharCount(); persist();
+  });
+
+  // Slot toggles
+  container.querySelectorAll('.apb-slot-toggle').forEach(btn => {
+    btn.addEventListener('click', () => toggleSlot(btn.dataset.slot));
+  });
+
+  // Actions
+  $('apb-copy-btn').addEventListener('click', copyPrompt);
+  $('apb-clear-btn').addEventListener('click', clearAll);
+  $('apb-save-btn').addEventListener('click', showSaveDialog);
+
+  // Dialog
+  $('apb-dialog-confirm').addEventListener('click', confirmSave);
+  $('apb-dialog-cancel').addEventListener('click', hideSaveDialog);
+  $('apb-template-name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmSave();
+    if (e.key === 'Escape') hideSaveDialog();
+  });
+  $('apb-dialog-backdrop').addEventListener('click', e => {
+    if (e.target === $('apb-dialog-backdrop')) hideSaveDialog();
+  });
+
+  // Keyboard shortcut: Ctrl+Enter / Cmd+Enter to copy
+  container.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); copyPrompt(); }
+  });
+}
+
+export function cleanup() {}
 </script>
 
 </body>

@@ -10,12 +10,19 @@
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
-    "test:install": "playwright install"
+    "test:install": "playwright install",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest"
   },
-  "keywords": ["developer-tools", "productivity", "offline"],
+  "keywords": [
+    "developer-tools",
+    "productivity",
+    "offline"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.48.0"
+    "@playwright/test": "^1.48.0",
+    "vitest": "^2.1.9"
   }
 }

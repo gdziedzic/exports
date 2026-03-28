@@ -12,2744 +12,771 @@
 {
   "id": "prompt-forge",
   "name": "Prompt Forge",
-  "description": "Assemble AI prompts with presets, recipes, and one-click templates",
-  "category": "AI",
-  "keywords": ["prompt", "ai", "builder", "template", "recipe"],
-  "version": "11.0.0"
+  "description": "Build structured AI prompts with four focused slots: task, role, context, and format",
+  "category": "Developer Tools",
+  "keywords": ["prompt", "ai", "builder", "template", "llm", "claude", "chatgpt"],
+  "version": "12.0.0"
 }
 </script>
 
 <!-- Tool UI Template -->
 <template id="tool-ui">
-  <div class="tool-container prompt-forge-tool">
-    <!-- Header -->
-    <div class="forge-header">
-      <div class="forge-brand">
-        <div class="forge-logo">⚡</div>
-        <div>
-          <h2 class="forge-title">Prompt Forge</h2>
-          <div class="forge-tagline">Assemble prompts fast • <kbd>⌘1-8</kbd> Quick Fire • <kbd>⌘S</kbd> Save • <kbd>⌘C</kbd> Copy</div>
-        </div>
+  <div class="pf-tool">
+
+    <!-- Task slot — always open, required -->
+    <div class="pf-slot pf-slot-task">
+      <div class="pf-slot-label-row">
+        <span class="pf-label">Task <span class="pf-required">required</span></span>
+        <span class="pf-char-count" id="pf-char-count">0 chars</span>
       </div>
-      <div class="forge-header-actions">
-        <button class="forge-btn" id="exportBtn" title="Export templates as JSON">📤 Export</button>
-        <button class="forge-btn" id="importBtn" title="Import templates from JSON">📥 Import</button>
+      <textarea
+        id="pf-task"
+        class="pf-task-input"
+        placeholder="What do you need? e.g. &quot;Write unit tests for the auth module in TypeScript&quot;"
+        rows="4"
+      ></textarea>
+    </div>
+
+    <!-- Role slot — collapsible -->
+    <div class="pf-slot pf-slot-collapsible" id="pf-role-slot">
+      <button class="pf-slot-toggle" type="button" aria-expanded="false" data-slot="role">
+        <span class="pf-label">Role</span>
+        <span class="pf-summary" id="pf-role-summary">None</span>
+        <span class="pf-chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="pf-slot-body" id="pf-role-body" hidden>
+        <div class="pf-pills" id="pf-role-pills"></div>
+        <textarea id="pf-role-custom" class="pf-slot-textarea" rows="2"
+          placeholder="Or describe a custom role…"></textarea>
       </div>
     </div>
 
-    <div class="forge-main-grid">
-      <!-- Sidebar -->
-      <aside class="forge-sidebar">
-        <!-- Quick Fire -->
-        <div class="forge-panel">
-          <div class="forge-panel-header">
-            <span class="forge-panel-title">Quick Fire</span>
-            <span class="forge-panel-badge">⌘1-8</span>
-          </div>
-          <div class="forge-panel-body">
-            <div class="forge-quick-fire-grid" id="quickFireGrid"></div>
-          </div>
-        </div>
-
-        <!-- Recipes -->
-        <div class="forge-panel">
-          <div class="forge-panel-header">
-            <span class="forge-panel-title">Recipes</span>
-          </div>
-          <div class="forge-panel-body">
-            <div class="forge-recipe-list" id="recipeList"></div>
-          </div>
-        </div>
-
-        <!-- Snippet Browser -->
-        <div class="forge-panel">
-          <div class="forge-panel-header">
-            <span class="forge-panel-title">Snippets</span>
-            <button class="forge-btn forge-btn-sm" id="forgeNewSnippetBtn">+ New</button>
-          </div>
-          <div class="forge-panel-body">
-            <div class="forge-snippet-browser">
-              <div class="forge-snippet-view-toggle">
-                <button class="forge-snippet-view-btn active" data-view="project">By Project</button>
-                <button class="forge-snippet-view-btn" data-view="tag">By Tag</button>
-              </div>
-              <input type="text" class="forge-snippet-search" id="forgeSnippetSearch" placeholder="Filter snippets..." />
-              <div class="forge-snippet-tree" id="forgeSnippetTree"></div>
-              <button class="forge-btn forge-btn-sm" id="forgeNewProjectBtn" style="margin-top:6px;width:100%">+ Project</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- History -->
-        <div class="forge-panel">
-          <div class="forge-panel-header">
-            <span class="forge-panel-title">History</span>
-          </div>
-          <div class="forge-panel-body">
-            <div class="forge-history-list" id="historyList"></div>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Builder -->
-      <main class="forge-builder">
-        <!-- Score Bar -->
-        <div class="forge-score-bar">
-          <span class="forge-score-label">Score</span>
-          <div class="forge-score-track">
-            <div class="forge-score-fill" id="scoreFill" style="width: 0%"></div>
-          </div>
-          <span class="forge-score-value" id="scoreValue">0%</span>
-          <span class="forge-score-tips" id="scoreTips">Add objective</span>
-        </div>
-
-        <!-- Intent-first Section -->
-        <div class="forge-section-card forge-intent-card">
-          <div class="forge-section-header forge-intent-header">
-            <h3><span>🧭</span> Intent</h3>
-            <div class="forge-intent-header-actions">
-              <button class="forge-btn forge-btn-sm" id="intentPasteBtn" type="button" title="Paste context (Alt+V)">Paste</button>
-              <button class="forge-btn forge-btn-sm" id="intentClearBtn" type="button" title="Clear intent (Alt+Backspace)">Clear</button>
-              <button class="forge-btn forge-btn-sm" id="toggleRefineBtn" type="button" title="Toggle refine (Alt+R)">Refine options</button>
-            </div>
-          </div>
-          <div class="forge-section-body">
-            <div class="forge-intent-modes" id="intentModes">
-              <button class="forge-intent-mode-btn forge-intent-primary-btn" type="button" data-intent-mode="create">Create</button>
-              <button class="forge-intent-mode-btn forge-intent-primary-btn" type="button" data-intent-mode="analyze">Analyze</button>
-              <button class="forge-intent-mode-btn forge-intent-primary-btn" type="button" data-intent-mode="rewrite">Rewrite</button>
-              <button class="forge-intent-mode-btn forge-intent-primary-btn" type="button" data-intent-mode="plan">Plan</button>
-            </div>
-            <div class="forge-workflow-modes" id="workflowModes">
-              <button class="forge-intent-mode-btn" type="button" data-workflow-profile="rapid">Rapid</button>
-              <button class="forge-intent-mode-btn" type="button" data-workflow-profile="balanced">Balanced</button>
-              <button class="forge-intent-mode-btn" type="button" data-workflow-profile="deep">Deep</button>
-            </div>
-            <div class="forge-form-row forge-form-row-single">
-              <div class="forge-form-group">
-                <label>Goal</label>
-                <textarea id="intentGoal" placeholder="What outcome do you want?"></textarea>
-              </div>
-            </div>
-            <div class="forge-form-row forge-form-row-single">
-              <div class="forge-form-group">
-                <label>Input / Context</label>
-                <textarea id="intentInput" placeholder="Paste context, draft text, notes, links, data..."></textarea>
-              </div>
-            </div>
-            <div class="forge-form-row forge-form-row-single">
-              <div class="forge-form-group">
-                <label>Output Format</label>
-                <div class="forge-intent-output-grid" id="intentOutputOptions">
-                  <button class="forge-intent-mode-btn" type="button" data-intent-output="bullets">Bullet List</button>
-                  <button class="forge-intent-mode-btn" type="button" data-intent-output="checklist">Checklist</button>
-                  <button class="forge-intent-mode-btn" type="button" data-intent-output="table">Table</button>
-                  <button class="forge-intent-mode-btn" type="button" data-intent-output="summary">Executive Summary</button>
-                  <button class="forge-intent-mode-btn" type="button" data-intent-output="steps">Step-by-step Plan</button>
-                  <button class="forge-intent-mode-btn" type="button" data-intent-output="json">Structured JSON</button>
-                </div>
-              </div>
-            </div>
-            <div class="forge-intent-status" id="intentStatusChips"></div>
-          </div>
-        </div>
-
-        <!-- Snippet Editor -->
-        <div class="forge-section-card" id="forgeSnippetEditorCard" style="display:none">
-          <div class="forge-section-header">
-            <h3><span>📝</span> Snippet Editor</h3>
-          </div>
-          <div class="forge-section-body" id="forgeSnippetEditorBody">
-            <!-- Rendered dynamically -->
-          </div>
-        </div>
-
-        <!-- Modifiers Section -->
-        <div class="forge-section-card" id="modifiersCard">
-          <div class="forge-section-header">
-            <h3><span>⚡</span> Quality Modifiers</h3>
-            <div class="forge-section-toggle">
-              <span class="forge-section-tag">Click to add</span>
-              <div class="forge-section-check checked" data-section-toggle="includeGuardrails" title="Include in prompt">✓</div>
-            </div>
-          </div>
-          <div class="forge-section-body" id="modifiersSection">
-            <label style="margin-bottom: 8px;">Guardrails</label>
-            <div class="forge-toggle-grid" id="guardrailsGrid"></div>
-
-            <label style="margin: 14px 0 8px;">Boosters</label>
-            <div class="forge-toggle-grid" id="boostersGrid"></div>
-
-            <label style="margin: 14px 0 8px;">Quick Clauses</label>
-            <div class="forge-clause-palette" id="clausePalette"></div>
-
-            <div class="forge-form-group">
-              <label>Additional Instructions</label>
-              <textarea id="extraInstructions" placeholder="Extra directives (or use clauses above)..."></textarea>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <!-- Output -->
-      <aside class="forge-output-panel forge-panel">
-        <div class="forge-output-header">
-          <span class="forge-panel-title">Assembled Prompt</span>
-          <div class="forge-output-actions">
-            <button class="forge-btn forge-btn-icon" id="clearBtn" title="Clear">🗑️</button>
-            <button class="forge-btn forge-btn-primary" id="copyBtn">📋 Copy</button>
-          </div>
-        </div>
-        <div class="forge-output-body">
-          <pre class="forge-output-pre" id="outputPre"></pre>
-        </div>
-      </aside>
-    </div>
-  </div>
-
-  <!-- Save Template Modal -->
-  <div class="forge-modal-overlay" id="saveModal">
-    <div class="forge-modal">
-      <div class="forge-modal-header">
-        <h3>💾 Save Template</h3>
-        <button class="forge-btn forge-btn-icon" id="closeSaveModal">✕</button>
-      </div>
-      <div class="forge-modal-body">
-        <div class="forge-form-group">
-          <label>Template Name</label>
-          <input id="templateNameInput" placeholder="e.g., Feature Dev, Bug Triage..." />
-        </div>
-      </div>
-      <div class="forge-modal-footer">
-        <button class="forge-btn" id="cancelSaveBtn">Cancel</button>
-        <button class="forge-btn forge-btn-primary" id="confirmSaveBtn">Save</button>
+    <!-- Context slot — collapsible -->
+    <div class="pf-slot pf-slot-collapsible" id="pf-context-slot">
+      <button class="pf-slot-toggle" type="button" aria-expanded="false" data-slot="context">
+        <span class="pf-label">Context</span>
+        <span class="pf-summary" id="pf-context-summary">Empty</span>
+        <span class="pf-chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="pf-slot-body" id="pf-context-body" hidden>
+        <textarea id="pf-context" class="pf-slot-textarea" rows="4"
+          placeholder="Paste code, error messages, specs, or any relevant context…"></textarea>
       </div>
     </div>
-  </div>
 
-  <!-- Import Modal -->
-  <div class="forge-modal-overlay" id="importModal">
-    <div class="forge-modal">
-      <div class="forge-modal-header">
-        <h3>📥 Import Templates</h3>
-        <button class="forge-btn forge-btn-icon" id="closeImportModal">✕</button>
-      </div>
-      <div class="forge-modal-body">
-        <div class="forge-form-group">
-          <label>Paste JSON</label>
-          <textarea id="importInput" style="min-height: 120px;" placeholder='{"templates": {...}}'></textarea>
-        </div>
-      </div>
-      <div class="forge-modal-footer">
-        <button class="forge-btn" id="cancelImportBtn">Cancel</button>
-        <button class="forge-btn forge-btn-primary" id="confirmImportBtn">Import</button>
+    <!-- Format slot — collapsible -->
+    <div class="pf-slot pf-slot-collapsible" id="pf-format-slot">
+      <button class="pf-slot-toggle" type="button" aria-expanded="false" data-slot="format">
+        <span class="pf-label">Format</span>
+        <span class="pf-summary" id="pf-format-summary">Default</span>
+        <span class="pf-chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="pf-slot-body" id="pf-format-body" hidden>
+        <div class="pf-pills" id="pf-format-pills"></div>
+        <textarea id="pf-format-custom" class="pf-slot-textarea" rows="2"
+          placeholder="Or describe a custom output format…"></textarea>
       </div>
     </div>
-  </div>
 
-  <!-- Toast -->
-  <div class="forge-toast" id="toast">
-    <span id="toastIcon">✓</span>
-    <span id="toastText">Copied!</span>
+    <!-- Actions -->
+    <div class="pf-actions">
+      <button id="pf-copy-btn" class="pf-btn pf-btn-primary" type="button">Copy Prompt</button>
+      <button id="pf-clear-btn" class="pf-btn pf-btn-secondary" type="button">Clear</button>
+      <button id="pf-save-btn" class="pf-btn pf-btn-secondary" type="button">Save Template</button>
+    </div>
+
+    <!-- Templates strip -->
+    <div class="pf-templates-wrap" id="pf-templates-wrap">
+      <div class="pf-templates-strip" id="pf-templates-strip" role="list" aria-label="Saved templates"></div>
+    </div>
+
+    <!-- Save template dialog -->
+    <div class="pf-dialog-backdrop" id="pf-dialog-backdrop" hidden>
+      <div class="pf-dialog" role="dialog" aria-modal="true" aria-labelledby="pf-dialog-title">
+        <h3 id="pf-dialog-title">Save Template</h3>
+        <input id="pf-template-name-input" type="text" placeholder="Template name…" autocomplete="off" />
+        <div class="pf-dialog-actions">
+          <button id="pf-dialog-confirm" class="pf-btn pf-btn-primary" type="button">Save</button>
+          <button id="pf-dialog-cancel" class="pf-btn pf-btn-secondary" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pf-toast" id="pf-toast" aria-live="polite"></div>
   </div>
 </template>
 
-<!-- Tool Styles -->
+<!-- Styles -->
 <style>
-  /* Container */
-  .prompt-forge-tool {
-    padding: 0;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    min-height: 100vh;
-    line-height: 1.5;
-    font-family: var(--font-sans);
-  }
-
-  /* Header */
-  .forge-header {
+  .pf-tool {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--bg-secondary);
-  }
-
-  .forge-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .forge-logo {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, var(--accent), var(--success));
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .forge-title {
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: var(--text-primary);
-    margin: 0;
-  }
-
-  .forge-tagline {
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-top: 1px;
-  }
-
-  .forge-header-actions {
-    display: flex;
+    flex-direction: column;
     gap: 8px;
-  }
-
-  /* Main Grid */
-  .forge-main-grid {
-    display: grid;
-    grid-template-columns: 260px 1fr 380px;
-    gap: 16px;
-    align-items: start;
-    padding: 20px 24px;
-  }
-
-  /* Sidebar */
-  .forge-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .forge-panel {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .forge-panel-header {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--bg-tertiary);
-  }
-
-  .forge-panel-title {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-  }
-
-  .forge-panel-badge {
-    font-size: 9px;
-    padding: 3px 7px;
-    background: var(--accent);
-    color: white;
-    border-radius: 20px;
-    font-weight: 700;
-  }
-
-  .forge-panel-body {
-    padding: 10px;
-  }
-
-  /* Quick Fire */
-  .forge-quick-fire-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-
-  .forge-qf-btn {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: 10px 8px;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    text-align: left;
-  }
-
-  .forge-qf-btn:hover {
-    border-color: var(--accent);
-    background: var(--accent-light);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
-  }
-
-  .forge-qf-btn.active {
-    border-color: var(--accent);
-    background: var(--accent-light);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 10%, transparent);
-  }
-
-  .forge-qf-icon { font-size: 16px; margin-bottom: 4px; }
-  .forge-qf-label { font-size: 11px; font-weight: 600; color: var(--text-primary); display: block; }
-  .forge-qf-key { font-size: 9px; color: var(--text-secondary); font-family: var(--font-mono); margin-top: 2px; }
-
-  /* Recipe List */
-  .forge-recipe-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 280px;
-    overflow-y: auto;
-  }
-
-  .forge-recipe-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-  }
-
-  .forge-recipe-item:hover {
-    background: var(--bg-tertiary);
-    border-color: var(--border-color);
-  }
-
-  .forge-recipe-item.selected {
-    background: var(--accent-light);
-    border-color: var(--accent);
-  }
-
-  .forge-recipe-icon {
-    font-size: 14px;
-    width: 26px;
-    height: 26px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
-  }
-
-  .forge-recipe-item.selected .forge-recipe-icon {
-    background: var(--accent);
-    color: white;
-    font-size: 12px;
-  }
-
-  .forge-recipe-info { flex: 1; min-width: 0; }
-  .forge-recipe-name { font-size: 12px; font-weight: 600; }
-  .forge-recipe-desc { font-size: 10px; color: var(--text-secondary); }
-
-  /* History List */
-  .forge-history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 160px;
-    overflow-y: auto;
-  }
-
-  .forge-history-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 10px;
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    gap: 6px;
-  }
-
-  .forge-history-item:hover { background: var(--bg-hover); }
-  .forge-history-name {
-    font-size: 11px;
-    font-weight: 600;
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .forge-history-time { font-size: 9px; color: var(--text-secondary); font-family: var(--font-mono); }
-  .forge-history-actions { display: flex; gap: 2px; }
-  .forge-history-actions .forge-btn-icon { padding: 4px; font-size: 10px; }
-
-  /* Builder */
-  .forge-builder {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .forge-intent-header {
-    cursor: default;
-  }
-
-  .forge-intent-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .forge-intent-header-actions .forge-btn {
-    padding: 6px 10px;
-    font-size: 11px;
-    line-height: 1;
-  }
-
-  .forge-intent-modes {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 12px;
-    padding: 10px;
-    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-color) 65%);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--accent-light) 35%, var(--bg-tertiary) 65%);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 16px 12px;
     position: relative;
   }
 
-  .forge-intent-modes .forge-intent-primary-btn {
-    min-height: 42px;
-    font-size: 13px;
-    letter-spacing: 0.01em;
-    border-width: 1.5px;
-    background: linear-gradient(
-      160deg,
-      color-mix(in srgb, var(--bg-tertiary) 88%, var(--accent) 12%),
-      color-mix(in srgb, var(--bg-tertiary) 76%, var(--accent) 24%)
-    );
-    box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 16%, transparent);
-  }
-
-  .forge-intent-modes .forge-intent-primary-btn:hover {
-    transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 26%, transparent);
-  }
-
-  .forge-intent-modes .forge-intent-primary-btn.active {
-    background: linear-gradient(155deg, var(--accent), color-mix(in srgb, var(--accent) 76%, black));
-    color: white;
-    border-color: color-mix(in srgb, var(--accent) 72%, black);
-    box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent),
-      0 14px 24px color-mix(in srgb, var(--accent) 34%, transparent);
-  }
-
-  .forge-workflow-modes {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .forge-workflow-modes .forge-intent-mode-btn {
-    border-radius: 10px;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 7px 8px;
-  }
-
-  .forge-intent-modes::before {
-    content: "Start here";
-    position: absolute;
-    top: -10px;
-    left: 12px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: var(--accent);
-    color: white;
-  }
-
-  .forge-intent-output-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .forge-intent-status {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
-  }
-
-  .forge-intent-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-color) 76%);
-    background: color-mix(in srgb, var(--bg-tertiary) 84%, var(--accent-light) 16%);
-    color: var(--text-secondary);
-    padding: 5px 10px;
-  }
-
-  .forge-intent-chip strong {
-    color: var(--text-primary);
-    font-weight: 700;
-  }
-
-  .forge-intent-mode-btn {
+  /* ── Slots ── */
+  .pf-slot {
     border: 1px solid var(--border-color);
-    background: color-mix(in srgb, var(--bg-tertiary) 86%, var(--accent) 14%);
-    color: var(--text-primary);
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 8px 10px;
-    cursor: pointer;
-    transition: var(--transition-fast);
-  }
-
-  .forge-intent-mode-btn:hover {
-    border-color: var(--accent);
-    transform: translateY(-1px);
-  }
-
-  .forge-intent-mode-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
-  }
-
-  .forge-intent-modes .forge-intent-mode-btn:not(.active) {
-    animation: intent-nudge 2.4s ease-in-out infinite;
-  }
-
-  @keyframes intent-nudge {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-1px); }
-  }
-
-  .forge-builder:not(.refine-open) #forgeSnippetEditorCard,
-  .forge-builder:not(.refine-open) #modifiersCard {
-    display: none;
-  }
-
-  /* Score Bar */
-  .forge-score-bar {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 12px 16px;
+    border-radius: 10px;
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .forge-score-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .forge-score-track {
-    flex: 1;
-    height: 6px;
-    background: var(--bg-tertiary);
-    border-radius: 3px;
     overflow: hidden;
   }
-  .forge-score-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--success));
-    border-radius: 3px;
-    transition: width var(--transition-slow);
-  }
-  .forge-score-value {
-    font-size: 13px;
-    font-weight: 700;
-    font-family: var(--font-mono);
-    min-width: 45px;
-    text-align: right;
-  }
-  .forge-score-tips {
-    font-size: 10px;
-    color: var(--text-secondary);
-    max-width: 180px;
-    text-align: right;
-  }
 
-  /* Section Cards */
-  .forge-section-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .forge-section-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border-color);
+  /* Task slot (always open) */
+  .pf-slot-label-row {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    transition: background var(--transition-fast);
-    background: var(--bg-tertiary);
+    padding: 10px 14px 6px;
   }
 
-  .forge-section-header:hover { background: var(--bg-hover); }
-
-  .forge-section-header h3 {
-    font-size: 13px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-  }
-
-  .forge-section-header h3 span { font-size: 15px; }
-
-  .forge-section-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .forge-section-check {
-    width: 18px;
-    height: 18px;
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    color: transparent;
-    background: var(--bg-primary);
-  }
-
-  .forge-section-check:hover {
-    border-color: var(--accent);
-  }
-
-  .forge-section-check.checked {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
-  }
-
-  .forge-section-card.forge-disabled {
-    opacity: 0.5;
-  }
-
-  .forge-section-card.forge-disabled .forge-section-body {
-    display: none;
-  }
-
-  .forge-section-tag {
-    font-size: 9px;
-    padding: 3px 8px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
-    color: var(--text-secondary);
-    font-weight: 600;
-  }
-
-  .forge-section-body { padding: 14px 16px; }
-  .forge-section-body.collapsed { display: none; }
-
-  /* Form Elements */
-  .forge-form-row {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .forge-form-row-triple { grid-template-columns: repeat(3, 1fr); }
-  .forge-form-row-single { grid-template-columns: 1fr; }
-  .forge-form-row:last-child { margin-bottom: 0; }
-
-  .forge-form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .forge-form-group label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-  }
-
-  .forge-form-group select,
-  .forge-form-group input,
-  .forge-form-group textarea {
-    width: 100%;
-    padding: 9px 11px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    color: var(--text-primary);
+  .pf-label {
     font-size: 12px;
-    font-family: var(--font-sans);
-    transition: all var(--transition-fast);
-  }
-
-  .forge-form-group select:focus,
-  .forge-form-group input:focus,
-  .forge-form-group textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
-    background: var(--bg-primary);
-  }
-
-  .forge-form-group textarea {
-    min-height: 60px;
-    resize: vertical;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    line-height: 1.5;
-  }
-
-  .forge-form-group select { cursor: pointer; }
-
-  /* Toggle Chips */
-  .forge-toggle-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .forge-toggle-chip {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-size: 11px;
-    font-weight: 500;
-  }
-
-  .forge-toggle-chip:hover { border-color: var(--text-secondary); }
-
-  .forge-toggle-chip.active {
-    background: var(--accent-light);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .forge-toggle-chip input { display: none; }
-
-  .forge-chip-check {
-    width: 14px;
-    height: 14px;
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 9px;
-    transition: all var(--transition-fast);
-    color: transparent;
-  }
-
-  .forge-toggle-chip.active .forge-chip-check {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
-  }
-
-  /* Clause Palette */
-  .forge-clause-palette {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 10px;
-  }
-
-  .forge-clause-chip {
-    padding: 5px 9px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
     color: var(--text-secondary);
+  }
+
+  .pf-required {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-left: 6px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .pf-char-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pf-task-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 14px 12px;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: vertical;
+    font-size: 14px;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    line-height: 1.55;
+  }
+
+  .pf-task-input::placeholder { color: var(--text-secondary); opacity: 0.7; }
+
+  /* Collapsible slot toggle */
+  .pf-slot-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    background: transparent;
+    border: none;
     cursor: pointer;
-    transition: all var(--transition-fast);
-    max-width: 160px;
+    text-align: left;
+    color: var(--text-primary);
+    transition: background 0.12s;
+  }
+
+  .pf-slot-toggle:hover { background: var(--bg-tertiary); }
+
+  .pf-slot-collapsible.open .pf-slot-toggle { background: var(--bg-tertiary); }
+
+  .pf-summary {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-style: italic;
   }
 
-  .forge-clause-chip:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: var(--accent-light);
-  }
-
-  /* Output Panel */
-  .forge-output-panel { position: sticky; top: 20px; }
-
-  .forge-output-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--bg-tertiary);
-  }
-
-  .forge-output-actions { display: flex; gap: 6px; }
-
-  .forge-output-body {
-    padding: 14px;
-    max-height: calc(100vh - 180px);
-    overflow-y: auto;
-    background: var(--bg-tertiary);
-    border-radius: 0 0 10px 10px;
-  }
-
-  .forge-output-pre {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-word;
+  .pf-slot-collapsible.filled .pf-summary {
     color: var(--text-primary);
-    margin: 0;
+    font-style: normal;
+    font-weight: 500;
   }
 
-  .forge-output-pre .section-label { color: var(--accent); font-weight: 600; }
+  .pf-chevron {
+    font-size: 16px;
+    color: var(--text-secondary);
+    transition: transform 0.15s;
+    line-height: 1;
+  }
 
-  /* Buttons */
-  .forge-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 7px 12px;
-    border-radius: var(--radius-md);
-    font-size: 11px;
+  .pf-slot-collapsible.open .pf-chevron { transform: rotate(90deg); }
+
+  /* Slot body */
+  .pf-slot-body {
+    padding: 0 14px 14px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .pf-slot-textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    outline: none;
+    resize: vertical;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    line-height: 1.5;
+    transition: border-color 0.1s;
+  }
+
+  .pf-slot-textarea:focus { border-color: var(--accent); }
+  .pf-slot-textarea::placeholder { color: var(--text-secondary); opacity: 0.7; }
+
+  /* Pills */
+  .pf-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 12px;
+  }
+
+  .pf-pill {
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-radius: 999px;
+    padding: 5px 13px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: border-color 0.1s, background 0.1s, color 0.1s;
+    white-space: nowrap;
+  }
+
+  .pf-pill:hover { border-color: var(--accent); }
+
+  .pf-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* Actions */
+  .pf-actions {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0 2px;
+    flex-wrap: wrap;
+  }
+
+  .pf-btn {
+    padding: 8px 18px;
+    border-radius: var(--radius-lg, 8px);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: opacity 0.1s, transform 0.1s;
+  }
+
+  .pf-btn:active { transform: scale(0.97); }
+
+  .pf-btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .pf-btn-primary:hover { opacity: 0.88; }
+
+  .pf-btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+  }
+
+  .pf-btn-secondary:hover { border-color: var(--accent); }
+
+  /* Templates strip */
+  .pf-templates-wrap {
+    min-height: 32px;
+  }
+
+  .pf-templates-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  .pf-template-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    background: var(--bg-tertiary);
+    border-radius: 999px;
+    padding: 5px 8px 5px 12px;
+    white-space: nowrap;
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.1s;
+    flex-shrink: 0;
+  }
+
+  .pf-template-chip:hover { border-color: var(--accent); }
+
+  .pf-template-chip-name {
+    font-weight: 600;
     color: var(--text-primary);
   }
 
-  .forge-btn:hover { background: var(--bg-hover); transform: translateY(-1px); }
-  .forge-btn-primary { background: var(--accent); border-color: var(--accent); color: white; box-shadow: var(--shadow-sm); }
-  .forge-btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-  .forge-btn-success { background: var(--success); border-color: var(--success); color: white; transition: all var(--transition-fast); }
-  .forge-btn-icon { padding: 7px; }
-  .forge-btn-sm { padding: 5px 8px; font-size: 10px; }
-
-  /* Modal */
-  .forge-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    backdrop-filter: blur(4px);
+  .pf-template-chip-del {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: all var(--transition-normal);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    font-size: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
   }
 
-  .forge-modal-overlay.active { opacity: 1; visibility: visible; }
+  .pf-template-chip-del:hover { color: var(--error, #e55); }
 
-  .forge-modal {
+  /* Dialog */
+  .pf-dialog-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    border-radius: 10px;
+  }
+
+  .pf-dialog {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    width: 320px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .pf-dialog h3 {
+    margin: 0 0 14px;
+    font-size: 15px;
+  }
+
+  .pf-dialog input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
-    width: 90%;
-    max-width: 460px;
-    max-height: 80vh;
-    overflow: hidden;
-    transform: scale(0.95);
-    transition: transform var(--transition-normal);
-    box-shadow: var(--shadow-lg);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+    outline: none;
+    margin-bottom: 14px;
   }
 
-  .forge-modal-overlay.active .forge-modal { transform: scale(1); }
-  .forge-modal-header {
-    padding: 16px 18px;
-    border-bottom: 1px solid var(--border-color);
+  .pf-dialog input:focus { border-color: var(--accent); }
+
+  .pf-dialog-actions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--bg-tertiary);
-  }
-  .forge-modal-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
-  .forge-modal-body { padding: 18px; max-height: 55vh; overflow-y: auto; }
-  .forge-modal-footer {
-    padding: 14px 18px;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    justify-content: flex-end;
     gap: 8px;
+    justify-content: flex-end;
   }
 
   /* Toast */
-  .forge-toast {
+  .pf-toast {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    padding: 12px 18px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--success);
-    border-radius: var(--radius-md);
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: var(--shadow-lg);
-    transform: translateY(100px);
-    opacity: 0;
-    transition: all var(--transition-normal);
-    z-index: 1001;
-    color: var(--success);
-  }
-
-  .forge-toast.show { transform: translateY(0); opacity: 1; }
-
-  /* Kbd */
-  kbd {
-    display: inline-block;
-    padding: 2px 5px;
-    background: var(--bg-tertiary);
+    background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
-    font-size: 9px;
-    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 200;
   }
 
-  /* Snippet Browser */
-  .forge-snippet-browser { display: flex; flex-direction: column; gap: 8px; }
-  .forge-snippet-view-toggle { display: flex; gap: 4px; }
-  .forge-snippet-view-btn {
-    flex: 1; padding: 5px 8px; font-size: 10px; font-weight: 600;
-    border: 1px solid var(--border-color); background: var(--bg-tertiary);
-    color: var(--text-secondary); border-radius: var(--radius-md); cursor: pointer;
-    transition: all var(--transition-fast); text-align: center;
-  }
-  .forge-snippet-view-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-  .forge-snippet-search {
-    width: 100%; padding: 6px 10px; font-size: 11px;
-    border: 1px solid var(--border-color); border-radius: var(--radius-md);
-    background: var(--bg-tertiary); color: var(--text-primary);
-  }
-  .forge-snippet-search:focus { outline: none; border-color: var(--accent); }
-  .forge-snippet-tree { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
-  .forge-snippet-group-header {
-    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
-    color: var(--text-secondary); padding: 6px 4px 2px; cursor: pointer; user-select: none;
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .forge-snippet-group-header:hover { color: var(--text-primary); }
-  .forge-snippet-item {
-    display: flex; align-items: center; gap: 6px; padding: 5px 8px;
-    border-radius: var(--radius-md); cursor: pointer; font-size: 11px;
-    transition: all var(--transition-fast); border: 1px solid transparent;
-  }
-  .forge-snippet-item:hover { background: var(--bg-tertiary); border-color: var(--border-color); }
-  .forge-snippet-item.selected { background: var(--accent-light); border-color: var(--accent); }
-  .forge-snippet-item input[type="checkbox"] { margin: 0; cursor: pointer; accent-color: var(--accent); }
-  .forge-snippet-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-  .forge-snippet-item-badge {
-    font-size: 8px; padding: 1px 5px; border-radius: 999px;
-    background: color-mix(in srgb, var(--accent) 15%, transparent);
-    color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
-  }
-  .forge-snippet-editor-fields { display: flex; flex-direction: column; gap: 10px; }
-  .forge-snippet-field-row-inline { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .forge-snippet-tags-selector { display: flex; flex-wrap: wrap; gap: 5px; }
-  .forge-snippet-tag-chip {
-    padding: 3px 8px; font-size: 10px; font-weight: 600;
-    border: 1px solid var(--border-color); border-radius: 999px;
-    background: var(--bg-tertiary); color: var(--text-secondary);
-    cursor: pointer; transition: all var(--transition-fast);
-  }
-  .forge-snippet-tag-chip:hover { border-color: var(--accent); }
-  .forge-snippet-tag-chip.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
-  .forge-snippet-editor-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid var(--border-color); }
-  .forge-snippet-empty { text-align: center; padding: 24px; color: var(--text-secondary); font-size: 12px; }
-
-  /* Scrollbar */
-  .forge-recipe-list::-webkit-scrollbar,
-  .forge-history-list::-webkit-scrollbar,
-  .forge-output-body::-webkit-scrollbar,
-  .forge-snippet-tree::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
-  }
-  .forge-recipe-list::-webkit-scrollbar-track,
-  .forge-history-list::-webkit-scrollbar-track,
-  .forge-output-body::-webkit-scrollbar-track,
-  .forge-snippet-tree::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .forge-recipe-list::-webkit-scrollbar-thumb,
-  .forge-history-list::-webkit-scrollbar-thumb,
-  .forge-output-body::-webkit-scrollbar-thumb,
-  .forge-snippet-tree::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 3px;
-  }
-  .forge-recipe-list::-webkit-scrollbar-thumb:hover,
-  .forge-history-list::-webkit-scrollbar-thumb:hover,
-  .forge-output-body::-webkit-scrollbar-thumb:hover,
-  .forge-snippet-tree::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
-  }
-
-  /* Responsive */
-  @media (max-width: 1200px) {
-    .forge-main-grid { grid-template-columns: 1fr; }
-    .forge-sidebar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .forge-output-panel { position: static; }
-  }
-
-  @media (max-width: 768px) {
-    .forge-sidebar { grid-template-columns: 1fr; }
-    .forge-form-row { grid-template-columns: 1fr; }
-    .forge-form-row-triple { grid-template-columns: 1fr; }
-    .forge-intent-header {
-      align-items: flex-start;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .forge-intent-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .forge-workflow-modes { grid-template-columns: 1fr; }
-    .forge-intent-output-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pf-toast.visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 </style>
 
-<!-- Tool Module -->
+<!-- Module -->
 <script type="module">
-import { copyToClipboard, downloadAsFile, saveToolState, loadToolState } from '../core/tool-utils.js';
+import {
+  ROLES,
+  FORMATS,
+  assemblePrompt,
+  resolveRoleText,
+  resolveFormatText,
+  validateSlots,
+  saveTemplate,
+  loadTemplate,
+  deleteTemplate,
+  serializeTemplates,
+  parseTemplates,
+  slotSummary,
+  presetLabel,
+} from '../core/prompt-slots.js';
 
-// ============ DATA ============
-const PERSONAS = [
-  { id: 'senior_dev', label: 'Senior Developer', text: 'You are a senior developer with 15+ years experience who writes clean, maintainable code and catches edge cases.' },
-  { id: 'code_reviewer', label: 'Code Reviewer', text: 'You are a meticulous code reviewer who spots bugs, security issues, and suggests improvements.' },
-  { id: 'architect', label: 'Solution Architect', text: 'You are a solution architect who maps constraints, dependencies, and risk surfaces before building.' },
-  { id: 'tech_writer', label: 'Technical Writer', text: 'You are a technical writer who creates clear, structured documentation for developers and stakeholders.' },
-  { id: 'devops', label: 'DevOps Engineer', text: 'You are a DevOps engineer focused on CI/CD, infrastructure as code, and operational reliability.' },
-  { id: 'content', label: 'Content Strategist', text: 'You are a content strategist who crafts clear, audience-aware messaging and information architecture.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
+const STORAGE_KEY = 'promptForge_v12';
 
-const VOICES = [
-  { id: 'neutral', label: 'Neutral', text: '' },
-  { id: 'executive', label: 'Executive brevity', text: 'Be extremely concise. Lead with the answer.' },
-  { id: 'teacher', label: 'Teacher', text: 'Explain reasoning step by step.' },
-  { id: 'challenger', label: 'Challenger', text: 'Push back on assumptions. Ask hard questions.' },
-  { id: 'pair', label: 'Pair programmer', text: 'Think out loud, collaborate, ask before assuming.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
+// ── State ────────────────────────────────────────────────────────────────────
 
-const PATTERNS = [
-  { id: 'feature', label: '🚀 Feature development', text: 'Plan and implement a new feature with requirements analysis, design, implementation steps, and testing strategy.' },
-  { id: 'research', label: 'Research synthesis', text: 'Synthesize provided material into an evidence-backed summary with signals, contradictions, and open questions.' },
-  { id: 'decision', label: 'Decision brief', text: 'Create a decision-ready brief with options, pros/cons, second-order effects, and recommendation.' },
-  { id: 'rewrite', label: 'Rewrite / Polish', text: 'Rewrite input to be concise, audience-fit, and structured.' },
-  { id: 'debug', label: 'Debug partner', text: 'Probe the issue, form hypotheses, propose experiments, and supply fixes with verification.' },
-  { id: 'review', label: 'Code review', text: 'Review changes, catch correctness/perf/security issues, propose actionable fixes.' },
-  { id: 'spec', label: 'Feature spec / RFC', text: 'Draft RFC with problem, requirements, non-goals, options, risks, acceptance tests.' },
-  { id: 'refactor', label: 'Refactor plan', text: 'Stabilize behavior, reduce complexity, keep parity with checks.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
-
-const FORMATS = [
-  { id: 'bullets', label: 'Bullets', text: 'Dense bullets with bold labels.' },
-  { id: 'steps', label: 'Numbered steps', text: 'Numbered sequence with owner, duration, success criteria.' },
-  { id: 'table', label: 'Comparison table', text: 'Markdown table comparing options.' },
-  { id: 'outline', label: 'Structured outline', text: 'Tight outline with headers and key points.' },
-  { id: 'patch', label: 'Patch plan', text: 'Git-style plan: files, diffs, tests, risks.' },
-  { id: 'prose', label: 'Prose', text: 'Flowing prose, no bullets.' },
-  { id: 'code', label: 'Code + Comments', text: 'Working code with inline documentation.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
-
-const TONES = [
-  { id: 'executive', label: 'Executive', text: 'Concise, directive, no hedging.' },
-  { id: 'friendly', label: 'Friendly', text: 'Warm, encouraging, supportive.' },
-  { id: 'precise', label: 'Precise', text: 'Exacting, cite assumptions, no fluff.' },
-  { id: 'exploratory', label: 'Exploratory', text: 'Curious, surface uncertainties.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
-
-const AUDIENCES = [
-  { id: 'senior_dev', label: 'Senior developers', text: 'Senior developers who value depth and precision.' },
-  { id: 'team', label: 'Development team', text: 'Cross-functional development team.' },
-  { id: 'leadership', label: 'Technical leadership', text: 'CTOs, VPs, tech leads making strategic decisions.' },
-  { id: 'stakeholders', label: 'Non-technical stakeholders', text: 'Product, business, or exec stakeholders.' },
-  { id: 'self', label: 'Myself', text: 'Personal reference and notes.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
-
-const OBJECTIVES = [
-  { id: 'ship_feature', label: 'Ship working feature', text: 'Deliver a complete, tested, production-ready feature.' },
-  { id: 'fix_bug', label: 'Fix bug with root cause', text: 'Identify root cause and implement verified fix.' },
-  { id: 'make_decision', label: 'Make informed decision', text: 'Gather evidence and recommend clear path forward.' },
-  { id: 'improve_quality', label: 'Improve code quality', text: 'Reduce complexity, improve maintainability.' },
-  { id: 'design_system', label: 'Design system/API', text: 'Create clean, extensible architecture.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
-
-const DELIVERABLES = [
-  { id: 'code', label: 'Working code', text: 'Production-ready code with tests.' },
-  { id: 'pr', label: 'Pull request', text: 'Reviewable PR with description and tests.' },
-  { id: 'spec', label: 'Technical spec', text: 'Design document with requirements and approach.' },
-  { id: 'plan', label: 'Implementation plan', text: 'Step-by-step plan with estimates.' },
-  { id: 'analysis', label: 'Analysis/recommendation', text: 'Written analysis with clear recommendation.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
-
-const CONTEXTS = [
-  { id: 'none', label: 'No context needed', text: '' },
-  { id: 'greenfield', label: 'Greenfield project', text: 'Starting from scratch with no legacy constraints.' },
-  { id: 'legacy', label: 'Legacy codebase', text: 'Working within existing legacy system with tech debt.' },
-  { id: 'migration', label: 'Active migration', text: 'System is undergoing migration or major refactor.' },
-  { id: 'production', label: 'Production critical', text: 'Changes affect live production systems.' },
-  { id: 'startup', label: 'Startup/MVP', text: 'Speed matters, can accept some tech debt.' },
-  { id: 'enterprise', label: 'Enterprise scale', text: 'Must consider scale, compliance, and process.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
-
-const TECH_STACKS = [
-  { id: 'html_single', label: 'HTML/CSS/JS (single file)', text: 'HTML, CSS, JavaScript in a single file.' },
-  { id: 'html_multi', label: 'HTML + CSS + JS (separate)', text: 'HTML, CSS, JavaScript in separate files.' },
-  { id: 'ts_react', label: 'TypeScript + React', text: 'TypeScript, React.' },
-  { id: 'ts_node', label: 'TypeScript + Node.js', text: 'TypeScript, Node.js.' },
-  { id: 'python', label: 'Python', text: 'Python 3.x.' },
-  { id: 'csharp', label: 'C# / .NET', text: 'C#, .NET.' },
-  { id: 'sql', label: 'SQL', text: 'SQL, database.' },
-  { id: 'powershell', label: 'PowerShell', text: 'PowerShell scripting.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
-
-const FRAMEWORKS = [
-  { id: 'none', label: 'None / Vanilla', text: '' },
-  { id: 'react', label: 'React', text: 'React with hooks and functional components.' },
-  { id: 'nextjs', label: 'Next.js', text: 'Next.js with App Router.' },
-  { id: 'vue', label: 'Vue.js', text: 'Vue 3 with Composition API.' },
-  { id: 'angular', label: 'Angular', text: 'Angular with TypeScript.' },
-  { id: 'express', label: 'Express.js', text: 'Express.js REST API.' },
-  { id: 'fastify', label: 'Fastify', text: 'Fastify high-performance API.' },
-  { id: 'django', label: 'Django', text: 'Django web framework.' },
-  { id: 'fastapi', label: 'FastAPI', text: 'FastAPI async framework.' },
-  { id: 'dotnet', label: '.NET Core', text: '.NET Core / ASP.NET.' },
-  { id: 'spring', label: 'Spring Boot', text: 'Spring Boot Java framework.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
-
-const DEV_TASKS = [
-  { id: 'feature', label: '🚀 New feature', text: 'Implement new functionality.' },
-  { id: 'bugfix', label: '🐛 Bugfix', text: 'Fix a bug or issue.' },
-  { id: 'refactor', label: '🔧 Refactor', text: 'Improve code without changing behavior.' },
-  { id: 'review', label: '👁️ Code review', text: 'Review code for issues.' },
-  { id: 'spec', label: '📝 Spec/RFC', text: 'Write technical specification.' },
-  { id: 'test', label: '🧪 Testing', text: 'Write or improve tests.' },
-  { id: 'perf', label: '⚡ Performance', text: 'Optimize for performance.' },
-  { id: 'security', label: '🔒 Security', text: 'Security review or hardening.' },
-  { id: 'ops', label: '🏗️ Ops/Infra', text: 'Infrastructure or DevOps work.' }
-];
-
-const CONSTRAINTS = [
-  { id: 'none', label: 'No constraints', text: '' },
-  { id: 'minimal_deps', label: 'Minimal dependencies', text: 'Prefer stdlib, avoid new deps.' },
-  { id: 'tested', label: 'Must have tests', text: 'All code must have test coverage.' },
-  { id: 'typed', label: 'Strict typing', text: 'Full type safety, no any.' },
-  { id: 'perf', label: 'Performance critical', text: 'Must meet latency/throughput targets.' },
-  { id: 'security', label: 'Security hardened', text: 'Follow security best practices.' },
-  { id: 'accessible', label: 'Accessibility required', text: 'Must meet WCAG standards.' },
-  { id: 'custom', label: '✏️ Custom...', text: '' }
-];
-
-const GUARDRAILS = [
-  { id: 'sources', label: 'Cite sources', text: 'Use provided materials; flag unknowns.' },
-  { id: 'assumptions', label: 'Call out assumptions', text: 'List assumptions; request missing info.' },
-  { id: 'hallucination', label: 'Anti-hallucination', text: 'If evidence missing, say so.' },
-  { id: 'security', label: 'Security focus', text: 'Never log secrets; least privilege.' },
-  { id: 'privacy', label: 'Privacy aware', text: 'Redact sensitive data.' },
-  { id: 'backwards', label: 'Backward compat', text: 'Maintain API compatibility.' }
-];
-
-const BOOSTERS = [
-  { id: 'alternatives', label: '2-3 alternatives', text: 'Supply contrasting approaches.' },
-  { id: 'reasoning', label: 'Show reasoning', text: 'Expose reasoning before answer.' },
-  { id: 'selfcheck', label: 'Self-review', text: 'Check relevance, completeness.' },
-  { id: 'edge', label: 'Edge cases', text: 'List failure modes and mitigations.' },
-  { id: 'tests', label: 'Test plan', text: 'Propose tests with assertions.' },
-  { id: 'followup', label: 'Follow-up Q', text: 'End with quality-improving question.' }
-];
-
-const CLAUSES = [
-  'Assume nothing; ask for missing details first.',
-  'Surface trade-offs with rationale.',
-  '30-second summary first, then depth.',
-  'Prioritize clarity over cleverness.',
-  'Mark speculation vs. facts.',
-  'Flag perf/security risks early.'
-];
-
-const QUICK_FIRES = [
-  { id: 'feature', icon: '🚀', label: 'Feature', key: '1', recipe: { pattern: 'feature', persona: 'senior_dev', devTask: 'feature', guardrails: ['assumptions'], boosters: ['edge', 'tests'] }},
-  { id: 'debug', icon: '🐛', label: 'Debug', key: '2', recipe: { pattern: 'debug', persona: 'senior_dev', devTask: 'bugfix', guardrails: ['assumptions', 'hallucination'], boosters: ['reasoning', 'edge'] }},
-  { id: 'review', icon: '👁️', label: 'Review', key: '3', recipe: { pattern: 'review', persona: 'code_reviewer', devTask: 'review', guardrails: ['security'], boosters: ['alternatives', 'tests'] }},
-  { id: 'spec', icon: '📝', label: 'Spec', key: '4', recipe: { pattern: 'spec', persona: 'architect', devTask: 'spec', guardrails: ['assumptions'], boosters: ['edge', 'selfcheck'] }},
-  { id: 'refactor', icon: '🔧', label: 'Refactor', key: '5', recipe: { pattern: 'refactor', persona: 'senior_dev', devTask: 'refactor', guardrails: ['backwards'], boosters: ['tests', 'edge'] }},
-  { id: 'decision', icon: '⚖️', label: 'Decision', key: '6', recipe: { pattern: 'decision', persona: 'architect', guardrails: ['sources', 'assumptions'], boosters: ['alternatives', 'reasoning'] }},
-  { id: 'docs', icon: '📄', label: 'Docs', key: '7', recipe: { pattern: 'research', persona: 'tech_writer', guardrails: ['assumptions'], boosters: ['selfcheck', 'followup'] }},
-  { id: 'perf', icon: '⚡', label: 'Perf', key: '8', recipe: { pattern: 'debug', persona: 'senior_dev', devTask: 'perf', guardrails: ['assumptions'], boosters: ['reasoning', 'alternatives'] }}
-];
-
-const RECIPES = [
-  { id: 'new_feature', icon: '🚀', name: 'New Feature', desc: 'Full feature development', config: { persona: 'senior_dev', pattern: 'feature', format: 'steps', tone: 'precise', devTask: 'feature', objective: 'ship_feature', deliverable: 'pr', guardrails: ['assumptions'], boosters: ['edge', 'tests'] }},
-  { id: 'bug_fix', icon: '🐞', name: 'Bug Investigation', desc: 'Root cause analysis', config: { persona: 'senior_dev', pattern: 'debug', format: 'steps', tone: 'precise', devTask: 'bugfix', objective: 'fix_bug', deliverable: 'pr', guardrails: ['assumptions', 'hallucination'], boosters: ['reasoning', 'edge'] }},
-  { id: 'pr_review', icon: '🔍', name: 'PR Review', desc: 'Thorough code review', config: { persona: 'code_reviewer', pattern: 'review', format: 'bullets', tone: 'precise', devTask: 'review', objective: 'improve_quality', deliverable: 'analysis', guardrails: ['security'], boosters: ['edge', 'tests'] }},
-  { id: 'rfc', icon: '📋', name: 'RFC / Spec', desc: 'Technical specification', config: { persona: 'architect', pattern: 'spec', format: 'outline', tone: 'precise', devTask: 'spec', objective: 'design_system', deliverable: 'spec', guardrails: ['assumptions'], boosters: ['alternatives', 'edge'] }},
-  { id: 'refactor_plan', icon: '🏗️', name: 'Refactor Plan', desc: 'Safe refactoring', config: { persona: 'senior_dev', pattern: 'refactor', format: 'steps', tone: 'precise', devTask: 'refactor', objective: 'improve_quality', deliverable: 'plan', guardrails: ['backwards'], boosters: ['tests', 'edge'] }},
-  { id: 'exec_brief', icon: '📊', name: 'Executive Brief', desc: 'Decision summary', config: { persona: 'architect', pattern: 'decision', format: 'bullets', tone: 'executive', audience: 'leadership', objective: 'make_decision', deliverable: 'analysis', guardrails: ['sources'], boosters: ['alternatives', 'reasoning'] }},
-  { id: 'onboarding', icon: '🎓', name: 'Explain Code', desc: 'Codebase walkthrough', config: { persona: 'senior_dev', voice: 'teacher', pattern: 'research', format: 'outline', tone: 'friendly', objective: 'improve_quality', deliverable: 'analysis', guardrails: ['hallucination'], boosters: ['reasoning', 'followup'] }}
-];
-
-const INTENT_MODES = [
-  { id: 'create', label: 'Create' },
-  { id: 'analyze', label: 'Analyze' },
-  { id: 'rewrite', label: 'Rewrite' },
-  { id: 'plan', label: 'Plan' }
-];
-
-const INTENT_OUTPUT_OPTIONS = [
-  { id: 'bullets', label: 'bullet list' },
-  { id: 'checklist', label: 'checklist' },
-  { id: 'table', label: 'table' },
-  { id: 'summary', label: 'executive summary' },
-  { id: 'steps', label: 'step-by-step plan' },
-  { id: 'json', label: 'structured JSON' }
-];
-
-const DEFAULT_OUTPUT_BY_MODE = {
-  create: 'steps',
-  analyze: 'summary',
-  rewrite: 'bullets',
-  plan: 'checklist'
-};
-
-const WORKFLOW_PROFILES = ['rapid', 'balanced', 'deep'];
-
-// ============ SNIPPET SYSTEM ============
-const COMPONENT_TYPES = [
-  { id: 'persona', label: 'Persona' }, { id: 'context', label: 'Context' },
-  { id: 'task', label: 'Task' }, { id: 'rules', label: 'Rules' },
-  { id: 'output-format', label: 'Output Format' }, { id: 'constraints', label: 'Constraints' },
-  { id: 'examples', label: 'Examples' }
-];
-const USE_CASE_TAGS = [
-  { id: 'coding', label: 'Coding' }, { id: 'writing', label: 'Writing' },
-  { id: 'analysis', label: 'Analysis' }, { id: 'debugging', label: 'Debugging' },
-  { id: 'review', label: 'Review' }, { id: 'planning', label: 'Planning' },
-  { id: 'documentation', label: 'Documentation' }
-];
-const COMPONENT_TYPE_ORDER = ['persona', 'context', 'task', 'rules', 'output-format', 'constraints', 'examples'];
-
-class SnippetManager {
-  constructor(storageKey) {
-    this.storageKey = storageKey;
-    this.projects = ['General'];
-    this.snippets = [];
-    this.enabledIds = [];
-    this.selectedId = null;
-    this.viewMode = 'project';
-    this.filterText = '';
-  }
-  load() {
-    const saved = loadToolState(this.storageKey);
-    if (saved) {
-      this.projects = saved.projects || ['General'];
-      this.snippets = saved.snippets || [];
-      this.enabledIds = saved.enabledIds || [];
-    }
-  }
-  save() {
-    saveToolState(this.storageKey, { projects: this.projects, snippets: this.snippets, enabledIds: this.enabledIds });
-  }
-  createSnippet(overrides = {}) {
-    const s = {
-      id: 'snip-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-      name: overrides.name || 'New Snippet', content: overrides.content || '',
-      project: overrides.project || this.projects[0] || 'General',
-      componentType: overrides.componentType || 'task', tags: overrides.tags || [],
-      createdAt: Date.now(), updatedAt: Date.now()
-    };
-    this.snippets.push(s);
-    this.save();
-    return s;
-  }
-  updateSnippet(id, updates) {
-    const s = this.snippets.find(x => x.id === id);
-    if (s) { Object.assign(s, updates, { updatedAt: Date.now() }); this.save(); }
-    return s;
-  }
-  deleteSnippet(id) {
-    this.snippets = this.snippets.filter(x => x.id !== id);
-    this.enabledIds = this.enabledIds.filter(x => x !== id);
-    if (this.selectedId === id) this.selectedId = null;
-    this.save();
-  }
-  duplicateSnippet(id) {
-    const o = this.snippets.find(x => x.id === id);
-    if (!o) return null;
-    return this.createSnippet({ name: o.name + ' (copy)', content: o.content, project: o.project, componentType: o.componentType, tags: [...o.tags] });
-  }
-  addProject(name) {
-    if (name && !this.projects.includes(name)) { this.projects.push(name); this.save(); }
-  }
-  deleteProject(name) {
-    if (name === 'General') return;
-    this.projects = this.projects.filter(p => p !== name);
-    this.snippets.forEach(s => { if (s.project === name) s.project = 'General'; });
-    this.save();
-  }
-  toggleEnabled(id) {
-    const idx = this.enabledIds.indexOf(id);
-    if (idx > -1) this.enabledIds.splice(idx, 1); else this.enabledIds.push(id);
-    this.save();
-  }
-  getEnabledSnippets() {
-    return this.snippets.filter(s => this.enabledIds.includes(s.id))
-      .sort((a, b) => COMPONENT_TYPE_ORDER.indexOf(a.componentType) - COMPONENT_TYPE_ORDER.indexOf(b.componentType));
-  }
-  getByProject() {
-    const groups = {};
-    this.projects.forEach(p => { groups[p] = []; });
-    this.getFiltered().forEach(s => {
-      if (!groups[s.project]) groups[s.project] = [];
-      groups[s.project].push(s);
-    });
-    return groups;
-  }
-  getByTag() {
-    const groups = {};
-    USE_CASE_TAGS.forEach(t => { groups[t.label] = []; });
-    groups['Untagged'] = [];
-    this.getFiltered().forEach(s => {
-      if (!s.tags || !s.tags.length) { groups['Untagged'].push(s); }
-      else { s.tags.forEach(tag => { const lbl = USE_CASE_TAGS.find(t => t.id === tag)?.label || tag; if (!groups[lbl]) groups[lbl] = []; groups[lbl].push(s); }); }
-    });
-    return groups;
-  }
-  getFiltered() {
-    if (!this.filterText) return this.snippets;
-    const q = this.filterText.toLowerCase();
-    return this.snippets.filter(s => s.name.toLowerCase().includes(q) || s.content.toLowerCase().includes(q) || s.project.toLowerCase().includes(q));
-  }
-}
-
-const snippetMgr = new SnippetManager('prompt-forge-snippets');
-
-// ============ STATE ============
 let state = {
-  intentMode: 'create',
-  workflowProfile: 'balanced',
-  intentGoal: '',
-  intentInput: '',
-  intentOutputFormat: 'steps',
-  showRefine: false,
-  extraInstructions: '',
-  guardrails: ['assumptions'],
-  boosters: ['edge', 'tests'],
-  includeGuardrails: true
+  task: '',
+  rolePresetId: null,
+  roleCustom: '',
+  contextText: '',
+  formatPresetId: null,
+  formatCustom: '',
+  templates: [],
 };
 
-let templates = {};
-let history = [];
+let container = null;
 
-// ============ DEVCHEF TOOL INTERFACE ============
-export const DevChefTool = {
-  container: null,
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-  init(container, context) {
-    this.container = container;
-    snippetMgr.load();
-    loadFromStorage();
-    migratePresetsToSnippets();
-    renderAll();
-    attachListeners();
-    updatePrompt();
-  },
+const $ = id => container.querySelector(`#${id}`);
 
-  onInput(input, context) {
-    return { output: '' };
-  },
-
-  cleanup() {
-    saveToStorage();
-  }
-};
-
-// ============ DOM UTILITIES ============
-const $ = id => document.getElementById(id);
-
-// ============ INITIALIZATION ============
-function loadFromStorage() {
-  const saved = loadToolState('prompt-forge');
-  if (saved) {
-    if (saved.templates) templates = saved.templates;
-    if (saved.history) history = saved.history;
-    if (saved.lastState) {
-      // Only load keys that exist in current state shape
-      const validKeys = Object.keys(state);
-      const filtered = {};
-      validKeys.forEach(k => {
-        if (saved.lastState.hasOwnProperty(k)) filtered[k] = saved.lastState[k];
-      });
-      state = { ...state, ...filtered };
-    }
-  }
+function persist() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
 }
 
-function saveToStorage() {
-  saveToolState('prompt-forge', {
-    templates,
-    history: history.slice(0, 20),
-    lastState: state
+function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) Object.assign(state, JSON.parse(raw));
+  } catch {}
+}
+
+function toast(msg, isError = false) {
+  const el = $('pf-toast');
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--error, #e55)' : 'var(--success, #4c4)';
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 2000);
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+
+function renderPills(containerId, items, activeId, onSelect) {
+  const wrap = $(containerId);
+  wrap.innerHTML = '';
+  items.forEach(item => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pf-pill' + (item.id === activeId ? ' active' : '');
+    btn.textContent = item.label;
+    btn.dataset.id = item.id;
+    btn.addEventListener('click', () => onSelect(item.id === activeId ? null : item.id));
+    wrap.appendChild(btn);
   });
 }
 
-function renderAll() {
-  ensureIntentState();
-  renderQuickFire();
-  renderRecipes();
-  renderGuardrails();
-  renderBoosters();
-  renderClauses();
-  renderTemplates();
-  renderHistory();
-  renderIntentControls();
-  renderSnippetTree();
-  renderSnippetEditor();
+function updateRoleSummary() {
+  const el = $('pf-role-summary');
+  const slot = $('pf-role-slot');
+  const label = presetLabel(state.rolePresetId, ROLES, null);
+  const text = label ?? state.roleCustom;
+  el.textContent = slotSummary(text, 'None', 48);
+  slot.classList.toggle('filled', !!(state.rolePresetId || state.roleCustom.trim()));
 }
 
-// ============ SNIPPET FUNCTIONS ============
-function renderSnippetTree() {
-  const tree = $('forgeSnippetTree');
-  if (!tree) return;
-  const groups = snippetMgr.viewMode === 'project' ? snippetMgr.getByProject() : snippetMgr.getByTag();
-  let html = '';
-  for (const [groupName, items] of Object.entries(groups)) {
-    if (items.length === 0 && snippetMgr.filterText) continue;
-    html += `<div class="forge-snippet-group-header" data-group="${groupName}">
-      <span>${groupName}</span><span style="font-size:9px">${items.length}</span>
-    </div>`;
-    items.forEach(s => {
-      const checked = snippetMgr.enabledIds.includes(s.id) ? 'checked' : '';
-      const selected = snippetMgr.selectedId === s.id ? 'selected' : '';
-      const typeLabel = COMPONENT_TYPES.find(t => t.id === s.componentType)?.label || s.componentType;
-      html += `<div class="forge-snippet-item ${selected}" data-snippet-id="${s.id}">
-        <input type="checkbox" ${checked} data-snippet-check="${s.id}" />
-        <span class="forge-snippet-item-name">${s.name}</span>
-        <span class="forge-snippet-item-badge">${typeLabel}</span>
-      </div>`;
-    });
-  }
-  if (!html) html = '<div class="forge-snippet-empty">No snippets yet</div>';
-  tree.innerHTML = html;
-
-  // Update view toggle
-  document.querySelectorAll('.forge-snippet-view-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.view === snippetMgr.viewMode);
-  });
+function updateContextSummary() {
+  const el = $('pf-context-summary');
+  const slot = $('pf-context-slot');
+  el.textContent = slotSummary(state.contextText, 'Empty', 48);
+  slot.classList.toggle('filled', !!state.contextText.trim());
 }
 
-function renderSnippetEditor() {
-  const card = $('forgeSnippetEditorCard');
-  const body = $('forgeSnippetEditorBody');
-  if (!card || !body) return;
-  const s = snippetMgr.snippets.find(x => x.id === snippetMgr.selectedId);
-  if (!s) {
-    card.style.display = 'none';
-    return;
-  }
-  card.style.display = '';
-  const projectOptions = snippetMgr.projects.map(p => `<option value="${p}" ${p === s.project ? 'selected' : ''}>${p}</option>`).join('');
-  const typeOptions = COMPONENT_TYPES.map(t => `<option value="${t.id}" ${t.id === s.componentType ? 'selected' : ''}>${t.label}</option>`).join('');
-  const tagChips = USE_CASE_TAGS.map(t => `<span class="forge-snippet-tag-chip ${(s.tags || []).includes(t.id) ? 'active' : ''}" data-tag="${t.id}">${t.label}</span>`).join('');
-  const isEnabled = snippetMgr.enabledIds.includes(s.id);
-  body.innerHTML = `<div class="forge-snippet-editor-fields">
-    <div class="forge-form-group"><label>Name</label><input id="forgeSnipName" value="${s.name.replace(/"/g, '&quot;')}" /></div>
-    <div class="forge-snippet-field-row-inline">
-      <div class="forge-form-group"><label>Project</label><select id="forgeSnipProject">${projectOptions}</select></div>
-      <div class="forge-form-group"><label>Component Type</label><select id="forgeSnipType">${typeOptions}</select></div>
-    </div>
-    <div class="forge-form-group"><label>Tags</label><div class="forge-snippet-tags-selector" id="forgeSnipTags">${tagChips}</div></div>
-    <div class="forge-form-group"><label>Content</label><textarea id="forgeSnipContent" style="min-height:120px">${s.content.replace(/</g, '&lt;')}</textarea></div>
-    <div class="forge-snippet-editor-actions">
-      <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" id="forgeSnipEnabled" ${isEnabled ? 'checked' : ''} /> Include in prompt</label>
-      <button class="forge-btn forge-btn-sm" id="forgeSnipCopy">Copy</button>
-      <button class="forge-btn forge-btn-sm" id="forgeSnipDuplicate">Duplicate</button>
-      <button class="forge-btn forge-btn-sm" id="forgeSnipDelete" style="color:var(--error)">Delete</button>
-    </div>
-  </div>`;
+function updateFormatSummary() {
+  const el = $('pf-format-summary');
+  const slot = $('pf-format-slot');
+  const label = presetLabel(state.formatPresetId, FORMATS, null);
+  const text = label ?? state.formatCustom;
+  el.textContent = slotSummary(text, 'Default', 48);
+  slot.classList.toggle('filled', !!(state.formatPresetId || state.formatCustom.trim()));
 }
 
-function enableOrCreateSnippet(name, content, componentType) {
-  let s = snippetMgr.snippets.find(x => x.name === name && x.componentType === componentType);
-  if (!s) {
-    s = snippetMgr.createSnippet({ name, content, componentType });
-  } else {
-    snippetMgr.updateSnippet(s.id, { content });
-  }
-  if (!snippetMgr.enabledIds.includes(s.id)) {
-    snippetMgr.enabledIds.push(s.id);
-  }
-  return s;
-}
-
-function migratePresetsToSnippets() {
-  if (snippetMgr.snippets.length > 0) return;
-  seedDefaultSnippets(snippetMgr);
-}
-
-function seedDefaultSnippets(mgr) {
-  // --- Project: Code Development ---
-  mgr.addProject('Code Development');
-
-  mgr.createSnippet({
-    name: 'Senior Engineer Persona',
-    content: 'You are a senior software engineer with 10+ years of experience in modern development practices, design patterns, and clean code principles. You write production-ready, well-tested code with clear documentation.',
-    project: 'Code Development',
-    componentType: 'persona',
-    tags: ['coding']
-  });
-
-  mgr.createSnippet({
-    name: 'Feature Implementation Task',
-    content: 'Implement the following feature:\n\nRequirement: {{requirement}}\nAcceptance criteria: {{criteria}}\n\nProvide:\n1. Implementation plan with file changes\n2. Complete working code\n3. Unit tests covering happy path and edge cases\n4. Brief explanation of design decisions',
-    project: 'Code Development',
-    componentType: 'task',
-    tags: ['coding', 'planning']
-  });
-
-  mgr.createSnippet({
-    name: 'Code Review Checklist',
-    content: 'Review this code for:\n- Correctness: Does it handle all edge cases?\n- Security: Any injection, XSS, or auth issues?\n- Performance: N+1 queries, unnecessary allocations, blocking calls?\n- Readability: Clear naming, small functions, minimal nesting?\n- Tests: Adequate coverage? Missing scenarios?\n\nRate severity: CRITICAL / IMPORTANT / SUGGESTION\nProvide specific line-level feedback with fixes.',
-    project: 'Code Development',
-    componentType: 'rules',
-    tags: ['coding', 'review']
-  });
-
-  mgr.createSnippet({
-    name: 'Code Output Format',
-    content: 'Structure your response as:\n1. Brief summary (1-2 sentences)\n2. Implementation with complete code blocks (include file paths)\n3. Tests with assertions\n4. Edge cases and potential issues\n5. Run/build instructions if applicable',
-    project: 'Code Development',
-    componentType: 'output-format',
-    tags: ['coding']
-  });
-
-  // --- Project: Writing & Analysis ---
-  mgr.addProject('Writing & Analysis');
-
-  mgr.createSnippet({
-    name: 'Technical Writer Persona',
-    content: 'You are an experienced technical writer who creates clear, well-structured documentation. You understand developer audiences and write concise prose that balances depth with readability. You use examples liberally.',
-    project: 'Writing & Analysis',
-    componentType: 'persona',
-    tags: ['writing', 'documentation']
-  });
-
-  mgr.createSnippet({
-    name: 'Research Synthesis Task',
-    content: 'Analyze the provided material and produce:\n\n1. Executive summary (3-5 key findings)\n2. Evidence-backed analysis with citations\n3. Contradictions or gaps in the data\n4. Actionable recommendations ranked by impact\n5. Open questions for further investigation',
-    project: 'Writing & Analysis',
-    componentType: 'task',
-    tags: ['analysis', 'writing']
-  });
-
-  mgr.createSnippet({
-    name: 'Decision Brief Template',
-    content: 'Create a decision brief:\n\nProblem: {{problem_statement}}\n\nOptions (at least 3):\n- For each: Description, Pros, Cons, Effort, Risk\n\nRecommendation: State clearly with rationale\nSecond-order effects: What changes downstream?\nReversibility: How easy to undo if wrong?',
-    project: 'Writing & Analysis',
-    componentType: 'task',
-    tags: ['analysis', 'planning']
-  });
-
-  mgr.createSnippet({
-    name: 'Writing Quality Rules',
-    content: 'Follow these writing guidelines:\n- Lead with the most important information\n- Use active voice and concrete language\n- Keep paragraphs to 3-4 sentences max\n- Use bullet points for lists of 3+ items\n- Define acronyms on first use\n- Include examples for abstract concepts\n- End sections with key takeaways',
-    project: 'Writing & Analysis',
-    componentType: 'rules',
-    tags: ['writing']
-  });
-
-  // --- Project: Debugging & Ops ---
-  mgr.addProject('Debugging & Ops');
-
-  mgr.createSnippet({
-    name: 'Debug Partner Persona',
-    content: 'You are a seasoned debugger who approaches problems methodically. You form hypotheses, design experiments to test them, and narrow down root causes systematically. You never guess — you verify.',
-    project: 'Debugging & Ops',
-    componentType: 'persona',
-    tags: ['debugging', 'coding']
-  });
-
-  mgr.createSnippet({
-    name: 'Bug Investigation Task',
-    content: 'Investigate this issue:\n\nSymptom: {{symptom}}\nSteps to reproduce: {{steps}}\nExpected vs actual behavior: {{diff}}\n\nProvide:\n1. Likely root causes ranked by probability\n2. Diagnostic steps to confirm each hypothesis\n3. Targeted fix with minimal blast radius\n4. Regression test to prevent recurrence\n5. Related areas to check for similar issues',
-    project: 'Debugging & Ops',
-    componentType: 'task',
-    tags: ['debugging']
-  });
-
-  mgr.createSnippet({
-    name: 'Incident Response Context',
-    content: 'Environment: {{environment}}\nService: {{service_name}}\nSeverity: {{severity}}\nImpact: {{user_impact}}\nTimeline: {{when_started}}\nRecent changes: {{recent_deployments}}\n\nConstraints:\n- Minimize downtime over perfect fix\n- Document all changes for post-mortem\n- Communicate status every 15 minutes',
-    project: 'Debugging & Ops',
-    componentType: 'context',
-    tags: ['debugging', 'planning']
-  });
-
-  mgr.createSnippet({
-    name: 'Ops Safety Constraints',
-    content: 'Operational constraints:\n- Never run destructive commands without confirmation\n- Always back up before modifying data\n- Test changes in staging first when possible\n- Log all manual interventions with timestamps\n- Prefer rollback over forward-fix under time pressure\n- Escalate if root cause is unclear after 30 minutes',
-    project: 'Debugging & Ops',
-    componentType: 'constraints',
-    tags: ['debugging', 'coding']
-  });
-
-  mgr.save();
-}
-
-// ============ RENDER FUNCTIONS ============
-function ensureIntentState() {
-  if (!INTENT_MODES.some(mode => mode.id === state.intentMode)) {
-    state.intentMode = 'create';
-  }
-  if (!WORKFLOW_PROFILES.includes(state.workflowProfile)) {
-    state.workflowProfile = 'balanced';
-  }
-  if (typeof state.intentGoal !== 'string') state.intentGoal = '';
-  if (typeof state.intentInput !== 'string') state.intentInput = '';
-  if (!INTENT_OUTPUT_OPTIONS.some(option => option.id === state.intentOutputFormat)) {
-    state.intentOutputFormat = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
-  }
-  state.showRefine = Boolean(state.showRefine);
-}
-
-function getIntentOutputLabel() {
-  const selected = INTENT_OUTPUT_OPTIONS.find(option => option.id === state.intentOutputFormat);
-  return selected?.label || state.intentOutputFormat;
-}
-
-function renderIntentControls() {
-  ensureIntentState();
-  const builder = document.querySelector('.forge-builder');
-  if (builder) {
-    builder.dataset.intentMode = state.intentMode;
-    builder.classList.toggle('refine-open', state.showRefine);
-  }
-
-  document.querySelectorAll('.forge-intent-mode-btn').forEach((button) => {
-    button.classList.toggle('active', button.dataset.intentMode === state.intentMode);
-  });
-
-  document.querySelectorAll('[data-workflow-profile]').forEach((button) => {
-    button.classList.toggle('active', button.dataset.workflowProfile === state.workflowProfile);
-  });
-
-  const intentGoal = $('intentGoal');
-  if (intentGoal) intentGoal.value = state.intentGoal || '';
-
-  const intentInput = $('intentInput');
-  if (intentInput) intentInput.value = state.intentInput || '';
-
-  document.querySelectorAll('[data-intent-output]').forEach((button) => {
-    button.classList.toggle('active', button.dataset.intentOutput === state.intentOutputFormat);
-  });
-
-  const toggleRefineBtn = $('toggleRefineBtn');
-  if (toggleRefineBtn) {
-    toggleRefineBtn.textContent = state.showRefine ? 'Hide refine' : 'Refine options';
-  }
-
-  const extraEl = $('extraInstructions');
-  if (extraEl) extraEl.value = state.extraInstructions || '';
-
-  const intentStatusChips = $('intentStatusChips');
-  if (intentStatusChips) {
-    intentStatusChips.innerHTML = `
-      <span class="forge-intent-chip">Mode <strong>${state.intentMode}</strong></span>
-      <span class="forge-intent-chip">Workflow <strong>${state.workflowProfile}</strong></span>
-      <span class="forge-intent-chip">Output <strong>${getIntentOutputLabel()}</strong></span>
-      <span class="forge-intent-chip">Refine <strong>${state.showRefine ? 'on' : 'off'}</strong></span>
-      <span class="forge-intent-chip">Shortcuts <strong>Alt+1..7 / Alt+R / Alt+V</strong></span>
-    `;
-  }
-}
-
-function renderQuickFire() {
-  const grid = $('quickFireGrid');
-  if (!grid) return;
-  grid.innerHTML = QUICK_FIRES.map(qf => `
-    <button class="forge-qf-btn" data-qf="${qf.id}">
-      <div class="forge-qf-icon">${qf.icon}</div>
-      <span class="forge-qf-label">${qf.label}</span>
-      <span class="forge-qf-key">⌘${qf.key}</span>
-    </button>
-  `).join('');
-}
-
-function renderRecipes() {
-  const list = $('recipeList');
-  if (!list) return;
-  list.innerHTML = RECIPES.map(r => `
-    <div class="forge-recipe-item" data-recipe="${r.id}">
-      <div class="forge-recipe-icon">${r.icon}</div>
-      <div class="forge-recipe-info">
-        <div class="forge-recipe-name">${r.name}</div>
-        <div class="forge-recipe-desc">${r.desc}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function renderGuardrails() {
-  const grid = $('guardrailsGrid');
-  if (!grid) return;
-  grid.innerHTML = GUARDRAILS.map(g => `
-    <label class="forge-toggle-chip ${state.guardrails.includes(g.id) ? 'active' : ''}" data-guardrail="${g.id}">
-      <input type="checkbox" ${state.guardrails.includes(g.id) ? 'checked' : ''} />
-      <span class="forge-chip-check">✓</span>
-      <span>${g.label}</span>
-    </label>
-  `).join('');
-}
-
-function renderBoosters() {
-  const grid = $('boostersGrid');
-  if (!grid) return;
-  grid.innerHTML = BOOSTERS.map(b => `
-    <label class="forge-toggle-chip ${state.boosters.includes(b.id) ? 'active' : ''}" data-booster="${b.id}">
-      <input type="checkbox" ${state.boosters.includes(b.id) ? 'checked' : ''} />
-      <span class="forge-chip-check">✓</span>
-      <span>${b.label}</span>
-    </label>
-  `).join('');
-}
-
-function renderClauses() {
-  const palette = $('clausePalette');
-  if (!palette) return;
-  palette.innerHTML = CLAUSES.map((c, i) => `
-    <button class="forge-clause-chip" data-clause="${i}" title="${c}">${c}</button>
-  `).join('');
+function updateCharCount() {
+  const role = resolveRoleText(state.rolePresetId, state.roleCustom);
+  const format = resolveFormatText(state.formatPresetId, state.formatCustom);
+  const prompt = assemblePrompt({ task: state.task, role, context: state.contextText, format });
+  $('pf-char-count').textContent = `${prompt.length} chars`;
 }
 
 function renderTemplates() {
-  // Templates are now saved as snippets, but keep template list for backward compat
-}
+  const strip = $('pf-templates-strip');
+  strip.innerHTML = '';
+  if (!state.templates.length) return;
 
-function renderHistory() {
-  const list = $('historyList');
-  if (!list) return;
-  if (!history.length) {
-    list.innerHTML = '<div style="color: var(--text-secondary); font-size: 11px; padding: 6px;">No history</div>';
-    return;
-  }
-  list.innerHTML = history.slice(0, 8).map((h, i) => `
-    <div class="forge-history-item" data-history="${i}">
-      <span class="forge-history-name">${h.name || 'Prompt'}</span>
-      <span class="forge-history-time">${formatTime(h.time)}</span>
-    </div>
-  `).join('');
-}
+  state.templates.forEach(tpl => {
+    const chip = document.createElement('div');
+    chip.className = 'pf-template-chip';
+    chip.setAttribute('role', 'listitem');
 
-// ============ EVENT LISTENERS ============
-function attachListeners() {
-  const intentModes = $('intentModes');
-  if (intentModes) {
-    intentModes.addEventListener('click', e => {
-      const button = e.target.closest('.forge-intent-mode-btn');
-      if (!button) return;
-      state.intentMode = button.dataset.intentMode;
-      state.intentOutputFormat = DEFAULT_OUTPUT_BY_MODE[state.intentMode];
-      renderIntentControls();
-      updatePrompt();
-    });
-  }
+    const name = document.createElement('span');
+    name.className = 'pf-template-chip-name';
+    name.textContent = tpl.name;
+    name.addEventListener('click', () => applyTemplate(tpl.name));
 
-  const workflowModes = $('workflowModes');
-  if (workflowModes) {
-    workflowModes.addEventListener('click', e => {
-      const button = e.target.closest('[data-workflow-profile]');
-      if (!button) return;
-      applyWorkflowProfile(button.dataset.workflowProfile);
-    });
-  }
+    const del = document.createElement('span');
+    del.className = 'pf-template-chip-del';
+    del.textContent = '×';
+    del.title = `Delete "${tpl.name}"`;
+    del.addEventListener('click', e => { e.stopPropagation(); removeTemplate(tpl.name); });
 
-  const intentOutputOptions = $('intentOutputOptions');
-  if (intentOutputOptions) {
-    intentOutputOptions.addEventListener('click', e => {
-      const button = e.target.closest('[data-intent-output]');
-      if (!button) return;
-      state.intentOutputFormat = button.dataset.intentOutput;
-      renderIntentControls();
-      updatePrompt();
-    });
-  }
-
-  const toggleRefineBtn = $('toggleRefineBtn');
-  if (toggleRefineBtn) {
-    toggleRefineBtn.addEventListener('click', () => {
-      state.showRefine = !state.showRefine;
-      renderIntentControls();
-    });
-  }
-
-  const intentPasteBtn = $('intentPasteBtn');
-  if (intentPasteBtn) {
-    intentPasteBtn.addEventListener('click', () => {
-      pasteIntentContext();
-    });
-  }
-
-  const intentClearBtn = $('intentClearBtn');
-  if (intentClearBtn) {
-    intentClearBtn.addEventListener('click', () => {
-      clearIntentFields();
-    });
-  }
-
-  ['intentGoal', 'intentInput'].forEach(id => {
-    const el = $(id);
-    if (!el) return;
-    el.addEventListener('input', e => {
-      state[id] = e.target.value;
-      updatePrompt();
-    });
-  });
-
-  // Extra instructions
-  const extraEl = $('extraInstructions');
-  if (extraEl) {
-    extraEl.addEventListener('input', e => {
-      state.extraInstructions = e.target.value;
-      updatePrompt();
-    });
-  }
-
-  // Quick Fire
-  const qfGrid = $('quickFireGrid');
-  if (qfGrid) {
-    qfGrid.addEventListener('click', e => {
-      const btn = e.target.closest('.forge-qf-btn');
-      if (btn) applyQuickFire(btn.dataset.qf);
-    });
-  }
-
-  // Recipes
-  const recipeList = $('recipeList');
-  if (recipeList) {
-    recipeList.addEventListener('click', e => {
-      const item = e.target.closest('.forge-recipe-item');
-      if (item) applyRecipe(item.dataset.recipe);
-    });
-  }
-
-  // Guardrails
-  const guardrailsGrid = $('guardrailsGrid');
-  if (guardrailsGrid) {
-    guardrailsGrid.addEventListener('click', e => {
-      const chip = e.target.closest('.forge-toggle-chip');
-      if (chip) toggleArrayItem('guardrails', chip.dataset.guardrail, renderGuardrails);
-    });
-  }
-
-  // Boosters
-  const boostersGrid = $('boostersGrid');
-  if (boostersGrid) {
-    boostersGrid.addEventListener('click', e => {
-      const chip = e.target.closest('.forge-toggle-chip');
-      if (chip) toggleArrayItem('boosters', chip.dataset.booster, renderBoosters);
-    });
-  }
-
-  // Clauses
-  const clausePalette = $('clausePalette');
-  if (clausePalette) {
-    clausePalette.addEventListener('click', e => {
-      const chip = e.target.closest('.forge-clause-chip');
-      if (chip) {
-        const clause = CLAUSES[parseInt(chip.dataset.clause)];
-        const extra = $('extraInstructions');
-        if (extra) {
-          extra.value = extra.value ? extra.value + '\n- ' + clause : '- ' + clause;
-          state.extraInstructions = extra.value;
-          updatePrompt();
-        }
-      }
-    });
-  }
-
-  // Section toggles (guardrails only now)
-  document.querySelectorAll('[data-section-toggle]').forEach(toggle => {
-    toggle.addEventListener('click', e => {
-      e.stopPropagation();
-      const key = toggle.dataset.sectionToggle;
-      state[key] = !state[key];
-      updateSectionVisibility();
-      updatePrompt();
-    });
-  });
-
-  // History
-  const historyList = $('historyList');
-  if (historyList) {
-    historyList.addEventListener('click', e => {
-      const item = e.target.closest('.forge-history-item');
-      if (item && history[item.dataset.history]) {
-        const savedState = history[item.dataset.history].state;
-        // Only load valid keys
-        const validKeys = Object.keys(state);
-        validKeys.forEach(k => {
-          if (savedState.hasOwnProperty(k)) state[k] = savedState[k];
-        });
-        renderSnippetTree();
-        renderSnippetEditor();
-        renderGuardrails();
-        renderBoosters();
-        renderIntentControls();
-        updatePrompt();
-      }
-    });
-  }
-
-  // Buttons
-  const copyBtn = $('copyBtn');
-  if (copyBtn) copyBtn.addEventListener('click', copyPrompt);
-
-  const clearBtn = $('clearBtn');
-  if (clearBtn) clearBtn.addEventListener('click', clearAll);
-
-  const newTemplateBtn = $('newTemplateBtn');
-  if (newTemplateBtn) {
-    newTemplateBtn.addEventListener('click', () => {
-      openModal('saveModal');
-      setTimeout(() => {
-        const input = $('templateNameInput');
-        if (input) input.focus();
-      }, 100);
-    });
-  }
-
-  const exportBtn = $('exportBtn');
-  if (exportBtn) exportBtn.addEventListener('click', exportTemplates);
-
-  const importBtn = $('importBtn');
-  if (importBtn) importBtn.addEventListener('click', () => openModal('importModal'));
-
-  // Modals
-  const closeSaveModal = $('closeSaveModal');
-  if (closeSaveModal) closeSaveModal.addEventListener('click', () => closeModal('saveModal'));
-
-  const cancelSaveBtn = $('cancelSaveBtn');
-  if (cancelSaveBtn) cancelSaveBtn.addEventListener('click', () => closeModal('saveModal'));
-
-  const closeImportModal = $('closeImportModal');
-  if (closeImportModal) closeImportModal.addEventListener('click', () => closeModal('importModal'));
-
-  const cancelImportBtn = $('cancelImportBtn');
-  if (cancelImportBtn) cancelImportBtn.addEventListener('click', () => closeModal('importModal'));
-
-  const confirmSaveBtn = $('confirmSaveBtn');
-  if (confirmSaveBtn) confirmSaveBtn.addEventListener('click', saveCurrentTemplate);
-
-  const templateNameInput = $('templateNameInput');
-  if (templateNameInput) {
-    templateNameInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        saveCurrentTemplate();
-      }
-    });
-  }
-
-  const confirmImportBtn = $('confirmImportBtn');
-  if (confirmImportBtn) {
-    confirmImportBtn.addEventListener('click', () => {
-      try {
-        const importInput = $('importInput');
-        if (!importInput) return;
-        const data = JSON.parse(importInput.value);
-        if (data.snippets) {
-          // Import snippet data
-          data.snippets.forEach(s => {
-            if (!snippetMgr.snippets.find(x => x.id === s.id)) {
-              snippetMgr.snippets.push(s);
-            }
-          });
-          if (data.projects) {
-            data.projects.forEach(p => snippetMgr.addProject(p));
-          }
-          snippetMgr.save();
-          renderSnippetTree();
-        }
-        const incoming = data.templates || data;
-        if (typeof incoming === 'object' && !Array.isArray(incoming)) {
-          Object.assign(templates, incoming);
-        }
-        saveToStorage();
-        closeModal('importModal');
-        importInput.value = '';
-        showToast('Imported!');
-      } catch (e) {
-        alert('Invalid JSON');
-      }
-    });
-  }
-
-  // Close modal on overlay click
-  document.querySelectorAll('.forge-modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', e => {
-      if (e.target === overlay) {
-        overlay.classList.remove('active');
-      }
-    });
-  });
-
-  // Snippet browser
-  const snippetTree = $('forgeSnippetTree');
-  if (snippetTree) {
-    snippetTree.addEventListener('click', e => {
-      const checkEl = e.target.closest('[data-snippet-check]');
-      if (checkEl) {
-        e.stopPropagation();
-        snippetMgr.toggleEnabled(checkEl.dataset.snippetCheck);
-        renderSnippetTree();
-        updatePrompt();
-        return;
-      }
-      const item = e.target.closest('.forge-snippet-item');
-      if (item) {
-        snippetMgr.selectedId = item.dataset.snippetId;
-        renderSnippetTree();
-        renderSnippetEditor();
-      }
-    });
-  }
-
-  const viewToggle = document.querySelector('.forge-snippet-view-toggle');
-  if (viewToggle) {
-    viewToggle.addEventListener('click', e => {
-      const btn = e.target.closest('.forge-snippet-view-btn');
-      if (btn) { snippetMgr.viewMode = btn.dataset.view; renderSnippetTree(); }
-    });
-  }
-
-  const snippetSearch = $('forgeSnippetSearch');
-  if (snippetSearch) {
-    snippetSearch.addEventListener('input', e => { snippetMgr.filterText = e.target.value; renderSnippetTree(); });
-  }
-
-  const newSnippetBtn = $('forgeNewSnippetBtn');
-  if (newSnippetBtn) {
-    newSnippetBtn.addEventListener('click', () => {
-      const s = snippetMgr.createSnippet();
-      snippetMgr.selectedId = s.id;
-      renderSnippetTree();
-      renderSnippetEditor();
-    });
-  }
-
-  const newProjectBtn = $('forgeNewProjectBtn');
-  if (newProjectBtn) {
-    newProjectBtn.addEventListener('click', () => {
-      const name = prompt('Project name:');
-      if (name) { snippetMgr.addProject(name); renderSnippetTree(); }
-    });
-  }
-
-  // Snippet editor delegation
-  document.addEventListener('click', e => {
-    const editorBody = $('forgeSnippetEditorBody');
-    if (!editorBody || !editorBody.contains(e.target)) return;
-    const s = snippetMgr.snippets.find(x => x.id === snippetMgr.selectedId);
-    if (!s) return;
-
-    if (e.target.id === 'forgeSnipEnabled') {
-      snippetMgr.toggleEnabled(s.id);
-      renderSnippetTree();
-      updatePrompt();
-      return;
-    }
-    if (e.target.id === 'forgeSnipCopy') {
-      copyToClipboard(s.content, { onSuccess: () => showToast('Copied!') });
-      return;
-    }
-    if (e.target.id === 'forgeSnipDuplicate') {
-      const dup = snippetMgr.duplicateSnippet(s.id);
-      if (dup) { snippetMgr.selectedId = dup.id; renderSnippetTree(); renderSnippetEditor(); showToast('Duplicated!'); }
-      return;
-    }
-    if (e.target.id === 'forgeSnipDelete') {
-      if (confirm(`Delete "${s.name}"?`)) { snippetMgr.deleteSnippet(s.id); renderSnippetTree(); renderSnippetEditor(); updatePrompt(); showToast('Deleted'); }
-      return;
-    }
-    const tag = e.target.closest('.forge-snippet-tag-chip');
-    if (tag) {
-      const tagId = tag.dataset.tag;
-      const tags = s.tags || [];
-      const idx = tags.indexOf(tagId);
-      if (idx > -1) tags.splice(idx, 1); else tags.push(tagId);
-      snippetMgr.updateSnippet(s.id, { tags });
-      renderSnippetEditor();
-    }
-  });
-
-  document.addEventListener('input', e => {
-    const editorBody = $('forgeSnippetEditorBody');
-    if (!editorBody || !editorBody.contains(e.target)) return;
-    const s = snippetMgr.snippets.find(x => x.id === snippetMgr.selectedId);
-    if (!s) return;
-
-    if (e.target.id === 'forgeSnipName') { snippetMgr.updateSnippet(s.id, { name: e.target.value }); renderSnippetTree(); }
-    if (e.target.id === 'forgeSnipContent') { snippetMgr.updateSnippet(s.id, { content: e.target.value }); updatePrompt(); }
-  });
-
-  document.addEventListener('change', e => {
-    const editorBody = $('forgeSnippetEditorBody');
-    if (!editorBody || !editorBody.contains(e.target)) return;
-    const s = snippetMgr.snippets.find(x => x.id === snippetMgr.selectedId);
-    if (!s) return;
-
-    if (e.target.id === 'forgeSnipProject') { snippetMgr.updateSnippet(s.id, { project: e.target.value }); renderSnippetTree(); }
-    if (e.target.id === 'forgeSnipType') { snippetMgr.updateSnippet(s.id, { componentType: e.target.value }); renderSnippetTree(); updatePrompt(); }
-  });
-
-  // Keyboard shortcuts
-  document.addEventListener('keydown', e => {
-    const isTyping = isInputFocused();
-    if (e.key === 'Escape') {
-      closeModal('saveModal');
-      closeModal('importModal');
-    }
-    if (e.altKey && !e.ctrlKey && !e.metaKey) {
-      if (e.key >= '1' && e.key <= '4') {
-        e.preventDefault();
-        const modeByIndex = ['create', 'analyze', 'rewrite', 'plan'];
-        state.intentMode = modeByIndex[Number(e.key) - 1] || state.intentMode;
-        state.intentOutputFormat = DEFAULT_OUTPUT_BY_MODE[state.intentMode] || state.intentOutputFormat;
-        renderIntentControls();
-        updatePrompt();
-        return;
-      }
-      if (e.key >= '5' && e.key <= '7') {
-        e.preventDefault();
-        const profileByIndex = ['rapid', 'balanced', 'deep'];
-        const profile = profileByIndex[Number(e.key) - 5];
-        if (profile) applyWorkflowProfile(profile);
-        return;
-      }
-      if (e.key.toLowerCase() === 'r') {
-        e.preventDefault();
-        state.showRefine = !state.showRefine;
-        renderIntentControls();
-        return;
-      }
-      if (e.key.toLowerCase() === 'v') {
-        e.preventDefault();
-        pasteIntentContext();
-        return;
-      }
-      if (e.key === 'Backspace' && !isTyping) {
-        e.preventDefault();
-        clearIntentFields();
-        return;
-      }
-    }
-    if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '8') {
-      e.preventDefault();
-      const qf = QUICK_FIRES[parseInt(e.key) - 1];
-      if (qf) applyQuickFire(qf.id);
-    }
-    if ((e.metaKey || e.ctrlKey) && e.key === 'c' && !isTyping) {
-      e.preventDefault();
-      copyPrompt();
-    }
-    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-      e.preventDefault();
-      openModal('saveModal');
-      setTimeout(() => {
-        const input = $('templateNameInput');
-        if (input) input.focus();
-      }, 100);
-    }
+    chip.appendChild(name);
+    chip.appendChild(del);
+    strip.appendChild(chip);
   });
 }
 
-function isInputFocused() {
-  const a = document.activeElement;
-  return a && ['INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName);
+// ── Slot toggle ───────────────────────────────────────────────────────────────
+
+function toggleSlot(slotName) {
+  const slot = $(`pf-${slotName}-slot`);
+  const body = $(`pf-${slotName}-body`);
+  const btn = slot.querySelector('.pf-slot-toggle');
+  const isOpen = slot.classList.contains('open');
+
+  slot.classList.toggle('open', !isOpen);
+  body.hidden = isOpen;
+  btn.setAttribute('aria-expanded', String(!isOpen));
 }
 
-function toggleArrayItem(key, id, renderFn) {
-  if (state[key].includes(id)) state[key] = state[key].filter(x => x !== id);
-  else state[key].push(id);
-  renderFn();
-  updatePrompt();
-}
+// ── Actions ───────────────────────────────────────────────────────────────────
 
-function clearIntentFields() {
-  state.intentGoal = '';
-  state.intentInput = '';
-  renderIntentControls();
-  updatePrompt();
-  showToast('Intent cleared');
-}
+function copyPrompt() {
+  const errors = validateSlots({ task: state.task });
+  if (errors.length) { toast(errors[0], true); return; }
 
-async function pasteIntentContext() {
-  if (!navigator.clipboard?.readText) {
-    showToast('Clipboard unavailable');
-    return;
-  }
+  const role = resolveRoleText(state.rolePresetId, state.roleCustom);
+  const format = resolveFormatText(state.formatPresetId, state.formatCustom);
+  const prompt = assemblePrompt({ task: state.task, role, context: state.contextText, format });
 
-  try {
-    const value = await navigator.clipboard.readText();
-    if (!value.trim()) {
-      showToast('Clipboard is empty');
-      return;
-    }
-    state.intentInput = value;
-    renderIntentControls();
-    updatePrompt();
-    showToast('Context pasted');
-  } catch (err) {
-    showToast('Clipboard blocked');
-  }
-}
-
-function applyWorkflowProfile(profile) {
-  if (!WORKFLOW_PROFILES.includes(profile)) return;
-  state.workflowProfile = profile;
-
-  if (profile === 'rapid') {
-    state.showRefine = false;
-    state.includeGuardrails = false;
-  } else if (profile === 'balanced') {
-    state.showRefine = true;
-    state.includeGuardrails = true;
-  } else {
-    state.showRefine = true;
-    state.includeGuardrails = true;
-  }
-
-  renderIntentControls();
-  updateSectionVisibility();
-  updatePrompt();
-}
-
-function updateSectionVisibility() {
-  renderIntentControls();
-  const card = $('modifiersCard');
-  const toggle = document.querySelector('[data-section-toggle="includeGuardrails"]');
-  if (card && toggle) {
-    card.classList.toggle('forge-disabled', !state.includeGuardrails);
-    toggle.classList.toggle('checked', state.includeGuardrails);
-  }
-}
-
-// ============ ACTIONS ============
-function applyQuickFire(id) {
-  const qf = QUICK_FIRES.find(q => q.id === id);
-  if (!qf) return;
-
-  document.querySelectorAll('.forge-qf-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.querySelector(`[data-qf="${id}"]`);
-  if (btn) btn.classList.add('active');
-
-  state.showRefine = true;
-  state.workflowProfile = 'deep';
-
-  // Clear enabled snippets
-  snippetMgr.enabledIds = [];
-
-  const r = qf.recipe;
-  if (r.persona) {
-    const p = PERSONAS.find(x => x.id === r.persona);
-    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'persona');
-  }
-  if (r.pattern) {
-    const p = PATTERNS.find(x => x.id === r.pattern);
-    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'task');
-  }
-  if (r.devTask) {
-    const d = DEV_TASKS.find(x => x.id === r.devTask);
-    if (d && d.text) enableOrCreateSnippet(d.label, d.text, 'context');
-  }
-  if (r.guardrails) state.guardrails = [...r.guardrails];
-  if (r.boosters) state.boosters = [...r.boosters];
-  state.includeGuardrails = true;
-
-  snippetMgr.save();
-  renderSnippetTree();
-  renderSnippetEditor();
-  renderGuardrails();
-  renderBoosters();
-  renderIntentControls();
-  updatePrompt();
-  showToast(`${qf.label} mode!`);
-}
-
-function applyRecipe(id) {
-  const recipe = RECIPES.find(r => r.id === id);
-  if (!recipe) return;
-
-  document.querySelectorAll('.forge-recipe-item').forEach(r => r.classList.remove('selected'));
-  const item = document.querySelector(`[data-recipe="${id}"]`);
-  if (item) item.classList.add('selected');
-
-  state.showRefine = true;
-  state.workflowProfile = 'deep';
-
-  // Clear enabled snippets
-  snippetMgr.enabledIds = [];
-
-  const c = recipe.config;
-  if (c.persona) {
-    const p = PERSONAS.find(x => x.id === c.persona);
-    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'persona');
-  }
-  if (c.voice) {
-    const v = VOICES.find(x => x.id === c.voice);
-    if (v && v.text) enableOrCreateSnippet(v.label, v.text, 'persona');
-  }
-  if (c.pattern) {
-    const p = PATTERNS.find(x => x.id === c.pattern);
-    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'task');
-  }
-  if (c.objective) {
-    const o = OBJECTIVES.find(x => x.id === c.objective);
-    if (o && o.text) enableOrCreateSnippet(o.label, o.text, 'rules');
-  }
-  if (c.deliverable) {
-    const d = DELIVERABLES.find(x => x.id === c.deliverable);
-    if (d && d.text) enableOrCreateSnippet(d.label, d.text, 'output-format');
-  }
-  if (c.devTask) {
-    const d = DEV_TASKS.find(x => x.id === c.devTask);
-    if (d && d.text) enableOrCreateSnippet(d.label, d.text, 'context');
-  }
-  if (c.guardrails) state.guardrails = [...c.guardrails];
-  if (c.boosters) state.boosters = [...c.boosters];
-  state.includeGuardrails = true;
-
-  snippetMgr.save();
-  renderSnippetTree();
-  renderSnippetEditor();
-  renderGuardrails();
-  renderBoosters();
-  renderIntentControls();
-  updatePrompt();
-  showToast(`${recipe.name} recipe!`);
-}
-
-function loadTemplate(name) {
-  if (!templates[name]) return;
-  const t = templates[name];
-  // Migrate old template fields to snippets
-  const validKeys = Object.keys(state);
-  validKeys.forEach(k => {
-    if (t.hasOwnProperty(k)) state[k] = t[k];
-  });
-  // Convert old state fields to snippets if present
-  if (t.persona && t.persona !== 'custom') {
-    const p = PERSONAS.find(x => x.id === t.persona);
-    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'persona');
-  }
-  if (t.pattern && t.pattern !== 'custom') {
-    const p = PATTERNS.find(x => x.id === t.pattern);
-    if (p && p.text) enableOrCreateSnippet(p.label, p.text, 'task');
-  }
-  if (t.objective && t.objective !== 'custom') {
-    const o = OBJECTIVES.find(x => x.id === t.objective);
-    if (o && o.text) enableOrCreateSnippet(o.label, o.text, 'rules');
-  }
-  snippetMgr.save();
-  renderSnippetTree();
-  renderSnippetEditor();
-  renderGuardrails();
-  renderBoosters();
-  renderIntentControls();
-  updatePrompt();
-  showToast(`Loaded: ${name}`);
+  navigator.clipboard.writeText(prompt)
+    .then(() => toast('✓ Copied!'))
+    .catch(() => { /* fallback */ document.execCommand?.('copy'); toast('✓ Copied!'); });
 }
 
 function clearAll() {
-  state = {
-    intentMode: 'create',
-    workflowProfile: 'balanced',
-    intentGoal: '',
-    intentInput: '',
-    intentOutputFormat: 'steps',
-    showRefine: false,
-    extraInstructions: '',
-    guardrails: [],
-    boosters: [],
-    includeGuardrails: true
+  state.task = '';
+  state.rolePresetId = null;
+  state.roleCustom = '';
+  state.contextText = '';
+  state.formatPresetId = null;
+  state.formatCustom = '';
+  applyStateToDOM();
+  persist();
+}
+
+function showSaveDialog() {
+  const backdrop = $('pf-dialog-backdrop');
+  const input = $('pf-template-name-input');
+  backdrop.hidden = false;
+  input.value = '';
+  setTimeout(() => input.focus(), 50);
+}
+
+function hideSaveDialog() {
+  $('pf-dialog-backdrop').hidden = true;
+}
+
+function confirmSave() {
+  const name = $('pf-template-name-input').value.trim();
+  if (!name) { toast('Enter a name', true); return; }
+  try {
+    const slots = {
+      task: state.task, rolePresetId: state.rolePresetId, roleCustom: state.roleCustom,
+      contextText: state.contextText, formatPresetId: state.formatPresetId, formatCustom: state.formatCustom,
+    };
+    state.templates = saveTemplate(name, slots, state.templates);
+    renderTemplates();
+    persist();
+    hideSaveDialog();
+    toast(`✓ Saved "${name}"`);
+  } catch (e) { toast(e.message, true); }
+}
+
+function applyTemplate(name) {
+  const slots = loadTemplate(name, state.templates);
+  if (!slots) return;
+  Object.assign(state, slots);
+  applyStateToDOM();
+  persist();
+  toast(`Loaded "${name}"`);
+}
+
+function removeTemplate(name) {
+  state.templates = deleteTemplate(name, state.templates);
+  renderTemplates();
+  persist();
+}
+
+// ── DOM sync ─────────────────────────────────────────────────────────────────
+
+function applyStateToDOM() {
+  $('pf-task').value = state.task;
+  $('pf-role-custom').value = state.roleCustom;
+  $('pf-context').value = state.contextText;
+  $('pf-format-custom').value = state.formatCustom;
+
+  renderPills('pf-role-pills', ROLES, state.rolePresetId, id => {
+    state.rolePresetId = id;
+    renderPills('pf-role-pills', ROLES, state.rolePresetId, arguments.callee);
+    updateRoleSummary();
+    updateCharCount();
+    persist();
+  });
+
+  renderPills('pf-format-pills', FORMATS, state.formatPresetId, id => {
+    state.formatPresetId = id;
+    renderPills('pf-format-pills', FORMATS, state.formatPresetId, arguments.callee);
+    updateFormatSummary();
+    updateCharCount();
+    persist();
+  });
+
+  updateRoleSummary();
+  updateContextSummary();
+  updateFormatSummary();
+  updateCharCount();
+  renderTemplates();
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+export function init(c) {
+  container = c;
+  restore();
+
+  // Wire up pill renderers with closures so re-render works cleanly
+  const reRoleSelect = id => {
+    state.rolePresetId = id;
+    renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+    updateRoleSummary();
+    updateCharCount();
+    persist();
   };
-  snippetMgr.enabledIds = [];
-  snippetMgr.selectedId = null;
-  snippetMgr.save();
-  renderSnippetTree();
-  renderSnippetEditor();
-  renderGuardrails();
-  renderBoosters();
-  renderIntentControls();
-  updatePrompt();
-  showToast('Cleared!');
-}
+  const reFormatSelect = id => {
+    state.formatPresetId = id;
+    renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+    updateFormatSummary();
+    updateCharCount();
+    persist();
+  };
 
-function exportTemplates() {
-  const data = JSON.stringify({
-    templates,
-    lastState: state,
-    snippets: snippetMgr.snippets,
-    projects: snippetMgr.projects,
-    enabledIds: snippetMgr.enabledIds
-  }, null, 2);
-  downloadAsFile(data, 'prompt-forge-templates.json', 'application/json');
-  showToast('Exported!');
-}
+  renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+  renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
 
-// ============ PROMPT ASSEMBLY ============
-function updatePrompt() {
-  const prompt = assemblePrompt();
-  const outputPre = $('outputPre');
-  if (outputPre) {
-    if (prompt.trim()) {
-      outputPre.innerHTML = highlightPrompt(prompt);
-    } else {
-      outputPre.innerHTML = '<span style="color: var(--text-secondary);">Enable snippets and configure options to build your prompt.</span>';
-    }
-  }
-  updateScore();
-  saveToStorage();
-}
+  $('pf-task').value = state.task;
+  $('pf-role-custom').value = state.roleCustom;
+  $('pf-context').value = state.contextText;
+  $('pf-format-custom').value = state.formatCustom;
 
-function assemblePrompt() {
-  const lines = [];
-  const selectedIntentOutput = INTENT_OUTPUT_OPTIONS.find(o => o.id === state.intentOutputFormat);
-  const outputLabel = selectedIntentOutput?.label || state.intentOutputFormat;
+  updateRoleSummary();
+  updateContextSummary();
+  updateFormatSummary();
+  updateCharCount();
+  renderTemplates();
 
-  if (state.intentMode) {
-    lines.push('--- INTENT ---');
-    lines.push(`Mode: ${state.intentMode}`);
-    lines.push('');
-  }
+  // Task input
+  $('pf-task').addEventListener('input', e => {
+    state.task = e.target.value;
+    updateCharCount();
+    persist();
+  });
 
-  if (!state.showRefine) {
-    lines.push('--- REQUEST ---');
-    lines.push(state.intentGoal || 'Help me with this request.');
-    if (state.intentInput) lines.push(`Context:\n${state.intentInput}`);
-    if (outputLabel) lines.push(`Return format: ${outputLabel}`);
-    return lines.join('\n').trim();
-  }
+  // Role custom text
+  $('pf-role-custom').addEventListener('input', e => {
+    state.roleCustom = e.target.value;
+    if (state.roleCustom.trim()) state.rolePresetId = null;
+    renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+    updateRoleSummary();
+    updateCharCount();
+    persist();
+  });
 
-  // Enabled snippets
-  const enabled = snippetMgr.getEnabledSnippets();
-  if (enabled.length) {
-    enabled.forEach(s => {
-      const typeLabel = COMPONENT_TYPES.find(t => t.id === s.componentType)?.label || s.componentType;
-      lines.push(`--- ${typeLabel.toUpperCase()} ---`);
-      lines.push(s.content);
-      lines.push('');
-    });
-  }
+  // Context text
+  $('pf-context').addEventListener('input', e => {
+    state.contextText = e.target.value;
+    updateContextSummary();
+    updateCharCount();
+    persist();
+  });
 
-  // Intent fields
-  if (state.intentGoal) {
-    lines.push('--- GOAL ---');
-    lines.push(state.intentGoal);
-    lines.push('');
-  }
-  if (state.intentInput) {
-    lines.push('--- CONTEXT ---');
-    lines.push(state.intentInput);
-    lines.push('');
-  }
-  if (outputLabel) {
-    lines.push(`Output format: ${outputLabel}`);
-    lines.push('');
-  }
+  // Format custom text
+  $('pf-format-custom').addEventListener('input', e => {
+    state.formatCustom = e.target.value;
+    if (state.formatCustom.trim()) state.formatPresetId = null;
+    renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+    updateFormatSummary();
+    updateCharCount();
+    persist();
+  });
 
-  // Guardrails (kept toggle-based)
-  if (state.includeGuardrails && state.guardrails.length) {
-    lines.push('--- GUARDRAILS ---');
-    state.guardrails.forEach(id => { const g = GUARDRAILS.find(x => x.id === id); if (g) lines.push(`• ${g.label}: ${g.text}`); });
-    lines.push('');
-  }
-  if (state.includeGuardrails && state.boosters.length) {
-    lines.push('--- QUALITY BOOSTERS ---');
-    state.boosters.forEach(id => { const b = BOOSTERS.find(x => x.id === id); if (b) lines.push(`• ${b.label}: ${b.text}`); });
-    lines.push('');
-  }
-  if (state.extraInstructions) {
-    lines.push('--- INSTRUCTIONS ---');
-    lines.push(state.extraInstructions);
-    lines.push('');
-  }
+  // Slot toggles
+  container.querySelectorAll('.pf-slot-toggle').forEach(btn => {
+    btn.addEventListener('click', () => toggleSlot(btn.dataset.slot));
+  });
 
-  while (lines.length && lines[lines.length - 1] === '') lines.pop();
-  return lines.join('\n');
-}
+  // Actions
+  $('pf-copy-btn').addEventListener('click', copyPrompt);
+  $('pf-clear-btn').addEventListener('click', clearAll);
+  $('pf-save-btn').addEventListener('click', showSaveDialog);
 
-function highlightPrompt(text) {
-  return text.replace(/^(---.*---)$/gm, '<span class="section-label">$1</span>');
-}
+  // Dialog
+  $('pf-dialog-confirm').addEventListener('click', confirmSave);
+  $('pf-dialog-cancel').addEventListener('click', hideSaveDialog);
+  $('pf-template-name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmSave();
+    if (e.key === 'Escape') hideSaveDialog();
+  });
+  $('pf-dialog-backdrop').addEventListener('click', e => {
+    if (e.target === $('pf-dialog-backdrop')) hideSaveDialog();
+  });
 
-function updateScore() {
-  let score = 0;
-  const tips = [];
-  const enabled = snippetMgr.getEnabledSnippets();
-  const hasType = type => enabled.some(s => s.componentType === type);
-
-  if (hasType('persona')) score += 15; else tips.push('Add persona');
-  if (hasType('task')) score += 25; else tips.push('Add task');
-  if (hasType('rules') || hasType('output-format')) score += 20; else tips.push('Add rules/format');
-  if (hasType('context')) score += 10;
-  if (hasType('constraints')) score += 5;
-  if (state.guardrails.length) score += 10;
-  if (state.boosters.length) score += 10;
-  if (state.intentGoal) score += 5;
-
-  score = Math.min(100, score);
-
-  const scoreFill = $('scoreFill');
-  if (scoreFill) scoreFill.style.width = score + '%';
-
-  const scoreValue = $('scoreValue');
-  if (scoreValue) {
-    scoreValue.textContent = score + '%';
-    scoreValue.style.color = score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--warning)' : 'var(--error)';
-  }
-
-  const scoreTips = $('scoreTips');
-  if (scoreTips) scoreTips.textContent = tips.slice(0, 2).join(', ') || 'Good!';
-}
-
-function copyPrompt() {
-  const text = assemblePrompt();
-  if (!text.trim()) {
-    showToast('Nothing to copy!');
-    return;
-  }
-
-  copyToClipboard(text, {
-    onSuccess: () => {
-      history.unshift({
-        name: state.intentGoal ? state.intentGoal.substring(0, 30) : 'Prompt',
-        time: Date.now(),
-        state: { ...state }
-      });
-      history = history.slice(0, 20);
-      renderHistory();
-      saveToStorage();
-
-      const btn = $('copyBtn');
-      if (btn) {
-        const original = btn.innerHTML;
-        btn.innerHTML = '✓ Copied!';
-        btn.classList.add('forge-btn-success');
-        setTimeout(() => {
-          btn.innerHTML = original;
-          btn.classList.remove('forge-btn-success');
-        }, 1500);
-      }
-    },
-    onError: () => {
-      showToast('Failed to copy!');
-    }
+  // Keyboard shortcut: Ctrl+Enter / Cmd+Enter to copy
+  container.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); copyPrompt(); }
   });
 }
 
-// ============ UTILITIES ============
-function openModal(id) {
-  const modal = $(id);
-  if (modal) modal.classList.add('active');
-}
-
-function closeModal(id) {
-  const modal = $(id);
-  if (modal) modal.classList.remove('active');
-}
-
-function saveCurrentTemplate() {
-  const input = $('templateNameInput');
-  if (!input) return;
-  const name = input.value.trim();
-  if (name) {
-    templates[name] = { ...state };
-    saveToStorage();
-    closeModal('saveModal');
-    input.value = '';
-    showToast(`Saved: ${name}`);
-  }
-}
-
-function showToast(msg) {
-  const toast = $('toast');
-  const toastText = $('toastText');
-  if (toast && toastText) {
-    toastText.textContent = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 1800);
-  }
-}
-
-function formatTime(ts) {
-  const diff = Date.now() - ts;
-  if (diff < 60000) return 'now';
-  if (diff < 3600000) return Math.floor(diff / 60000) + 'm';
-  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h';
-  return new Date(ts).toLocaleDateString();
-}
+export function cleanup() {}
 </script>
 
 </body>

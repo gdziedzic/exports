@@ -1,505 +1,243 @@
 import { test, expect } from '@playwright/test';
 
-/**
- * AI Prompt Builder E2E Tests
- * Tests for the enhanced UX features including keyboard shortcuts,
- * bulk operations, context menu, and inline previews
- */
+async function openAIPromptBuilder(page) {
+  await page.addInitScript(() => {
+    localStorage.removeItem('aiPromptBuilder_v12');
+  });
 
-test.describe('AI Prompt Builder - Core Functionality', () => {
+  await page.goto('/');
+  await page.waitForSelector('#tool-list', { timeout: 10000 });
+
+  const searchBox = page.locator('#tool-search');
+  await searchBox.fill('ai prompt');
+  await page.waitForTimeout(300);
+
+  const toolEntry = page.locator('#tool-list .tool-item:has-text("AI Prompt Builder")').first();
+  await toolEntry.click();
+  await page.waitForSelector('.apb-tool', { timeout: 10000 });
+}
+
+test.describe('AI Prompt Builder — Slots UI', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-
-    // Wait for DevChef to load
-    await page.waitForSelector('#tool-list', { timeout: 10000 });
-
-    // Search for and open AI Prompt Builder
-    const searchBox = page.locator('#tool-search');
-    await searchBox.fill('ai prompt');
-    await page.waitForTimeout(300);
-
-    // Click the AI Prompt Builder tool
-    const promptBuilderTool = page.locator('#tool-list .tool-item:has-text("AI Prompt Builder")').first();
-    await promptBuilderTool.click();
-
-    // Wait for tool to load
-    await page.waitForSelector('#components-list', { timeout: 5000 });
+    await openAIPromptBuilder(page);
   });
 
-  test('should load AI Prompt Builder successfully', async ({ page }) => {
-    // Check main elements are visible
-    await expect(page.locator('.components-panel')).toBeVisible();
-    await expect(page.locator('.preview-panel')).toBeVisible();
-    await expect(page.locator('#components-list')).toBeVisible();
-    await expect(page.locator('#final-prompt')).toBeVisible();
+  // ── Layout ──────────────────────────────────────────────────────────────────
+
+  test('renders the four slots and action buttons', async ({ page }) => {
+    await expect(page.locator('#apb-task')).toBeVisible();
+    await expect(page.locator('#apb-role-slot')).toBeVisible();
+    await expect(page.locator('#apb-context-slot')).toBeVisible();
+    await expect(page.locator('#apb-format-slot')).toBeVisible();
+    await expect(page.locator('#apb-copy-btn')).toBeVisible();
+    await expect(page.locator('#apb-clear-btn')).toBeVisible();
+    await expect(page.locator('#apb-save-btn')).toBeVisible();
   });
 
-  test('should display quick actions toolbar', async ({ page }) => {
-    // Check quick actions toolbar exists
-    await expect(page.locator('.quick-actions-toolbar')).toBeVisible();
-    await expect(page.locator('#enable-all-btn')).toBeVisible();
-    await expect(page.locator('#disable-all-btn')).toBeVisible();
-    await expect(page.locator('#invert-selection-btn')).toBeVisible();
+  test('collapsible slot bodies are hidden on load', async ({ page }) => {
+    await expect(page.locator('#apb-role-body')).toBeHidden();
+    await expect(page.locator('#apb-context-body')).toBeHidden();
+    await expect(page.locator('#apb-format-body')).toBeHidden();
   });
 
-  test('should render components with numbered badges', async ({ page }) => {
-    // Check that components are rendered
-    const components = page.locator('.component-item');
-    const count = await components.count();
-    expect(count).toBeGreaterThan(0);
-
-    // Check first 9 components have number badges
-    const maxToCheck = Math.min(count, 9);
-    for (let i = 0; i < maxToCheck; i++) {
-      const componentNumber = components.nth(i).locator('.component-number');
-      await expect(componentNumber).toBeVisible();
-      const numberText = await componentNumber.textContent();
-      expect(numberText).toBe((i + 1).toString());
-    }
+  test('default summaries are shown when slots are empty', async ({ page }) => {
+    await expect(page.locator('#apb-role-summary')).toHaveText('None');
+    await expect(page.locator('#apb-context-summary')).toHaveText('Empty');
+    await expect(page.locator('#apb-format-summary')).toHaveText('Default');
   });
 
-  test('should display inline content preview', async ({ page }) => {
-    // Check that components with content show preview
-    const componentPreviews = page.locator('.component-preview');
-    const previewCount = await componentPreviews.count();
+  // ── Slot expand / collapse ───────────────────────────────────────────────────
 
-    // At least some components should have previews
-    expect(previewCount).toBeGreaterThan(0);
-
-    // Preview should be truncated (contains ...)
-    if (previewCount > 0) {
-      const firstPreview = await componentPreviews.first().textContent();
-      expect(firstPreview.length).toBeLessThan(100);
-    }
-  });
-});
-
-test.describe('AI Prompt Builder - Component Toggling', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('#tool-list', { timeout: 10000 });
-    const searchBox = page.locator('#tool-search');
-    await searchBox.fill('ai prompt');
-    await page.waitForTimeout(300);
-    const promptBuilderTool = page.locator('#tool-list .tool-item:has-text("AI Prompt Builder")').first();
-    await promptBuilderTool.click();
-    await page.waitForSelector('#components-list', { timeout: 5000 });
+  test('clicking role slot opens and closes it', async ({ page }) => {
+    const toggle = page.locator('#apb-role-slot .apb-slot-toggle');
+    await toggle.click();
+    await expect(page.locator('#apb-role-body')).toBeVisible();
+    await expect(page.locator('#apb-role-slot')).toHaveClass(/open/);
+    await toggle.click();
+    await expect(page.locator('#apb-role-body')).toBeHidden();
   });
 
-  test('should toggle component by clicking header', async ({ page }) => {
-    const firstComponent = page.locator('.component-item').first();
-
-    // Get initial state
-    const initialActive = await firstComponent.evaluate(el => el.classList.contains('active'));
-
-    // Click the header (not the checkbox directly)
-    await firstComponent.locator('.component-header').click();
-    await page.waitForTimeout(100);
-
-    // Check state changed
-    const newActive = await firstComponent.evaluate(el => el.classList.contains('active'));
-    expect(newActive).toBe(!initialActive);
+  test('aria-expanded updates on toggle', async ({ page }) => {
+    const toggle = page.locator('#apb-role-slot .apb-slot-toggle');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
   });
 
-  test('should toggle component by clicking checkbox', async ({ page }) => {
-    const firstComponent = page.locator('.component-item').first();
-    const checkbox = firstComponent.locator('.component-toggle');
-
-    // Get initial state
-    const initialChecked = await checkbox.evaluate(el => el.classList.contains('checked'));
-
-    // Click checkbox
-    await checkbox.click();
-    await page.waitForTimeout(100);
-
-    // Check state changed
-    const newChecked = await checkbox.evaluate(el => el.classList.contains('checked'));
-    expect(newChecked).toBe(!initialChecked);
-  });
-});
-
-test.describe('AI Prompt Builder - Bulk Operations', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('#tool-list', { timeout: 10000 });
-    const searchBox = page.locator('#tool-search');
-    await searchBox.fill('ai prompt');
-    await page.waitForTimeout(300);
-    const promptBuilderTool = page.locator('#tool-list .tool-item:has-text("AI Prompt Builder")').first();
-    await promptBuilderTool.click();
-    await page.waitForSelector('#components-list', { timeout: 5000 });
+  test('format slot shows pills when opened', async ({ page }) => {
+    await page.locator('#apb-format-slot .apb-slot-toggle').click();
+    const pills = page.locator('#apb-format-pills .apb-pill');
+    expect(await pills.count()).toBeGreaterThan(3);
   });
 
-  test('should enable all components', async ({ page }) => {
-    // Click disable all first to ensure we have disabled components
-    await page.click('#disable-all-btn');
-    await page.waitForTimeout(200);
+  // ── Role pills ────────────────────────────────────────────────────────────
 
-    // Now enable all
-    await page.click('#enable-all-btn');
-    await page.waitForTimeout(200);
-
-    // Check all components are active
-    const components = page.locator('.component-item');
-    const count = await components.count();
-
-    for (let i = 0; i < count; i++) {
-      const isActive = await components.nth(i).evaluate(el => el.classList.contains('active'));
-      expect(isActive).toBe(true);
-    }
+  test('role pills include general-purpose options', async ({ page }) => {
+    await page.locator('#apb-role-slot .apb-slot-toggle').click();
+    const pills = page.locator('#apb-role-pills .apb-pill');
+    expect(await pills.count()).toBeGreaterThan(3);
+    // Shared ROLES array includes these
+    await expect(pills.filter({ hasText: 'Senior Dev' })).toBeVisible();
+    await expect(pills.filter({ hasText: 'Analyst' })).toBeVisible();
+    await expect(pills.filter({ hasText: 'Teacher' })).toBeVisible();
   });
 
-  test('should disable all components', async ({ page }) => {
-    // Click disable all
-    await page.click('#disable-all-btn');
-    await page.waitForTimeout(200);
-
-    // Check all components are inactive
-    const components = page.locator('.component-item');
-    const count = await components.count();
-
-    for (let i = 0; i < count; i++) {
-      const isActive = await components.nth(i).evaluate(el => el.classList.contains('active'));
-      expect(isActive).toBe(false);
-    }
+  test('selecting a role pill marks it active and updates summary', async ({ page }) => {
+    await page.locator('#apb-role-slot .apb-slot-toggle').click();
+    const pill = page.locator('#apb-role-pills .apb-pill').filter({ hasText: 'Analyst' });
+    await pill.click();
+    await expect(pill).toHaveClass(/active/);
+    await expect(page.locator('#apb-role-summary')).toHaveText('Analyst');
+    await expect(page.locator('#apb-role-slot')).toHaveClass(/filled/);
   });
 
-  test('should invert component selection', async ({ page }) => {
-    // Get initial states
-    const components = page.locator('.component-item');
-    const count = await components.count();
-    const initialStates = [];
+  test('only one role pill active at a time', async ({ page }) => {
+    await page.locator('#apb-role-slot .apb-slot-toggle').click();
+    await page.locator('#apb-role-pills .apb-pill').filter({ hasText: 'Analyst' }).click();
+    await page.locator('#apb-role-pills .apb-pill').filter({ hasText: 'Teacher' }).click();
 
-    for (let i = 0; i < count; i++) {
-      const isActive = await components.nth(i).evaluate(el => el.classList.contains('active'));
-      initialStates.push(isActive);
-    }
-
-    // Click invert
-    await page.click('#invert-selection-btn');
-    await page.waitForTimeout(200);
-
-    // Check all states are inverted
-    for (let i = 0; i < count; i++) {
-      const isActive = await components.nth(i).evaluate(el => el.classList.contains('active'));
-      expect(isActive).toBe(!initialStates[i]);
-    }
-  });
-});
-
-test.describe('AI Prompt Builder - Keyboard Shortcuts', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('#tool-list', { timeout: 10000 });
-    const searchBox = page.locator('#tool-search');
-    await searchBox.fill('ai prompt');
-    await page.waitForTimeout(300);
-    const promptBuilderTool = page.locator('#tool-list .tool-item:has-text("AI Prompt Builder")').first();
-    await promptBuilderTool.click();
-    await page.waitForSelector('#components-list', { timeout: 5000 });
+    const activePills = page.locator('#apb-role-pills .apb-pill.active');
+    expect(await activePills.count()).toBe(1);
+    await expect(activePills).toHaveText('Teacher');
   });
 
-  test('should toggle component with number keys', async ({ page }) => {
-    const firstComponent = page.locator('.component-item').first();
-
-    // Get initial state
-    const initialActive = await firstComponent.evaluate(el => el.classList.contains('active'));
-
-    // Press '1' key
-    await page.keyboard.press('1');
-    await page.waitForTimeout(200);
-
-    // Check state changed
-    const newActive = await firstComponent.evaluate(el => el.classList.contains('active'));
-    expect(newActive).toBe(!initialActive);
+  test('deselecting active role pill resets summary', async ({ page }) => {
+    await page.locator('#apb-role-slot .apb-slot-toggle').click();
+    const pill = page.locator('#apb-role-pills .apb-pill').filter({ hasText: 'Analyst' });
+    await pill.click();
+    await pill.click();
+    await expect(page.locator('#apb-role-summary')).toHaveText('None');
   });
 
-  test('should enable all with Ctrl+A', async ({ page }) => {
-    // Disable all first
-    await page.click('#disable-all-btn');
-    await page.waitForTimeout(200);
+  // ── Custom role text ──────────────────────────────────────────────────────
 
-    // Press Ctrl+A
-    await page.keyboard.press('Control+a');
-    await page.waitForTimeout(200);
+  test('typing custom role clears any active preset pill', async ({ page }) => {
+    await page.locator('#apb-role-slot .apb-slot-toggle').click();
+    await page.locator('#apb-role-pills .apb-pill').filter({ hasText: 'Senior Dev' }).click();
+    await expect(page.locator('#apb-role-pills .apb-pill.active')).toHaveCount(1);
 
-    // Check all components are active
-    const activeComponents = page.locator('.component-item.active');
-    const count = await activeComponents.count();
-    const totalComponents = await page.locator('.component-item').count();
-
-    expect(count).toBe(totalComponents);
+    await page.locator('#apb-role-custom').fill('You are a pirate captain.');
+    await expect(page.locator('#apb-role-pills .apb-pill.active')).toHaveCount(0);
   });
 
-  test('should disable all with Ctrl+D', async ({ page }) => {
-    // Enable all first
-    await page.click('#enable-all-btn');
-    await page.waitForTimeout(200);
+  // ── Format pills ──────────────────────────────────────────────────────────
 
-    // Press Ctrl+D
-    await page.keyboard.press('Control+d');
-    await page.waitForTimeout(200);
-
-    // Check all components are inactive
-    const activeComponents = page.locator('.component-item.active');
-    const count = await activeComponents.count();
-
-    expect(count).toBe(0);
+  test('selecting format updates the summary', async ({ page }) => {
+    await page.locator('#apb-format-slot .apb-slot-toggle').click();
+    await page.locator('#apb-format-pills .apb-pill').filter({ hasText: 'Steps' }).click();
+    await expect(page.locator('#apb-format-summary')).toHaveText('Steps');
   });
 
-  test('should invert selection with Ctrl+I', async ({ page }) => {
-    // Get initial count of active components
-    const initialActive = await page.locator('.component-item.active').count();
-    const total = await page.locator('.component-item').count();
+  // ── Context ───────────────────────────────────────────────────────────────
 
-    // Press Ctrl+I
-    await page.keyboard.press('Control+i');
-    await page.waitForTimeout(200);
-
-    // Check inverted
-    const newActive = await page.locator('.component-item.active').count();
-    expect(newActive).toBe(total - initialActive);
+  test('typing context shows summary and marks slot filled', async ({ page }) => {
+    await page.locator('#apb-context-slot .apb-slot-toggle').click();
+    await page.locator('#apb-context').fill('relevant context data');
+    await expect(page.locator('#apb-context-summary')).toHaveText('relevant context data');
+    await expect(page.locator('#apb-context-slot')).toHaveClass(/filled/);
   });
 
-  test('should navigate components with arrow keys', async ({ page }) => {
-    const firstComponent = page.locator('.component-item').first();
+  // ── Char count ────────────────────────────────────────────────────────────
 
-    // Click first component to focus
-    await firstComponent.click();
-    await page.waitForTimeout(100);
-
-    // Press down arrow
-    await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(100);
-
-    // Check second component has focus class
-    const focusedComponents = page.locator('.component-item.focused');
-    const count = await focusedComponents.count();
-    expect(count).toBeGreaterThan(0);
-  });
-});
-
-test.describe('AI Prompt Builder - Context Menu', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('#tool-list', { timeout: 10000 });
-    const searchBox = page.locator('#tool-search');
-    await searchBox.fill('ai prompt');
-    await page.waitForTimeout(300);
-    const promptBuilderTool = page.locator('#tool-list .tool-item:has-text("AI Prompt Builder")').first();
-    await promptBuilderTool.click();
-    await page.waitForSelector('#components-list', { timeout: 5000 });
+  test('char count reflects assembled prompt length', async ({ page }) => {
+    await page.locator('#apb-task').fill('Write a summary');
+    const countText = await page.locator('#apb-char-count').textContent();
+    expect(parseInt(countText)).toBeGreaterThan(0);
   });
 
-  test('should show context menu on right-click', async ({ page }) => {
-    const firstComponent = page.locator('.component-item').first();
+  // ── Validation ────────────────────────────────────────────────────────────
 
-    // Right-click the component
-    await firstComponent.click({ button: 'right' });
-    await page.waitForTimeout(100);
-
-    // Check context menu is visible
-    const contextMenu = page.locator('#context-menu');
-    await expect(contextMenu).toHaveClass(/show/);
+  test('copy with empty task shows error toast', async ({ page }) => {
+    await page.locator('#apb-copy-btn').click();
+    await expect(page.locator('#apb-toast')).toHaveClass(/visible/);
+    await expect(page.locator('#apb-toast')).toContainText('required');
   });
 
-  test('should hide context menu on click outside', async ({ page }) => {
-    const firstComponent = page.locator('.component-item').first();
+  // ── Clear ─────────────────────────────────────────────────────────────────
 
-    // Right-click to show menu
-    await firstComponent.click({ button: 'right' });
-    await page.waitForTimeout(100);
+  test('clear resets task, role, context, and format', async ({ page }) => {
+    await page.locator('#apb-task').fill('Some task');
+    await page.locator('#apb-role-slot .apb-slot-toggle').click();
+    await page.locator('#apb-role-pills .apb-pill').filter({ hasText: 'Analyst' }).click();
+    await page.locator('#apb-context-slot .apb-slot-toggle').click();
+    await page.locator('#apb-context').fill('Some context');
 
-    // Click outside
-    await page.click('body', { position: { x: 10, y: 10 } });
-    await page.waitForTimeout(100);
+    await page.locator('#apb-clear-btn').click();
 
-    // Check context menu is hidden
-    const contextMenu = page.locator('#context-menu');
-    await expect(contextMenu).not.toHaveClass(/show/);
+    await expect(page.locator('#apb-task')).toHaveValue('');
+    await expect(page.locator('#apb-role-pills .apb-pill.active')).toHaveCount(0);
+    await expect(page.locator('#apb-context')).toHaveValue('');
   });
 
-  test('should toggle component from context menu', async ({ page }) => {
-    const firstComponent = page.locator('.component-item').first();
+  // ── Templates ─────────────────────────────────────────────────────────────
 
-    // Get initial state
-    const initialActive = await firstComponent.evaluate(el => el.classList.contains('active'));
-
-    // Right-click to show menu
-    await firstComponent.click({ button: 'right' });
-    await page.waitForTimeout(100);
-
-    // Click toggle option
-    const toggleOption = page.locator('[data-action="ctx-toggle"]');
-    await toggleOption.click();
-    await page.waitForTimeout(200);
-
-    // Check state changed
-    const newActive = await firstComponent.evaluate(el => el.classList.contains('active'));
-    expect(newActive).toBe(!initialActive);
-  });
-});
-
-test.describe('AI Prompt Builder - Preview Generation', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('#tool-list', { timeout: 10000 });
-    const searchBox = page.locator('#tool-search');
-    await searchBox.fill('ai prompt');
-    await page.waitForTimeout(300);
-    const promptBuilderTool = page.locator('#tool-list .tool-item:has-text("AI Prompt Builder")').first();
-    await promptBuilderTool.click();
-    await page.waitForSelector('#components-list', { timeout: 5000 });
+  test('save template dialog opens on button click', async ({ page }) => {
+    await page.locator('#apb-save-btn').click();
+    await expect(page.locator('#apb-dialog-backdrop')).toBeVisible();
   });
 
-  test('should update final prompt when toggling components', async ({ page }) => {
-    const finalPrompt = page.locator('#final-prompt');
-
-    // Get initial content
-    const initialContent = await finalPrompt.inputValue();
-
-    // Toggle a component
-    await page.keyboard.press('1');
-    await page.waitForTimeout(300);
-
-    // Check prompt changed
-    const newContent = await finalPrompt.inputValue();
-    expect(newContent).not.toBe(initialContent);
+  test('backdrop click closes save dialog', async ({ page }) => {
+    await page.locator('#apb-save-btn').click();
+    await page.locator('#apb-dialog-backdrop').click({ position: { x: 5, y: 5 } });
+    await expect(page.locator('#apb-dialog-backdrop')).toBeHidden();
   });
 
-  test('should update character count', async ({ page }) => {
-    const charCount = page.locator('#char-count');
-    await expect(charCount).toBeVisible();
+  test('saving a template adds it to the strip', async ({ page }) => {
+    await page.locator('#apb-task').fill('Write tests');
+    await page.locator('#apb-save-btn').click();
+    await page.locator('#apb-template-name-input').fill('Test Writer');
+    await page.locator('#apb-dialog-confirm').click();
 
-    const text = await charCount.textContent();
-    expect(text).toMatch(/\d+ characters/);
+    await expect(page.locator('#apb-templates-strip')).toContainText('Test Writer');
   });
 
-  test('should update word count', async ({ page }) => {
-    const wordCount = page.locator('#word-count');
-    await expect(wordCount).toBeVisible();
+  test('loading a saved template restores all slots', async ({ page }) => {
+    // Save
+    await page.locator('#apb-task').fill('Analyze the dataset');
+    await page.locator('#apb-format-slot .apb-slot-toggle').click();
+    await page.locator('#apb-format-pills .apb-pill').filter({ hasText: 'Table' }).click();
+    await page.locator('#apb-save-btn').click();
+    await page.locator('#apb-template-name-input').fill('Data Analysis');
+    await page.locator('#apb-dialog-confirm').click();
 
-    const text = await wordCount.textContent();
-    expect(text).toMatch(/\d+ words/);
-  });
-});
+    // Clear then load
+    await page.locator('#apb-clear-btn').click();
+    await page.locator('#apb-templates-strip .apb-template-chip-name').filter({ hasText: 'Data Analysis' }).click();
 
-test.describe('AI Prompt Builder - Component Actions', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('#tool-list', { timeout: 10000 });
-    const searchBox = page.locator('#tool-search');
-    await searchBox.fill('ai prompt');
-    await page.waitForTimeout(300);
-    const promptBuilderTool = page.locator('#tool-list .tool-item:has-text("AI Prompt Builder")').first();
-    await promptBuilderTool.click();
-    await page.waitForSelector('#components-list', { timeout: 5000 });
+    await expect(page.locator('#apb-task')).toHaveValue('Analyze the dataset');
+    await expect(page.locator('#apb-format-pills .apb-pill.active')).toHaveText('Table');
   });
 
-  test('should expand component on edit button click', async ({ page }) => {
-    const firstComponent = page.locator('.component-item').first();
+  test('deleting a template removes it from the strip', async ({ page }) => {
+    await page.locator('#apb-task').fill('x');
+    await page.locator('#apb-save-btn').click();
+    await page.locator('#apb-template-name-input').fill('Deletable');
+    await page.locator('#apb-dialog-confirm').click();
+    await expect(page.locator('#apb-templates-strip')).toContainText('Deletable');
 
-    // Hover to show actions
-    await firstComponent.hover();
-    await page.waitForTimeout(100);
-
-    // Click edit button
-    const editBtn = firstComponent.locator('[data-action="edit"]');
-    await editBtn.click();
-    await page.waitForTimeout(100);
-
-    // Check component is expanded
-    const isExpanded = await firstComponent.evaluate(el => el.classList.contains('expanded'));
-    expect(isExpanded).toBe(true);
+    await page.locator('.apb-template-chip').filter({ hasText: 'Deletable' }).locator('.apb-template-chip-del').click();
+    await expect(page.locator('#apb-templates-strip')).not.toContainText('Deletable');
   });
 
-  test('should show component actions on hover', async ({ page }) => {
-    const firstComponent = page.locator('.component-item').first();
-    const actions = firstComponent.locator('.component-actions');
-
-    // Hover over component
-    await firstComponent.hover();
-    await page.waitForTimeout(200);
-
-    // Check actions are visible
-    const opacity = await actions.evaluate(el => {
-      return window.getComputedStyle(el).opacity;
-    });
-
-    // Opacity should be greater than 0 (visible)
-    expect(parseFloat(opacity)).toBeGreaterThan(0);
+  test('Escape key closes the save dialog', async ({ page }) => {
+    await page.locator('#apb-save-btn').click();
+    await page.locator('#apb-template-name-input').press('Escape');
+    await expect(page.locator('#apb-dialog-backdrop')).toBeHidden();
   });
 
-  test('should copy prompt to clipboard', async ({ page }) => {
-    // Click copy button
-    await page.click('#copy-prompt-btn');
-    await page.waitForTimeout(200);
+  test('saving a template with the same name replaces it', async ({ page }) => {
+    const saveTpl = async name => {
+      await page.locator('#apb-save-btn').click();
+      await page.locator('#apb-template-name-input').fill(name);
+      await page.locator('#apb-dialog-confirm').click();
+    };
 
-    // Check status message appears
-    const statusMessage = page.locator('#status-message');
-    await expect(statusMessage).toHaveClass(/show/);
-  });
-});
+    await page.locator('#apb-task').fill('version 1');
+    await saveTpl('Dup');
+    await page.locator('#apb-task').fill('version 2');
+    await saveTpl('Dup');
 
-test.describe('AI Prompt Builder - Error Handling', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('#tool-list', { timeout: 10000 });
-    const searchBox = page.locator('#tool-search');
-    await searchBox.fill('ai prompt');
-    await page.waitForTimeout(300);
-    const promptBuilderTool = page.locator('#tool-list .tool-item:has-text("AI Prompt Builder")').first();
-    await promptBuilderTool.click();
-    await page.waitForSelector('#components-list', { timeout: 5000 });
-  });
-
-  test('should load without JavaScript errors', async ({ page }) => {
-    const jsErrors = [];
-
-    page.on('pageerror', error => {
-      jsErrors.push(error.message);
-    });
-
-    // Perform various actions
-    await page.click('#enable-all-btn');
-    await page.waitForTimeout(100);
-    await page.keyboard.press('1');
-    await page.waitForTimeout(100);
-    await page.click('#invert-selection-btn');
-    await page.waitForTimeout(100);
-
-    // Should have no critical errors
-    const criticalErrors = jsErrors.filter(e =>
-      e.includes('undefined') ||
-      e.includes('null') ||
-      e.includes('Cannot read')
-    );
-
-    expect(criticalErrors.length).toBe(0);
-  });
-
-  test('should handle rapid keyboard input', async ({ page }) => {
-    // Rapidly press number keys
-    for (let i = 1; i <= 5; i++) {
-      await page.keyboard.press(i.toString());
-      await page.waitForTimeout(50);
-    }
-
-    // App should still be responsive
-    await expect(page.locator('#components-list')).toBeVisible();
-    await expect(page.locator('#final-prompt')).toBeVisible();
-  });
-
-  test('should handle rapid button clicks', async ({ page }) => {
-    // Rapidly click bulk operation buttons
-    for (let i = 0; i < 5; i++) {
-      await page.click('#enable-all-btn');
-      await page.waitForTimeout(50);
-      await page.click('#disable-all-btn');
-      await page.waitForTimeout(50);
-    }
-
-    // App should still be responsive
-    await expect(page.locator('#components-list')).toBeVisible();
+    // Should still be just one chip named "Dup"
+    expect(await page.locator('.apb-template-chip').filter({ hasText: 'Dup' }).count()).toBe(1);
   });
 });
