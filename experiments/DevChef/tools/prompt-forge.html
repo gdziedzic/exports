@@ -12,10 +12,10 @@
 {
   "id": "prompt-forge",
   "name": "Prompt Forge",
-  "description": "Build structured AI prompts with four focused slots: task, role, context, and format",
+  "description": "Advanced prompt engineering: chain-of-thought, few-shot examples, variables, and template import/export",
   "category": "Developer Tools",
-  "keywords": ["prompt", "ai", "builder", "template", "llm", "claude", "chatgpt"],
-  "version": "12.0.0"
+  "keywords": ["prompt", "ai", "advanced", "chain-of-thought", "few-shot", "examples", "engineering", "llm", "claude", "chatgpt"],
+  "version": "13.0.0"
 }
 </script>
 
@@ -27,7 +27,10 @@
     <div class="pf-slot pf-slot-task">
       <div class="pf-slot-label-row">
         <span class="pf-label">Task <span class="pf-required">required</span></span>
-        <span class="pf-char-count" id="pf-char-count">0 chars</span>
+        <div class="pf-task-controls">
+          <span class="pf-char-count" id="pf-char-count">0 chars</span>
+          <button class="pf-cot-toggle" id="pf-cot-btn" type="button" title="Chain-of-Thought: ask AI to reason step by step before answering">CoT</button>
+        </div>
       </div>
       <textarea
         id="pf-task"
@@ -64,6 +67,20 @@
       </div>
     </div>
 
+    <!-- Examples slot — collapsible (few-shot) -->
+    <div class="pf-slot pf-slot-collapsible" id="pf-examples-slot">
+      <button class="pf-slot-toggle" type="button" aria-expanded="false" data-slot="examples">
+        <span class="pf-label">Examples <span class="pf-label-hint">few-shot</span></span>
+        <span class="pf-summary" id="pf-examples-summary">None</span>
+        <span class="pf-chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="pf-slot-body" id="pf-examples-body" hidden>
+        <p class="pf-examples-help">Add input/output pairs to guide the AI with concrete examples.</p>
+        <div id="pf-examples-list"></div>
+        <button class="pf-add-example-btn" id="pf-add-example-btn" type="button">+ Add Example</button>
+      </div>
+    </div>
+
     <!-- Format slot — collapsible -->
     <div class="pf-slot pf-slot-collapsible" id="pf-format-slot">
       <button class="pf-slot-toggle" type="button" aria-expanded="false" data-slot="format">
@@ -83,6 +100,9 @@
       <button id="pf-copy-btn" class="pf-btn pf-btn-primary" type="button">Copy Prompt</button>
       <button id="pf-clear-btn" class="pf-btn pf-btn-secondary" type="button">Clear</button>
       <button id="pf-save-btn" class="pf-btn pf-btn-secondary" type="button">Save Template</button>
+      <button id="pf-export-btn" class="pf-btn pf-btn-secondary" type="button" title="Export templates as JSON">Export</button>
+      <button id="pf-import-btn" class="pf-btn pf-btn-secondary" type="button" title="Import templates from JSON">Import</button>
+      <input id="pf-import-file" type="file" accept=".json" style="display:none" />
     </div>
 
     <!-- Templates strip -->
@@ -91,7 +111,7 @@
     </div>
 
     <!-- Save template dialog -->
-    <div class="pf-dialog-backdrop" id="pf-dialog-backdrop" hidden>
+    <div class="pf-dialog-backdrop" id="pf-dialog-backdrop">
       <div class="pf-dialog" role="dialog" aria-modal="true" aria-labelledby="pf-dialog-title">
         <h3 id="pf-dialog-title">Save Template</h3>
         <input id="pf-template-name-input" type="text" placeholder="Template name…" autocomplete="off" />
@@ -126,12 +146,17 @@
     overflow: hidden;
   }
 
-  /* Task slot (always open) */
   .pf-slot-label-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 10px 14px 6px;
+  }
+
+  .pf-task-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .pf-label {
@@ -140,6 +165,16 @@
     letter-spacing: 0.02em;
     text-transform: uppercase;
     color: var(--text-secondary);
+  }
+
+  .pf-label-hint {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-left: 5px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-style: italic;
   }
 
   .pf-required {
@@ -155,6 +190,28 @@
     font-size: 11px;
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Chain-of-Thought toggle */
+  .pf-cot-toggle {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: all 0.12s;
+  }
+
+  .pf-cot-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  .pf-cot-toggle.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
   }
 
   .pf-task-input {
@@ -190,7 +247,6 @@
   }
 
   .pf-slot-toggle:hover { background: var(--bg-tertiary); }
-
   .pf-slot-collapsible.open .pf-slot-toggle { background: var(--bg-tertiary); }
 
   .pf-summary {
@@ -274,6 +330,87 @@
     color: #fff;
   }
 
+  /* Examples */
+  .pf-examples-help {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 10px 0 8px;
+    line-height: 1.4;
+  }
+
+  .pf-example-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  .pf-example-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+
+  .pf-example-textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 9px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    outline: none;
+    resize: vertical;
+    font-size: 12px;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    line-height: 1.45;
+    transition: border-color 0.1s;
+  }
+
+  .pf-example-textarea:focus { border-color: var(--accent); }
+  .pf-example-textarea::placeholder { color: var(--text-secondary); opacity: 0.6; }
+
+  .pf-example-del {
+    position: absolute;
+    top: 0;
+    right: -4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.1s, border-color 0.1s;
+  }
+
+  .pf-example-del:hover { color: var(--error, #e55); border-color: var(--error, #e55); }
+
+  .pf-add-example-btn {
+    margin-top: 4px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px dashed var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: border-color 0.1s, color 0.1s;
+  }
+
+  .pf-add-example-btn:hover { border-color: var(--accent); color: var(--accent); }
+
   /* Actions */
   .pf-actions {
     display: flex;
@@ -311,9 +448,7 @@
   .pf-btn-secondary:hover { border-color: var(--accent); }
 
   /* Templates strip */
-  .pf-templates-wrap {
-    min-height: 32px;
-  }
+  .pf-templates-wrap { min-height: 32px; }
 
   .pf-templates-strip {
     display: flex;
@@ -360,16 +495,20 @@
 
   .pf-template-chip-del:hover { color: var(--error, #e55); }
 
-  /* Dialog */
+  /* Dialog — uses .open class to show/hide (avoids hidden-attr vs display:flex specificity issue) */
   .pf-dialog-backdrop {
+    display: none;
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
-    display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100;
     border-radius: 10px;
+  }
+
+  .pf-dialog-backdrop.open {
+    display: flex;
   }
 
   .pf-dialog {
@@ -451,7 +590,7 @@ import {
   presetLabel,
 } from '../core/prompt-slots.js';
 
-const STORAGE_KEY = 'promptForge_v12';
+const STORAGE_KEY = 'promptForge_v13';
 
 // ── State ────────────────────────────────────────────────────────────────────
 
@@ -462,6 +601,8 @@ let state = {
   contextText: '',
   formatPresetId: null,
   formatCustom: '',
+  chainOfThought: false,
+  examples: [],          // [{ input: string, output: string }]
   templates: [],
 };
 
@@ -487,7 +628,34 @@ function toast(msg, isError = false) {
   el.textContent = msg;
   el.style.color = isError ? 'var(--error, #e55)' : 'var(--success, #4c4)';
   el.classList.add('visible');
-  setTimeout(() => el.classList.remove('visible'), 2000);
+  setTimeout(() => el.classList.remove('visible'), 2500);
+}
+
+// ── Prompt assembly ───────────────────────────────────────────────────────────
+
+function buildPrompt() {
+  const role = resolveRoleText(state.rolePresetId, state.roleCustom);
+  const format = resolveFormatText(state.formatPresetId, state.formatCustom);
+  const base = assemblePrompt({ task: state.task, role, context: state.contextText, format });
+
+  const extras = [];
+
+  if (state.examples && state.examples.length > 0) {
+    const filled = state.examples.filter(ex => ex.input.trim() || ex.output.trim());
+    if (filled.length > 0) {
+      const exBlock = filled.map((ex, i) =>
+        `Example ${i + 1}:\nInput: ${ex.input.trim()}\nOutput: ${ex.output.trim()}`
+      ).join('\n\n');
+      extras.push(`Examples:\n${exBlock}`);
+    }
+  }
+
+  if (state.chainOfThought) {
+    extras.push('Think step by step before giving your final answer.');
+  }
+
+  if (extras.length === 0) return base;
+  return base + '\n\n' + extras.join('\n\n');
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -531,11 +699,84 @@ function updateFormatSummary() {
   slot.classList.toggle('filled', !!(state.formatPresetId || state.formatCustom.trim()));
 }
 
+function updateExamplesSummary() {
+  const el = $('pf-examples-summary');
+  const slot = $('pf-examples-slot');
+  const filled = (state.examples || []).filter(ex => ex.input.trim() || ex.output.trim());
+  if (filled.length === 0) {
+    el.textContent = 'None';
+    slot.classList.remove('filled');
+  } else {
+    el.textContent = `${filled.length} example${filled.length > 1 ? 's' : ''}`;
+    slot.classList.add('filled');
+  }
+}
+
 function updateCharCount() {
-  const role = resolveRoleText(state.rolePresetId, state.roleCustom);
-  const format = resolveFormatText(state.formatPresetId, state.formatCustom);
-  const prompt = assemblePrompt({ task: state.task, role, context: state.contextText, format });
-  $('pf-char-count').textContent = `${prompt.length} chars`;
+  $('pf-char-count').textContent = `${buildPrompt().length} chars`;
+}
+
+function updateCotButton() {
+  $('pf-cot-btn').classList.toggle('active', !!state.chainOfThought);
+}
+
+function renderExamples() {
+  const list = $('pf-examples-list');
+  list.innerHTML = '';
+  (state.examples || []).forEach((ex, i) => {
+    const pair = document.createElement('div');
+    pair.className = 'pf-example-pair';
+
+    const inputCol = document.createElement('div');
+    const inputLabel = document.createElement('div');
+    inputLabel.className = 'pf-example-label';
+    inputLabel.textContent = 'Input';
+    const inputTa = document.createElement('textarea');
+    inputTa.className = 'pf-example-textarea';
+    inputTa.rows = 3;
+    inputTa.placeholder = 'e.g. "Translate this to French"';
+    inputTa.value = ex.input;
+    inputTa.addEventListener('input', e => {
+      state.examples[i].input = e.target.value;
+      updateExamplesSummary(); updateCharCount(); persist();
+    });
+    inputCol.appendChild(inputLabel);
+    inputCol.appendChild(inputTa);
+
+    const outputCol = document.createElement('div');
+    const outputLabel = document.createElement('div');
+    outputLabel.className = 'pf-example-label';
+    outputLabel.textContent = 'Output';
+    const outputTa = document.createElement('textarea');
+    outputTa.className = 'pf-example-textarea';
+    outputTa.rows = 3;
+    outputTa.placeholder = 'e.g. "Traduire ceci en français"';
+    outputTa.value = ex.output;
+    outputTa.addEventListener('input', e => {
+      state.examples[i].output = e.target.value;
+      updateExamplesSummary(); updateCharCount(); persist();
+    });
+    outputCol.appendChild(outputLabel);
+    outputCol.appendChild(outputTa);
+
+    const del = document.createElement('button');
+    del.className = 'pf-example-del';
+    del.type = 'button';
+    del.textContent = '×';
+    del.title = 'Remove example';
+    del.addEventListener('click', () => {
+      state.examples.splice(i, 1);
+      renderExamples(); updateExamplesSummary(); updateCharCount(); persist();
+    });
+
+    pair.appendChild(inputCol);
+    pair.appendChild(outputCol);
+    pair.appendChild(del);
+    list.appendChild(pair);
+  });
+
+  $('pf-add-example-btn').style.display =
+    (state.examples || []).length >= 5 ? 'none' : 'block';
 }
 
 function renderTemplates() {
@@ -584,13 +825,10 @@ function copyPrompt() {
   const errors = validateSlots({ task: state.task });
   if (errors.length) { toast(errors[0], true); return; }
 
-  const role = resolveRoleText(state.rolePresetId, state.roleCustom);
-  const format = resolveFormatText(state.formatPresetId, state.formatCustom);
-  const prompt = assemblePrompt({ task: state.task, role, context: state.contextText, format });
-
+  const prompt = buildPrompt();
   navigator.clipboard.writeText(prompt)
     .then(() => toast('✓ Copied!'))
-    .catch(() => { /* fallback */ document.execCommand?.('copy'); toast('✓ Copied!'); });
+    .catch(() => { document.execCommand?.('copy'); toast('✓ Copied!'); });
 }
 
 function clearAll() {
@@ -600,20 +838,20 @@ function clearAll() {
   state.contextText = '';
   state.formatPresetId = null;
   state.formatCustom = '';
+  state.chainOfThought = false;
+  state.examples = [];
   applyStateToDOM();
   persist();
 }
 
 function showSaveDialog() {
-  const backdrop = $('pf-dialog-backdrop');
-  const input = $('pf-template-name-input');
-  backdrop.hidden = false;
-  input.value = '';
-  setTimeout(() => input.focus(), 50);
+  $('pf-dialog-backdrop').classList.add('open');
+  $('pf-template-name-input').value = '';
+  setTimeout(() => $('pf-template-name-input').focus(), 50);
 }
 
 function hideSaveDialog() {
-  $('pf-dialog-backdrop').hidden = true;
+  $('pf-dialog-backdrop').classList.remove('open');
 }
 
 function confirmSave() {
@@ -623,6 +861,7 @@ function confirmSave() {
     const slots = {
       task: state.task, rolePresetId: state.rolePresetId, roleCustom: state.roleCustom,
       contextText: state.contextText, formatPresetId: state.formatPresetId, formatCustom: state.formatCustom,
+      chainOfThought: state.chainOfThought, examples: JSON.parse(JSON.stringify(state.examples)),
     };
     state.templates = saveTemplate(name, slots, state.templates);
     renderTemplates();
@@ -647,7 +886,44 @@ function removeTemplate(name) {
   persist();
 }
 
-// ── Named pill handlers (defined at module scope so they can reference each other) ──
+function exportTemplates() {
+  if (!state.templates.length) { toast('No templates to export', true); return; }
+  const json = serializeTemplates(state.templates);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'prompt-forge-templates.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ Exported');
+}
+
+function triggerImport() {
+  $('pf-import-file').value = '';
+  $('pf-import-file').click();
+}
+
+function handleImportFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const imported = parseTemplates(ev.target.result);
+      const existing = new Set(state.templates.map(t => t.name));
+      const newOnes = imported.filter(t => !existing.has(t.name));
+      state.templates = [...state.templates, ...newOnes];
+      renderTemplates(); persist();
+      toast(`✓ Imported ${newOnes.length} template${newOnes.length !== 1 ? 's' : ''}`);
+    } catch (err) {
+      toast(err.message, true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── Named pill handlers ───────────────────────────────────────────────────────
 
 function reRoleSelect(id) {
   state.rolePresetId = id;
@@ -677,6 +953,9 @@ function applyStateToDOM() {
   updateRoleSummary();
   updateContextSummary();
   updateFormatSummary();
+  updateCotButton();
+  renderExamples();
+  updateExamplesSummary();
   updateCharCount();
   renderTemplates();
 }
@@ -686,6 +965,7 @@ function applyStateToDOM() {
 export function init(context) {
   container = context.container;
   restore();
+  if (!state.examples) state.examples = [];
 
   renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
   renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
@@ -698,12 +978,23 @@ export function init(context) {
   updateRoleSummary();
   updateContextSummary();
   updateFormatSummary();
+  updateCotButton();
+  renderExamples();
+  updateExamplesSummary();
   updateCharCount();
   renderTemplates();
 
   // Task input
   $('pf-task').addEventListener('input', e => {
     state.task = e.target.value;
+    updateCharCount();
+    persist();
+  });
+
+  // Chain-of-thought toggle
+  $('pf-cot-btn').addEventListener('click', () => {
+    state.chainOfThought = !state.chainOfThought;
+    updateCotButton();
     updateCharCount();
     persist();
   });
@@ -736,6 +1027,17 @@ export function init(context) {
     persist();
   });
 
+  // Add example
+  $('pf-add-example-btn').addEventListener('click', () => {
+    if (!state.examples) state.examples = [];
+    if (state.examples.length >= 5) return;
+    state.examples.push({ input: '', output: '' });
+    renderExamples(); updateExamplesSummary(); persist();
+    // Auto-open examples slot
+    const slot = $('pf-examples-slot');
+    if (!slot.classList.contains('open')) toggleSlot('examples');
+  });
+
   // Slot toggles
   container.querySelectorAll('.pf-slot-toggle').forEach(btn => {
     btn.addEventListener('click', () => toggleSlot(btn.dataset.slot));
@@ -745,6 +1047,9 @@ export function init(context) {
   $('pf-copy-btn').addEventListener('click', copyPrompt);
   $('pf-clear-btn').addEventListener('click', clearAll);
   $('pf-save-btn').addEventListener('click', showSaveDialog);
+  $('pf-export-btn').addEventListener('click', exportTemplates);
+  $('pf-import-btn').addEventListener('click', triggerImport);
+  $('pf-import-file').addEventListener('change', handleImportFile);
 
   // Dialog
   $('pf-dialog-confirm').addEventListener('click', confirmSave);

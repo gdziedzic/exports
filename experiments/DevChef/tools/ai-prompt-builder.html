@@ -13,9 +13,9 @@
   "id": "ai-prompt-builder",
   "name": "AI Prompt Builder",
   "category": "Developer Tools",
-  "description": "Build structured AI prompts with four focused slots: task, role, context, and format",
-  "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "builder", "template"],
-  "version": "12.0.0"
+  "description": "Build structured AI prompts with five focused slots: task, role, context, format, and tone",
+  "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "builder", "template", "tone"],
+  "version": "13.0.0"
 }
 </script>
 
@@ -78,6 +78,20 @@
       </div>
     </div>
 
+    <!-- Tone slot — collapsible -->
+    <div class="apb-slot apb-slot-collapsible" id="apb-tone-slot">
+      <button class="apb-slot-toggle" type="button" aria-expanded="false" data-slot="tone">
+        <span class="apb-label">Tone</span>
+        <span class="apb-summary" id="apb-tone-summary">Neutral</span>
+        <span class="apb-chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="apb-slot-body" id="apb-tone-body" hidden>
+        <div class="apb-pills" id="apb-tone-pills"></div>
+        <textarea id="apb-tone-custom" class="apb-slot-textarea" rows="2"
+          placeholder="Or describe a custom tone or writing style…"></textarea>
+      </div>
+    </div>
+
     <!-- Actions -->
     <div class="apb-actions">
       <button id="apb-copy-btn" class="apb-btn apb-btn-primary" type="button">Copy Prompt</button>
@@ -91,7 +105,7 @@
     </div>
 
     <!-- Save template dialog -->
-    <div class="apb-dialog-backdrop" id="apb-dialog-backdrop" hidden>
+    <div class="apb-dialog-backdrop" id="apb-dialog-backdrop">
       <div class="apb-dialog" role="dialog" aria-modal="true" aria-labelledby="apb-dialog-title">
         <h3 id="apb-dialog-title">Save Template</h3>
         <input id="apb-template-name-input" type="text" placeholder="Template name…" autocomplete="off" />
@@ -335,16 +349,20 @@
 
   .apb-template-chip-del:hover { color: var(--error, #e55); }
 
-  /* Dialog */
+  /* Dialog — uses .open class to show/hide (avoids hidden-attr vs display:flex specificity issue) */
   .apb-dialog-backdrop {
+    display: none;
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
-    display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100;
     border-radius: 10px;
+  }
+
+  .apb-dialog-backdrop.open {
+    display: flex;
   }
 
   .apb-dialog {
@@ -414,7 +432,16 @@ import {
   presetLabel,
 } from '../core/prompt-slots.js';
 
-const STORAGE_KEY = 'aiPromptBuilder_v12';
+const STORAGE_KEY = 'aiPromptBuilder_v13';
+
+const TONES = [
+  { id: 'professional', label: 'Professional', text: 'professional and business-appropriate' },
+  { id: 'casual',       label: 'Casual',       text: 'casual and conversational' },
+  { id: 'concise',      label: 'Concise',      text: 'concise and to the point, avoiding unnecessary words' },
+  { id: 'detailed',     label: 'Detailed',     text: 'thorough and detailed, covering all aspects comprehensively' },
+  { id: 'technical',    label: 'Technical',    text: 'technically precise, using correct domain terminology' },
+  { id: 'creative',     label: 'Creative',     text: 'creative and engaging, using vivid language' },
+];
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -425,6 +452,8 @@ let state = {
   contextText: '',
   formatPresetId: null,
   formatCustom: '',
+  tonePresetId: null,
+  toneCustom: '',
   templates: [],
 };
 
@@ -451,6 +480,12 @@ function toast(msg, isError = false) {
   el.style.color = isError ? 'var(--error, #e55)' : 'var(--success, #4c4)';
   el.classList.add('visible');
   setTimeout(() => el.classList.remove('visible'), 2000);
+}
+
+function resolveToneText(presetId, customText) {
+  if (!presetId) return customText.trim();
+  const preset = TONES.find(t => t.id === presetId);
+  return preset ? preset.text : customText.trim();
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
@@ -488,11 +523,24 @@ function updateFormatSummary() {
   $('apb-format-slot').classList.toggle('filled', !!(state.formatPresetId || state.formatCustom.trim()));
 }
 
-function updateCharCount() {
+function updateToneSummary() {
+  const label = presetLabel(state.tonePresetId, TONES, null);
+  const text = label ?? state.toneCustom;
+  $('apb-tone-summary').textContent = slotSummary(text, 'Neutral', 48);
+  $('apb-tone-slot').classList.toggle('filled', !!(state.tonePresetId || state.toneCustom.trim()));
+}
+
+function buildPrompt() {
   const role = resolveRoleText(state.rolePresetId, state.roleCustom);
   const format = resolveFormatText(state.formatPresetId, state.formatCustom);
-  const prompt = assemblePrompt({ task: state.task, role, context: state.contextText, format });
-  $('apb-char-count').textContent = `${prompt.length} chars`;
+  const tone = resolveToneText(state.tonePresetId, state.toneCustom);
+  const base = assemblePrompt({ task: state.task, role, context: state.contextText, format });
+  if (tone) return base + `\n\nTone: write in a ${tone} tone.`;
+  return base;
+}
+
+function updateCharCount() {
+  $('apb-char-count').textContent = `${buildPrompt().length} chars`;
 }
 
 function renderTemplates() {
@@ -537,33 +585,34 @@ function toggleSlot(slotName) {
 function copyPrompt() {
   const errors = validateSlots({ task: state.task });
   if (errors.length) { toast(errors[0], true); return; }
-  const role = resolveRoleText(state.rolePresetId, state.roleCustom);
-  const format = resolveFormatText(state.formatPresetId, state.formatCustom);
-  const prompt = assemblePrompt({ task: state.task, role, context: state.contextText, format });
+  const prompt = buildPrompt();
   navigator.clipboard.writeText(prompt).then(() => toast('✓ Copied!')).catch(() => toast('✓ Copied!'));
 }
 
 function clearAll() {
   state.task = ''; state.rolePresetId = null; state.roleCustom = '';
   state.contextText = ''; state.formatPresetId = null; state.formatCustom = '';
+  state.tonePresetId = null; state.toneCustom = '';
   $('apb-task').value = '';
   $('apb-role-custom').value = '';
   $('apb-context').value = '';
   $('apb-format-custom').value = '';
+  $('apb-tone-custom').value = '';
   renderPills('apb-role-pills', ROLES, null, reRoleSelect);
   renderPills('apb-format-pills', FORMATS, null, reFormatSelect);
-  updateRoleSummary(); updateContextSummary(); updateFormatSummary(); updateCharCount();
+  renderPills('apb-tone-pills', TONES, null, reToneSelect);
+  updateRoleSummary(); updateContextSummary(); updateFormatSummary(); updateToneSummary(); updateCharCount();
   persist();
 }
 
 function showSaveDialog() {
-  $('apb-dialog-backdrop').hidden = false;
+  $('apb-dialog-backdrop').classList.add('open');
   $('apb-template-name-input').value = '';
   setTimeout(() => $('apb-template-name-input').focus(), 50);
 }
 
 function hideSaveDialog() {
-  $('apb-dialog-backdrop').hidden = true;
+  $('apb-dialog-backdrop').classList.remove('open');
 }
 
 function confirmSave() {
@@ -573,6 +622,7 @@ function confirmSave() {
     const slots = {
       task: state.task, rolePresetId: state.rolePresetId, roleCustom: state.roleCustom,
       contextText: state.contextText, formatPresetId: state.formatPresetId, formatCustom: state.formatCustom,
+      tonePresetId: state.tonePresetId, toneCustom: state.toneCustom,
     };
     state.templates = saveTemplate(name, slots, state.templates);
     renderTemplates(); persist(); hideSaveDialog(); toast(`✓ Saved "${name}"`);
@@ -587,9 +637,11 @@ function applyTemplate(name) {
   $('apb-role-custom').value = state.roleCustom;
   $('apb-context').value = state.contextText;
   $('apb-format-custom').value = state.formatCustom;
+  $('apb-tone-custom').value = state.toneCustom || '';
   renderPills('apb-role-pills', ROLES, state.rolePresetId, reRoleSelect);
   renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
-  updateRoleSummary(); updateContextSummary(); updateFormatSummary(); updateCharCount();
+  renderPills('apb-tone-pills', TONES, state.tonePresetId, reToneSelect);
+  updateRoleSummary(); updateContextSummary(); updateFormatSummary(); updateToneSummary(); updateCharCount();
   persist(); toast(`Loaded "${name}"`);
 }
 
@@ -598,7 +650,7 @@ function removeTemplate(name) {
   renderTemplates(); persist();
 }
 
-// ── Pill handlers (declared before use in clearAll) ───────────────────────────
+// ── Pill handlers ─────────────────────────────────────────────────────────────
 
 function reRoleSelect(id) {
   state.rolePresetId = id;
@@ -612,6 +664,13 @@ function reFormatSelect(id) {
   updateFormatSummary(); updateCharCount(); persist();
 }
 
+function reToneSelect(id) {
+  state.tonePresetId = id;
+  if (id) { state.toneCustom = ''; $('apb-tone-custom').value = ''; }
+  renderPills('apb-tone-pills', TONES, state.tonePresetId, reToneSelect);
+  updateToneSummary(); updateCharCount(); persist();
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 export function init(context) {
@@ -620,15 +679,18 @@ export function init(context) {
 
   renderPills('apb-role-pills', ROLES, state.rolePresetId, reRoleSelect);
   renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+  renderPills('apb-tone-pills', TONES, state.tonePresetId, reToneSelect);
 
   $('apb-task').value = state.task;
   $('apb-role-custom').value = state.roleCustom;
   $('apb-context').value = state.contextText;
   $('apb-format-custom').value = state.formatCustom;
+  $('apb-tone-custom').value = state.toneCustom || '';
 
   updateRoleSummary();
   updateContextSummary();
   updateFormatSummary();
+  updateToneSummary();
   updateCharCount();
   renderTemplates();
 
@@ -659,6 +721,14 @@ export function init(context) {
     if (state.formatCustom.trim()) state.formatPresetId = null;
     renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
     updateFormatSummary(); updateCharCount(); persist();
+  });
+
+  // Tone custom text
+  $('apb-tone-custom').addEventListener('input', e => {
+    state.toneCustom = e.target.value;
+    if (state.toneCustom.trim()) state.tonePresetId = null;
+    renderPills('apb-tone-pills', TONES, state.tonePresetId, reToneSelect);
+    updateToneSummary(); updateCharCount(); persist();
   });
 
   // Slot toggles
