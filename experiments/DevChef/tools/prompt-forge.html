@@ -647,6 +647,24 @@ function removeTemplate(name) {
   persist();
 }
 
+// ── Named pill handlers (defined at module scope so they can reference each other) ──
+
+function reRoleSelect(id) {
+  state.rolePresetId = id;
+  renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+  updateRoleSummary();
+  updateCharCount();
+  persist();
+}
+
+function reFormatSelect(id) {
+  state.formatPresetId = id;
+  renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+  updateFormatSummary();
+  updateCharCount();
+  persist();
+}
+
 // ── DOM sync ─────────────────────────────────────────────────────────────────
 
 function applyStateToDOM() {
@@ -654,23 +672,8 @@ function applyStateToDOM() {
   $('pf-role-custom').value = state.roleCustom;
   $('pf-context').value = state.contextText;
   $('pf-format-custom').value = state.formatCustom;
-
-  renderPills('pf-role-pills', ROLES, state.rolePresetId, id => {
-    state.rolePresetId = id;
-    renderPills('pf-role-pills', ROLES, state.rolePresetId, arguments.callee);
-    updateRoleSummary();
-    updateCharCount();
-    persist();
-  });
-
-  renderPills('pf-format-pills', FORMATS, state.formatPresetId, id => {
-    state.formatPresetId = id;
-    renderPills('pf-format-pills', FORMATS, state.formatPresetId, arguments.callee);
-    updateFormatSummary();
-    updateCharCount();
-    persist();
-  });
-
+  renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+  renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
   updateRoleSummary();
   updateContextSummary();
   updateFormatSummary();
@@ -680,25 +683,9 @@ function applyStateToDOM() {
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 
-export function init(c) {
-  container = c;
+export function init(context) {
+  container = context.container;
   restore();
-
-  // Wire up pill renderers with closures so re-render works cleanly
-  const reRoleSelect = id => {
-    state.rolePresetId = id;
-    renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
-    updateRoleSummary();
-    updateCharCount();
-    persist();
-  };
-  const reFormatSelect = id => {
-    state.formatPresetId = id;
-    renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
-    updateFormatSummary();
-    updateCharCount();
-    persist();
-  };
 
   renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
   renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
