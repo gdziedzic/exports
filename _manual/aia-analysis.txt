@@ -1,0 +1,34 @@
+Compare [A] vs [B]. Create a table with: feature, pros, cons, and best use case for each.
+List the pros and cons of [OPTION]. Be balanced and specific.
+Analyze the trade-offs between [OPTION_A] and [OPTION_B] for [CONTEXT]. Consider: cost, complexity, scalability, and maintainability.
+Compare these approaches and recommend one with justification:\n\n1. [Approach A]\n2. [Approach B]\n3. [Approach C]
+What are the strengths and weaknesses of [APPROACH] in the context of [SCENARIO]?
+Create a decision matrix for choosing between [OPTIONS]. Use these criteria: [CRITERIA]. Weight each criterion and score each option.
+Help me make a decision about [TOPIC]. Ask me the key questions I should consider, then guide me to a recommendation based on my answers.
+Given these options and constraints, what would you recommend and why?\n\nOptions: [OPTIONS]\nConstraints: [CONSTRAINTS]\nPriorities: [PRIORITIES]
+What factors should I consider when deciding [DECISION]? Rank them by importance.
+Evaluate [OPTION] on a scale of 1-10 for each of these criteria: [CRITERIA]. Provide a total weighted score.
+Apply the 5 Whys technique to find the root cause of: [PROBLEM]\n\nWhy 1:\nWhy 2:\nWhy 3:\nWhy 4:\nWhy 5:\n\nRoot cause:
+Create a fishbone (Ishikawa) diagram analysis for: [PROBLEM]\n\nCategories:\n- People:\n- Process:\n- Technology:\n- Environment:\n- Materials:\n- Management:\n\nMost likely root cause:
+This [SYSTEM/PROCESS] is failing. Here are the symptoms: [SYMPTOMS]. Diagnose the most likely causes, ordered by probability.
+What could go wrong with [PLAN/SYSTEM]? List failure modes from most to least likely, with mitigation strategies for each.
+Perform a SWOT analysis for [SUBJECT]:\n\nStrengths:\nWeaknesses:\nOpportunities:\nThreats:
+Perform a risk assessment for [PROJECT/DECISION]:\n\nFor each risk, provide: description, likelihood (1-5), impact (1-5), risk score, and mitigation strategy.
+What are the short-term and long-term implications of [DECISION/ACTION]?\n\nShort-term (1-6 months):\nLong-term (1-5 years):\nUnintended consequences:
+Analyze the stakeholders affected by [DECISION]. For each: who are they, what do they care about, how are they impacted, and what's their likely reaction?
+What are the second-order effects of [ACTION/CHANGE]? Think beyond the obvious first-order consequences.
+Perform a cost-benefit analysis for [PROPOSAL]:\n\nCosts (tangible and intangible):\nBenefits (tangible and intangible):\nBreak-even point:\nRecommendation:
+Analyze this data and identify the top 3 patterns or trends:\n\n[DATA]
+What anomalies or outliers do you notice in this data? What might explain them?\n\n[DATA]
+Identify the key metrics and KPIs that matter most for [GOAL/CONTEXT]. Explain why each one is important.
+What story does this data tell? Provide a narrative summary:\n\n[DATA]
+Find the logical flaws or weak points in this argument:\n\n[ARGUMENT]
+Steelman this position — make the strongest possible case for:\n\n[POSITION]
+Play devil's advocate against this idea:\n\n[IDEA]\n\nPresent the 3 strongest counterarguments.
+What are the hidden assumptions in this plan/argument?\n\n[CONTENT]
+Evaluate the quality of evidence supporting this claim: [CLAIM]\n\nRate: strong, moderate, or weak — and explain why.
+What would need to be true for [IDEA/PLAN] to succeed? List the critical assumptions and assess how realistic each one is.
+Identify the cognitive biases that might be affecting this decision:\n\n[DECISION/REASONING]
+What questions should we be asking about [TOPIC] that nobody is asking?
+Analyze [SITUATION] using the Cynefin framework. Is this a simple, complicated, complex, or chaotic problem? What approach does that suggest?
+Perform a pre-mortem for [PROJECT/PLAN]: Imagine it has failed spectacularly. What went wrong? List the most likely causes of failure.

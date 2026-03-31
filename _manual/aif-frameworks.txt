@@ -1,0 +1,44 @@
+# CO-STAR Framework
+[CO-STAR]\nContext: [Provide background information]\nObjective: [Define the task]\nStyle: [Specify writing style]\nTone: [Define the tone]\nAudience: [Identify the audience]\nResponse: [Define the format]
+# RISEN Framework
+[RISEN]\nRole: [Who should the AI act as?]\nInstructions: [What is the task?]\nSteps: [What steps should it follow?]\nEnd goal: [What is the desired outcome?]\nNarrowing: [What constraints apply?]
+# RTF Framework
+[RTF]\nRole: Act as a [ROLE]\nTask: [Describe the task in detail]\nFormat: [Specify output format]
+# CRISP Framework
+[CRISP]\nCapacity: You are a [ROLE/EXPERT]\nRole: Your job is to [FUNCTION]\nInsight: Here is the context: [CONTEXT]\nStatement: I need you to [TASK]\nPersonality: Communicate in a [STYLE] manner
+# RACE Framework
+[RACE]\nRole: You are a [ROLE]\nAction: [What action to take]\nContext: [Background information]\nExpectation: [Expected output and format]
+# CARE Framework
+[CARE]\nContext: [Background and situation]\nAction: [What you want done]\nResult: [Desired outcome]\nExample: [Provide an example if helpful]
+# Chain-of-Density Summarization
+Summarize the following text. Produce 5 versions, each more concise than the last while retaining all key information. Each version should be denser — packing more information into fewer words.\n\nText: [TEXT]\n\nVersion 1 (longest):\nVersion 2:\nVersion 3:\nVersion 4:\nVersion 5 (shortest, most dense):
+# Tree of Thought
+Consider this problem: [PROBLEM]\n\nExplore 3 different reasoning paths:\n\nPath 1: [Approach A]\n- Step 1:\n- Step 2:\n- Conclusion:\n\nPath 2: [Approach B]\n- Step 1:\n- Step 2:\n- Conclusion:\n\nPath 3: [Approach C]\n- Step 1:\n- Step 2:\n- Conclusion:\n\nNow evaluate which path leads to the best answer and explain why.
+# Self-Consistency
+Answer this question 3 times independently, using different reasoning approaches each time. Then compare your answers and select the most reliable one.\n\nQuestion: [QUESTION]\n\nAttempt 1:\nAttempt 2:\nAttempt 3:\n\nFinal answer (with justification):
+# Skeleton-of-Thought
+First, provide a skeleton outline of your answer to: [QUESTION]\n\nThen, expand each point in the skeleton with detailed content.
+# Least-to-Most Prompting
+To solve this complex problem, let's break it into subproblems from simplest to hardest:\n\n1. [Simplest subproblem]\n2. [Next subproblem, building on 1]\n3. [Next subproblem, building on 1-2]\n...\n\nNow solve each subproblem in order, using previous answers:\n\nProblem: [PROBLEM]
+# Prompt Chaining Template
+Step 1: [First prompt — extract/analyze]\nStep 2: Using the output of Step 1, [second prompt — transform/refine]\nStep 3: Using the output of Step 2, [third prompt — finalize/format]
+# Role-Play Debate
+Simulate a debate between [EXPERT_A] and [EXPERT_B] on the topic: [TOPIC]\n\n[EXPERT_A] argues: [POSITION_A]\n[EXPERT_B] argues: [POSITION_B]\n\nEach expert gives 3 arguments. Then a moderator summarizes the strongest points from each side.
+# Socratic Method
+I want to learn about [TOPIC]. Instead of explaining it directly, guide me through it using the Socratic method — ask me thought-provoking questions that lead me to understand the concept myself. Start with the first question.
+# SCAMPER Framework
+Apply the SCAMPER creative thinking framework to: [TOPIC/PRODUCT]\n\nSubstitute: What can be substituted?\nCombine: What can be combined?\nAdapt: What can be adapted from elsewhere?\nModify: What can be modified or magnified?\nPut to other uses: What else can it be used for?\nEliminate: What can be removed?\nReverse: What can be reversed or rearranged?
+# First Principles
+Analyze [TOPIC] using first principles thinking:\n\n1. What are the fundamental truths we know for certain?\n2. Break the problem down to its most basic elements.\n3. Build up a solution from scratch using only these elements.\n\nAvoid analogies and conventional assumptions.
+# Structured Critique
+Evaluate the following using this structure:\n\n[CONTENT TO EVALUATE]\n\n1. Strengths (what works well)\n2. Weaknesses (what doesn't work)\n3. Opportunities (what could be improved)\n4. Specific actionable suggestions (numbered list)
+# Persona Switching
+Answer the following question from 3 different perspectives:\n\nQuestion: [QUESTION]\n\n1. As a [PERSONA_1]:\n2. As a [PERSONA_2]:\n3. As a [PERSONA_3]:\n\nSynthesis: What insights emerge from comparing these perspectives?
+# Iterative Refinement
+Here is my current version:\n\n[CONTENT]\n\nPlease:\n1. Rate it 1-10\n2. Identify the 3 biggest weaknesses\n3. Provide a revised version addressing those weaknesses\n4. Rate the revised version 1-10
+# MECE Analysis
+Analyze [TOPIC] using the MECE principle (Mutually Exclusive, Collectively Exhaustive):\n\nBreak it into categories that don't overlap and together cover everything:\n\n1. [Category 1]\n2. [Category 2]\n3. [Category 3]\n...\n\nFor each category, provide key details.
+# Audience Adaptation
+Explain [TOPIC] for three different audiences:\n\n1. For a 10-year-old:\n2. For a college student:\n3. For a domain expert:\n\nHighlight what changes in each version and why.
+# Contrarian Thinking
+Take the contrarian position on: [CLAIM/IDEA]\n\nPresent the strongest possible argument against the mainstream view. Include evidence, reasoning, and address likely counterarguments. End with an honest assessment of how strong the contrarian case actually is.

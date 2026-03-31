@@ -1,0 +1,43 @@
+Rewrite the following to be simpler and easier to understand:\n\n[TEXT]
+Rewrite this in a more formal, professional tone:\n\n[TEXT]
+Rewrite this in a casual, conversational tone:\n\n[TEXT]
+Make this more concise. Cut the word count in half while keeping all key information:\n\n[TEXT]
+Expand on this with more detail and examples:\n\n[TEXT]
+Rewrite this to be more persuasive and compelling:\n\n[TEXT]
+Rewrite this for a [AUDIENCE] audience:\n\n[TEXT]
+Rewrite this in active voice:\n\n[TEXT]
+Make this more engaging and interesting to read:\n\n[TEXT]
+Provide a TL;DR summary in 1-2 sentences:\n\n[TEXT]
+Summarize this in 3-5 bullet points:\n\n[TEXT]
+Write an executive summary (one paragraph) of:\n\n[TEXT]
+Summarize this in exactly one sentence:\n\n[TEXT]
+Extract the key takeaways from:\n\n[TEXT]
+Summarize this text, then list any questions it leaves unanswered:\n\n[TEXT]
+Proofread and fix any grammar, spelling, or punctuation errors in:\n\n[TEXT]
+Improve the clarity and readability of this text without changing its meaning:\n\n[TEXT]
+Check this text for logical inconsistencies or factual errors:\n\n[TEXT]
+Edit this for tone — it should sound [DESIRED TONE]:\n\n[TEXT]
+Remove jargon and make this accessible to a general audience:\n\n[TEXT]
+Tighten up this writing. Remove filler words, redundancies, and unnecessary qualifiers:\n\n[TEXT]
+Translate the following to [LANGUAGE]:\n\n[TEXT]
+Translate this and adapt it culturally for a [COUNTRY/REGION] audience:\n\n[TEXT]
+Translate this technical text to [LANGUAGE], preserving technical accuracy:\n\n[TEXT]
+Write a blog post outline about [TOPIC]. Include a hook, 5-7 sections with key points, and a conclusion.
+Write a professional email about [TOPIC]. Tone: [TONE]. Key points to cover: [POINTS]
+Draft a documentation page for [FEATURE/API]. Include: overview, usage examples, parameters, and common pitfalls.
+Write a README section for [PROJECT/FEATURE] covering: what it does, how to install, how to use, and an example.
+Write a commit message for the following changes:\n\n[CHANGES]
+Write a pull request description for:\n\n[CHANGES]\n\nInclude: summary, motivation, what changed, and testing notes.
+Write release notes for version [X.Y.Z] based on these changes:\n\n[CHANGELOG]
+Write a clear, concise error message for when [ERROR CONDITION]. Include what went wrong and how to fix it.
+Write a [TYPE] that is:\n- Tone: professional\n- Length: [LENGTH]\n- Audience: [AUDIENCE]\n- Purpose: [PURPOSE]
+Make this sound more confident and authoritative:\n\n[TEXT]
+Make this sound more empathetic and understanding:\n\n[TEXT]
+Make this sound more urgent:\n\n[TEXT]
+Make this more diplomatic and tactful:\n\n[TEXT]
+Adjust the tone to be enthusiastic and positive:\n\n[TEXT]
+Write 5 different subject lines for an email about [TOPIC]. Vary the style: direct, curious, urgent, friendly, and creative.
+Write a short, punchy tagline for [PRODUCT/IDEA].
+Turn these rough notes into polished prose:\n\n[NOTES]
+Write a clear explanation of [CONCEPT] using an analogy that a non-expert would understand.
+Create a FAQ section with 5-7 questions and answers about [TOPIC].

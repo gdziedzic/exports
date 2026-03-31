@@ -1,0 +1,176 @@
+# Text Formatting & Transformations
+# Utilities for text manipulation and formatting
+
+# ============================================================================
+# CASE TRANSFORMATIONS (examples - static text)
+# ============================================================================
+
+# Note: ProTextExpander3 can evaluate C# expressions, so you can transform clipboard text
+# For actual case conversion, you would copy text first, then use an expression like:
+# "UPPERCASE TEXT".ToUpper()
+
+uppercase example;ABCDEFGHIJKLMNOPQRSTUVWXYZ
+lowercase example;abcdefghijklmnopqrstuvwxyz
+camelCase example;camelCaseExample
+PascalCase example;PascalCaseExample
+snake_case example;snake_case_example
+kebab-case example;kebab-case-example
+SCREAMING_CASE example;SCREAMING_SNAKE_CASE
+
+# ============================================================================
+# LOREM IPSUM TEXT
+# ============================================================================
+
+lorem short;Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+lorem medium;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+lorem long;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+lorem paragraph;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+lorem words;Lorem ipsum dolor sit amet
+
+# ============================================================================
+# PLACEHOLDER TEXT
+# ============================================================================
+
+placeholder name;[Name]
+placeholder email;[Email]
+placeholder phone;[Phone]
+placeholder address;[Address]
+placeholder company;[Company]
+placeholder title;[Title]
+placeholder content;[Content]
+placeholder description;[Description]
+placeholder url;[URL]
+placeholder image;[Image]
+
+# ============================================================================
+# COMMON PHRASES - PROFESSIONAL
+# ============================================================================
+
+regards;Best regards
+sincerely;Sincerely yours
+thank you;Thank you for your time
+appreciate;I appreciate your help
+follow up;Following up on
+looking forward;Looking forward to hearing from you
+please advise;Please advise
+kindly confirm;Kindly confirm
+as discussed;As discussed
+per our conversation;Per our conversation
+
+# ============================================================================
+# COMMON PHRASES - CASUAL
+# ============================================================================
+
+thanks;Thanks!
+you're welcome;You're welcome!
+no problem;No problem!
+sounds good;Sounds good!
+let me know;Let me know
+talk soon;Talk soon!
+catch up;Let's catch up
+be right back;Be right back (BRB)
+on my way;On my way!
+got it;Got it!
+
+# ============================================================================
+# LINE SEPARATORS
+# ============================================================================
+
+separator dashes;----------------------------------------
+separator equals;========================================
+separator stars;****************************************
+separator hashes;########################################
+separator tildes;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+separator underscores;________________________________________
+
+# ============================================================================
+# BRACKETS & WRAPPERS
+# ============================================================================
+
+square brackets;[]
+curly braces;{}
+angle brackets;<>
+parentheses;()
+double quotes;""
+single quotes;''
+backticks;``
+
+# ============================================================================
+# WHITESPACE
+# ============================================================================
+
+tab;\t
+newline;\n
+double newline;\n\n
+space x2;
+space x4;
+space x8;
+
+# ============================================================================
+# NUMBERS & SEQUENCES
+# ============================================================================
+
+numbers 0-9;0123456789
+numbers 1-10;1 2 3 4 5 6 7 8 9 10
+alphabet lower;abcdefghijklmnopqrstuvwxyz
+alphabet upper;ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+# ============================================================================
+# PHONETIC ALPHABET
+# ============================================================================
+
+phonetic a;Alpha
+phonetic b;Bravo
+phonetic c;Charlie
+phonetic d;Delta
+phonetic e;Echo
+phonetic f;Foxtrot
+phonetic g;Golf
+phonetic h;Hotel
+phonetic i;India
+phonetic j;Juliet
+phonetic k;Kilo
+phonetic l;Lima
+phonetic m;Mike
+phonetic n;November
+phonetic o;Oscar
+phonetic p;Papa
+phonetic q;Quebec
+phonetic r;Romeo
+phonetic s;Sierra
+phonetic t;Tango
+phonetic u;Uniform
+phonetic v;Victor
+phonetic w;Whiskey
+phonetic x;X-ray
+phonetic y;Yankee
+phonetic z;Zulu
+
+# ============================================================================
+# TEXT DECORATIONS (using unicode)
+# ============================================================================
+
+bold a;𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳
+italic a;𝑎𝑏𝑐𝑑𝑒𝑓𝑔ℎ𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝𝑞𝑟𝑠𝑡𝑢𝑣𝑤𝑥𝑦𝑧
+monospace a;𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣
+
+# ============================================================================
+# DIVIDERS & SECTION BREAKS
+# ============================================================================
+
+section break;═══════════════════════════════════════
+header underline;-----------------------------------
+double line;═══════════════════════════════════════
+dotted line;· · · · · · · · · · · · · · · · · · · ·
+wave line;～～～～～～～～～～～～～～～～～～～～
+
+# ============================================================================
+# FILE PATHS (examples)
+# ============================================================================
+
+path windows;C:\Users\Username\Documents
+path linux;/home/username/documents
+path mac;/Users/username/Documents
+path relative;./path/to/file
+path parent;../
+path current;./

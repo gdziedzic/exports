@@ -1,0 +1,63 @@
+Format this JSON:\n\n```json\n[PASTE JSON HERE]\n```
+Format this SQL query:\n\n```sql\n[PASTE SQL HERE]\n```
+Format this XML:\n\n```xml\n[PASTE XML HERE]\n```
+Translate to English:\n\n[PASTE TEXT HERE]
+Translate to Polish:\n\n[PASTE TEXT HERE]
+Translate to German:\n\n[PASTE TEXT HERE]
+Translate to Spanish:\n\n[PASTE TEXT HERE]
+Translate to French:\n\n[PASTE TEXT HERE]
+Convert this JSON to YAML:\n\n```json\n[PASTE JSON HERE]\n```
+Convert this YAML to JSON:\n\n```yaml\n[PASTE YAML HERE]\n```
+Convert this JSON to CSV:\n\n```json\n[PASTE JSON HERE]\n```
+Convert this CSV to JSON:\n\n```\n[PASTE CSV HERE]\n```
+Convert this XML to JSON:\n\n```xml\n[PASTE XML HERE]\n```
+Convert this JSON to XML:\n\n```json\n[PASTE JSON HERE]\n```
+Convert this markdown to HTML:\n\n[PASTE MARKDOWN HERE]
+Minify this JSON (remove all whitespace):\n\n```json\n[PASTE JSON HERE]\n```
+Prettify and fix this broken JSON:\n\n```\n[PASTE BROKEN JSON HERE]\n```
+Generate a regex pattern that matches: [DESCRIBE PATTERN]
+Explain this regex step by step:\n\n```\n[PASTE REGEX HERE]\n```
+Write a cron expression for: [DESCRIBE SCHEDULE]
+Explain this cron expression:\n\n```\n[PASTE CRON HERE]\n```
+Generate sample data (10 rows) for this schema:\n\n[DESCRIBE FIELDS]
+Convert this curl command to Python requests:\n\n```bash\n[PASTE CURL HERE]\n```
+Convert this curl command to C# HttpClient:\n\n```bash\n[PASTE CURL HERE]\n```
+Convert this curl command to JavaScript fetch:\n\n```bash\n[PASTE CURL HERE]\n```
+Summarize this text in 3 bullet points:\n\n[PASTE TEXT HERE]
+Summarize this text in one sentence:\n\n[PASTE TEXT HERE]
+Rewrite this to be more concise:\n\n[PASTE TEXT HERE]
+Rewrite this in a professional tone:\n\n[PASTE TEXT HERE]
+Rewrite this in a casual/friendly tone:\n\n[PASTE TEXT HERE]
+Fix grammar and spelling in this text:\n\n[PASTE TEXT HERE]
+Proofread this and list all issues found:\n\n[PASTE TEXT HERE]
+Extract all URLs from this text:\n\n[PASTE TEXT HERE]
+Extract all email addresses from this text:\n\n[PASTE TEXT HERE]
+Generate a .gitignore for a [LANGUAGE/FRAMEWORK] project
+Write unit tests for this function:\n\n```\n[PASTE CODE HERE]\n```
+Add error handling to this code:\n\n```\n[PASTE CODE HERE]\n```
+Refactor this code for readability:\n\n```\n[PASTE CODE HERE]\n```
+Add comments and docstrings to this code:\n\n```\n[PASTE CODE HERE]\n```
+Find bugs in this code:\n\n```\n[PASTE CODE HERE]\n```
+Optimize this code for performance:\n\n```\n[PASTE CODE HERE]\n```
+Convert this code from [LANGUAGE A] to [LANGUAGE B]:\n\n```\n[PASTE CODE HERE]\n```
+Generate a SQL query for: [DESCRIBE WHAT YOU NEED]
+Explain this SQL query step by step:\n\n```sql\n[PASTE SQL HERE]\n```
+Optimize this SQL query:\n\n```sql\n[PASTE SQL HERE]\n```
+Create a database schema for: [DESCRIBE YOUR DATA]
+Generate TypeScript types/interfaces from this JSON:\n\n```json\n[PASTE JSON HERE]\n```
+Generate a C# class from this JSON:\n\n```json\n[PASTE JSON HERE]\n```
+Generate a Python dataclass from this JSON:\n\n```json\n[PASTE JSON HERE]\n```
+Decode this base64 string and explain what it contains:\n\n[PASTE BASE64 HERE]
+Decode this JWT token and explain the claims:\n\n[PASTE JWT HERE]
+Generate a UUID/GUID for me
+Write a commit message for these changes:\n\n[DESCRIBE CHANGES]
+Write a PR description for these changes:\n\n[DESCRIBE CHANGES]
+Create a changelog entry for:\n\n[DESCRIBE WHAT CHANGED]
+Estimate story points (1-13) for this task:\n\n[DESCRIBE TASK]
+Write acceptance criteria for this user story:\n\n[DESCRIBE FEATURE]
+Convert this timestamp to human-readable date: [PASTE TIMESTAMP]
+Calculate the difference between these dates: [DATE1] and [DATE2]
+Create an ASCII table from this data:\n\n[PASTE DATA HERE]
+Create a mermaid diagram for:\n\n[DESCRIBE FLOW]
+Generate a PlantUML diagram for:\n\n[DESCRIBE SYSTEM]
+Compare these two texts and list the differences:\n\nText 1:\n[PASTE TEXT 1]\n\nText 2:\n[PASTE TEXT 2]

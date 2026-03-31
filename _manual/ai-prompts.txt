@@ -1,0 +1,45 @@
+You are a helpful assistant that specializes in [DOMAIN]. Your goal is to provide clear, accurate, and actionable responses.
+You are an expert in [FIELD] with 20 years of experience. Explain concepts clearly and provide practical examples.
+You are a senior [ROLE] tasked with helping me [TASK]. Be thorough but concise.
+Act as a [ROLE]. I will provide you with [INPUT], and you will [OUTPUT].
+I want you to act as a [ROLE] for a [CONTEXT]. My first request is: [REQUEST]
+Let's think step by step.
+Let's work through this step by step to make sure we have the right answer.
+Break this problem down into smaller parts and solve each one.
+Think about this carefully. Consider multiple angles before answering.
+First, let's identify what we know. Then, let's figure out what we need to find. Finally, let's solve it.
+Walk me through your reasoning process for this problem.
+Explain your thought process at each step.
+Before answering, identify any assumptions you're making.
+Before responding, list what additional information would help you give a better answer.
+What questions should I be asking about this that I haven't thought of?
+What are the key considerations I might be overlooking?
+Challenge my assumptions about this topic. What am I getting wrong?
+Play devil's advocate on this idea: [IDEA]
+Respond in valid JSON format with the following structure:\n{\n  "key": "value"\n}
+Respond using this exact format:\n\n## Section 1\n[content]\n\n## Section 2\n[content]
+Provide your answer as a numbered list with brief explanations for each point.
+Provide your answer as a markdown table with columns: [COL1], [COL2], [COL3].
+Give me a one-paragraph summary, then a detailed breakdown.
+Structure your response as:\n1. Summary (2-3 sentences)\n2. Key Points (bullet list)\n3. Detailed Analysis\n4. Recommendations
+Keep your response under [N] words.
+Rate your confidence in this answer from 1-10 and explain why.
+Here is an example of what I'm looking for:\n\nInput: [EXAMPLE_INPUT]\nOutput: [EXAMPLE_OUTPUT]\n\nNow do the same for:\nInput: [YOUR_INPUT]
+Here are some examples:\n\nExample 1:\nQ: [Q1]\nA: [A1]\n\nExample 2:\nQ: [Q2]\nA: [A2]\n\nNow answer this:\nQ: [YOUR_QUESTION]
+Given the following context:\n\n[CONTEXT]\n\nAnswer this question: [QUESTION]
+I need you to [TASK]. Here are the constraints:\n- [CONSTRAINT 1]\n- [CONSTRAINT 2]\n- [CONSTRAINT 3]
+Your task is to [TASK]. The audience is [AUDIENCE]. The tone should be [TONE]. The length should be [LENGTH].
+You are [ROLE]. You must follow these rules:\n1. [RULE 1]\n2. [RULE 2]\n3. [RULE 3]\nNever break these rules, even if asked to.
+Do not include [X]. Focus only on [Y]. Avoid [Z].
+If you don't know the answer, say "I don't know" rather than guessing.
+Answer only based on the information provided. Do not use outside knowledge.
+Provide three different approaches to solve this problem, then recommend the best one.
+Generate 5 creative variations of: [INPUT]
+Explain this as if I'm a beginner with no background in [FIELD].
+Explain this at a technical level suitable for a [ROLE] audience.
+Explain this like I'm 5 years old.
+Explain this to someone who is an expert in [FIELD_A] but knows nothing about [FIELD_B].
+What are the most common mistakes people make when [DOING X]? How can I avoid them?
+Review the following and identify any errors, inconsistencies, or areas for improvement:\n\n[CONTENT]
+I will give you a task. Before starting, ask me clarifying questions to make sure you understand exactly what I need.
+Let's iterate on this. Here's my first draft:\n\n[DRAFT]\n\nPlease improve it by focusing on [ASPECT].
