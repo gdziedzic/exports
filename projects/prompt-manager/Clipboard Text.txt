@@ -1,0 +1,12 @@
+Review the following code for bugs, security issues, and improvements.
+
+Code:
+`{language}
+{paste code here}
+`
+
+Provide:
+1. Critical bugs or security issues
+2. Performance improvements
+3. Readability suggestions
+4. A summary rating (1-5)
