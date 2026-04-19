@@ -28,8 +28,13 @@
 
     <div class="tool-section">
       <label class="section-label">Load from JSON Schema</label>
-      <textarea id="json-schema-input" placeholder='Paste JSON schema here (format: {"tables": [{"name": "Users", "schema": "dbo", "columns": [...]}, ...]})'></textarea>
+      <textarea id="json-schema-input" placeholder='Paste JSON schema here (format: {"tables": [{"name": "Users", "schema": "dbo", "columns": [{"name": "Id", "primaryKey": true}, {"name": "Email"}]}, ...]})'></textarea>
       <button id="load-schema-btn" class="secondary">Load from JSON Schema</button>
+      <select id="sample-select" class="sample-select">
+        <option value="">Load Sample Schema…</option>
+        <option value="ecommerce">E-Commerce (Orders)</option>
+        <option value="hr">HR (Employees)</option>
+      </select>
     </div>
 
     <div class="tool-section">
@@ -42,6 +47,12 @@
       <label class="section-label">Joins</label>
       <div id="joins-list" class="joins-list"></div>
       <button id="add-join-btn" class="secondary">+ Add JOIN</button>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">WHERE Conditions</label>
+      <div id="conditions-list" class="conditions-list"></div>
+      <button id="add-condition-btn" class="secondary">+ Add Condition</button>
     </div>
 
     <div class="tool-section">
@@ -171,6 +182,51 @@
     font-size: 13px;
   }
 
+  .conditions-list {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .condition-row {
+    display: grid;
+    grid-template-columns: 80px 1.5fr 1.5fr 1fr 1.5fr auto;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    align-items: end;
+  }
+
+  .condition-row.first-condition {
+    grid-template-columns: 1.5fr 1.5fr 1fr 1.5fr auto;
+  }
+
+  .condition-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .condition-field label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .condition-field select,
+  .condition-field input {
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 768px) {
+    .condition-row,
+    .condition-row.first-condition {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .query-options {
     display: grid;
     gap: 12px;
@@ -198,6 +254,12 @@
     font-family: var(--font-mono);
     font-size: 13px;
     margin-bottom: 8px;
+  }
+
+  .sample-select {
+    width: auto;
+    display: inline-block;
+    margin-top: 8px;
   }
 
   #output {
@@ -369,6 +431,7 @@ export const DevChefTool = {
   context: null,
   tables: [],
   joins: [],
+  conditions: [],
   schemaData: null,
 
   init(container, context) {
@@ -382,23 +445,121 @@ export const DevChefTool = {
     const addJoinBtn = container.querySelector("#add-join-btn");
     const selectMode = container.querySelector("#select-mode");
     const loadSchemaBtn = container.querySelector("#load-schema-btn");
+    const sampleSelect = container.querySelector("#sample-select");
+    const addConditionBtn = container.querySelector("#add-condition-btn");
 
     generateBtn?.addEventListener("click", () => this.generateSQL());
     copyBtn?.addEventListener("click", () => this.copyOutput());
     resetBtn?.addEventListener("click", () => this.reset());
     addTableBtn?.addEventListener("click", () => this.addTable());
     addJoinBtn?.addEventListener("click", () => this.addJoin());
+    addConditionBtn?.addEventListener("click", () => this.addCondition());
     loadSchemaBtn?.addEventListener("click", () => this.loadFromJsonSchema());
+    sampleSelect?.addEventListener("change", (e) => {
+      if (e.target.value) this.loadSample(e.target.value);
+      e.target.value = '';
+    });
 
     selectMode?.addEventListener("change", (e) => {
       const explicitColumns = container.querySelector("#explicit-columns");
       explicitColumns.style.display = e.target.value === 'explicit' ? 'block' : 'none';
     });
 
-    // Add initial tables
+    // Reset state on (re-)init to prevent accumulation across tool re-opens
+    this.tables = [];
+    this.joins = [];
+    this.conditions = [];
+    this.schemaData = null;
+
     this.addTable('Users', 'u');
     this.addTable('Orders', 'o');
     this.addJoin();
+  },
+
+  sampleSchemas: {
+    ecommerce: {
+      label: "E-Commerce (Orders)",
+      schema: {
+        "tables": [
+          {
+            "name": "Customers", "schema": "dbo",
+            "columns": [
+              {"name": "CustomerId", "type": "int", "primaryKey": true},
+              {"name": "FirstName", "type": "nvarchar(100)"},
+              {"name": "LastName", "type": "nvarchar(100)"},
+              {"name": "Email", "type": "nvarchar(255)"},
+              {"name": "CreatedAt", "type": "datetime"}
+            ]
+          },
+          {
+            "name": "Orders", "schema": "dbo",
+            "columns": [
+              {"name": "OrderId", "type": "int", "primaryKey": true},
+              {"name": "CustomerId", "type": "int", "references": {"table": "Customers", "column": "CustomerId"}},
+              {"name": "OrderDate", "type": "datetime"},
+              {"name": "TotalAmount", "type": "decimal(10,2)"},
+              {"name": "Status", "type": "nvarchar(50)"}
+            ]
+          },
+          {
+            "name": "OrderItems", "schema": "dbo",
+            "columns": [
+              {"name": "OrderItemId", "type": "int", "primaryKey": true},
+              {"name": "OrderId", "type": "int", "references": {"table": "Orders", "column": "OrderId"}},
+              {"name": "ProductId", "type": "int"},
+              {"name": "Qty", "type": "int"},
+              {"name": "UnitPrice", "type": "decimal(10,2)"}
+            ]
+          }
+        ]
+      }
+    },
+    hr: {
+      label: "HR (Employees)",
+      schema: {
+        "tables": [
+          {
+            "name": "Departments", "schema": "hr",
+            "columns": [
+              {"name": "DepartmentId", "type": "int", "primaryKey": true},
+              {"name": "Name", "type": "nvarchar(100)"},
+              {"name": "ManagerId", "type": "int"}
+            ]
+          },
+          {
+            "name": "Employees", "schema": "hr",
+            "columns": [
+              {"name": "EmployeeId", "type": "int", "primaryKey": true},
+              {"name": "FirstName", "type": "nvarchar(100)"},
+              {"name": "LastName", "type": "nvarchar(100)"},
+              {"name": "DepartmentId", "type": "int", "references": {"table": "Departments", "column": "DepartmentId"}},
+              {"name": "HireDate", "type": "date"},
+              {"name": "Salary", "type": "decimal(12,2)"}
+            ]
+          },
+          {
+            "name": "Projects", "schema": "hr",
+            "columns": [
+              {"name": "ProjectId", "type": "int", "primaryKey": true},
+              {"name": "Name", "type": "nvarchar(200)"},
+              {"name": "DepartmentId", "type": "int", "references": {"table": "Departments", "column": "DepartmentId"}},
+              {"name": "StartDate", "type": "date"},
+              {"name": "EndDate", "type": "date"}
+            ]
+          }
+        ]
+      }
+    }
+  },
+
+  loadSample(key) {
+    const entry = this.sampleSchemas[key];
+    if (!entry) return;
+    const jsonSchemaInput = this.container.querySelector("#json-schema-input");
+    if (jsonSchemaInput) {
+      jsonSchemaInput.value = JSON.stringify(entry.schema, null, 2);
+    }
+    this.applySchema(entry.schema);
   },
 
   loadFromJsonSchema() {
@@ -411,39 +572,106 @@ export const DevChefTool = {
     }
 
     try {
-      this.schemaData = JSON.parse(json);
+      const data = JSON.parse(json);
 
-      if (!this.schemaData.tables || !Array.isArray(this.schemaData.tables)) {
+      if (!data.tables || !Array.isArray(data.tables)) {
         alert('Invalid schema format. Expected: {"tables": [...]}');
         return;
       }
 
-      if (this.schemaData.tables.length === 0) {
+      if (data.tables.length === 0) {
         alert('No tables found in schema');
         return;
       }
 
-      // Clear existing tables and joins
-      this.tables = [];
-      this.joins = [];
-
-      // Load all tables from schema
-      this.schemaData.tables.forEach((table, index) => {
-        const alias = this.generateAlias(table.name, index);
-        this.addTable(table.name, alias, table.schema || 'dbo', table.columns);
-      });
-
-      // Add one join to get started
-      if (this.tables.length > 1) {
-        this.addJoin();
-      }
-
-      alert(`Successfully loaded ${this.schemaData.tables.length} table(s) from schema!`);
+      this.applySchema(data);
 
     } catch (error) {
       alert(`Error parsing JSON: ${error.message}`);
       console.error(error);
     }
+  },
+
+  applySchema(data) {
+    this.schemaData = data;
+    this.tables = [];
+    this.joins = [];
+
+    data.tables.forEach((table, index) => {
+      const alias = this.generateAlias(table.name, index);
+      this.addTable(table.name, alias, table.schema || 'dbo', table.columns);
+    });
+
+    const detected = this.detectFKJoins();
+
+    if (detected > 0) {
+      this.renderJoins();
+      this.generateSQL();
+    } else if (this.tables.length > 1) {
+      this.addJoin();
+    }
+  },
+
+  detectFKJoins() {
+    const seen = new Set();
+    let count = 0;
+
+    // Pass 1: explicit `references` annotations in column definitions
+    // rightTable = FK holder (gets the JOIN keyword), leftTable = referenced table (ON left side)
+    this.tables.forEach(table => {
+      if (!table.columns) return;
+      table.columns.forEach(col => {
+        if (!col.references) return;
+        const refTable = this.tables.find(t => t.name === col.references.table);
+        if (!refTable || refTable.name === table.name) return; // skip self-refs
+        const key = `${refTable.name}.${col.references.column}→${table.name}.${col.name}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        this.joins.push({
+          leftTable: refTable.name,          // referenced table (PK side)
+          leftColumn: col.references.column, // PK column
+          rightTable: table.name,            // FK holder (the table being JOINed)
+          rightColumn: col.name,             // FK column
+          joinType: 'LEFT JOIN'
+        });
+        count++;
+      });
+    });
+
+    // Pass 2: heuristic — column named XxxId where Xxx matches another table name
+    if (count === 0) {
+      this.tables.forEach(table => {
+        if (!table.columns) return;
+        table.columns.forEach(col => {
+          if (col.primaryKey || !col.name.endsWith('Id')) return;
+          const prefix = col.name.slice(0, -2);
+          const refTable = this.tables.find(t =>
+            t.name !== table.name && (
+              t.name.toLowerCase() === prefix.toLowerCase() ||
+              t.name.toLowerCase() === prefix.toLowerCase() + 's' ||
+              t.name.toLowerCase() === prefix.toLowerCase() + 'es'
+            )
+          );
+          if (!refTable) return;
+          const pkCol = refTable.columns?.find(c => c.primaryKey)?.name
+            || refTable.columns?.find(c => c.name.toLowerCase().endsWith('id'))?.name
+            || prefix + 'Id';
+          const key = `${refTable.name}.${pkCol}→${table.name}.${col.name}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          this.joins.push({
+            leftTable: refTable.name,
+            leftColumn: pkCol,
+            rightTable: table.name,
+            rightColumn: col.name,
+            joinType: 'LEFT JOIN'
+          });
+          count++;
+        });
+      });
+    }
+
+    return count;
   },
 
   generateAlias(tableName, index) {
@@ -467,7 +695,7 @@ export const DevChefTool = {
 
     tablesList.innerHTML = this.tables.map((table, index) => {
       const displayName = table.schema ? `${table.schema}.${table.name}` : table.name;
-      const columnCount = table.columns ? ` (${table.columns.length} columns)` : '';
+      const columnCount = table.columns?.length > 0 ? ` (${table.columns.length} columns)` : '';
       return `
       <div class="table-row">
         <div class="table-field">
@@ -504,6 +732,7 @@ export const DevChefTool = {
     });
 
     this.updateJoinSelects();
+    this.renderConditions();
   },
 
   removeTable(index) {
@@ -605,15 +834,27 @@ export const DevChefTool = {
     // Attach event listeners
     joinsList.querySelectorAll('.join-left-table').forEach(select => {
       select.addEventListener('change', (e) => {
-        this.joins[e.target.dataset.index].leftTable = e.target.value;
-        this.renderJoins(); // Re-render to update column suggestions
+        const idx = e.target.dataset.index;
+        this.joins[idx].leftTable = e.target.value;
+        const inferred = this.inferJoinColumns(this.joins[idx]);
+        if (inferred) {
+          this.joins[idx].leftColumn = inferred.leftColumn;
+          this.joins[idx].rightColumn = inferred.rightColumn;
+        }
+        this.renderJoins();
       });
     });
 
     joinsList.querySelectorAll('.join-right-table').forEach(select => {
       select.addEventListener('change', (e) => {
-        this.joins[e.target.dataset.index].rightTable = e.target.value;
-        this.renderJoins(); // Re-render to update column suggestions
+        const idx = e.target.dataset.index;
+        this.joins[idx].rightTable = e.target.value;
+        const inferred = this.inferJoinColumns(this.joins[idx]);
+        if (inferred) {
+          this.joins[idx].leftColumn = inferred.leftColumn;
+          this.joins[idx].rightColumn = inferred.rightColumn;
+        }
+        this.renderJoins();
       });
     });
 
@@ -642,6 +883,46 @@ export const DevChefTool = {
     });
   },
 
+  inferJoinColumns(join) {
+    const lt = this.tables.find(t => t.name === join.leftTable);
+    const rt = this.tables.find(t => t.name === join.rightTable);
+    if (!lt || !rt) return null;
+
+    // Explicit references: right table's FK → left table
+    for (const col of rt.columns || []) {
+      if (col.references?.table === lt.name)
+        return { leftColumn: col.references.column, rightColumn: col.name };
+    }
+    // Explicit references: left table's FK → right table
+    for (const col of lt.columns || []) {
+      if (col.references?.table === rt.name)
+        return { leftColumn: col.name, rightColumn: col.references.column };
+    }
+
+    // Heuristic: right table has XxxId matching left table name
+    for (const col of rt.columns || []) {
+      if (col.primaryKey || !col.name.endsWith('Id')) continue;
+      const prefix = col.name.slice(0, -2);
+      if (lt.name.toLowerCase() === prefix.toLowerCase() ||
+          lt.name.toLowerCase() === prefix.toLowerCase() + 's') {
+        const pkCol = lt.columns?.find(c => c.primaryKey)?.name || prefix + 'Id';
+        return { leftColumn: pkCol, rightColumn: col.name };
+      }
+    }
+    // Heuristic: left table has XxxId matching right table name
+    for (const col of lt.columns || []) {
+      if (col.primaryKey || !col.name.endsWith('Id')) continue;
+      const prefix = col.name.slice(0, -2);
+      if (rt.name.toLowerCase() === prefix.toLowerCase() ||
+          rt.name.toLowerCase() === prefix.toLowerCase() + 's') {
+        const pkCol = rt.columns?.find(c => c.primaryKey)?.name || prefix + 'Id';
+        return { leftColumn: col.name, rightColumn: pkCol };
+      }
+    }
+
+    return null;
+  },
+
   removeJoin(index) {
     this.joins.splice(index, 1);
     this.renderJoins();
@@ -649,6 +930,116 @@ export const DevChefTool = {
 
   updateJoinSelects() {
     this.renderJoins();
+  },
+
+  addCondition() {
+    this.conditions.push({ connector: 'AND', table: '', column: '', operator: '=', value: '', value2: '' });
+    this.renderConditions();
+  },
+
+  removeCondition(index) {
+    this.conditions.splice(index, 1);
+    this.renderConditions();
+  },
+
+  renderConditions() {
+    const list = this.container.querySelector('#conditions-list');
+    if (!list) return;
+
+    const tableOptions = this.tables.map(t =>
+      `<option value="${t.name}">${t.schema ? t.schema + '.' : ''}${t.name}${t.alias ? ' (' + t.alias + ')' : ''}</option>`
+    ).join('');
+
+    const noValueOps = new Set(['IS NULL', 'IS NOT NULL']);
+    const twoValueOps = new Set(['BETWEEN']);
+
+    list.innerHTML = this.conditions.map((cond, i) => {
+      const colTable = this.tables.find(t => t.name === cond.table);
+      const colOptions = colTable?.columns
+        ? colTable.columns.map(c => `<option value="${c.name}">${c.name}</option>`).join('')
+        : '';
+      const hideValue = noValueOps.has(cond.operator);
+      const showBetween = twoValueOps.has(cond.operator);
+      const alias = colTable?.alias || cond.table;
+      const colPlaceholder = alias ? `${alias}.column` : 'column';
+
+      const connectorField = i === 0 ? '' : `
+        <div class="condition-field">
+          <label>Connector</label>
+          <select class="cond-connector" data-index="${i}">
+            <option value="AND" ${cond.connector === 'AND' ? 'selected' : ''}>AND</option>
+            <option value="OR" ${cond.connector === 'OR' ? 'selected' : ''}>OR</option>
+          </select>
+        </div>`;
+
+      return `
+        <div class="condition-row${i === 0 ? ' first-condition' : ''}">
+          ${connectorField}
+          <div class="condition-field">
+            <label>Table</label>
+            <select class="cond-table" data-index="${i}">
+              <option value="">Select table</option>
+              ${tableOptions}
+            </select>
+          </div>
+          <div class="condition-field">
+            <label>Column</label>
+            ${colOptions ? `
+              <input type="text" list="cond-cols-${i}" class="cond-column" data-index="${i}" value="${cond.column}" placeholder="${colPlaceholder}">
+              <datalist id="cond-cols-${i}">${colOptions}</datalist>
+            ` : `
+              <input type="text" class="cond-column" data-index="${i}" value="${cond.column}" placeholder="${colPlaceholder}">
+            `}
+          </div>
+          <div class="condition-field">
+            <label>Operator</label>
+            <select class="cond-operator" data-index="${i}">
+              ${['=','!=','<','>','<=','>=','LIKE','NOT LIKE','IN','NOT IN','IS NULL','IS NOT NULL','BETWEEN']
+                .map(op => `<option value="${op}" ${cond.operator === op ? 'selected' : ''}>${op}</option>`).join('')}
+            </select>
+          </div>
+          <div class="condition-field" ${hideValue ? 'style="visibility:hidden"' : ''}>
+            <label>${showBetween ? 'From' : 'Value'}</label>
+            <input type="text" class="cond-value" data-index="${i}" value="${cond.value}" placeholder="${cond.operator === 'IN' || cond.operator === 'NOT IN' ? "1, 2, 3" : "'value'"}">
+            ${showBetween ? `<input type="text" class="cond-value2" data-index="${i}" value="${cond.value2}" placeholder="'to'" style="margin-top:4px">` : ''}
+          </div>
+          <button class="remove-btn remove-condition" data-index="${i}">Remove</button>
+        </div>`;
+    }).join('');
+
+    // Set selected table values
+    this.conditions.forEach((cond, i) => {
+      const sel = list.querySelector(`.cond-table[data-index="${i}"]`);
+      if (sel) sel.value = cond.table;
+    });
+
+    list.querySelectorAll('.cond-connector').forEach(el =>
+      el.addEventListener('change', e => { this.conditions[e.target.dataset.index].connector = e.target.value; }));
+
+    list.querySelectorAll('.cond-table').forEach(el =>
+      el.addEventListener('change', e => {
+        this.conditions[e.target.dataset.index].table = e.target.value;
+        this.conditions[e.target.dataset.index].column = '';
+        this.renderConditions();
+      }));
+
+    list.querySelectorAll('.cond-column').forEach(el =>
+      el.addEventListener('input', e => { this.conditions[e.target.dataset.index].column = e.target.value; }));
+
+    list.querySelectorAll('.cond-operator').forEach(el =>
+      el.addEventListener('change', e => {
+        this.conditions[e.target.dataset.index].operator = e.target.value;
+        this.renderConditions();
+      }));
+
+    list.querySelectorAll('.cond-value').forEach(el =>
+      el.addEventListener('input', e => { this.conditions[e.target.dataset.index].value = e.target.value; }));
+
+    list.querySelectorAll('.cond-value2').forEach(el =>
+      el.addEventListener('input', e => { this.conditions[e.target.dataset.index].value2 = e.target.value; }));
+
+    list.querySelectorAll('.remove-condition').forEach(el =>
+      el.addEventListener('click', e => { this.removeCondition(parseInt(e.target.dataset.index)); }));
   },
 
   generateSQL() {
@@ -712,6 +1103,34 @@ export const DevChefTool = {
       sql += '\n';
     });
 
+    // WHERE clause
+    const validConditions = this.conditions.filter(c => c.column);
+    if (validConditions.length > 0) {
+      sql += 'WHERE\n';
+      validConditions.forEach((cond, i) => {
+        const t = this.tables.find(t => t.name === cond.table);
+        const qualifier = t?.alias || cond.table;
+        const colRef = qualifier ? `${qualifier}.[${cond.column}]` : `[${cond.column}]`;
+        const noValue = cond.operator === 'IS NULL' || cond.operator === 'IS NOT NULL';
+        const isBetween = cond.operator === 'BETWEEN';
+        const isIn = cond.operator === 'IN' || cond.operator === 'NOT IN';
+
+        let expr;
+        if (noValue) {
+          expr = `${colRef} ${cond.operator}`;
+        } else if (isBetween) {
+          expr = `${colRef} BETWEEN ${cond.value} AND ${cond.value2 || "'?'"}`;
+        } else if (isIn) {
+          expr = `${colRef} ${cond.operator} (${cond.value})`;
+        } else {
+          expr = `${colRef} ${cond.operator} ${cond.value}`;
+        }
+
+        const prefix = i === 0 ? '    ' : `    ${cond.connector} `;
+        sql += `${prefix}${expr}\n`;
+      });
+    }
+
     sql += ';';
 
     this.context.setOutput(sql);
@@ -734,10 +1153,14 @@ export const DevChefTool = {
   reset() {
     this.tables = [];
     this.joins = [];
+    this.conditions = [];
     this.context.setOutput('');
     this.addTable('Users', 'u');
     this.addTable('Orders', 'o');
     this.addJoin();
+    this.renderConditions();
+    const jsonSchemaInput = this.container.querySelector("#json-schema-input");
+    if (jsonSchemaInput) jsonSchemaInput.value = '';
   },
 
   onInput(input, context) {
