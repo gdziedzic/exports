@@ -685,6 +685,8 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -1021,11 +1023,13 @@ export const DevChefTool = {
   copyCurl() {
     const curl = this.context.getOutput();
     if (curl) {
-      navigator.clipboard.writeText(curl).then(() => {
-        const btn = this.container.querySelector('#copy-curl-btn');
-        const original = btn.textContent;
-        btn.textContent = '✓ Copied!';
-        setTimeout(() => btn.textContent = original, 2000);
+      copyToClipboard(curl, {
+        onSuccess: () => {
+          const btn = this.container.querySelector('#copy-curl-btn');
+          const original = btn.textContent;
+          btn.textContent = '✓ Copied!';
+          setTimeout(() => btn.textContent = original, 2000);
+        }
       });
     }
   },

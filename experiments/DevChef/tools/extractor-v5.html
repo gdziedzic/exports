@@ -1420,6 +1420,8 @@ Try pasting: URLs, emails, crypto addresses, API keys, logs, code..."></textarea
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -2078,11 +2080,13 @@ def process_data(input_file):
       output = JSON.stringify(this.lastResults, null, 2);
     }
 
-    navigator.clipboard.writeText(output).then(() => {
-      const btn = this.container.querySelector('#copy-btn');
-      const originalText = btn.textContent;
-      btn.textContent = '✓';
-      setTimeout(() => btn.textContent = originalText, 2000);
+    copyToClipboard(output, {
+      onSuccess: () => {
+        const btn = this.container.querySelector('#copy-btn');
+        const originalText = btn.textContent;
+        btn.textContent = '✓';
+        setTimeout(() => btn.textContent = originalText, 2000);
+      }
     });
   },
 

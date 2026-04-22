@@ -431,6 +431,7 @@ import {
   slotSummary,
   presetLabel,
 } from '../core/prompt-slots.js';
+import { copyToClipboard } from '../core/tool-utils.js';
 
 const STORAGE_KEY = 'aiPromptBuilder_v13';
 
@@ -586,7 +587,7 @@ function copyPrompt() {
   const errors = validateSlots({ task: state.task });
   if (errors.length) { toast(errors[0], true); return; }
   const prompt = buildPrompt();
-  navigator.clipboard.writeText(prompt).then(() => toast('✓ Copied!')).catch(() => toast('✓ Copied!'));
+  copyToClipboard(prompt, { onSuccess: () => toast('✓ Copied!'), onError: () => toast('✗ Failed') });
 }
 
 function clearAll() {

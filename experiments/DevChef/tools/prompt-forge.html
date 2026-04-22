@@ -589,6 +589,7 @@ import {
   slotSummary,
   presetLabel,
 } from '../core/prompt-slots.js';
+import { copyToClipboard } from '../core/tool-utils.js';
 
 const STORAGE_KEY = 'promptForge_v13';
 
@@ -826,9 +827,10 @@ function copyPrompt() {
   if (errors.length) { toast(errors[0], true); return; }
 
   const prompt = buildPrompt();
-  navigator.clipboard.writeText(prompt)
-    .then(() => toast('✓ Copied!'))
-    .catch(() => { document.execCommand?.('copy'); toast('✓ Copied!'); });
+  copyToClipboard(prompt, {
+    onSuccess: () => toast('✓ Copied!'),
+    onError: () => toast('✗ Failed')
+  });
 }
 
 function clearAll() {

@@ -487,6 +487,8 @@
 
 <!-- Module -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export function init(context) {
   const { container } = context;
 
@@ -565,11 +567,13 @@ export function init(context) {
     btn.addEventListener('click', () => {
       const targetId = btn.dataset.target;
       const code = container.querySelector(`#${targetId}`).textContent;
-      navigator.clipboard.writeText(code).then(() => {
-        btn.textContent = 'Copied!';
-        setTimeout(() => {
-          btn.textContent = 'Copy Code';
-        }, 2000);
+      copyToClipboard(code, {
+        onSuccess: () => {
+          btn.textContent = 'Copied!';
+          setTimeout(() => {
+            btn.textContent = 'Copy Code';
+          }, 2000);
+        }
       });
     });
   });

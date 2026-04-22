@@ -254,6 +254,8 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -640,7 +642,7 @@ ORDER BY
   },
 
   copySnippet(code) {
-    navigator.clipboard.writeText(code);
+    copyToClipboard(code);
   },
 
   escapeHtml(text) {

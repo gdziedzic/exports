@@ -1443,6 +1443,8 @@ ORDER BY u.Created DESC;</pre>
 
 <!-- Module Logic -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -2149,11 +2151,13 @@ export const DevChefTool = {
 
   copySQL() {
     const sql = this.container.querySelector('#sql-output').textContent;
-    navigator.clipboard.writeText(sql).then(() => {
-      const btn = this.container.querySelector('#copy-sql-btn');
-      const orig = btn.textContent;
-      btn.textContent = '✓ Copied!';
-      setTimeout(() => btn.textContent = orig, 2000);
+    copyToClipboard(sql, {
+      onSuccess: () => {
+        const btn = this.container.querySelector('#copy-sql-btn');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = orig, 2000);
+      }
     });
   },
 

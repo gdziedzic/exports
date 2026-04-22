@@ -1,36 +1,26 @@
 /**
  * DevChef Web Components Library
  *
- * Reusable UI components for DevChef tools to eliminate duplication
- * and enforce consistent design patterns across all tools.
+ * Reusable UI components for DevChef tools with modern CSS animations,
+ * @starting-style entry transitions, color-mix() theming, and CSS spinners.
  *
- * @version 1.0.0
- * @author DevChef
+ * @version 2.0.0
  */
 
 // =============================================================================
 // Base Component Class
 // =============================================================================
 
-/**
- * Base class for all DevChef components with shared functionality
- */
 class DevChefComponent extends HTMLElement {
   constructor() {
     super();
     this._internals = {};
   }
 
-  /**
-   * Get theme-aware CSS custom properties
-   */
   getThemeVars() {
     return getComputedStyle(document.documentElement);
   }
 
-  /**
-   * Dispatch custom event with detail
-   */
   emit(eventName, detail = {}) {
     this.dispatchEvent(new CustomEvent(eventName, {
       detail,
@@ -39,37 +29,29 @@ class DevChefComponent extends HTMLElement {
     }));
   }
 
-  /**
-   * Query selector helper
-   */
   $(selector) {
     return this.querySelector(selector);
   }
 
-  /**
-   * Query selector all helper
-   */
   $$(selector) {
     return this.querySelectorAll(selector);
   }
 }
 
 // =============================================================================
-// 1. ToolButton Component
+// 1. ToolButton
 // =============================================================================
 
 /**
- * Smart button component with built-in states and variants
+ * Smart button with states, variants, CSS spinner, and ripple effect.
  *
  * @element tool-button
- *
- * @attr {string} variant - Button style: primary, secondary, danger (default: primary)
- * @attr {string} label - Button text label
- * @attr {boolean} disabled - Disabled state
- * @attr {boolean} loading - Loading state with spinner
- * @attr {string} icon - Optional icon (emoji or text)
- *
- * @fires tool-click - Emitted when button is clicked
+ * @attr {string} variant - primary | secondary | danger | success
+ * @attr {string} label   - Button text
+ * @attr {string} icon    - Optional leading icon (emoji / text)
+ * @attr {boolean} disabled
+ * @attr {boolean} loading - Shows CSS spinner, disables click
+ * @fires tool-click
  *
  * @example
  * <tool-button variant="primary" label="Copy" icon="📋"></tool-button>
@@ -94,44 +76,33 @@ class ToolButton extends DevChefComponent {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue !== newValue) {
-      this.render();
-    }
+    if (oldValue !== newValue) this.render();
   }
 
   render() {
-    const variant = this.getAttribute('variant') || 'primary';
-    const label = this.getAttribute('label') || 'Button';
+    const variant  = this.getAttribute('variant') || 'primary';
+    const label    = this.getAttribute('label')   || 'Button';
     const disabled = this.hasAttribute('disabled');
-    const loading = this.hasAttribute('loading');
-    const icon = this.getAttribute('icon') || '';
+    const loading  = this.hasAttribute('loading');
+    const icon     = this.getAttribute('icon')    || '';
 
-    const variantClass = variant === 'primary' ? '' : variant;
+    const cls = variant === 'primary' ? 'tool-btn' : `tool-btn ${variant}`;
 
     this.innerHTML = `
-      <button
-        class="tool-btn ${variantClass}"
-        ${disabled || loading ? 'disabled' : ''}
-      >
-        ${loading ? '<span class="spinner">⟳</span>' : ''}
-        ${icon ? `<span class="icon">${icon}</span>` : ''}
+      <button class="${cls}" ${disabled || loading ? 'disabled' : ''} aria-busy="${loading}">
+        ${loading ? '<span class="btn-spinner" aria-hidden="true"></span>' : ''}
+        ${icon && !loading ? `<span class="icon" aria-hidden="true">${icon}</span>` : ''}
         <span class="label">${label}</span>
       </button>
     `;
   }
 
   _attachEventListeners() {
-    const btn = this.$('button');
-    if (btn) {
-      btn.addEventListener('click', this._clickHandler);
-    }
+    this.$('button')?.addEventListener('click', this._clickHandler);
   }
 
   _detachEventListeners() {
-    const btn = this.$('button');
-    if (btn) {
-      btn.removeEventListener('click', this._clickHandler);
-    }
+    this.$('button')?.removeEventListener('click', this._clickHandler);
   }
 
   _handleClick(e) {
@@ -142,19 +113,11 @@ class ToolButton extends DevChefComponent {
 
   // Public API
   setLoading(isLoading) {
-    if (isLoading) {
-      this.setAttribute('loading', '');
-    } else {
-      this.removeAttribute('loading');
-    }
+    isLoading ? this.setAttribute('loading', '') : this.removeAttribute('loading');
   }
 
   setDisabled(isDisabled) {
-    if (isDisabled) {
-      this.setAttribute('disabled', '');
-    } else {
-      this.removeAttribute('disabled');
-    }
+    isDisabled ? this.setAttribute('disabled', '') : this.removeAttribute('disabled');
   }
 
   setLabel(label) {
@@ -163,26 +126,22 @@ class ToolButton extends DevChefComponent {
 }
 
 // =============================================================================
-// 2. ToolTextarea Component
+// 2. ToolTextarea
 // =============================================================================
 
 /**
- * Enhanced textarea with auto-resize and monospace options
+ * Enhanced textarea with field-sizing, autoresize, and monospace mode.
  *
  * @element tool-textarea
- *
- * @attr {string} placeholder - Placeholder text
- * @attr {number} rows - Initial number of rows (default: 8)
- * @attr {boolean} monospace - Use monospace font
- * @attr {boolean} readonly - Read-only state
- * @attr {boolean} autoresize - Auto-resize to fit content
- * @attr {boolean} linenumbers - Show line numbers (not yet implemented)
- *
- * @fires input - Emitted when content changes
- * @fires change - Emitted when content changes and loses focus
+ * @attr {string}  placeholder
+ * @attr {number}  rows         - Minimum rows (default 6)
+ * @attr {boolean} monospace
+ * @attr {boolean} readonly
+ * @attr {boolean} autoresize   - JS fallback for browsers without field-sizing
+ * @fires input, change
  *
  * @example
- * <tool-textarea placeholder="Enter text..." monospace autoresize></tool-textarea>
+ * <tool-textarea placeholder="Paste JSON..." monospace autoresize></tool-textarea>
  */
 class ToolTextarea extends DevChefComponent {
   static get observedAttributes() {
@@ -199,120 +158,90 @@ class ToolTextarea extends DevChefComponent {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue !== newValue && this.$('textarea')) {
-      if (name === 'value') {
-        this.$('textarea').value = newValue || '';
-        if (this.hasAttribute('autoresize')) {
-          this._autoResize();
-        }
-      } else {
-        this.render();
-      }
+    if (oldValue === newValue) return;
+    const ta = this.$('textarea');
+    if (!ta) { this.render(); return; }
+
+    if (name === 'value') {
+      ta.value = newValue || '';
+      this._maybeResize(ta);
+    } else {
+      this.render();
     }
   }
 
   render() {
     const placeholder = this.getAttribute('placeholder') || '';
-    const rows = this.getAttribute('rows') || '8';
-    const monospace = this.hasAttribute('monospace');
-    const readonly = this.hasAttribute('readonly');
-    const value = this.getAttribute('value') || '';
+    const rows        = this.getAttribute('rows')        || '6';
+    const monospace   = this.hasAttribute('monospace');
+    const readonly    = this.hasAttribute('readonly');
+    const value       = this.getAttribute('value')       || '';
 
     this.innerHTML = `
       <textarea
-        class="tool-textarea ${monospace ? 'monospace' : ''}"
+        class="tool-textarea${monospace ? ' monospace' : ''}"
         placeholder="${placeholder}"
         rows="${rows}"
         ${readonly ? 'readonly' : ''}
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
       >${value}</textarea>
     `;
   }
 
   _attachEventListeners() {
-    const textarea = this.$('textarea');
-    if (textarea) {
-      textarea.addEventListener('input', this._handleInput.bind(this));
-      textarea.addEventListener('change', this._handleChange.bind(this));
+    const ta = this.$('textarea');
+    if (!ta) return;
 
-      if (this.hasAttribute('autoresize')) {
-        textarea.addEventListener('input', this._autoResize.bind(this));
-        // Initial resize
-        this._autoResize();
-      }
+    ta.addEventListener('input',  this._handleInput.bind(this));
+    ta.addEventListener('change', this._handleChange.bind(this));
+
+    if (this.hasAttribute('autoresize')) {
+      ta.addEventListener('input', () => this._maybeResize(ta));
+      this._maybeResize(ta);
     }
   }
 
-  _detachEventListeners() {
-    const textarea = this.$('textarea');
-    if (textarea) {
-      textarea.removeEventListener('input', this._handleInput);
-      textarea.removeEventListener('change', this._handleChange);
-    }
-  }
+  _detachEventListeners() {}
 
-  _handleInput(e) {
-    this.emit('input', { value: e.target.value });
-  }
+  _handleInput(e)  { this.emit('input',  { value: e.target.value }); }
+  _handleChange(e) { this.emit('change', { value: e.target.value }); }
 
-  _handleChange(e) {
-    this.emit('change', { value: e.target.value });
-  }
-
-  _autoResize() {
-    const textarea = this.$('textarea');
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = textarea.scrollHeight + 'px';
-    }
+  _maybeResize(ta) {
+    // field-sizing: content handles this natively; JS fallback for older browsers
+    if (CSS.supports('field-sizing', 'content')) return;
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
   }
 
   // Public API
-  getValue() {
-    const textarea = this.$('textarea');
-    return textarea ? textarea.value : '';
-  }
-
+  getValue()      { return this.$('textarea')?.value ?? ''; }
   setValue(value) {
-    const textarea = this.$('textarea');
-    if (textarea) {
-      textarea.value = value;
-      if (this.hasAttribute('autoresize')) {
-        this._autoResize();
-      }
-      this.emit('change', { value });
-    }
+    const ta = this.$('textarea');
+    if (!ta) return;
+    ta.value = value;
+    this._maybeResize(ta);
+    this.emit('change', { value });
   }
-
-  clear() {
-    this.setValue('');
-  }
-
-  focus() {
-    const textarea = this.$('textarea');
-    if (textarea) textarea.focus();
-  }
+  clear()  { this.setValue(''); }
+  focus()  { this.$('textarea')?.focus(); }
 }
 
 // =============================================================================
-// 3. ToolInput Component
+// 3. ToolInput
 // =============================================================================
 
 /**
- * Enhanced text input with validation support
+ * Enhanced text input with validation support.
  *
  * @element tool-input
- *
- * @attr {string} placeholder - Placeholder text
- * @attr {string} type - Input type (text, number, email, url, etc.)
- * @attr {string} value - Input value
- * @attr {boolean} readonly - Read-only state
- * @attr {string} pattern - Validation pattern (regex)
- *
- * @fires input - Emitted when content changes
- * @fires change - Emitted when content changes and loses focus
- *
- * @example
- * <tool-input placeholder="Enter email..." type="email"></tool-input>
+ * @attr {string}  placeholder
+ * @attr {string}  type      - text | number | email | url | search | password
+ * @attr {string}  value
+ * @attr {boolean} readonly
+ * @attr {string}  pattern   - Regex validation pattern
+ * @fires input, change
  */
 class ToolInput extends DevChefComponent {
   static get observedAttributes() {
@@ -324,26 +253,24 @@ class ToolInput extends DevChefComponent {
     this._attachEventListeners();
   }
 
-  disconnectedCallback() {
-    this._detachEventListeners();
-  }
+  disconnectedCallback() {}
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue !== newValue && this.$('input')) {
-      if (name === 'value') {
-        this.$('input').value = newValue || '';
-      } else {
-        this.render();
-      }
+    if (oldValue === newValue) return;
+    const inp = this.$('input');
+    if (name === 'value' && inp) {
+      inp.value = newValue || '';
+    } else {
+      this.render();
     }
   }
 
   render() {
     const placeholder = this.getAttribute('placeholder') || '';
-    const type = this.getAttribute('type') || 'text';
-    const value = this.getAttribute('value') || '';
-    const readonly = this.hasAttribute('readonly');
-    const pattern = this.getAttribute('pattern') || '';
+    const type        = this.getAttribute('type')        || 'text';
+    const value       = this.getAttribute('value')       || '';
+    const readonly    = this.hasAttribute('readonly');
+    const pattern     = this.getAttribute('pattern')     || '';
 
     this.innerHTML = `
       <input
@@ -351,85 +278,45 @@ class ToolInput extends DevChefComponent {
         class="tool-input"
         placeholder="${placeholder}"
         value="${value}"
-        ${readonly ? 'readonly' : ''}
-        ${pattern ? `pattern="${pattern}"` : ''}
+        ${readonly  ? 'readonly'          : ''}
+        ${pattern   ? `pattern="${pattern}"` : ''}
+        autocomplete="off"
       />
     `;
   }
 
   _attachEventListeners() {
-    const input = this.$('input');
-    if (input) {
-      input.addEventListener('input', this._handleInput.bind(this));
-      input.addEventListener('change', this._handleChange.bind(this));
-    }
-  }
-
-  _detachEventListeners() {
-    const input = this.$('input');
-    if (input) {
-      input.removeEventListener('input', this._handleInput);
-      input.removeEventListener('change', this._handleChange);
-    }
-  }
-
-  _handleInput(e) {
-    this.emit('input', { value: e.target.value });
-  }
-
-  _handleChange(e) {
-    this.emit('change', { value: e.target.value });
+    const inp = this.$('input');
+    if (!inp) return;
+    inp.addEventListener('input',  e => this.emit('input',  { value: e.target.value }));
+    inp.addEventListener('change', e => this.emit('change', { value: e.target.value }));
   }
 
   // Public API
-  getValue() {
-    const input = this.$('input');
-    return input ? input.value : '';
-  }
-
+  getValue()      { return this.$('input')?.value ?? ''; }
   setValue(value) {
-    const input = this.$('input');
-    if (input) {
-      input.value = value;
-      this.emit('change', { value });
-    }
+    const inp = this.$('input');
+    if (!inp) return;
+    inp.value = value;
+    this.emit('change', { value });
   }
-
-  clear() {
-    this.setValue('');
-  }
-
-  focus() {
-    const input = this.$('input');
-    if (input) input.focus();
-  }
-
-  isValid() {
-    const input = this.$('input');
-    return input ? input.checkValidity() : true;
-  }
+  clear()    { this.setValue(''); }
+  focus()    { this.$('input')?.focus(); }
+  isValid()  { return this.$('input')?.checkValidity() ?? true; }
 }
 
 // =============================================================================
-// 4. ToolSelect Component
+// 4. ToolSelect
 // =============================================================================
 
 /**
- * Enhanced select dropdown
+ * Enhanced select dropdown with custom arrow styling.
  *
  * @element tool-select
- *
- * @attr {string} options - JSON array of options [{value, label}, ...]
- * @attr {string} value - Selected value
- * @attr {string} placeholder - Placeholder option
- *
- * @fires change - Emitted when selection changes
- *
- * @example
- * <tool-select
- *   options='[{"value":"2","label":"2 spaces"},{"value":"4","label":"4 spaces"}]'
- *   value="2">
- * </tool-select>
+ * @attr {string} options     - JSON: [{value, label}, ...]
+ * @attr {string} value       - Selected value
+ * @attr {string} placeholder - Empty placeholder option
+ * @fires change
  */
 class ToolSelect extends DevChefComponent {
   static get observedAttributes() {
@@ -441,36 +328,30 @@ class ToolSelect extends DevChefComponent {
     this._attachEventListeners();
   }
 
-  disconnectedCallback() {
-    this._detachEventListeners();
-  }
+  disconnectedCallback() {}
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue !== newValue) {
-      this.render();
-    }
+    if (oldValue !== newValue) this.render();
   }
 
   render() {
     const placeholder = this.getAttribute('placeholder') || '';
-    const value = this.getAttribute('value') || '';
+    const value       = this.getAttribute('value')       || '';
     let options = [];
 
     try {
-      const optionsAttr = this.getAttribute('options');
-      if (optionsAttr) {
-        options = JSON.parse(optionsAttr);
-      }
+      const raw = this.getAttribute('options');
+      if (raw) options = JSON.parse(raw);
     } catch (e) {
-      console.error('Invalid options JSON:', e);
+      console.error('ToolSelect: invalid options JSON', e);
     }
 
     this.innerHTML = `
       <select class="tool-select">
         ${placeholder ? `<option value="" disabled ${!value ? 'selected' : ''}>${placeholder}</option>` : ''}
-        ${options.map(opt => `
-          <option value="${opt.value}" ${opt.value === value ? 'selected' : ''}>
-            ${opt.label || opt.value}
+        ${options.map(o => `
+          <option value="${o.value}" ${o.value === value ? 'selected' : ''}>
+            ${o.label ?? o.value}
           </option>
         `).join('')}
       </select>
@@ -478,61 +359,36 @@ class ToolSelect extends DevChefComponent {
   }
 
   _attachEventListeners() {
-    const select = this.$('select');
-    if (select) {
-      select.addEventListener('change', this._handleChange.bind(this));
-    }
-  }
-
-  _detachEventListeners() {
-    const select = this.$('select');
-    if (select) {
-      select.removeEventListener('change', this._handleChange);
-    }
-  }
-
-  _handleChange(e) {
-    this.setAttribute('value', e.target.value);
-    this.emit('change', { value: e.target.value });
+    this.$('select')?.addEventListener('change', e => {
+      this.setAttribute('value', e.target.value);
+      this.emit('change', { value: e.target.value });
+    });
   }
 
   // Public API
-  getValue() {
-    const select = this.$('select');
-    return select ? select.value : '';
+  getValue()        { return this.$('select')?.value ?? ''; }
+  setValue(value)   {
+    const sel = this.$('select');
+    if (!sel) return;
+    sel.value = value;
+    this.setAttribute('value', value);
+    this.emit('change', { value });
   }
-
-  setValue(value) {
-    const select = this.$('select');
-    if (select) {
-      select.value = value;
-      this.setAttribute('value', value);
-      this.emit('change', { value });
-    }
-  }
-
-  setOptions(options) {
-    this.setAttribute('options', JSON.stringify(options));
-  }
+  setOptions(opts)  { this.setAttribute('options', JSON.stringify(opts)); }
 }
 
 // =============================================================================
-// 5. ToolFileInput Component
+// 5. ToolFileInput
 // =============================================================================
 
 /**
- * File input with drag-drop support
+ * File input with drag-drop support and visual drag-over feedback.
  *
  * @element tool-file-input
- *
- * @attr {string} accept - Accepted file types (e.g., ".json,.csv")
- * @attr {boolean} multiple - Allow multiple files
- * @attr {string} label - Button label
- *
- * @fires file-loaded - Emitted when file(s) are loaded with {files, contents}
- *
- * @example
- * <tool-file-input accept=".json" label="Load JSON"></tool-file-input>
+ * @attr {string}  accept   - Accepted MIME / extension types
+ * @attr {boolean} multiple
+ * @attr {string}  label    - Button label
+ * @fires file-loaded — { files, contents }
  */
 class ToolFileInput extends DevChefComponent {
   static get observedAttributes() {
@@ -544,127 +400,108 @@ class ToolFileInput extends DevChefComponent {
     this._attachEventListeners();
   }
 
-  disconnectedCallback() {
-    this._detachEventListeners();
-  }
+  disconnectedCallback() {}
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue !== newValue) {
-      this.render();
-    }
+    if (oldValue !== newValue) this.render();
   }
 
   render() {
-    const accept = this.getAttribute('accept') || '';
+    const accept   = this.getAttribute('accept')   || '';
     const multiple = this.hasAttribute('multiple');
-    const label = this.getAttribute('label') || 'Choose File';
+    const label    = this.getAttribute('label')    || 'Choose File';
+    const uid      = `file-${Math.random().toString(36).slice(2, 9)}`;
 
     this.innerHTML = `
       <div class="tool-file-input">
         <input
           type="file"
-          id="file-input-${Date.now()}"
+          id="${uid}"
           accept="${accept}"
           ${multiple ? 'multiple' : ''}
-          style="display: none;"
+          style="display:none"
         />
-        <label for="file-input-${Date.now()}" class="file-input-label">
-          <button type="button" class="tool-btn secondary">${label}</button>
-        </label>
-        <div class="file-drop-zone" style="display: none;">
-          <p>Drop files here or click to browse</p>
+        <button type="button" class="tool-btn secondary" data-trigger="${uid}">
+          <span class="icon" aria-hidden="true">📂</span>
+          ${label}
+        </button>
+        <div class="file-drop-zone" aria-label="Drop files here">
+          Drop files here or click the button
         </div>
-        <div class="file-preview"></div>
+        <div class="file-preview" aria-live="polite"></div>
       </div>
     `;
   }
 
   _attachEventListeners() {
-    const input = this.$('input[type="file"]');
+    const input    = this.$('input[type="file"]');
+    const trigger  = this.$('button[data-trigger]');
     const dropZone = this.$('.file-drop-zone');
-    const label = this.$('.file-input-label button');
 
-    if (input && label) {
-      label.addEventListener('click', () => input.click());
-      input.addEventListener('change', this._handleFileSelect.bind(this));
-    }
+    trigger?.addEventListener('click', () => input?.click());
+    input?.addEventListener('change', e => this._processFiles(Array.from(e.target.files)));
 
     if (dropZone) {
-      dropZone.addEventListener('dragover', this._handleDragOver.bind(this));
-      dropZone.addEventListener('drop', this._handleDrop.bind(this));
+      dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+      dropZone.addEventListener('dragleave', e => { dropZone.classList.remove('drag-over'); });
+      dropZone.addEventListener('drop',      e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        this._processFiles(Array.from(e.dataTransfer.files));
+      });
     }
-  }
-
-  _detachEventListeners() {
-    // Cleanup handled by component removal
-  }
-
-  async _handleFileSelect(e) {
-    const files = Array.from(e.target.files);
-    await this._processFiles(files);
-  }
-
-  _handleDragOver(e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  async _handleDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    const files = Array.from(e.dataTransfer.files);
-    await this._processFiles(files);
   }
 
   async _processFiles(files) {
-    const contents = [];
-
-    for (const file of files) {
-      const content = await this._readFile(file);
-      contents.push({ file, content });
-    }
-
-    this._updatePreview(files);
+    const contents = await Promise.all(
+      files.map(f => this._readFile(f).then(content => ({ file: f, content })))
+    );
+    this._renderPreview(files);
     this.emit('file-loaded', { files, contents });
   }
 
   _readFile(file) {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result);
-      reader.onerror = reject;
-      reader.readAsText(file);
+      const r = new FileReader();
+      r.onload  = e => resolve(e.target.result);
+      r.onerror = reject;
+      r.readAsText(file);
     });
   }
 
-  _updatePreview(files) {
+  _renderPreview(files) {
     const preview = this.$('.file-preview');
-    if (preview) {
-      preview.innerHTML = files.map(f => `
-        <div class="file-item">
-          <span class="file-name">${f.name}</span>
-          <span class="file-size">${(f.size / 1024).toFixed(2)} KB</span>
-        </div>
-      `).join('');
-    }
+    if (!preview) return;
+    preview.innerHTML = files.map(f => `
+      <div class="file-item">
+        <span class="file-name">${f.name}</span>
+        <span class="file-size">${(f.size / 1024).toFixed(1)} KB</span>
+      </div>
+    `).join('');
   }
 }
 
 // =============================================================================
-// 6. ToolStatus Component
+// 6. ToolStatus
 // =============================================================================
 
 /**
- * Status/notification display with auto-dismiss
+ * Status / notification bar with CSS-animated entry via @starting-style.
+ *
+ * Keeps DOM structure persistent across updates so CSS transitions fire
+ * instead of replacing the element on each show() call.
  *
  * @element tool-status
+ * @attr {string} message  - Status text (empty = hidden)
+ * @attr {string} type     - success | error | warning | info
+ * @attr {number} duration - Auto-hide after N ms (0 = stay)
  *
- * @attr {string} message - Status message
- * @attr {string} type - Status type: success, error, info, warning
- * @attr {number} duration - Auto-dismiss duration in ms (0 = no auto-dismiss)
+ * @method show(message, type?, duration?)
+ * @method hide()
  *
  * @example
- * <tool-status message="Success!" type="success" duration="3000"></tool-status>
+ * <tool-status id="status"></tool-status>
+ * statusEl.show('Copied!', 'success', 2000);
  */
 class ToolStatus extends DevChefComponent {
   static get observedAttributes() {
@@ -673,173 +510,139 @@ class ToolStatus extends DevChefComponent {
 
   constructor() {
     super();
-    this._dismissTimer = null;
+    this._timer = null;
   }
 
   connectedCallback() {
-    this.render();
-    this._startDismissTimer();
+    // Create persistent DOM structure once
+    if (!this.$('.tool-status')) {
+      this.innerHTML = `
+        <div class="tool-status" role="status" aria-live="polite">
+          <span class="status-icon" aria-hidden="true"></span>
+          <span class="status-message"></span>
+        </div>
+      `;
+    }
+    this._sync();
   }
 
   disconnectedCallback() {
-    this._clearDismissTimer();
+    this._clearTimer();
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue !== newValue) {
-      this.render();
-      if (name === 'duration' || name === 'message') {
-        this._startDismissTimer();
+      this._sync();
+      if (name === 'message' || name === 'duration') {
+        this._scheduleHide();
       }
     }
   }
 
-  render() {
+  _sync() {
+    const bar     = this.$('.tool-status');
+    const iconEl  = this.$('.status-icon');
+    const msgEl   = this.$('.status-message');
+    if (!bar || !iconEl || !msgEl) return;
+
     const message = this.getAttribute('message') || '';
-    const type = this.getAttribute('type') || 'info';
+    const type    = this.getAttribute('type')    || 'info';
 
-    if (!message) {
-      this.innerHTML = '';
-      this.style.display = 'none';
-      return;
+    const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' };
+
+    // Update type class
+    bar.className = `tool-status ${type}`;
+    iconEl.textContent = icons[type] ?? icons.info;
+    msgEl.textContent  = message;
+
+    // Toggle visibility — @starting-style handles the entry animation
+    if (message) {
+      bar.classList.add('visible');
+    } else {
+      bar.classList.remove('visible');
     }
-
-    const icons = {
-      success: '✓',
-      error: '✗',
-      warning: '⚠',
-      info: 'ℹ'
-    };
-
-    this.style.display = 'block';
-    this.innerHTML = `
-      <div class="tool-status ${type}">
-        <span class="status-icon">${icons[type] || icons.info}</span>
-        <span class="status-message">${message}</span>
-      </div>
-    `;
   }
 
-  _startDismissTimer() {
-    this._clearDismissTimer();
+  _scheduleHide() {
+    this._clearTimer();
     const duration = parseInt(this.getAttribute('duration')) || 0;
     if (duration > 0) {
-      this._dismissTimer = setTimeout(() => {
-        this.hide();
-      }, duration);
+      this._timer = setTimeout(() => this.hide(), duration);
     }
   }
 
-  _clearDismissTimer() {
-    if (this._dismissTimer) {
-      clearTimeout(this._dismissTimer);
-      this._dismissTimer = null;
+  _clearTimer() {
+    if (this._timer) {
+      clearTimeout(this._timer);
+      this._timer = null;
     }
   }
 
   // Public API
   show(message, type = 'info', duration = 3000) {
+    this.setAttribute('type',    type);
     this.setAttribute('message', message);
-    this.setAttribute('type', type);
-    if (duration) {
-      this.setAttribute('duration', duration.toString());
-    }
+    if (duration) this.setAttribute('duration', String(duration));
   }
 
   hide() {
-    this.removeAttribute('message');
-    this.style.display = 'none';
+    this._clearTimer();
+    this.setAttribute('message', '');
   }
 }
 
 // =============================================================================
-// 7. ToolContainer Component
+// 7. ToolContainer
 // =============================================================================
 
 /**
- * Layout container with responsive layouts
+ * Responsive layout container.
  *
  * @element tool-container
- *
- * @attr {string} layout - Layout type: single, split, grid
- *
- * @slot header - Header content
- * @slot main - Main content
- * @slot footer - Footer content
- *
- * @example
- * <tool-container layout="split">
- *   <div slot="header">Header</div>
- *   <div slot="main">Content</div>
- * </tool-container>
+ * @attr {string} layout - single | split | grid
+ * @slot header, main (default), footer
  */
 class ToolContainer extends DevChefComponent {
   static get observedAttributes() {
     return ['layout'];
   }
 
-  connectedCallback() {
-    this.render();
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue !== newValue) {
-      this.render();
-    }
-  }
+  connectedCallback()                        { this.render(); }
+  attributeChangedCallback(n, o, v)          { if (o !== v) this.render(); }
 
   render() {
     const layout = this.getAttribute('layout') || 'single';
-
     this.className = `tool-container layout-${layout}`;
     this.innerHTML = `
       <div class="tool-layout">
-        <div class="tool-slot-header">
-          <slot name="header"></slot>
-        </div>
-        <div class="tool-slot-main">
-          <slot name="main"></slot>
-          <slot></slot>
-        </div>
-        <div class="tool-slot-footer">
-          <slot name="footer"></slot>
-        </div>
+        <div class="tool-slot-header"><slot name="header"></slot></div>
+        <div class="tool-slot-main"><slot name="main"></slot><slot></slot></div>
+        <div class="tool-slot-footer"><slot name="footer"></slot></div>
       </div>
     `;
   }
 }
 
 // =============================================================================
-// Register all components
+// Register
 // =============================================================================
 
-/**
- * Register all DevChef components with the browser's custom element registry
- */
 export function registerComponents() {
-  // Check if already registered
-  if (customElements.get('tool-button')) {
-    console.log('DevChef components already registered');
-    return;
-  }
+  if (customElements.get('tool-button')) return;
 
-  customElements.define('tool-button', ToolButton);
-  customElements.define('tool-textarea', ToolTextarea);
-  customElements.define('tool-input', ToolInput);
-  customElements.define('tool-select', ToolSelect);
+  customElements.define('tool-button',     ToolButton);
+  customElements.define('tool-textarea',   ToolTextarea);
+  customElements.define('tool-input',      ToolInput);
+  customElements.define('tool-select',     ToolSelect);
   customElements.define('tool-file-input', ToolFileInput);
-  customElements.define('tool-status', ToolStatus);
-  customElements.define('tool-container', ToolContainer);
-
-  console.log('DevChef components registered successfully');
+  customElements.define('tool-status',     ToolStatus);
+  customElements.define('tool-container',  ToolContainer);
 }
 
-// Auto-register components when module is loaded
 if (typeof window !== 'undefined') {
   registerComponents();
 }
 
-// Export component classes for testing and extension
 export {
   DevChefComponent,
   ToolButton,

@@ -418,6 +418,8 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -567,9 +569,11 @@ ORDER BY
 
   copyQuery(dbType) {
     const query = this.sqlQueries[dbType];
-    navigator.clipboard.writeText(query).then(() => {
-      this.showQuery(dbType);
-      alert(`${dbType.toUpperCase()} query copied to clipboard!`);
+    copyToClipboard(query, {
+      onSuccess: () => {
+        this.showQuery(dbType);
+        alert(`${dbType.toUpperCase()} query copied to clipboard!`);
+      }
     });
   },
 
@@ -1066,13 +1070,15 @@ ORDER BY
   copyOutput() {
     const output = this.context.getOutput();
     if (output) {
-      navigator.clipboard.writeText(output).then(() => {
-        const copyBtn = this.container.querySelector('#copy-btn');
-        const originalText = copyBtn.textContent;
-        copyBtn.textContent = '✓ Copied!';
-        setTimeout(() => {
-          copyBtn.textContent = originalText;
-        }, 2000);
+      copyToClipboard(output, {
+        onSuccess: () => {
+          const copyBtn = this.container.querySelector('#copy-btn');
+          const originalText = copyBtn.textContent;
+          copyBtn.textContent = '✓ Copied!';
+          setTimeout(() => {
+            copyBtn.textContent = originalText;
+          }, 2000);
+        }
       });
     }
   },

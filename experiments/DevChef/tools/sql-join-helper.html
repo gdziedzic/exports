@@ -426,6 +426,8 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -1139,13 +1141,15 @@ export const DevChefTool = {
   copyOutput() {
     const output = this.context.getOutput();
     if (output) {
-      navigator.clipboard.writeText(output).then(() => {
-        const copyBtn = this.container.querySelector("#copy-btn");
-        const originalText = copyBtn.textContent;
-        copyBtn.textContent = "✓ Copied!";
-        setTimeout(() => {
-          copyBtn.textContent = originalText;
-        }, 2000);
+      copyToClipboard(output, {
+        onSuccess: () => {
+          const copyBtn = this.container.querySelector("#copy-btn");
+          const originalText = copyBtn.textContent;
+          copyBtn.textContent = "✓ Copied!";
+          setTimeout(() => {
+            copyBtn.textContent = originalText;
+          }, 2000);
+        }
       });
     }
   },
