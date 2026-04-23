@@ -60,6 +60,7 @@ import { showDeepSearch, toggleDeepSearch } from './core/deepsearch-ui.js';
 // V7 State-of-the-Art UX Excellence
 import { v7UX } from './core/v7-ux.js';
 import { onboarding } from './core/onboarding.js';
+import { showToolHealthDashboard } from './core/tool-health.js';
 
 /**
  * ============================================================================
@@ -1549,6 +1550,7 @@ function showLoadingErrors() {
           <div class="error-message">${escapeHtml(err.error)}</div>
         </div>
       `).join('')}
+      <button class="open-health-btn">Open Tool Health Dashboard</button>
       <button class="open-console-btn">Open Debug Console</button>
     </div>
   `;
@@ -1569,6 +1571,11 @@ function showLoadingErrors() {
   const consoleBtn = errorBanner.querySelector('.open-console-btn');
   consoleBtn.addEventListener('click', () => {
     debugConsole.show();
+  });
+
+  const healthBtn = errorBanner.querySelector('.open-health-btn');
+  healthBtn.addEventListener('click', () => {
+    showToolHealthDashboard(context);
   });
 }
 
@@ -1650,6 +1657,7 @@ function showSettingsDialog(context) {
         </div>
         <div class="settings-section">
           <h4>Quick Actions</h4>
+          <button id="show-tool-health" class="btn-secondary">Tool Health Dashboard</button>
           <button id="show-shortcuts" class="btn-secondary">Keyboard Shortcuts</button>
           <button id="reload-tools" class="btn-secondary">Reload Tools</button>
         </div>
@@ -1704,6 +1712,11 @@ function showSettingsDialog(context) {
   dialog.querySelector('#show-shortcuts').addEventListener('click', () => {
     closeDialog();
     showKeyboardShortcutsHelp();
+  });
+
+  dialog.querySelector('#show-tool-health').addEventListener('click', () => {
+    closeDialog();
+    showToolHealthDashboard(context);
   });
 
   dialog.querySelector('#reload-tools').addEventListener('click', () => {

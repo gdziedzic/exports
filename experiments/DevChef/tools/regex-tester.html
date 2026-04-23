@@ -154,6 +154,60 @@
     color: var(--text-secondary);
     font-style: italic;
   }
+
+  .match-captures {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .captures-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+
+  .named-group {
+    display: grid;
+    grid-template-columns: minmax(80px, max-content) 1fr;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 12px;
+    padding: 2px 0;
+  }
+
+  .group-name {
+    font-weight: 600;
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+
+  .group-name::after {
+    content: ':';
+    opacity: 0.5;
+  }
+
+  .group-value {
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    word-break: break-all;
+  }
+
+  .group-value.empty {
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .positional-groups {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    font-family: var(--font-mono);
+  }
 </style>
 
 <!-- Standalone Styles -->
@@ -301,26 +355,23 @@ export const DevChefTool = {
       const regex = new RegExp(pattern, flags);
       const matches = [];
 
+      const buildMatch = (match) => ({
+        text:     match[0],
+        index:    match.index,
+        named:    match.groups ? Object.entries(match.groups) : [],
+        captures: match.slice(1)
+      });
+
       if (flags.includes('g')) {
-        // Global flag: find all matches
         let match;
         while ((match = regex.exec(testString)) !== null) {
-          matches.push({
-            text: match[0],
-            index: match.index,
-            groups: match.slice(1)
-          });
+          matches.push(buildMatch(match));
+          // Guard against zero-length matches looping forever
+          if (match[0].length === 0) regex.lastIndex++;
         }
       } else {
-        // No global flag: find first match
         const match = regex.exec(testString);
-        if (match) {
-          matches.push({
-            text: match[0],
-            index: match.index,
-            groups: match.slice(1)
-          });
-        }
+        if (match) matches.push(buildMatch(match));
       }
 
       // Display results
@@ -330,13 +381,35 @@ export const DevChefTool = {
           <div class="result-info">Pattern: /${pattern}/${flags}</div>
         `;
 
-        matchesPanel.innerHTML = matches.map((m, i) => `
-          <div class="match-item">
-            <div class="match-index">Match ${i + 1} at position ${m.index}</div>
-            <div class="match-text">${this.escapeHtml(m.text)}</div>
-            ${m.groups.length > 0 ? `<div class="match-index">Groups: ${m.groups.map(g => this.escapeHtml(g || '')).join(', ')}</div>` : ''}
-          </div>
-        `).join('');
+        matchesPanel.innerHTML = matches.map((m, i) => {
+          const namedHtml = m.named.length > 0 ? `
+            <div class="match-captures">
+              <div class="captures-label">Named groups</div>
+              ${m.named.map(([name, val]) => `
+                <div class="named-group">
+                  <span class="group-name">${this.escapeHtml(name)}</span>
+                  <span class="group-value ${val == null ? 'empty' : ''}">${val != null ? this.escapeHtml(val) : 'undefined'}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : '';
+
+          // Show positional captures only if there are no named groups, or alongside them
+          const positional = m.named.length > 0
+            ? m.captures.filter((_, idx) => !m.named.some(([, v]) => v === m.captures[idx]))
+            : m.captures;
+          const positionalHtml = positional.length > 0 && m.named.length === 0 ? `
+            <div class="positional-groups">Capture groups: ${positional.map(g => this.escapeHtml(g ?? '')).join(', ')}</div>
+          ` : '';
+
+          return `
+            <div class="match-item">
+              <div class="match-index">Match ${i + 1} — position ${m.index}–${m.index + m.text.length}</div>
+              <div class="match-text">${this.escapeHtml(m.text)}</div>
+              ${namedHtml}${positionalHtml}
+            </div>
+          `;
+        }).join('');
       } else {
         resultsPanel.innerHTML = `
           <div class="result-error">✗ No matches found</div>

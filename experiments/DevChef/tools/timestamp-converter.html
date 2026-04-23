@@ -59,6 +59,10 @@
           <div class="output-label">Milliseconds</div>
           <input type="text" id="milliseconds" readonly>
         </div>
+        <div class="output-item relative-item">
+          <div class="output-label">Relative</div>
+          <input type="text" id="relative" readonly>
+        </div>
       </div>
     </div>
   </div>
@@ -204,6 +208,19 @@
     background: white;
     margin-top: 4px;
   }
+
+  .relative-item {
+    background: var(--accent-light, rgba(52, 152, 219, 0.08));
+    border: 1px solid rgba(52, 152, 219, 0.2);
+  }
+
+  .relative-item input {
+    background: transparent;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    font-family: var(--font-sans);
+  }
 </style>
 
 <!-- Tool Module Logic -->
@@ -211,6 +228,8 @@
 export const DevChefTool = {
   container: null,
   context: null,
+  _currentDate: null,
+  _ticker: null,
 
   init(container, context) {
     this.container = container;
@@ -250,6 +269,14 @@ export const DevChefTool = {
 
     // Initialize with current time
     this.updateFromDate(new Date());
+
+    // Live ticker — keeps relative time fresh every second
+    this._ticker = setInterval(() => {
+      const relEl = this.container?.querySelector("#relative");
+      if (relEl && this._currentDate) {
+        relEl.value = this.formatRelative(this._currentDate);
+      }
+    }, 1000);
   },
 
   onInput(input, context) {
@@ -294,15 +321,41 @@ export const DevChefTool = {
   },
 
   updateOutputs(date) {
-    const iso = this.container.querySelector("#iso");
-    const utc = this.container.querySelector("#utc");
-    const local = this.container.querySelector("#local");
-    const milliseconds = this.container.querySelector("#milliseconds");
+    this._currentDate = date;
 
-    if (iso) iso.value = date.toISOString();
-    if (utc) utc.value = date.toUTCString();
-    if (local) local.value = date.toString();
+    const iso          = this.container.querySelector("#iso");
+    const utc          = this.container.querySelector("#utc");
+    const local        = this.container.querySelector("#local");
+    const milliseconds = this.container.querySelector("#milliseconds");
+    const relative     = this.container.querySelector("#relative");
+
+    if (iso)          iso.value          = date.toISOString();
+    if (utc)          utc.value          = date.toUTCString();
+    if (local)        local.value        = date.toLocaleString();
     if (milliseconds) milliseconds.value = date.getTime();
+    if (relative)     relative.value     = this.formatRelative(date);
+  },
+
+  formatRelative(date) {
+    const now    = Date.now();
+    const diffMs = date.getTime() - now;
+    const abs    = Math.abs(diffMs);
+    const future = diffMs > 0;
+
+    const fmt = (n, unit) => future ? `in ${n} ${unit}` : `${n} ${unit} ago`;
+
+    if (abs <     5_000) return 'just now';
+    if (abs <    60_000) return fmt(Math.round(abs / 1_000),       abs < 10_000 ? 'second' : 'seconds');
+    if (abs <  3_600_000) return fmt(Math.round(abs / 60_000),     Math.round(abs / 60_000) === 1 ? 'minute' : 'minutes');
+    if (abs < 86_400_000) return fmt(Math.round(abs / 3_600_000),  Math.round(abs / 3_600_000) === 1 ? 'hour' : 'hours');
+
+    const days   = Math.round(abs / 86_400_000);
+    const months = Math.round(abs / 2_592_000_000);
+    const years  = Math.round(abs / 31_536_000_000);
+
+    if (days   < 30)  return fmt(days,   days   === 1 ? 'day'   : 'days');
+    if (months < 12)  return fmt(months, months === 1 ? 'month' : 'months');
+    return                    fmt(years,  years  === 1 ? 'year'  : 'years');
   }
 };
 

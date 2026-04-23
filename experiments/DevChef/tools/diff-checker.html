@@ -215,6 +215,8 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { debounce } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -230,6 +232,13 @@ export const DevChefTool = {
     compareBtn?.addEventListener("tool-click", () => this.compare());
     swapBtn?.addEventListener("tool-click", () => this.swap());
     clearBtn?.addEventListener("tool-click", () => this.clear());
+
+    const debouncedCompare = debounce(() => this.compare(), 300);
+    container.querySelector("#text1")?.addEventListener("input", debouncedCompare);
+    container.querySelector("#text2")?.addEventListener("input", debouncedCompare);
+
+    const checkboxes = container.querySelectorAll("#ignore-case, #ignore-whitespace, #trim-lines");
+    checkboxes.forEach(cb => cb.addEventListener("change", () => this.compare()));
   },
 
   compare() {
