@@ -48,20 +48,31 @@
       </div>
     </div>
 
+    <div class="tool-section tool-shell-examples">
+      <label class="section-label">Examples</label>
+      <div class="tool-shell-action-row">
+        <tool-button variant="secondary" label="Encode Query" data-example-id="encode-query"></tool-button>
+        <tool-button variant="secondary" label="Decode Component" data-example-id="decode-component"></tool-button>
+      </div>
+    </div>
+
     <div class="tool-section">
       <label class="section-label" for="input">Input</label>
-      <textarea id="input" placeholder="Enter URL or text..."></textarea>
+      <tool-textarea id="input" placeholder="Enter URL or text..." monospace rows="8"></tool-textarea>
     </div>
 
     <div class="tool-section">
       <label class="section-label" for="output">Output</label>
-      <textarea id="output" readonly></textarea>
-      <div id="status" style="margin-top: 8px; font-size: 12px;"></div>
+      <tool-textarea id="output" readonly monospace rows="8"></tool-textarea>
     </div>
 
     <div class="tool-section">
-      <button id="copy-btn">Copy Result</button>
-      <button id="clear-btn" class="secondary">Clear</button>
+      <tool-status id="status"></tool-status>
+    </div>
+
+    <div class="tool-section">
+      <tool-button id="copy-btn" variant="primary" label="Copy Result"></tool-button>
+      <tool-button id="clear-btn" variant="secondary" label="Clear"></tool-button>
     </div>
   </div>
 </template>
@@ -202,60 +213,55 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
-import { copyToClipboard, showStatus } from '../core/tool-utils.js';
+import '../core/components.js';
+import { createToolShell } from '../core/tool-shell.js';
 
 export const DevChefTool = {
   container: null,
   context: null,
+  shell: null,
 
   init(container, context) {
     this.container = container;
     this.context = context;
 
-    const inputEl = container.querySelector("#input");
     const modeRadios = container.querySelectorAll('input[name="mode"]');
-    const copyBtn = container.querySelector("#copy-btn");
-    const clearBtn = container.querySelector("#clear-btn");
-
-    if (inputEl) {
-      inputEl.addEventListener("input", (e) => {
-        context.setInput(e.target.value);
-      });
-    }
+    this.shell = createToolShell(container, context, {
+      examples: [
+        {
+          id: "encode-query",
+          label: "Encode Query",
+          input: "https://example.com/search?q=dev chef&sort=latest",
+          output: "https://example.com/search?q=dev%20chef&sort=latest",
+          controls: { 'input[name="mode"][value="encode"]': true }
+        },
+        {
+          id: "decode-component",
+          label: "Decode Component",
+          input: "name%3DDevChef%26mode%3Dfast",
+          output: "name=DevChef&mode=fast",
+          controls: { 'input[name="mode"][value="decodeComponent"]': true }
+        }
+      ]
+    });
 
     modeRadios.forEach(radio => {
       radio.addEventListener("change", () => {
-        if (context.input) {
-          context.setInput(context.input);
+        if (this.shell.getInput()) {
+          const result = this.onInput(this.shell.getInput(), context);
+          if (result?.output !== undefined) context.setOutput(result.output);
         }
       });
     });
-
-    if (copyBtn) {
-      copyBtn.addEventListener("click", () => {
-        const output = context.getOutput();
-        if (output) {
-          copyToClipboard(output, {
-            onSuccess: () => showStatus(this.container, "✓ Copied to clipboard", "success"),
-            onError: () => showStatus(this.container, "✗ Failed to copy", "error")
-          });
-        }
-      });
-    }
-
-    if (clearBtn) {
-      clearBtn.addEventListener("click", () => {
-        context.setInput("");
-        context.setOutput("");
-        inputEl.value = "";
-        showStatus(this.container, "", "");
-      });
-    }
   },
 
   onInput(input, context) {
+    const outputEl = this.container.querySelector("#output");
+    const statusEl = this.container.querySelector("#status");
+
     if (!input) {
-      this.setStatus("", "");
+      statusEl.hide();
+      outputEl.setValue("");
       return { output: "" };
     }
 
@@ -266,28 +272,33 @@ export const DevChefTool = {
       switch (mode) {
         case "encode":
           output = encodeURI(input);
-          showStatus(this.container, "✓ URL encoded", "success");
+          statusEl.show("✓ URL encoded", "success", 2000);
           break;
         case "decode":
           output = decodeURI(input);
-          showStatus(this.container, "✓ URL decoded", "success");
+          statusEl.show("✓ URL decoded", "success", 2000);
           break;
         case "encodeComponent":
           output = encodeURIComponent(input);
-          showStatus(this.container, "✓ Component encoded", "success");
+          statusEl.show("✓ Component encoded", "success", 2000);
           break;
         case "decodeComponent":
           output = decodeURIComponent(input);
-          showStatus(this.container, "✓ Component decoded", "success");
+          statusEl.show("✓ Component decoded", "success", 2000);
           break;
       }
+      outputEl.setValue(output);
       return { output };
     } catch (error) {
-      showStatus(this.container, `✗ Error: ${error.message}`, "error");
+      statusEl.show(`✗ Error: ${error.message}`, "error", 3000);
+      outputEl.setValue("");
       return { output: "", errors: [error.message] };
     }
   },
 
+  cleanup() {
+    this.shell?.cleanup();
+  }
 };
 
 // Standalone mode initialization
@@ -305,7 +316,8 @@ if (typeof window !== 'undefined' && !window.DevChef) {
         setOutput(val) {
           this.output = val;
           const outputEl = document.querySelector("#output");
-          if (outputEl) outputEl.value = val;
+          if (outputEl?.setValue) outputEl.setValue(val);
+          else if (outputEl) outputEl.value = val;
         },
         getInput() { return this.input; },
         getOutput() { return this.output; },

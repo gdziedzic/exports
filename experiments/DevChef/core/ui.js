@@ -192,6 +192,7 @@ export function renderToolList(context, searchQuery = "") {
         toolItem.innerHTML = `
           <span class="tool-name">${manifest.name}</span>
           ${categoryBadge}
+          ${renderMetadataBadges(manifest)}
           ${indicators.length > 0 ? `<span class="tool-indicators">${indicators.join('')}</span>` : ''}
         `;
 
@@ -246,6 +247,7 @@ export function renderToolList(context, searchQuery = "") {
 
           toolItem.innerHTML = `
             <span class="tool-name">${manifest.name}</span>
+            ${renderMetadataBadges(manifest)}
             ${indicators.length > 0 ? `<span class="tool-indicators">${indicators.join('')}</span>` : ''}
           `;
 
@@ -448,7 +450,7 @@ function createPaletteItem(manifest, isRecent, isFavorite, context, palette) {
       ${indicators.length > 0 ? `<div class="palette-item-indicators">${indicators.join('')}</div>` : ''}
     </div>
     ${manifest.description ? `<div class="palette-item-description">${manifest.description}</div>` : ''}
-    <div class="palette-item-category">${manifest.category || "Uncategorized"}</div>
+    <div class="palette-item-category">${manifest.category || "Uncategorized"}${renderPaletteMetadata(manifest)}</div>
   `;
 
   item.addEventListener("click", () => {
@@ -464,6 +466,26 @@ function createPaletteItem(manifest, isRecent, isFavorite, context, palette) {
   });
 
   return item;
+}
+
+function renderMetadataBadges(manifest) {
+  const tags = Array.isArray(manifest.tags) ? manifest.tags.slice(0, 2) : [];
+  if (tags.length === 0) return '';
+  return `<span class="tool-metadata-tags">${tags.map(tag => `<span class="tool-metadata-tag">${escapeHtml(tag)}</span>`).join('')}</span>`;
+}
+
+function renderPaletteMetadata(manifest) {
+  const parts = [];
+  if (Array.isArray(manifest.tags) && manifest.tags.length > 0) {
+    parts.push(manifest.tags.slice(0, 3).join(', '));
+  }
+  if (manifest.maturity) {
+    parts.push(manifest.maturity);
+  }
+  if (manifest.testCoverage && manifest.testCoverage !== 'unknown') {
+    parts.push(`${manifest.testCoverage} coverage`);
+  }
+  return parts.length > 0 ? ` · ${escapeHtml(parts.join(' · '))}` : '';
 }
 
 /**

@@ -12,7 +12,8 @@
     "test:report": "playwright show-report",
     "test:install": "playwright install",
     "test:unit": "vitest run",
-    "test:unit:watch": "vitest"
+    "test:unit:watch": "vitest",
+    "generate:tools-readme": "node scripts/generate-tool-readme.mjs"
   },
   "keywords": [
     "developer-tools",
@@ -23,6 +24,7 @@
   "license": "ISC",
   "devDependencies": {
     "@playwright/test": "^1.48.0",
+    "happy-dom": "^20.9.0",
     "vitest": "^2.1.9"
   }
 }

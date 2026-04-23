@@ -12,6 +12,7 @@
  */
 
 import { storage } from './storage.js';
+import { getToolSearchMetadata } from './tool-metadata.js';
 
 // ============================================================================
 // CONSTANTS
@@ -208,7 +209,7 @@ export function searchTools(tools, query, options = {}) {
     // Filter by tags if specified
     if (tags.length > 0) {
       filtered = filtered.filter(tool => {
-        const toolTags = tool.keywords || [];
+        const toolTags = getToolSearchMetadata(tool).tags.concat(getToolSearchMetadata(tool).keywords);
         return tags.every(tag => toolTags.includes(tag));
       });
     }
@@ -240,7 +241,8 @@ export function searchTools(tools, query, options = {}) {
 
     // Apply tags filter
     if (tags.length > 0) {
-      const toolTags = tool.keywords || [];
+      const metadata = getToolSearchMetadata(tool);
+      const toolTags = metadata.tags.concat(metadata.keywords);
       const hasAllTags = tags.every(tag => toolTags.includes(tag));
       if (!hasAllTags) {
         return null;
@@ -249,22 +251,26 @@ export function searchTools(tools, query, options = {}) {
 
     const lowerQuery = query.toLowerCase().trim();
     const lowerName = tool.name ? tool.name.toLowerCase() : '';
-    const lowerCategory = tool.category ? tool.category.toLowerCase() : '';
+    const metadata = getToolSearchMetadata(tool);
 
     // Check for exact matches (case-insensitive) - should show ONLY that tool
     const exactNameMatch = lowerName === lowerQuery;
+    const exactAliasMatch = metadata.aliases.some(alias => alias.toLowerCase() === lowerQuery);
 
     // If exact match, give it maximum score and return immediately
-    if (exactNameMatch) {
+    if (exactNameMatch || exactAliasMatch) {
       return {
         tool,
-        score: 1000, // Very high score for exact name match
+        score: exactNameMatch ? 1000 : 950,
         isFavorite: tool.id ? favorites.includes(tool.id) : false,
         isRecent: !!recentTools.find(r => r?.toolId === tool.id),
         matchDetails: {
-          nameScore: 1000,
+          nameScore: exactNameMatch ? 1000 : 0,
+          aliasScore: exactAliasMatch ? 950 : 0,
           descScore: 0,
-          categoryScore: 0
+          categoryScore: 0,
+          tagScore: 0,
+          exampleScore: 0
         }
       };
     }
@@ -285,8 +291,12 @@ export function searchTools(tools, query, options = {}) {
 
     const descScore = tool.description ? fuzzyScore(query, tool.description) * 0.3 : 0;
     const categoryScore = tool.category ? fuzzyScore(query, tool.category) * 0.4 : 0;
-    const keywordScore = tool.keywords ?
-      Math.max(...tool.keywords.map(k => fuzzyScore(query, k)), 0) * 0.5 : 0;
+    const keywordScore = maxFuzzyScore(query, metadata.keywords) * 0.5;
+    const tagScore = maxFuzzyScore(query, metadata.tags) * 0.8;
+    const aliasScore = maxFuzzyScore(query, metadata.aliases) * 0.9;
+    const exampleScore = maxFuzzyScore(query, metadata.examples) * 0.6;
+    const maturityScore = maxFuzzyScore(query, metadata.maturity) * 0.35;
+    const coverageScore = maxFuzzyScore(query, metadata.testCoverage) * 0.35;
 
     // Combined score - heavily weighted towards name
     let baseScore;
@@ -299,7 +309,12 @@ export function searchTools(tools, query, options = {}) {
         nameScore * 2.0,  // Double weight for name even in weak matches
         descScore,
         categoryScore,
-        keywordScore
+        keywordScore,
+        tagScore,
+        aliasScore,
+        exampleScore,
+        maturityScore,
+        coverageScore
       );
     }
 
@@ -319,6 +334,14 @@ export function searchTools(tools, query, options = {}) {
       if (recentEntry) {
         score += 5;
       }
+
+      if (tool.maturity === 'stable') {
+        score += 3;
+      }
+
+      if (['unit', 'e2e', 'automated'].includes(tool.testCoverage)) {
+        score += 3;
+      }
     }
 
     return {
@@ -330,7 +353,12 @@ export function searchTools(tools, query, options = {}) {
         nameScore,
         descScore,
         categoryScore,
-        keywordScore
+        keywordScore,
+        tagScore,
+        aliasScore,
+        exampleScore,
+        maturityScore,
+        coverageScore
       }
     };
   }).filter(r => r !== null); // Remove invalid/filtered entries
@@ -365,6 +393,11 @@ export function searchTools(tools, query, options = {}) {
       return (a.tool?.name || '').localeCompare(b.tool?.name || '');
     })
     .slice(0, maxResults);
+}
+
+function maxFuzzyScore(query, values) {
+  if (!Array.isArray(values) || values.length === 0) return 0;
+  return Math.max(...values.map(value => fuzzyScore(query, value)), 0);
 }
 
 /**

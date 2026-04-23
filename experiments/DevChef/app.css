@@ -253,6 +253,26 @@ body {
   transform: translateX(4px);
 }
 
+.tool-metadata-tags {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.tool-metadata-tag {
+  max-width: 74px;
+  padding: 2px 5px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tool-item.active {
   background: var(--accent-light);
   color: var(--accent);
@@ -1124,6 +1144,12 @@ button.secondary:hover {
   padding: 16px;
 }
 
+.tool-health-entry-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 16px 12px 16px;
+}
+
 .tool-health-entry-main h3 {
   margin: 0 0 4px 0;
   font-size: 16px;
@@ -1181,6 +1207,82 @@ button.secondary:hover {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 8px;
   padding: 0 16px 16px 16px;
+}
+
+.tool-health-metadata-panel {
+  margin: 0 16px 16px 16px;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+}
+
+.tool-health-metadata-grid {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.7fr) minmax(0, 1.35fr) minmax(0, 1.35fr);
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--border-color);
+}
+
+.tool-health-metadata-grid > div {
+  min-width: 0;
+  padding: 8px 10px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.tool-health-metadata-grid .tool-health-metadata-head {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tool-health-metadata-findings {
+  margin-top: 14px;
+}
+
+.tool-health-metadata-findings h4 {
+  margin: 0 0 8px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tool-health-metadata-findings p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.tool-health-metadata-finding {
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--warning);
+  background: var(--warning-bg, rgba(217, 119, 6, 0.08));
+  font-size: 12px;
+}
+
+.tool-health-metadata-finding + .tool-health-metadata-finding {
+  margin-top: 6px;
+}
+
+.tool-health-metadata-finding.error {
+  border-left-color: var(--error);
+  background: var(--error-bg, rgba(220, 38, 38, 0.08));
+}
+
+.tool-health-muted {
+  color: var(--text-secondary);
+  font-style: italic;
 }
 
 .tool-health-check {
@@ -1248,6 +1350,10 @@ button.secondary:hover {
   }
 
   .tool-health-entry-main {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-health-metadata-grid {
     grid-template-columns: 1fr;
   }
 

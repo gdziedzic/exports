@@ -175,6 +175,66 @@ body {
 }
 
 /* =============================================================================
+   Tool Shell Helpers
+   ============================================================================= */
+
+.tool-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tool-shell-panel {
+  min-width: 0;
+}
+
+.tool-shell-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.tool-shell-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.tool-shell-actions {
+  margin-bottom: var(--spacing-md);
+}
+
+.tool-shell-examples .tool-shell-action-row {
+  gap: var(--spacing-xs);
+}
+
+.tool-shell-validation {
+  color: var(--error);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.tool-shell-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-md);
+  align-items: end;
+}
+
+.tool-shell-setting {
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+@media (max-width: 760px) {
+  .tool-shell-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =============================================================================
    Form Elements — Modern styling
    ============================================================================= */
 

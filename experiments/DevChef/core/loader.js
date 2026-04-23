@@ -4,6 +4,7 @@
  */
 
 import { ToolRegistry } from './registry.js';
+import { getToolIndexFilename, mergeToolMetadata, normalizeToolIndexEntry } from './tool-metadata.js';
 
 
 /**
@@ -77,7 +78,7 @@ export function getLoadingErrors() {
  * @param {string} path - Path to the tool HTML file
  * @returns {Promise<void>}
  */
-async function loadTool(path) {
+async function loadTool(path, indexMetadata = {}) {
   try {
     const html = await fetch(path).then(r => {
       if (!r.ok) throw new Error(`Failed to load ${path}: ${r.status}`);
@@ -94,7 +95,10 @@ async function loadTool(path) {
       loadingErrors.push({ path, error });
       return;
     }
-    const manifest = JSON.parse(manifestScript.textContent);
+    const manifest = mergeToolMetadata(JSON.parse(manifestScript.textContent), {
+      ...indexMetadata,
+      path
+    });
 
     // Extract template
     const template = doc.querySelector("template#tool-ui");
@@ -219,7 +223,15 @@ async function loadToolsFromDirectory(dir) {
     }
 
     // Load all tools from this directory
-    const loadPromises = toolFiles.map(file => loadTool(`${dir}/${file}`));
+    const loadPromises = toolFiles.map(entry => {
+      const metadata = normalizeToolIndexEntry(entry);
+      const file = getToolIndexFilename(entry);
+      if (!file) {
+        console.error(`Invalid tool entry in ${indexPath}:`, entry);
+        return Promise.resolve();
+      }
+      return loadTool(`${dir}/${file}`, metadata);
+    });
     await Promise.all(loadPromises);
 
   } catch (error) {

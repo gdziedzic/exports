@@ -40,6 +40,14 @@
       </div>
     </div>
 
+    <div class="tool-section tool-shell-examples">
+      <label class="section-label">Examples</label>
+      <div class="tool-shell-action-row">
+        <tool-button variant="secondary" label="Encode JSON" data-example-id="encode-json"></tool-button>
+        <tool-button variant="secondary" label="Decode Payload" data-example-id="decode-payload"></tool-button>
+      </div>
+    </div>
+
     <div class="tool-section">
       <label class="section-label">Input</label>
       <tool-textarea
@@ -73,62 +81,49 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
-import { copyToClipboard, showStatus } from '../core/tool-utils.js';
+import '../core/components.js';
+import { createToolShell } from '../core/tool-shell.js';
 
 export const DevChefTool = {
   container: null,
   context: null,
+  shell: null,
 
   init(container, context) {
     this.container = container;
     this.context = context;
 
-    const inputEl = container.querySelector("#input");
     const outputEl = container.querySelector("#output");
     const modeRadios = container.querySelectorAll('input[name="mode"]');
-    const copyBtn = container.querySelector("#copy-btn");
-    const clearBtn = container.querySelector("#clear-btn");
     const statusEl = container.querySelector("#status");
 
-    // Handle input changes
-    if (inputEl) {
-      inputEl.addEventListener("input", (e) => {
-        context.setInput(e.detail.value);
-      });
-    }
+    this.shell = createToolShell(container, context, {
+      examples: [
+        {
+          id: "encode-json",
+          label: "Encode JSON",
+          input: "{\"status\":\"ok\",\"items\":[1,2,3]}",
+          output: "eyJzdGF0dXMiOiJvayIsIml0ZW1zIjpbMSwyLDNdfQ==",
+          controls: { 'input[name="mode"][value="encode"]': true }
+        },
+        {
+          id: "decode-payload",
+          label: "Decode Payload",
+          input: "SGVsbG8sIERldkNoZWYh",
+          output: "Hello, DevChef!",
+          controls: { 'input[name="mode"][value="decode"]': true }
+        }
+      ]
+    });
 
-    // Handle mode changes
     modeRadios.forEach(radio => {
       radio.addEventListener("change", () => {
-        if (context.input) {
-          context.setInput(context.input);
+        if (this.shell.getInput()) {
+          const result = this.processValue(this.shell.getInput(), outputEl, statusEl);
+          if (result?.output !== undefined) this.context.setOutput(result.output);
         }
       });
     });
-
-    // Handle copy button
-    if (copyBtn) {
-      copyBtn.addEventListener("tool-click", () => {
-        const output = outputEl.getValue();
-        if (output) {
-          copyToClipboard(output, {
-            onSuccess: () => statusEl.show("✓ Copied to clipboard", "success", 2000),
-            onError: () => statusEl.show("✗ Failed to copy", "error", 2000)
-          });
-        }
-      });
-    }
-
-    // Handle clear button
-    if (clearBtn) {
-      clearBtn.addEventListener("tool-click", () => {
-        inputEl.setValue("");
-        outputEl.setValue("");
-        context.setInput("");
-        context.setOutput("");
-        statusEl.hide();
-      });
-    }
   },
 
   onInput(input, context) {
@@ -141,6 +136,10 @@ export const DevChefTool = {
       return { output: "" };
     }
 
+    return this.processValue(input, outputEl, statusEl);
+  },
+
+  processValue(input, outputEl, statusEl) {
     const mode = this.container.querySelector('input[name="mode"]:checked')?.value || "encode";
 
     try {
@@ -160,6 +159,10 @@ export const DevChefTool = {
       outputEl.setValue("");
       return { output: "", errors: [error.message] };
     }
+  },
+
+  cleanup() {
+    this.shell?.cleanup();
   }
 };
 

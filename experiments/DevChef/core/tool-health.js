@@ -5,6 +5,7 @@
 
 import { getLoadingErrors } from './loader.js';
 import { ToolRegistry } from './registry.js';
+import { getToolIndexFilename, normalizeToolIndexEntry, validateToolMetadataIndex } from './tool-metadata.js';
 
 const REQUIRED_MANIFEST_FIELDS = ['id', 'name', 'category', 'description'];
 const TOOL_INDEX_PATH = './tools/index.json';
@@ -41,10 +42,16 @@ export async function runToolHealthChecks() {
   const files = indexResult.files;
   report.totals.files = files.length;
 
-  const duplicateFiles = findDuplicates(files);
+  const duplicateFiles = findDuplicates(files.map(getToolIndexFilename).filter(Boolean));
   const entries = await Promise.all(files.map((file, index) => {
     return validateToolEntry(file, index, duplicateFiles);
   }));
+  const manifestsByFile = new Map(entries.map(entry => [entry.file, entry.manifest]).filter(([, manifest]) => manifest));
+  const metadataValidation = validateToolMetadataIndex(files, {
+    manifestsByFile,
+    now: new Date()
+  });
+  applyMetadataValidation(entries, metadataValidation);
 
   const duplicateIds = findDuplicates(
     entries
@@ -155,30 +162,35 @@ async function fetchToolIndex() {
 }
 
 async function validateToolEntry(file, index, duplicateFiles) {
+  const metadata = normalizeToolIndexEntry(file);
+  const filename = getToolIndexFilename(file);
   const entry = {
     index,
-    file,
-    path: `${TOOL_BASE_PATH}${file}`,
+    file: filename,
+    path: `${TOOL_BASE_PATH}${filename}`,
+    metadata,
     manifest: null,
     checks: []
   };
 
-  if (typeof file !== 'string' || !file.endsWith('.html')) {
+  if (!filename || !filename.endsWith('.html')) {
     entry.checks.push(failCheck('HTML file entry', 'Index entries must be .html filenames.'));
     return entry;
   }
 
-  if (file.includes('/') || file.includes('\\')) {
+  if (filename.includes('/') || filename.includes('\\')) {
     entry.checks.push(warnCheck('Flat file path', 'Tool entries should be filenames inside tools/.'));
   } else {
     entry.checks.push(passCheck('Flat file path', 'Entry points to a tools/ HTML file.'));
   }
 
-  if (duplicateFiles.has(file)) {
-    entry.checks.push(failCheck('Unique index entry', `${file} appears more than once in ${TOOL_INDEX_PATH}.`));
+  if (duplicateFiles.has(filename)) {
+    entry.checks.push(failCheck('Unique index entry', `${filename} appears more than once in ${TOOL_INDEX_PATH}.`));
   } else {
     entry.checks.push(passCheck('Unique index entry', 'Index entry is unique.'));
   }
+
+  validateRegistryMetadata(entry);
 
   let html = '';
   try {
@@ -222,6 +234,44 @@ async function validateToolEntry(file, index, duplicateFiles) {
   validateLoaderStatus(entry);
 
   return entry;
+}
+
+function validateRegistryMetadata(entry) {
+  if (!entry.metadata || Object.keys(entry.metadata).length <= 1) {
+    entry.checks.push(warnCheck('Registry metadata', 'Index entry uses legacy filename-only metadata.'));
+    return;
+  }
+
+  ['category', 'tags', 'aliases', 'examples', 'maturity', 'lastUpdated', 'testCoverage'].forEach(field => {
+    const value = entry.metadata[field];
+    const present = Array.isArray(value) ? value.length > 0 : Boolean(value);
+    if (present) {
+      entry.checks.push(passCheck(`Registry metadata: ${field}`, `${field} is present in tools/index.json.`));
+    } else {
+      entry.checks.push(warnCheck(`Registry metadata: ${field}`, `${field} is not set in tools/index.json.`));
+    }
+  });
+}
+
+function applyMetadataValidation(entries, validation) {
+  entries.forEach(entry => {
+    const issues = validation.issuesByFile?.[entry.file] || [];
+    entry.metadataIssues = issues;
+
+    if (issues.length === 0) {
+      entry.checks.push(passCheck('Metadata quality gate', 'Registry metadata passes all quality checks.'));
+      return;
+    }
+
+    issues.forEach(issue => {
+      const checkName = `Metadata quality: ${issue.field}`;
+      if (issue.severity === 'error') {
+        entry.checks.push(failCheck(checkName, issue.message));
+      } else {
+        entry.checks.push(warnCheck(checkName, issue.message));
+      }
+    });
+  });
 }
 
 function validateManifestFields(entry) {
@@ -418,11 +468,70 @@ function renderEntry(entry) {
           <span>checks passed</span>
         </div>
       </div>
+      <div class="tool-health-entry-actions">
+        <tool-button
+          variant="secondary"
+          label="Metadata"
+          data-metadata-toggle="${escapeHtml(entry.file)}">
+        </tool-button>
+      </div>
+      ${renderMetadataPanel(entry)}
       <div class="tool-health-checks">
         ${visibleChecks.map(renderCheck).join('')}
       </div>
     </article>
   `;
+}
+
+function renderMetadataPanel(entry) {
+  const rows = [
+    ['ID', entry.metadata?.id, entry.manifest?.id],
+    ['Name', entry.metadata?.name, entry.manifest?.name],
+    ['Category', entry.metadata?.category, entry.manifest?.category],
+    ['Tags', entry.metadata?.tags, entry.manifest?.tags || entry.manifest?.keywords],
+    ['Aliases', entry.metadata?.aliases, entry.manifest?.aliases],
+    ['Examples', entry.metadata?.examples, entry.manifest?.examples],
+    ['Maturity', entry.metadata?.maturity, entry.manifest?.maturity],
+    ['Last Updated', entry.metadata?.lastUpdated, entry.manifest?.lastUpdated],
+    ['Coverage', entry.metadata?.testCoverage, entry.manifest?.testCoverage]
+  ];
+  const issues = entry.metadataIssues || [];
+
+  return `
+    <div class="tool-health-metadata-panel" data-metadata-panel="${escapeHtml(entry.file)}" hidden>
+      <div class="tool-health-metadata-grid">
+        <div class="tool-health-metadata-head">Field</div>
+        <div class="tool-health-metadata-head">Registry</div>
+        <div class="tool-health-metadata-head">Manifest</div>
+        ${rows.map(([label, registry, manifest]) => `
+          <div>${escapeHtml(label)}</div>
+          <div>${formatMetadataValue(registry)}</div>
+          <div>${formatMetadataValue(manifest)}</div>
+        `).join('')}
+      </div>
+      <div class="tool-health-metadata-findings">
+        <h4>Metadata Findings</h4>
+        ${issues.length === 0
+          ? '<p>No metadata quality issues.</p>'
+          : issues.map(issue => `
+            <div class="tool-health-metadata-finding ${issue.severity}">
+              <strong>${escapeHtml(issue.field)}</strong>
+              <span>${escapeHtml(issue.message)}</span>
+            </div>
+          `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function formatMetadataValue(value) {
+  if (Array.isArray(value)) {
+    return value.length > 0 ? escapeHtml(value.join(', ')) : '<span class="tool-health-muted">Not set</span>';
+  }
+  if (value == null || value === '') {
+    return '<span class="tool-health-muted">Not set</span>';
+  }
+  return escapeHtml(value);
 }
 
 function renderCheck(check) {
@@ -440,6 +549,7 @@ function renderCheck(check) {
 function bindHealthFilters(content) {
   const buttons = content.querySelectorAll('[data-health-filter]');
   const entries = content.querySelectorAll('[data-health-status]');
+  const metadataToggles = content.querySelectorAll('[data-metadata-toggle]');
 
   buttons.forEach(button => {
     button.addEventListener('tool-click', () => {
@@ -448,6 +558,16 @@ function bindHealthFilters(content) {
       entries.forEach(entry => {
         entry.hidden = filter !== 'all' && entry.dataset.healthStatus !== filter;
       });
+    });
+  });
+
+  metadataToggles.forEach(button => {
+    button.addEventListener('tool-click', () => {
+      const file = button.dataset.metadataToggle;
+      const panel = content.querySelector(`[data-metadata-panel="${CSS.escape(file)}"]`);
+      if (!panel) return;
+      panel.hidden = !panel.hidden;
+      button.setLabel?.(panel.hidden ? 'Metadata' : 'Hide Metadata');
     });
   });
 }

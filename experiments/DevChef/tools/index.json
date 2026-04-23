@@ -1,1 +1,872 @@
-["string-cleaner.html", "base64-tool.html", "url-encoder.html", "uuid-generator.html", "hash-generator.html", "timestamp-converter.html", "regex-tester.html", "config-manager.html", "html-converter.html", "json-formatter.html", "color-picker.html", "jwt-decoder.html", "sql-formatter.html", "csv-json-converter.html", "diff-checker.html", "table-schema-generator.html", "sql-data-generator.html", "connection-string-builder.html", "tsql-snippets.html", "sql-join-helper.html", "json-schema-loader.html", "template-transform.html", "bimble-transforms.html", "code-transformer.html", "data-pipeline-studio.html", "kql-builder.html", "curl-builder.html", "line-operations.html", "quick-calc.html", "fix-parser.html", "http-mock-api.html", "extractor-v5.html", "sql-emmet-ultimate.html", "ai-prompt-builder.html", "prompt-forge.html"]
+[
+  {
+    "file": "string-cleaner.html",
+    "id": "string-cleaner",
+    "name": "String Cleaner",
+    "category": "Text",
+    "tags": [
+      "text",
+      "cleanup",
+      "normalize",
+      "whitespace"
+    ],
+    "aliases": [
+      "trim",
+      "dedupe spaces",
+      "clean text"
+    ],
+    "examples": [
+      "Trim pasted text",
+      "Normalize whitespace",
+      "Remove empty lines"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "base64-tool.html",
+    "id": "base64-tool",
+    "name": "Base64 Encoder/Decoder",
+    "category": "Encoding",
+    "tags": [
+      "encoding",
+      "base64",
+      "decode",
+      "encode"
+    ],
+    "aliases": [
+      "b64",
+      "base64 decode",
+      "base64 encode"
+    ],
+    "examples": [
+      "Decode base64 payload",
+      "Encode text for transport"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "url-encoder.html",
+    "id": "url-encoder",
+    "name": "URL Encoder/Decoder",
+    "category": "Encoding",
+    "tags": [
+      "encoding",
+      "url",
+      "uri",
+      "percent-encoding"
+    ],
+    "aliases": [
+      "url decode",
+      "uri encode",
+      "percent encode"
+    ],
+    "examples": [
+      "Decode query string",
+      "Encode URL component"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "uuid-generator.html",
+    "id": "uuid-generator",
+    "name": "UUID Generator",
+    "category": "Generators",
+    "tags": [
+      "generator",
+      "uuid",
+      "guid",
+      "random"
+    ],
+    "aliases": [
+      "guid generator",
+      "uuid v4"
+    ],
+    "examples": [
+      "Generate UUID batch",
+      "Copy GUIDs for fixtures"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "hash-generator.html",
+    "id": "hash-generator",
+    "name": "Hash Generator",
+    "category": "Generators",
+    "tags": [
+      "hash",
+      "crypto",
+      "checksum",
+      "sha",
+      "md5"
+    ],
+    "aliases": [
+      "sha256",
+      "md5",
+      "checksum"
+    ],
+    "examples": [
+      "Hash text with SHA-256",
+      "Compare checksums"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "timestamp-converter.html",
+    "id": "timestamp-converter",
+    "name": "Timestamp Converter",
+    "category": "Converters",
+    "tags": [
+      "time",
+      "date",
+      "unix",
+      "epoch",
+      "converter"
+    ],
+    "aliases": [
+      "unix time",
+      "epoch converter",
+      "timestamp"
+    ],
+    "examples": [
+      "Convert Unix timestamp",
+      "Use current time"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "regex-tester.html",
+    "id": "regex-tester",
+    "name": "Regex Tester",
+    "category": "Text",
+    "tags": [
+      "regex",
+      "text",
+      "match",
+      "validate"
+    ],
+    "aliases": [
+      "regexp",
+      "regular expression",
+      "pattern tester"
+    ],
+    "examples": [
+      "Test a regex",
+      "Extract matching groups"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "config-manager.html",
+    "id": "config-manager",
+    "name": "Config Manager",
+    "category": "DevChef",
+    "tags": [
+      "devchef",
+      "settings",
+      "configuration",
+      "storage"
+    ],
+    "aliases": [
+      "settings manager",
+      "tool config"
+    ],
+    "examples": [
+      "Review enabled tools",
+      "Manage DevChef configuration"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "tool-shell-demo.html",
+    "id": "tool-shell-demo",
+    "name": "Tool Shell Demo",
+    "category": "DevChef",
+    "tags": [
+      "devchef",
+      "components",
+      "shell",
+      "demo"
+    ],
+    "aliases": [
+      "shell demo",
+      "component shell",
+      "tool template"
+    ],
+    "examples": [
+      "Review reusable tool shell patterns",
+      "Test examples and persisted settings"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "unit"
+  },
+  {
+    "file": "html-converter.html",
+    "id": "html-converter",
+    "name": "HTML Converter",
+    "category": "DevChef",
+    "tags": [
+      "html",
+      "entities",
+      "escape",
+      "unescape"
+    ],
+    "aliases": [
+      "html entities",
+      "escape html",
+      "unescape html"
+    ],
+    "examples": [
+      "Encode HTML entities",
+      "Decode pasted markup"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "json-formatter.html",
+    "id": "json-formatter",
+    "name": "JSON Formatter",
+    "category": "Data",
+    "tags": [
+      "json",
+      "format",
+      "validate",
+      "data"
+    ],
+    "aliases": [
+      "pretty json",
+      "json validator",
+      "minify json"
+    ],
+    "examples": [
+      "Format JSON payload",
+      "Validate malformed JSON"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "color-picker.html",
+    "id": "color-picker",
+    "name": "Color Picker & Themes",
+    "category": "Design",
+    "tags": [
+      "color",
+      "design",
+      "palette",
+      "theme"
+    ],
+    "aliases": [
+      "hex picker",
+      "rgb converter",
+      "theme colors"
+    ],
+    "examples": [
+      "Pick a color",
+      "Convert HEX to RGB"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "jwt-decoder.html",
+    "id": "jwt-decoder",
+    "name": "JWT Decoder",
+    "category": "Crypto",
+    "tags": [
+      "jwt",
+      "token",
+      "decode",
+      "security"
+    ],
+    "aliases": [
+      "json web token",
+      "bearer token",
+      "decode jwt"
+    ],
+    "examples": [
+      "Inspect JWT claims",
+      "Decode token header"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "sql-formatter.html",
+    "id": "sql-formatter",
+    "name": "SQL Formatter",
+    "category": "Database",
+    "tags": [
+      "sql",
+      "database",
+      "format",
+      "query"
+    ],
+    "aliases": [
+      "format sql",
+      "sql beautifier",
+      "query formatter"
+    ],
+    "examples": [
+      "Format SELECT query",
+      "Normalize SQL indentation"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "csv-json-converter.html",
+    "id": "csv-json-converter",
+    "name": "CSV ⇄ JSON",
+    "category": "Data",
+    "tags": [
+      "csv",
+      "json",
+      "convert",
+      "data"
+    ],
+    "aliases": [
+      "csv to json",
+      "json to csv",
+      "table converter"
+    ],
+    "examples": [
+      "Convert CSV rows to JSON",
+      "Export JSON as CSV"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "diff-checker.html",
+    "id": "diff-checker",
+    "name": "Diff Checker",
+    "category": "Text",
+    "tags": [
+      "diff",
+      "compare",
+      "text",
+      "review"
+    ],
+    "aliases": [
+      "text compare",
+      "compare files",
+      "side by side diff"
+    ],
+    "examples": [
+      "Compare two snippets",
+      "Review text changes"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "table-schema-generator.html",
+    "id": "table-schema-generator",
+    "name": "Table Schema",
+    "category": "Database",
+    "tags": [
+      "schema",
+      "table",
+      "database",
+      "ddl"
+    ],
+    "aliases": [
+      "schema builder",
+      "table ddl",
+      "create table"
+    ],
+    "examples": [
+      "Generate table schema",
+      "Draft CREATE TABLE columns"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "sql-data-generator.html",
+    "id": "sql-data-generator",
+    "name": "SQL Data Gen",
+    "category": "Database",
+    "tags": [
+      "sql",
+      "data",
+      "generator",
+      "fixtures"
+    ],
+    "aliases": [
+      "seed data",
+      "insert generator",
+      "mock sql data"
+    ],
+    "examples": [
+      "Generate INSERT statements",
+      "Create test rows"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "connection-string-builder.html",
+    "id": "connection-string-builder",
+    "name": "Connection String",
+    "category": "Database",
+    "tags": [
+      "database",
+      "connection-string",
+      "config",
+      "credentials"
+    ],
+    "aliases": [
+      "dsn builder",
+      "connection string",
+      "database url"
+    ],
+    "examples": [
+      "Build SQL Server connection string",
+      "Assemble Postgres URL"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "tsql-snippets.html",
+    "id": "tsql-snippets",
+    "name": "T-SQL Snippets",
+    "category": "Database",
+    "tags": [
+      "tsql",
+      "sql-server",
+      "snippets",
+      "database"
+    ],
+    "aliases": [
+      "sql snippets",
+      "t-sql reference",
+      "sql server snippets"
+    ],
+    "examples": [
+      "Find T-SQL maintenance snippet",
+      "Copy query pattern"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "sql-join-helper.html",
+    "id": "sql-join-helper",
+    "name": "SQL Join Helper",
+    "category": "Database",
+    "tags": [
+      "sql",
+      "join",
+      "database",
+      "query"
+    ],
+    "aliases": [
+      "join builder",
+      "sql joins",
+      "join helper"
+    ],
+    "examples": [
+      "Build INNER JOIN",
+      "Explain join type"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "json-schema-loader.html",
+    "id": "json-schema-loader",
+    "name": "JSON Schema Loader",
+    "category": "Database",
+    "tags": [
+      "json",
+      "schema",
+      "database",
+      "loader"
+    ],
+    "aliases": [
+      "schema loader",
+      "json schema",
+      "schema import"
+    ],
+    "examples": [
+      "Load JSON schema",
+      "Map schema fields"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "template-transform.html",
+    "id": "template-transform",
+    "name": "Template Transform",
+    "category": "Development",
+    "tags": [
+      "template",
+      "transform",
+      "markdown",
+      "generator"
+    ],
+    "aliases": [
+      "readme generator",
+      "template engine",
+      "text template"
+    ],
+    "examples": [
+      "Generate README",
+      "Render template with data"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "bimble-transforms.html",
+    "id": "bimble-transforms",
+    "name": "Bimble Transforms",
+    "category": "Development",
+    "tags": [
+      "transform",
+      "text",
+      "csv",
+      "template"
+    ],
+    "aliases": [
+      "bimble",
+      "row transform",
+      "bulk transform"
+    ],
+    "examples": [
+      "Transform rows with pattern",
+      "Generate SQL from CSV"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "code-transformer.html",
+    "id": "code-transformer",
+    "name": "Code Transformer",
+    "category": "Development",
+    "tags": [
+      "code",
+      "transform",
+      "developer",
+      "refactor"
+    ],
+    "aliases": [
+      "code converter",
+      "case converter",
+      "code cleanup"
+    ],
+    "examples": [
+      "Transform code casing",
+      "Convert code snippets"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "data-pipeline-studio.html",
+    "id": "data-pipeline-studio",
+    "name": "Data Pipeline Studio",
+    "category": "Data",
+    "tags": [
+      "data",
+      "pipeline",
+      "workflow",
+      "transform"
+    ],
+    "aliases": [
+      "pipeline builder",
+      "data workflow",
+      "etl studio"
+    ],
+    "examples": [
+      "Build multi-step data pipeline",
+      "Chain transformations"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "kql-builder.html",
+    "id": "kql-builder",
+    "name": "KQL Builder",
+    "category": "Azure",
+    "tags": [
+      "kql",
+      "azure",
+      "application-insights",
+      "query"
+    ],
+    "aliases": [
+      "kusto",
+      "kusto query",
+      "app insights query"
+    ],
+    "examples": [
+      "Build Application Insights query",
+      "Format KQL pipeline"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "e2e"
+  },
+  {
+    "file": "curl-builder.html",
+    "id": "curl-builder",
+    "name": "cURL Builder",
+    "category": "Development",
+    "tags": [
+      "http",
+      "curl",
+      "api",
+      "request"
+    ],
+    "aliases": [
+      "curl command",
+      "api request",
+      "http request builder"
+    ],
+    "examples": [
+      "Build POST request",
+      "Add headers to curl"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "line-operations.html",
+    "id": "line-operations",
+    "name": "Line Operations",
+    "category": "Text",
+    "tags": [
+      "text",
+      "lines",
+      "sort",
+      "dedupe"
+    ],
+    "aliases": [
+      "line tools",
+      "sort lines",
+      "unique lines"
+    ],
+    "examples": [
+      "Sort lines",
+      "Remove duplicate lines"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "quick-calc.html",
+    "id": "quick-calc",
+    "name": "Quick Calc",
+    "category": "Dev",
+    "tags": [
+      "calculator",
+      "math",
+      "quick",
+      "numbers"
+    ],
+    "aliases": [
+      "calc",
+      "calculator",
+      "quick math"
+    ],
+    "examples": [
+      "Evaluate expression",
+      "Calculate percentages"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "fix-parser.html",
+    "id": "fix-parser",
+    "name": "FIX Parser",
+    "category": "Developer Tools",
+    "tags": [
+      "fix",
+      "parser",
+      "finance",
+      "protocol",
+      "trading"
+    ],
+    "aliases": [
+      "fix decoder",
+      "fix message",
+      "financial protocol"
+    ],
+    "examples": [
+      "Decode FIX message",
+      "Inspect trading session fields"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "http-mock-api.html",
+    "id": "http-mock-api",
+    "name": "HTTP Mock API",
+    "category": "Developer Tools",
+    "tags": [
+      "http",
+      "api",
+      "mock",
+      "rest",
+      "testing"
+    ],
+    "aliases": [
+      "mock server",
+      "fake api",
+      "rest mock"
+    ],
+    "examples": [
+      "Mock JSON endpoint",
+      "Test API response shape"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "extractor-v5.html",
+    "id": "extractor-v5",
+    "name": "Extractor V5 Ultimate",
+    "category": "Text",
+    "tags": [
+      "extract",
+      "regex",
+      "text",
+      "scrape",
+      "validate"
+    ],
+    "aliases": [
+      "extractor",
+      "pattern extractor",
+      "text extraction"
+    ],
+    "examples": [
+      "Extract URLs and emails",
+      "Validate common patterns"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "sql-emmet-ultimate.html",
+    "id": "sql-emmet-ultimate",
+    "name": "SQL Emmet ULTIMATE",
+    "category": "Database",
+    "tags": [
+      "sql",
+      "emmet",
+      "database",
+      "generation"
+    ],
+    "aliases": [
+      "sql emmet",
+      "query shorthand",
+      "sql generator"
+    ],
+    "examples": [
+      "Expand SQL shorthand",
+      "Generate query skeleton"
+    ],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  },
+  {
+    "file": "ai-prompt-builder.html",
+    "id": "ai-prompt-builder",
+    "name": "AI Prompt Builder",
+    "category": "Developer Tools",
+    "tags": [
+      "ai",
+      "prompt",
+      "llm",
+      "template",
+      "chatgpt"
+    ],
+    "aliases": [
+      "prompt builder",
+      "llm prompt",
+      "chatgpt prompt"
+    ],
+    "examples": [
+      "Build structured prompt",
+      "Save reusable prompt template"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "e2e"
+  },
+  {
+    "file": "prompt-forge.html",
+    "id": "prompt-forge",
+    "name": "Prompt Forge",
+    "category": "Developer Tools",
+    "tags": [
+      "ai",
+      "prompt",
+      "llm",
+      "advanced",
+      "examples"
+    ],
+    "aliases": [
+      "prompt engineering",
+      "prompt forge",
+      "few shot prompt"
+    ],
+    "examples": [
+      "Compose prompt from slots",
+      "Manage prompt templates"
+    ],
+    "maturity": "stable",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "e2e"
+  }
+]
