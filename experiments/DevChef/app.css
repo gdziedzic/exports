@@ -103,6 +103,27 @@ body {
   letter-spacing: -0.5px;
 }
 
+.brand-home-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.brand-home-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+  border-radius: 10px;
+}
+
+.brand-home-btn:hover .version-badge,
+.brand-home-btn:hover h1 {
+  filter: brightness(1.05);
+}
+
 #sidebar .subtitle {
   font-size: 12px;
   color: var(--text-secondary);

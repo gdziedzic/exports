@@ -27,6 +27,12 @@
     </div>
 
     <div class="tool-section">
+      <label class="section-label">Paste Existing SQL or JSON Schema</label>
+      <textarea id="existing-query-input" placeholder="SELECT u.*, o.OrderId FROM dbo.Users u INNER JOIN dbo.Orders o ON u.Id = o.UserId WHERE o.Status = 'Open'"></textarea>
+      <button id="import-query-btn" class="secondary">Import Existing</button>
+    </div>
+
+    <div class="tool-section">
       <label class="section-label">Load from JSON Schema</label>
       <textarea id="json-schema-input" placeholder='Paste JSON schema here (format: {"tables": [{"name": "Users", "schema": "dbo", "columns": [{"name": "Id", "primaryKey": true}, {"name": "Email"}]}, ...]})'></textarea>
       <button id="load-schema-btn" class="secondary">Load from JSON Schema</button>
@@ -449,6 +455,7 @@ export const DevChefTool = {
     const loadSchemaBtn = container.querySelector("#load-schema-btn");
     const sampleSelect = container.querySelector("#sample-select");
     const addConditionBtn = container.querySelector("#add-condition-btn");
+    const importQueryBtn = container.querySelector("#import-query-btn");
 
     generateBtn?.addEventListener("click", () => this.generateSQL());
     copyBtn?.addEventListener("click", () => this.copyOutput());
@@ -457,6 +464,7 @@ export const DevChefTool = {
     addJoinBtn?.addEventListener("click", () => this.addJoin());
     addConditionBtn?.addEventListener("click", () => this.addCondition());
     loadSchemaBtn?.addEventListener("click", () => this.loadFromJsonSchema());
+    importQueryBtn?.addEventListener("click", () => this.importExistingInput());
     sampleSelect?.addEventListener("change", (e) => {
       if (e.target.value) this.loadSample(e.target.value);
       e.target.value = '';
@@ -476,6 +484,238 @@ export const DevChefTool = {
     this.addTable('Users', 'u');
     this.addTable('Orders', 'o');
     this.addJoin();
+  },
+
+  importExistingInput() {
+    const input = this.container.querySelector('#existing-query-input')?.value || '';
+    if (!input.trim()) {
+      alert('Paste a SQL query or JSON schema to import');
+      return;
+    }
+
+    const trimmed = input.trim();
+    if (trimmed.startsWith('{')) {
+      try {
+        const data = JSON.parse(trimmed);
+        if (data.tables && Array.isArray(data.tables)) {
+          const jsonSchemaInput = this.container.querySelector("#json-schema-input");
+          if (jsonSchemaInput) {
+            jsonSchemaInput.value = JSON.stringify(data, null, 2);
+          }
+          this.applySchema(data);
+          return;
+        }
+      } catch (error) {
+        // Fall through and try SQL parsing
+      }
+    }
+
+    const parsed = this.parseSQLQuery(trimmed);
+    if (!parsed) {
+      alert('Could not parse the SQL query');
+      return;
+    }
+
+    this.applyParsedQuery(parsed);
+  },
+
+  parseIdentifier(value = '') {
+    return value.replace(/^\[|\]$/g, '').replace(/^["'`]|["'`]$/g, '');
+  },
+
+  parseTableReference(reference = '') {
+    const cleaned = reference.trim().replace(/,$/, '');
+    const parts = cleaned.split('.').map(part => this.parseIdentifier(part));
+    if (parts.length > 1) {
+      return {
+        schema: parts.slice(0, -1).join('.'),
+        name: parts[parts.length - 1]
+      };
+    }
+    return { schema: '', name: parts[0] || '' };
+  },
+
+  parseColumnReference(reference = '') {
+    const cleaned = reference.trim().replace(/[(),]/g, '');
+    const match = cleaned.match(/^(?:\[?([\w$]+)\]?\.)?\[?([\w$]+)\]?$/);
+    if (!match) {
+      return null;
+    }
+    return {
+      qualifier: match[1] || '',
+      column: this.parseIdentifier(match[2])
+    };
+  },
+
+  parseWhereConditions(whereClause, aliasMap) {
+    const conditions = [];
+    const parts = whereClause
+      .trim()
+      .split(/\s+(AND|OR)\s+/i)
+      .filter(Boolean);
+    let connector = 'AND';
+
+    for (const part of parts) {
+      if (/^(AND|OR)$/i.test(part)) {
+        connector = part.toUpperCase();
+        continue;
+      }
+
+      const expression = part.trim().replace(/;$/, '');
+      let parsed = null;
+
+      const betweenMatch = expression.match(/^(.+?)\s+BETWEEN\s+(.+?)\s+AND\s+(.+)$/i);
+      if (betweenMatch) {
+        parsed = {
+          left: betweenMatch[1],
+          operator: 'BETWEEN',
+          value: betweenMatch[2].trim(),
+          value2: betweenMatch[3].trim()
+        };
+      }
+
+      const nullMatch = parsed ? null : expression.match(/^(.+?)\s+(IS NULL|IS NOT NULL)$/i);
+      if (nullMatch) {
+        parsed = {
+          left: nullMatch[1],
+          operator: nullMatch[2].toUpperCase(),
+          value: '',
+          value2: ''
+        };
+      }
+
+      const inMatch = parsed ? null : expression.match(/^(.+?)\s+(IN|NOT IN)\s*\((.+)\)$/i);
+      if (inMatch) {
+        parsed = {
+          left: inMatch[1],
+          operator: inMatch[2].toUpperCase(),
+          value: inMatch[3].trim(),
+          value2: ''
+        };
+      }
+
+      const compareMatch = parsed ? null : expression.match(/^(.+?)\s*(=|!=|<>|<=|>=|<|>|LIKE|NOT LIKE)\s*(.+)$/i);
+      if (compareMatch) {
+        parsed = {
+          left: compareMatch[1],
+          operator: compareMatch[2].toUpperCase() === '<>' ? '!=' : compareMatch[2].toUpperCase(),
+          value: compareMatch[3].trim(),
+          value2: ''
+        };
+      }
+
+      if (!parsed) {
+        continue;
+      }
+
+      const leftRef = this.parseColumnReference(parsed.left);
+      if (!leftRef) {
+        continue;
+      }
+
+      conditions.push({
+        connector,
+        table: aliasMap[leftRef.qualifier] || '',
+        column: leftRef.column,
+        operator: parsed.operator,
+        value: parsed.value,
+        value2: parsed.value2
+      });
+      connector = 'AND';
+    }
+
+    return conditions;
+  },
+
+  parseSQLQuery(query) {
+    const normalized = query.replace(/\r\n/g, '\n');
+    const selectMatch = normalized.match(/\bselect\b([\s\S]*?)\bfrom\b/i);
+    const fromMatch = normalized.match(/\bfrom\b\s+([^\s,;()]+)(?:\s+(?:as\s+)?([A-Za-z_][\w]*))?/i);
+    if (!fromMatch) {
+      return null;
+    }
+
+    const baseTableInfo = this.parseTableReference(fromMatch[1]);
+    const baseAlias = fromMatch[2] || this.generateAlias(baseTableInfo.name, 0);
+    const tables = [{
+      name: baseTableInfo.name,
+      schema: baseTableInfo.schema || 'dbo',
+      alias: baseAlias,
+      columns: []
+    }];
+    const joins = [];
+    const aliasMap = { [baseAlias]: baseTableInfo.name };
+
+    const joinRegex = /\b((?:inner|left(?:\s+outer)?|right(?:\s+outer)?|full(?:\s+outer)?|cross)?)\s+join\s+([^\s,;()]+)(?:\s+(?:as\s+)?([A-Za-z_][\w]*))?(?:\s+on\s+([\s\S]*?))?(?=\s+\b(?:inner|left|right|full|cross)\b\s+join|\s+\bwhere\b|\s+\bgroup\b\s+\bby\b|\s+\border\b\s+\bby\b|;|$)/gi;
+    let joinMatch;
+    while ((joinMatch = joinRegex.exec(normalized)) !== null) {
+      const joinType = (joinMatch[1] || 'INNER').trim().toUpperCase().replace(/\s+OUTER/g, ' OUTER') + ' JOIN';
+      const tableInfo = this.parseTableReference(joinMatch[2]);
+      const alias = joinMatch[3] || this.generateAlias(tableInfo.name, tables.length);
+      tables.push({
+        name: tableInfo.name,
+        schema: tableInfo.schema || 'dbo',
+        alias,
+        columns: []
+      });
+      aliasMap[alias] = tableInfo.name;
+
+      const onClause = (joinMatch[4] || '').trim();
+      const onMatch = onClause.match(/([\w\[\].]+)\s*=\s*([\w\[\].]+)/);
+      const left = onMatch ? this.parseColumnReference(onMatch[1]) : null;
+      const right = onMatch ? this.parseColumnReference(onMatch[2]) : null;
+      joins.push({
+        joinType,
+        leftTable: left ? (aliasMap[left.qualifier] || '') : '',
+        leftColumn: left?.column || '',
+        rightTable: right ? (aliasMap[right.qualifier] || tableInfo.name) : tableInfo.name,
+        rightColumn: right?.column || ''
+      });
+    }
+
+    const whereMatch = normalized.match(/\bwhere\b([\s\S]*?)(?=\bgroup\b\s+\bby\b|\border\b\s+\bby\b|;|$)/i);
+    const conditions = whereMatch ? this.parseWhereConditions(whereMatch[1], aliasMap) : [];
+
+    let selectMode = 'all';
+    let columnList = '';
+    if (selectMatch) {
+      const selectClause = selectMatch[1].trim().replace(/\s+/g, ' ');
+      if (selectClause !== '*') {
+        const entries = selectClause.split(',').map(item => item.trim()).filter(Boolean);
+        const allPrefixed = entries.length > 0 && entries.every(item => /\.\*$/.test(item));
+        if (allPrefixed) {
+          selectMode = 'table-prefix';
+        } else {
+          selectMode = 'explicit';
+          columnList = entries.join(', ');
+        }
+      }
+    }
+
+    return { tables, joins, conditions, selectMode, columnList };
+  },
+
+  applyParsedQuery(parsed) {
+    this.tables = parsed.tables;
+    this.joins = parsed.joins;
+    this.conditions = parsed.conditions;
+    this.schemaData = null;
+
+    if (this.tables.length === 0) {
+      this.addTable('Users', 'u');
+    } else {
+      this.renderTables();
+      this.renderJoins();
+      this.renderConditions();
+    }
+
+    const selectMode = this.container.querySelector("#select-mode");
+    const explicitColumns = this.container.querySelector("#explicit-columns");
+    const columnList = this.container.querySelector("#column-list");
+    selectMode.value = parsed.selectMode || 'all';
+    explicitColumns.style.display = selectMode.value === 'explicit' ? 'block' : 'none';
+    columnList.value = parsed.columnList || '';
+    this.generateSQL();
   },
 
   sampleSchemas: {

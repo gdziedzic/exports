@@ -8,6 +8,7 @@ import { storage } from './storage.js';
 import { searchTools, highlightMatches, groupByCategory } from './search-unified.js';
 import { notifications } from './notifications.js';
 import { workflowSnapshots } from './workflowsnapshots.js';
+import { upgradeLegacyControls } from './components.js';
 
 let currentToolId = null;
 let workspaceStyleElement = null;
@@ -57,6 +58,7 @@ export function openTool(id, context, workspace = "#workspace", updateUrl = true
 
   // Inject tool template
   container.innerHTML = tool.templateHtml;
+  upgradeLegacyControls(container);
 
   // Inject tool styles
   if (tool.style) {
@@ -119,6 +121,44 @@ export function openTool(id, context, workspace = "#workspace", updateUrl = true
   updateRecentTools(context);
 
   console.log(`Opened tool: ${tool.manifest.name}`);
+}
+
+function renderHomeContent(container) {
+  container.innerHTML = `
+    <div class="welcome-screen">
+      <h2>Welcome to DevChef V11</h2>
+      <p>True game changer workflow hub for fast offline-first tool work</p>
+      <p>Press <kbd>Ctrl+K</kbd> for Command Palette or <kbd>/</kbd> to jump into search</p>
+      <p style="margin-top: 18px; color: var(--text-secondary);">
+        Pick a tool from the left, use Recent to jump back in, or hit the DevChef title anytime to come home.
+      </p>
+    </div>
+  `;
+}
+
+export function showHome(context, workspace = "#workspace", updateUrl = true) {
+  currentToolId = null;
+
+  if (updateUrl) {
+    const url = new URL(window.location);
+    url.searchParams.delete('tool');
+    window.history.pushState({ home: true }, '', url);
+  }
+
+  const container = document.querySelector(workspace);
+  if (!container) {
+    console.error("Workspace container not found");
+    return;
+  }
+
+  if (workspaceStyleElement) {
+    workspaceStyleElement.remove();
+    workspaceStyleElement = null;
+  }
+
+  renderHomeContent(container);
+  updateSidebarActiveState(null);
+  updateRecentTools(context);
 }
 
 /**

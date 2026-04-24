@@ -26,6 +26,12 @@
       <p class="tool-description">Build, test, and generate cURL commands for REST APIs, webhooks, and HTTP requests</p>
     </div>
 
+    <div class="import-section">
+      <label class="section-label">Paste Existing cURL Command</label>
+      <textarea id="existing-curl-input" placeholder='curl -X POST "https://api.example.com/v1/users" -H "Content-Type: application/json" -d "{\"name\":\"Jane\"}"'></textarea>
+      <button id="import-curl-btn" class="action-btn secondary-action">Import Existing</button>
+    </div>
+
     <div class="main-layout">
       <div class="scenarios-panel">
         <div class="panel-header">
@@ -229,6 +235,13 @@
 
 <!-- Tool Styles -->
 <style>
+  .import-section {
+    margin-bottom: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+  }
+
   .main-layout {
     display: grid;
     grid-template-columns: 280px 1fr;
@@ -551,6 +564,11 @@
     opacity: 0.9;
   }
 
+  .secondary-action {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
   .curl-output {
     padding: 16px;
     background: var(--bg-primary);
@@ -578,6 +596,20 @@
     margin-bottom: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+  }
+
+  #existing-curl-input {
+    width: 100%;
+    min-height: 110px;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-primary);
+    resize: vertical;
   }
 
   .tips-grid {
@@ -808,11 +840,187 @@ export const DevChefTool = {
     });
 
     // Actions
+    container.querySelector('#import-curl-btn')?.addEventListener('click', () => this.importCurlCommand());
     container.querySelector('#copy-curl-btn')?.addEventListener('click', () => this.copyCurl());
     container.querySelector('#export-curl-btn')?.addEventListener('click', () => this.exportCurl());
 
     // Load default scenario
     this.loadScenario('rest-get');
+  },
+
+  tokenizeCommand(command) {
+    const normalized = command
+      .replace(/\\\r?\n/g, ' ')
+      .replace(/`\r?\n/g, ' ')
+      .trim();
+    const tokens = [];
+    let current = '';
+    let quote = null;
+
+    for (let i = 0; i < normalized.length; i++) {
+      const char = normalized[i];
+
+      if (quote) {
+        if (char === '\\' && i + 1 < normalized.length) {
+          current += normalized[i + 1];
+          i++;
+          continue;
+        }
+        if (char === quote) {
+          quote = null;
+          continue;
+        }
+        current += char;
+        continue;
+      }
+
+      if (char === '"' || char === "'") {
+        quote = char;
+        continue;
+      }
+
+      if (/\s/.test(char)) {
+        if (current) {
+          tokens.push(current);
+          current = '';
+        }
+        continue;
+      }
+
+      current += char;
+    }
+
+    if (current) {
+      tokens.push(current);
+    }
+
+    return tokens;
+  },
+
+  resetOptions() {
+    this.container.querySelector('#opt-powershell-mode').checked = false;
+    this.container.querySelector('#opt-verbose').checked = false;
+    this.container.querySelector('#opt-follow-redirects').checked = false;
+    this.container.querySelector('#opt-insecure').checked = false;
+    this.container.querySelector('#opt-include-headers').checked = false;
+    this.container.querySelector('#opt-compressed').checked = false;
+    this.container.querySelector('#opt-show-error').checked = false;
+    this.container.querySelector('#opt-timeout').value = '';
+    this.container.querySelector('#opt-max-redirects').value = '';
+    this.container.querySelector('#opt-user-agent').value = '';
+  },
+
+  setAuthState(authType, values = {}) {
+    const authTypeSelect = this.container.querySelector('#auth-type');
+    authTypeSelect.value = authType;
+    this.updateAuthConfig(authType);
+
+    if (authType === 'basic') {
+      this.container.querySelector('#auth-username').value = values.username || '';
+      this.container.querySelector('#auth-password').value = values.password || '';
+    } else if (authType === 'bearer') {
+      this.container.querySelector('#auth-token').value = values.token || '';
+    } else if (authType === 'api-key') {
+      this.container.querySelector('#auth-key-name').value = values.keyName || '';
+      this.container.querySelector('#auth-key-value').value = values.keyValue || '';
+    }
+  },
+
+  importCurlCommand() {
+    const raw = this.container.querySelector('#existing-curl-input')?.value || '';
+    if (!raw.trim()) {
+      alert('Paste a cURL command to import');
+      return;
+    }
+
+    const isPowerShell = raw.includes('`\n') || raw.includes('`\r\n');
+    const tokens = this.tokenizeCommand(raw);
+    const filtered = tokens[0] === 'curl' ? tokens.slice(1) : tokens;
+    if (filtered.length === 0) {
+      alert('Could not parse the cURL command');
+      return;
+    }
+
+    let method = 'GET';
+    let url = '';
+    let body = '';
+    let bodyType = 'none';
+    const headers = [];
+    let auth = { type: 'none' };
+
+    this.resetOptions();
+    this.container.querySelector('#opt-powershell-mode').checked = isPowerShell;
+
+    for (let i = 0; i < filtered.length; i++) {
+      const token = filtered[i];
+      const next = filtered[i + 1];
+
+      if ((token === '-X' || token === '--request') && next) {
+        method = next.toUpperCase();
+        i++;
+      } else if ((token === '-H' || token === '--header') && next) {
+        const separator = next.indexOf(':');
+        if (separator !== -1) {
+          const key = next.substring(0, separator).trim();
+          const value = next.substring(separator + 1).trim();
+          if (/^authorization$/i.test(key) && /^bearer\s+/i.test(value)) {
+            auth = { type: 'bearer', token: value.replace(/^bearer\s+/i, '') };
+          } else {
+            headers.push({ key, value });
+          }
+        }
+        i++;
+      } else if ((token === '-u' || token === '--user') && next) {
+        const [username, password = ''] = next.split(':');
+        auth = { type: 'basic', username, password };
+        i++;
+      } else if ((token === '-d' || token === '--data' || token === '--data-raw' || token === '--data-binary') && next) {
+        body = next;
+        bodyType = body.trim().startsWith('{') || body.trim().startsWith('[') ? 'json' : 'raw';
+        if (method === 'GET') {
+          method = 'POST';
+        }
+        i++;
+      } else if (token === '-L' || token === '--location') {
+        this.container.querySelector('#opt-follow-redirects').checked = true;
+      } else if (token === '-k' || token === '--insecure') {
+        this.container.querySelector('#opt-insecure').checked = true;
+      } else if (token === '-i' || token === '--include') {
+        this.container.querySelector('#opt-include-headers').checked = true;
+      } else if (token === '-v' || token === '--verbose') {
+        this.container.querySelector('#opt-verbose').checked = true;
+      } else if (token === '-S' || token === '--show-error') {
+        this.container.querySelector('#opt-show-error').checked = true;
+      } else if (token === '--compressed') {
+        this.container.querySelector('#opt-compressed').checked = true;
+      } else if (token === '--max-time' && next) {
+        this.container.querySelector('#opt-timeout').value = next;
+        i++;
+      } else if (token === '--max-redirs' && next) {
+        this.container.querySelector('#opt-max-redirects').value = next;
+        i++;
+      } else if ((token === '-A' || token === '--user-agent') && next) {
+        this.container.querySelector('#opt-user-agent').value = next;
+        i++;
+      } else if (!token.startsWith('-')) {
+        url = token;
+      }
+    }
+
+    const apiKeyHeader = headers.find(header => /^(x-api-key|api-key)$/i.test(header.key));
+    if (apiKeyHeader) {
+      auth = { type: 'api-key', keyName: apiKeyHeader.key, keyValue: apiKeyHeader.value };
+      headers.splice(headers.indexOf(apiKeyHeader), 1);
+    }
+
+    this.container.querySelector('#http-method').value = method;
+    this.container.querySelector('#url-input').value = url;
+    this.container.querySelector('#body-type').value = bodyType;
+    this.container.querySelector('#body-data').value = body;
+    this.headers = headers.length > 0 ? headers : [{ key: '', value: '' }];
+    this.renderHeaders();
+    this.setAuthState(auth.type, auth);
+    this.generateCurl();
   },
 
   switchTab(tabName) {

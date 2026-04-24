@@ -5,7 +5,7 @@
 
 import { context } from './core/state.js';
 import { initializeTools, getLoadingErrors } from './core/loader.js';
-import { renderToolList, showCommandPalette, openTool, updateRecentTools, toggleFavorite, exportSettings, importSettings, clearHistory, showStorageStats, getCurrentToolId, saveCurrentWorkflow, showWorkflowSnapshotsManager } from './core/ui.js';
+import { renderToolList, showCommandPalette, openTool, showHome, updateRecentTools, toggleFavorite, exportSettings, importSettings, clearHistory, showStorageStats, getCurrentToolId, saveCurrentWorkflow, showWorkflowSnapshotsManager } from './core/ui.js';
 import { ToolRegistry } from './core/registry.js';
 import { debugConsole } from './core/console.js';
 import { storage } from './core/storage.js';
@@ -71,8 +71,8 @@ import { showToolHealthDashboard } from './core/tool-health.js';
 
 let deferredInstallPrompt = null;
 let serviceWorkerRegistration = null;
-const APP_VERSION = '10.0';
-const APP_TAGLINE = '30x Productivity, Production Ready';
+const APP_VERSION = '11.0';
+const APP_TAGLINE = 'True Game Changer, Zero-Friction Flow';
 
 /**
  * Initialize PWA functionality
@@ -359,6 +359,9 @@ async function init() {
   // Set up theme toggle
   setupThemeToggle();
 
+  // Set up home navigation affordance
+  setupHomeNavigation();
+
   // Set up workflow snapshot buttons
   setupSnapshotButtons();
 
@@ -398,12 +401,12 @@ async function init() {
   }
 
   console.log(`✓ DevChef V${APP_VERSION} ${APP_TAGLINE} ready - ${toolCount} tools loaded 🚀🌙`);
-  console.log(`🎨 V10 Features: Quick Resume | Clipboard Sprint | Clip-to-Snippet | Smart Automation`);
+  console.log(`🎨 V11 Features: Quick Resume | Clipboard Sprint | Clip-to-Snippet | Smart Automation | One-Click Home`);
   console.log(`⚡ Core Features: Performance Monitor | Advanced Search (Ctrl+K) | DevTools (F12)`);
   console.log(`🌙 ULTIMATE Features: Snippets++ | Universal Favorites | Macros | Batch | Quick Panel`);
   console.log(``);
   console.log(`📌 ULTIMATE SHORTCUTS:`);
-  console.log(`   ⚡ Quick Panel: Ctrl+Shift+Q  |  🚀 V10 Boost: Ctrl+Shift+0  |  🎯 Focus Mode: Ctrl+Shift+9`);
+  console.log(`   ⚡ Quick Panel: Ctrl+Shift+Q  |  🚀 V11 Boost: Ctrl+Shift+0  |  🏠 Home: DevChef title  |  🎯 Focus Mode: Ctrl+Shift+9`);
   console.log(`   1️⃣ Resume: Ctrl+Shift+1  |  2️⃣ Clipboard Sprint: Ctrl+Shift+2  |  3️⃣ Clip→Snippet: Ctrl+Shift+3`);
   console.log(`   🔴 Macro: Ctrl+Shift+M  |  ⚡ Batch: Ctrl+Shift+B  |  📜 History: Ctrl+Shift+H`);
   console.log(`   🔍 Search: Ctrl+K / Ctrl+Shift+F  |  📝 Snippets: Ctrl+B  |  🛠️ DevTools: F12`);
@@ -422,11 +425,15 @@ function setupHistoryNavigation() {
         // Open tool without updating URL (to avoid pushing another history state)
         openTool(toolId, context, "#workspace", false);
       }
+    } else if (e.state && e.state.home) {
+      showHome(context, "#workspace", false);
     } else {
       // No state, check URL parameter
       const toolFromUrl = getQueryParam('tool');
       if (toolFromUrl && ToolRegistry.get(toolFromUrl)) {
         openTool(toolFromUrl, context, "#workspace", false);
+      } else {
+        showHome(context, "#workspace", false);
       }
     }
   });
@@ -435,7 +442,18 @@ function setupHistoryNavigation() {
   const currentToolId = getQueryParam('tool');
   if (currentToolId) {
     window.history.replaceState({ toolId: currentToolId }, '');
+  } else {
+    window.history.replaceState({ home: true }, '');
   }
+}
+
+function setupHomeNavigation() {
+  const homeButton = document.getElementById('home-button');
+  if (!homeButton) return;
+
+  homeButton.addEventListener('click', () => {
+    showHome(context);
+  });
 }
 
 /**
@@ -1188,7 +1206,7 @@ function setupV10ProductivityRail() {
     rail.className = 'v10-productivity-rail';
     rail.innerHTML = `
       <div class="v10-rail-header">
-        <span class="v10-rail-title">V10 Productivity</span>
+        <span class="v10-rail-title">V11 Productivity</span>
         <span class="v10-rail-shortcuts">/ • Ctrl+K • Ctrl+Shift+L</span>
       </div>
       <div class="v10-rail-actions">
@@ -1234,7 +1252,7 @@ function setupV8BoostDock() {
   dock.className = 'v8-boost-dock';
   dock.innerHTML = `
     <div class="v8-boost-header">
-      <h3>V10 Boost</h3>
+      <h3>V11 Boost</h3>
       <button class="v8-boost-close" type="button" interestfor="tooltip" data-tooltip="Hide dock">✕</button>
     </div>
     <p class="v8-boost-copy">Run high-impact actions in one click.</p>
@@ -1305,20 +1323,20 @@ function quickResumeLastTool() {
     openTool(lastToolId, context);
     const tool = ToolRegistry.get(lastToolId);
     const toolName = tool?.manifest?.name || lastToolId;
-    notifications.success(`V10 Resume: ${toolName}`, { duration: 1800 });
+    notifications.success(`V11 Resume: ${toolName}`, { duration: 1800 });
     return;
   }
   showCommandPalette(context);
-  notifications.info('V10 Resume: no recent tool found, opened Command Palette', { duration: 2200 });
+  notifications.info('V11 Resume: no recent tool found, opened Command Palette', { duration: 2200 });
 }
 
 async function runClipboardSprint() {
   try {
     await quickInput.open();
-    notifications.success('V10 Sprint: clipboard loaded into Quick Input', { duration: 1800 });
+    notifications.success('V11 Sprint: clipboard loaded into Quick Input', { duration: 1800 });
   } catch (error) {
     quickInput.toggle();
-    notifications.info('V10 Sprint: opened Quick Input', { duration: 1800 });
+    notifications.info('V11 Sprint: opened Quick Input', { duration: 1800 });
   }
 }
 
@@ -1334,16 +1352,16 @@ async function captureClipboardToSnippet() {
     const snippet = snippetManager.createSnippet({
       title: `Clipboard ${new Date().toLocaleTimeString()}`,
       content: text,
-      description: 'Captured via V10 Clip-to-Snippet',
+      description: 'Captured via V11 Clip-to-Snippet',
       language: 'text',
       category: 'Captured',
       toolId: currentToolId || null,
       tags: ['clipboard', 'v10']
     });
 
-    notifications.success(`V10 Clip→Snippet: saved "${snippet.title}"`, { duration: 2200 });
+    notifications.success(`V11 Clip→Snippet: saved "${snippet.title}"`, { duration: 2200 });
   } catch (error) {
-    notifications.error('V10 Clip→Snippet failed: clipboard access denied');
+    notifications.error('V11 Clip→Snippet failed: clipboard access denied');
   }
 }
 
@@ -1450,17 +1468,7 @@ function setupInputOutputHandlers() {
  * Show welcome screen when no tools are available
  */
 function showWelcomeScreen() {
-  const workspace = document.querySelector("#workspace");
-  workspace.innerHTML = `
-    <div class="welcome-screen">
-      <h2>Welcome to DevChef</h2>
-      <p>An offline-first micro-tool engine for developers</p>
-      <p>Press <kbd>Ctrl+K</kbd> to open the command palette</p>
-      <p style="margin-top: 24px; color: var(--text-secondary);">
-        No tools loaded. Add tools to <code>/core/tools/</code> or <code>/tools/</code>
-      </p>
-    </div>
-  `;
+  showHome(context, "#workspace", false);
 }
 
 /**

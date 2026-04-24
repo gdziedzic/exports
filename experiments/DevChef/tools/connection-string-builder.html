@@ -27,6 +27,12 @@
     </div>
 
     <div class="tool-section">
+      <label class="section-label">Paste Existing Connection String</label>
+      <textarea id="existing-connection-string" placeholder="Server=myserver;Database=mydb;User Id=sa;Password=pass123;"></textarea>
+      <button id="import-connection-string-btn" class="secondary">Import Existing</button>
+    </div>
+
+    <div class="tool-section">
       <label class="section-label">Authentication Type</label>
       <div class="auth-type-toggle">
         <button id="sql-auth-btn" class="auth-btn active">SQL Authentication</button>
@@ -416,10 +422,12 @@ export const DevChefTool = {
     const buildBtn = container.querySelector("#build-btn");
     const copyBtn = container.querySelector("#copy-btn");
     const testBtn = container.querySelector("#test-btn");
+    const importBtn = container.querySelector("#import-connection-string-btn");
 
     buildBtn?.addEventListener("click", () => this.buildConnectionString());
     copyBtn?.addEventListener("click", () => this.copyConnectionString());
     testBtn?.addEventListener("click", () => this.testFormat());
+    importBtn?.addEventListener("click", () => this.importConnectionString());
 
     // Auth type buttons
     const sqlAuthBtn = container.querySelector("#sql-auth-btn");
@@ -441,6 +449,81 @@ export const DevChefTool = {
     });
 
     // Initial build
+    this.buildConnectionString();
+  },
+
+  parseBoolean(value) {
+    return /^(true|yes|1|sspi)$/i.test(String(value || '').trim());
+  },
+
+  parseConnectionString(input) {
+    const result = {};
+    const parts = input.split(';').map(part => part.trim()).filter(Boolean);
+
+    parts.forEach(part => {
+      const separatorIndex = part.indexOf('=');
+      if (separatorIndex === -1) return;
+      const key = part.substring(0, separatorIndex).trim().toLowerCase();
+      const value = part.substring(separatorIndex + 1).trim();
+      result[key] = value;
+    });
+
+    return result;
+  },
+
+  importConnectionString() {
+    const input = this.container.querySelector("#existing-connection-string")?.value || '';
+    if (!input.trim()) {
+      alert('Paste a connection string to import');
+      return;
+    }
+
+    const parsed = this.parseConnectionString(input);
+    if (Object.keys(parsed).length === 0) {
+      alert('Could not parse the connection string');
+      return;
+    }
+
+    const serverValue = parsed.server || parsed['data source'] || parsed.address || parsed.addr || parsed['network address'] || '';
+    const databaseValue = parsed.database || parsed['initial catalog'] || '';
+    const usernameValue = parsed['user id'] || parsed.uid || parsed.user || parsed.username || '';
+    const passwordValue = parsed.password || parsed.pwd || '';
+    const integratedSecurity = this.parseBoolean(parsed['integrated security'] || parsed['trusted_connection']);
+    const encrypt = this.parseBoolean(parsed.encrypt);
+    const trustCert = this.parseBoolean(parsed['trustservercertificate'] || parsed['trust server certificate']);
+    const mars = this.parseBoolean(parsed['multipleactiveresultsets'] || parsed['multiple active result sets']);
+    const persistSecurity = this.parseBoolean(parsed['persist security info']);
+    const timeout = parsed['connection timeout'] || parsed['connect timeout'] || '';
+    const appName = parsed['application name'] || parsed.application || '';
+
+    let server = serverValue;
+    let port = '';
+    if (server.includes(',')) {
+      const [serverName, portValue] = server.split(',', 2);
+      server = serverName.trim();
+      port = portValue.trim();
+    }
+
+    this.container.querySelector("#server").value = server;
+    this.container.querySelector("#port").value = port;
+    this.container.querySelector("#database").value = databaseValue;
+    this.container.querySelector("#username").value = usernameValue;
+    this.container.querySelector("#password").value = passwordValue;
+    this.container.querySelector("#encrypt").checked = encrypt;
+    this.container.querySelector("#trust-server-certificate").checked = trustCert;
+    this.container.querySelector("#multiple-active-result-sets").checked = mars;
+    this.container.querySelector("#persist-security-info").checked = persistSecurity;
+    this.container.querySelector("#connection-timeout").value = timeout || '30';
+    this.container.querySelector("#application-name").value = appName;
+
+    if (integratedSecurity) {
+      this.setAuthType('windows');
+    } else if (server.toLowerCase().includes('database.windows.net')) {
+      this.setAuthType('azure');
+    } else {
+      this.setAuthType('sql');
+    }
+
     this.buildConnectionString();
   },
 

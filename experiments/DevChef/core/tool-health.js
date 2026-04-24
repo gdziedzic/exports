@@ -6,6 +6,7 @@
 import { getLoadingErrors } from './loader.js';
 import { ToolRegistry } from './registry.js';
 import { getToolIndexFilename, normalizeToolIndexEntry, validateToolMetadataIndex } from './tool-metadata.js';
+import { analyzeSharedControlUsage } from './components.js';
 
 const REQUIRED_MANIFEST_FIELDS = ['id', 'name', 'category', 'description'];
 const TOOL_INDEX_PATH = './tools/index.json';
@@ -226,6 +227,7 @@ async function validateToolEntry(file, index, duplicateFiles) {
   const template = doc.querySelector('template#tool-ui');
   if (template) {
     entry.checks.push(passCheck('Template exists', 'Found template#tool-ui.'));
+    validateSharedControls(entry, template);
   } else {
     entry.checks.push(failCheck('Template exists', 'Missing <template id="tool-ui">.'));
   }
@@ -344,6 +346,32 @@ function validateLoaderStatus(entry) {
   matchingErrors.forEach(error => {
     entry.checks.push(failCheck('No load errors', error.error || 'Loader reported an error.'));
   });
+}
+
+function validateSharedControls(entry, template) {
+  const usage = analyzeSharedControlUsage(template);
+  const legacyTotal = Object.values(usage.legacy).reduce((sum, count) => sum + count, 0);
+  const sharedTotal = Object.values(usage.shared).reduce((sum, count) => sum + count, 0);
+
+  if (legacyTotal === 0) {
+    entry.checks.push(passCheck(
+      'Shared controls adoption',
+      `Template uses shared controls directly (${sharedTotal} shared controls detected).`
+    ));
+    return;
+  }
+
+  const details = [
+    usage.legacy.button ? `${usage.legacy.button} button` : '',
+    usage.legacy.input ? `${usage.legacy.input} input` : '',
+    usage.legacy.textarea ? `${usage.legacy.textarea} textarea` : '',
+    usage.legacy.select ? `${usage.legacy.select} select` : ''
+  ].filter(Boolean).join(', ');
+
+  entry.checks.push(warnCheck(
+    'Shared controls adoption',
+    `Template still uses legacy controls (${details}). The runtime bridge upgrades these in-app, but source markup should migrate to shared controls.`
+  ));
 }
 
 function hasDevChefToolExport(scriptContent) {

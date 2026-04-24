@@ -23,63 +23,29 @@
   <div class="tool-container">
     <div class="tool-header">
       <h2 class="tool-title">Template Transform Tool</h2>
-      <p class="tool-description">Transform JSON data using Jinja2-style templating with live preview</p>
-      <div class="mode-toggle">
-        <button id="simplified-mode-btn" class="mode-btn active">Simplified</button>
-        <button id="advanced-mode-btn" class="mode-btn">Advanced</button>
-      </div>
+      <p class="tool-description">Choose a starter recipe, add data, edit the template, and copy the output.</p>
     </div>
 
     <div id="simplified-section">
       <div class="tool-section">
-        <label class="section-label">Quick Templates</label>
-
-        <!-- Quick Actions Bar -->
-        <div class="quick-actions">
-          <button class="action-btn" id="clear-all-btn" title="Clear all inputs (Ctrl+L)">
-            <span class="btn-icon">🗑️</span>
-            <span class="btn-label">Clear All</span>
-          </button>
-          <button class="action-btn" id="save-template-btn" title="Save current template">
-            <span class="btn-icon">💾</span>
-            <span class="btn-label">Save</span>
-          </button>
-          <button class="action-btn" id="share-template-btn" title="Copy shareable link">
-            <span class="btn-icon">🔗</span>
-            <span class="btn-label">Share</span>
-          </button>
-          <div class="kbd-hint">
-            <kbd>?</kbd> for shortcuts
-          </div>
+        <div class="recipe-header">
+          <label class="section-label">Starter Recipes</label>
+          <button class="action-btn" id="clear-all-btn" type="button">Clear</button>
+        </div>
+        <p class="compact-note" id="active-recipe-summary">Recipe: SQL Insert</p>
+        <div class="starter-recipes">
+          <button class="starter-recipe active" type="button" data-template="sql-insert">SQL Insert</button>
+          <button class="starter-recipe" type="button" data-template="sql-update">SQL Update</button>
+          <button class="starter-recipe" type="button" data-template="html">HTML</button>
+          <button class="starter-recipe" type="button" data-template="email">Email</button>
+          <button class="starter-recipe" type="button" data-template="csv-to-json">CSV to JSON</button>
+          <button class="starter-recipe" type="button" data-template="markdown">Markdown</button>
         </div>
 
-        <!-- Recent Templates -->
-        <div class="recent-templates-section" id="recent-templates-section" style="display: none;">
-          <label class="section-label">
-            ⏱️ Recent Templates
-            <button class="clear-history-btn" id="clear-history-btn" title="Clear history">✕</button>
-          </label>
-          <div class="recent-templates" id="recent-templates">
-            <!-- Recent templates will be dynamically generated -->
-          </div>
-        </div>
-
-        <!-- Search and Filter Section -->
-        <div class="template-discovery">
-          <div class="template-search-wrapper">
-            <input type="text" id="template-search" placeholder="🔍 Search templates... (Ctrl+F)" />
-            <div class="template-count" id="template-count">Showing 0 of 0 templates</div>
-          </div>
-
-          <div class="tag-filter-section">
-            <label class="filter-label">Filter by tags:</label>
-            <div class="tag-pills" id="tag-pills">
-              <!-- Tag pills will be dynamically generated -->
-            </div>
-          </div>
-        </div>
-
-        <div class="templates-grid" id="templates-grid">
+        <details class="library-drawer">
+          <summary>Open recipe library</summary>
+          <div class="drawer-note">The full recipe catalog stays available here, but the main workflow is data plus template to output.</div>
+          <div class="templates-grid" id="templates-grid">
           <button class="template-card" data-template="sql-insert">
             <div class="template-icon">💾</div>
             <div class="template-name">SQL Insert</div>
@@ -248,51 +214,24 @@
             <div class="template-icon">🧪</div>
             <div class="template-name">Jest Test</div>
           </button>
-        </div>
+          </div>
+        </details>
       </div>
     </div>
 
     <div class="editor-layout">
       <div class="editor-pane">
         <div class="tool-section">
-          <label class="section-label">
-            Data Input
-            <span class="hint">Choose your data format</span>
-          </label>
-          <div class="data-format-toggle">
-            <button id="json-format-btn" class="format-btn active">JSON</button>
-            <button id="text-format-btn" class="format-btn">Key-Value</button>
-            <button id="csv-format-btn" class="format-btn">CSV</button>
-            <button id="snippets-format-btn" class="format-btn">Templates/Snippets</button>
+          <div class="data-section-header">
+            <label class="section-label" for="data-input">Data</label>
+            <select id="data-format-select" class="data-format-select" aria-label="Data format">
+              <option value="json">JSON</option>
+              <option value="text">Key-Value</option>
+              <option value="csv">CSV</option>
+            </select>
           </div>
-
-          <div id="json-input-section" class="data-input-section">
-            <textarea id="json-input" placeholder='{\n  "name": "John Doe",\n  "items": [1, 2, 3]\n}'></textarea>
-          </div>
-
-          <div id="text-input-section" class="data-input-section" style="display: none;">
-            <textarea id="text-input" placeholder='name=John Doe\nemail=john@example.com\nage=30\ncity=New York'></textarea>
-            <div class="format-hint">Format: key=value (one per line) or key: value</div>
-          </div>
-
-          <div id="csv-input-section" class="data-input-section" style="display: none;">
-            <textarea id="csv-input" placeholder='name,email,age\nJohn Doe,john@example.com,30\nJane Smith,jane@example.com,25'></textarea>
-            <div class="format-hint">Format: First line = headers, following lines = data rows</div>
-          </div>
-
-          <div id="snippets-input-section" class="data-input-section" style="display: none;">
-            <div class="snippets-toolbar">
-              <button class="snippet-btn" data-snippet="sql-insert-basic">SQL INSERT (Basic)</button>
-              <button class="snippet-btn" data-snippet="sql-insert-multi">SQL INSERT (Multi-row)</button>
-              <button class="snippet-btn" data-snippet="sql-update-basic">SQL UPDATE (Basic)</button>
-              <button class="snippet-btn" data-snippet="sql-update-where">SQL UPDATE (WHERE)</button>
-              <button class="snippet-btn" data-snippet="sql-upsert">SQL UPSERT (MERGE)</button>
-              <button class="snippet-btn" data-snippet="sql-insert-select">INSERT INTO SELECT</button>
-            </div>
-            <textarea id="snippets-input" placeholder='Select a template above or define your own data in JSON format'></textarea>
-            <div class="format-hint">Click a template button to load pre-configured SQL snippets, or enter custom JSON data</div>
-          </div>
-
+          <textarea id="data-input" placeholder='{\n  "name": "John Doe",\n  "items": [1, 2, 3]\n}'></textarea>
+          <div class="format-hint" id="data-format-hint">Use a JSON object or array.</div>
           <div id="json-error" class="error-message"></div>
         </div>
 
@@ -317,14 +256,14 @@
       <div class="preview-pane">
         <div class="tool-section">
           <label class="section-label">
-            Live Preview
+            Output
             <button id="copy-output-btn" class="inline-btn">Copy Output</button>
           </label>
           <div id="preview-output"></div>
         </div>
 
         <div class="tool-section" id="advanced-options">
-          <label class="section-label">Syntax Reference</label>
+          <label class="section-label">Template Syntax</label>
           <div class="syntax-reference">
             <div class="syntax-item">
               <code>{{ variable }}</code>
@@ -359,61 +298,92 @@
 
 <!-- Tool Styles -->
 <style>
-  .mode-toggle {
+  .recipe-header {
     display: flex;
-    gap: 8px;
-    margin-top: 16px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
   }
 
-  .mode-btn {
-    padding: 8px 16px;
-    font-size: 13px;
+  .compact-note {
+    margin: 0 0 14px;
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+
+  .starter-recipes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .starter-recipe {
+    padding: 8px 14px;
     background: var(--bg-secondary);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 999px;
     cursor: pointer;
     transition: all 0.2s;
+    font-size: 12px;
+    font-weight: 600;
   }
 
-  .mode-btn.active {
+  .starter-recipe:hover,
+  .starter-recipe.active {
     background: var(--accent);
     color: white;
     border-color: var(--accent);
   }
 
-  .data-format-toggle {
+  .library-drawer {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    overflow: hidden;
+  }
+
+  .library-drawer summary {
+    cursor: pointer;
+    padding: 14px 16px;
+    font-weight: 600;
+    list-style: none;
+  }
+
+  .library-drawer summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .library-drawer[open] summary {
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .drawer-note {
+    padding: 14px 16px 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+
+  .data-section-header {
     display: flex;
-    gap: 6px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     margin-bottom: 12px;
   }
 
-  .format-btn {
-    padding: 6px 14px;
+  .data-format-select {
+    padding: 8px 12px;
     font-size: 12px;
     background: var(--bg-secondary);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
+    border-radius: 6px;
   }
 
-  .format-btn.active {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-  }
-
-  .format-btn:hover:not(.active) {
-    background: var(--bg-tertiary);
-  }
-
-  .data-input-section {
-    margin-bottom: 8px;
-  }
-
-  .data-input-section textarea {
+  #data-input {
     min-height: 250px;
     font-family: var(--font-mono);
     font-size: 13px;
@@ -429,45 +399,11 @@
     font-style: italic;
   }
 
-  .snippets-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 12px;
-    padding: 12px;
-    background: var(--bg-tertiary);
-    border-radius: 6px;
-  }
-
-  .snippet-btn {
-    padding: 8px 14px;
-    font-size: 12px;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: var(--font-mono);
-  }
-
-  .snippet-btn:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-  }
-
-  .snippet-btn.active {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-  }
-
   .templates-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 12px;
-    margin-bottom: 24px;
+    padding: 16px;
   }
 
   .template-card {
@@ -491,6 +427,11 @@
     background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
     transform: translateY(-3px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  .template-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
   }
 
   .template-card:active {
@@ -591,10 +532,7 @@
     align-items: center;
   }
 
-  #json-input,
-  #text-input,
-  #csv-input,
-  #snippets-input,
+  #data-input,
   #template-input {
     min-height: 250px;
     font-family: var(--font-mono);
@@ -681,235 +619,23 @@
     color: var(--text-secondary);
   }
 
-  #simplified-section {
-    display: block;
-  }
-
   #advanced-options {
-    display: none;
-  }
-
-  .mode-advanced #simplified-section {
-    display: none;
-  }
-
-  .mode-advanced #advanced-options {
     display: block;
-  }
-
-  /* Quick Actions Bar */
-  .quick-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding: 12px;
-    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
 
   .action-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
     padding: 8px 14px;
-    background: var(--bg-primary);
+    background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     color: var(--text-primary);
   }
 
   .action-btn:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
-  }
-
-  .action-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  }
-
-  .btn-icon {
-    font-size: 16px;
-  }
-
-  .btn-label {
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .kbd-hint {
-    margin-left: auto;
-    font-size: 11px;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .kbd-hint kbd {
-    padding: 2px 6px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 3px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  }
-
-  /* Recent Templates Section */
-  .recent-templates-section {
-    margin-bottom: 16px;
-    padding: 12px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-left: 3px solid var(--accent);
-    border-radius: 6px;
-    animation: slideIn 0.3s ease;
-  }
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .recent-templates-section .section-label {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-
-  .clear-history-btn {
-    padding: 2px 8px;
-    font-size: 12px;
-    background: transparent;
-    color: var(--text-secondary);
-    border: 1px solid transparent;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .clear-history-btn:hover {
-    background: var(--bg-tertiary);
-    color: var(--error);
-    border-color: var(--border-color);
-  }
-
-  .recent-templates {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .recent-template-chip {
-    padding: 6px 12px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-
-  .recent-template-chip:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Template Discovery Section */
-  .template-discovery {
-    margin-bottom: 20px;
-    padding: 16px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  }
-
-  .template-search-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
-
-  #template-search {
-    flex: 1;
-    min-height: 40px;
-    font-size: 14px;
-    padding: 8px 12px;
-  }
-
-  .template-count {
-    font-size: 12px;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    font-weight: 500;
-  }
-
-  .tag-filter-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .filter-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .tag-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .tag-pill {
-    padding: 6px 12px;
-    font-size: 11px;
-    font-weight: 500;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-
-  .tag-pill:hover {
-    border-color: var(--accent);
-    background: var(--bg-tertiary);
-  }
-
-  .tag-pill.active {
     background: var(--accent);
     color: white;
     border-color: var(--accent);
@@ -919,37 +645,15 @@
     position: relative;
   }
 
-  .template-card.hidden {
-    display: none;
-  }
-
-  .template-favorite {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    opacity: 0.3;
-    transition: all 0.2s;
-  }
-
-  .template-favorite:hover,
-  .template-favorite.active {
-    opacity: 1;
-  }
-
   @media (max-width: 1024px) {
     .editor-layout {
       grid-template-columns: 1fr;
     }
 
-    .template-search-wrapper {
+    .recipe-header,
+    .data-section-header {
       flex-direction: column;
       align-items: flex-start;
-    }
-
-    #template-search {
-      width: 100%;
     }
   }
 </style>
@@ -1075,142 +779,9 @@ import { copyToClipboard } from '../core/tool-utils.js';
 export const DevChefTool = {
   container: null,
   context: null,
-  currentMode: 'simplified',
   currentDataFormat: 'json',
   autocompleteKeys: [],
-  currentSnippet: null,
-  selectedTags: [],
-  searchQuery: '',
-  favorites: [],
-  allTags: [],
-  recentTemplates: [],
-  autoSaveTimer: null,
-
-  snippets: {
-    'sql-insert-basic': {
-      name: 'SQL INSERT (Basic)',
-      json: JSON.stringify({
-        table: 'Users',
-        data: {
-          FirstName: 'John',
-          LastName: 'Doe',
-          Email: 'john@example.com',
-          Age: 30,
-          City: 'New York'
-        }
-      }, null, 2),
-      template: `-- INSERT INTO {{ table }}
-INSERT INTO [{{ table }}] ([FirstName], [LastName], [Email], [Age], [City])
-VALUES ('{{ data.FirstName }}', '{{ data.LastName }}', '{{ data.Email }}', {{ data.Age }}, '{{ data.City }}');`
-    },
-    'sql-insert-multi': {
-      name: 'SQL INSERT (Multi-row)',
-      json: JSON.stringify({
-        table: 'Products',
-        columns: ['ProductName', 'Category', 'Price', 'Stock'],
-        rows: [
-          { ProductName: 'Laptop', Category: 'Electronics', Price: 999.99, Stock: 50 },
-          { ProductName: 'Mouse', Category: 'Electronics', Price: 29.99, Stock: 200 },
-          { ProductName: 'Keyboard', Category: 'Electronics', Price: 79.99, Stock: 150 },
-          { ProductName: 'Monitor', Category: 'Electronics', Price: 299.99, Stock: 75 }
-        ]
-      }, null, 2),
-      template: `-- Multi-row INSERT INTO {{ table }}
-{% for row in rows %}
-INSERT INTO [{{ table }}] ([ProductName], [Category], [Price], [Stock])
-VALUES ('{{ row.ProductName }}', '{{ row.Category }}', {{ row.Price }}, {{ row.Stock }});
-{% endfor %}`
-    },
-    'sql-update-basic': {
-      name: 'SQL UPDATE (Basic)',
-      json: JSON.stringify({
-        table: 'Customers',
-        id: 101,
-        data: {
-          Email: 'newemail@example.com',
-          Phone: '555-0123',
-          Address: '123 Main St',
-          City: 'Boston',
-          Status: 'Active'
-        }
-      }, null, 2),
-      template: `-- UPDATE {{ table }}
-UPDATE [{{ table }}]
-SET [Email] = '{{ data.Email }}',
-    [Phone] = '{{ data.Phone }}',
-    [Address] = '{{ data.Address }}',
-    [City] = '{{ data.City }}',
-    [Status] = '{{ data.Status }}'
-WHERE [Id] = {{ id }};`
-    },
-    'sql-update-where': {
-      name: 'SQL UPDATE with WHERE conditions',
-      json: JSON.stringify({
-        table: 'Orders',
-        updates: [
-          {
-            setClause: { Status: 'Shipped', ShippedDate: '2024-01-15', Carrier: 'FedEx' },
-            whereClause: { OrderId: 1001 }
-          },
-          {
-            setClause: { Status: 'Delivered', DeliveredDate: '2024-01-20' },
-            whereClause: { OrderId: 1002 }
-          },
-          {
-            setClause: { Status: 'Cancelled', CancelledDate: '2024-01-18', Reason: 'Customer Request' },
-            whereClause: { OrderId: 1003 }
-          }
-        ]
-      }, null, 2),
-      template: `-- UPDATE {{ table }} with WHERE conditions
-{% for update in updates %}
-UPDATE [{{ table }}]
-SET {% for key in update.setClause %}[{{ key }}] = '{{ update.setClause[key] }}'{% if not loop.last %},
-    {% endif %}{% endfor %}
-WHERE [OrderId] = {{ update.whereClause.OrderId }};
-{% endfor %}`
-    },
-    'sql-upsert': {
-      name: 'SQL UPSERT (MERGE)',
-      json: JSON.stringify({
-        table: 'Inventory',
-        keyColumn: 'ProductId',
-        data: [
-          { ProductId: 1, ProductName: 'Widget A', Quantity: 100, Price: 19.99 },
-          { ProductId: 2, ProductName: 'Widget B', Quantity: 50, Price: 29.99 },
-          { ProductId: 3, ProductName: 'Widget C', Quantity: 75, Price: 24.99 }
-        ]
-      }, null, 2),
-      template: `-- UPSERT (MERGE) for {{ table }}
-{% for row in data %}
-MERGE INTO [{{ table }}] AS target
-USING (SELECT {{ row.ProductId }} AS ProductId) AS source
-ON target.{{ keyColumn }} = source.{{ keyColumn }}
-WHEN MATCHED THEN
-  UPDATE SET
-    [ProductName] = '{{ row.ProductName }}',
-    [Quantity] = {{ row.Quantity }},
-    [Price] = {{ row.Price }}
-WHEN NOT MATCHED THEN
-  INSERT ([ProductId], [ProductName], [Quantity], [Price])
-  VALUES ({{ row.ProductId }}, '{{ row.ProductName }}', {{ row.Quantity }}, {{ row.Price }});
-{% endfor %}`
-    },
-    'sql-insert-select': {
-      name: 'INSERT INTO SELECT',
-      json: JSON.stringify({
-        targetTable: 'ActiveUsers',
-        sourceTable: 'Users',
-        columns: ['UserId', 'Username', 'Email', 'CreatedDate'],
-        whereCondition: 'Status = \'Active\' AND LastLoginDate >= DATEADD(month, -6, GETDATE())'
-      }, null, 2),
-      template: `-- INSERT INTO {{ targetTable }} from {{ sourceTable }}
-INSERT INTO [{{ targetTable }}] ({% for col in columns %}[{{ col }}]{% if not loop.last %}, {% endif %}{% endfor %})
-SELECT {% for col in columns %}[{{ col }}]{% if not loop.last %}, {% endif %}{% endfor %}
-FROM [{{ sourceTable }}]
-WHERE {{ whereCondition }};`
-    }
-  },
+  currentTemplateId: null,
 
   templates: {
     'sql-insert': {
@@ -2489,85 +2060,32 @@ set -e
   init(container, context) {
     this.container = container;
     this.context = context;
-
-    // Load saved state
-    this.loadState();
-
-    const simplifiedModeBtn = container.querySelector("#simplified-mode-btn");
-    const advancedModeBtn = container.querySelector("#advanced-mode-btn");
-    const jsonFormatBtn = container.querySelector("#json-format-btn");
-    const textFormatBtn = container.querySelector("#text-format-btn");
-    const csvFormatBtn = container.querySelector("#csv-format-btn");
-    const snippetsFormatBtn = container.querySelector("#snippets-format-btn");
-    const jsonInput = container.querySelector("#json-input");
-    const textInput = container.querySelector("#text-input");
-    const csvInput = container.querySelector("#csv-input");
-    const snippetsInput = container.querySelector("#snippets-input");
+    const dataFormatSelect = container.querySelector("#data-format-select");
+    const dataInput = container.querySelector("#data-input");
     const templateInput = container.querySelector("#template-input");
     const copyOutputBtn = container.querySelector("#copy-output-btn");
-    const templateSearch = container.querySelector("#template-search");
 
-    simplifiedModeBtn?.addEventListener("click", () => this.setMode('simplified'));
-    advancedModeBtn?.addEventListener("click", () => this.setMode('advanced'));
-
-    jsonFormatBtn?.addEventListener("click", () => this.setDataFormat('json'));
-    textFormatBtn?.addEventListener("click", () => this.setDataFormat('text'));
-    csvFormatBtn?.addEventListener("click", () => this.setDataFormat('csv'));
-    snippetsFormatBtn?.addEventListener("click", () => this.setDataFormat('snippets'));
-
-    jsonInput?.addEventListener("input", () => this.render());
-    textInput?.addEventListener("input", () => this.render());
-    csvInput?.addEventListener("input", () => this.render());
-    snippetsInput?.addEventListener("input", () => this.render());
+    dataFormatSelect?.addEventListener("change", (e) => this.setDataFormat(e.target.value));
+    dataInput?.addEventListener("input", () => this.render());
     templateInput?.addEventListener("input", () => this.render());
     templateInput?.addEventListener("keyup", (e) => this.handleAutocomplete(e));
-
     copyOutputBtn?.addEventListener("click", () => this.copyOutput());
 
-    // Search input listener
-    templateSearch?.addEventListener("input", (e) => {
-      this.searchQuery = e.target.value.toLowerCase();
-      this.filterTemplates();
-    });
-
-    // Quick action buttons
     const clearAllBtn = container.querySelector("#clear-all-btn");
-    const saveTemplateBtn = container.querySelector("#save-template-btn");
-    const shareTemplateBtn = container.querySelector("#share-template-btn");
-    const clearHistoryBtn = container.querySelector("#clear-history-btn");
-
     clearAllBtn?.addEventListener("click", () => this.clearAll());
-    saveTemplateBtn?.addEventListener("click", () => this.saveCurrentWork());
-    shareTemplateBtn?.addEventListener("click", () => this.shareTemplate());
-    clearHistoryBtn?.addEventListener("click", () => this.clearHistory());
 
-    // Keyboard shortcuts
-    this.setupKeyboardShortcuts();
-
-    // Auto-save setup
-    jsonInput?.addEventListener("input", () => this.scheduleAutoSave());
-    textInput?.addEventListener("input", () => this.scheduleAutoSave());
-    csvInput?.addEventListener("input", () => this.scheduleAutoSave());
-    snippetsInput?.addEventListener("input", () => this.scheduleAutoSave());
-    templateInput?.addEventListener("input", () => this.scheduleAutoSave());
-
-    // Initialize tag pills and favorites
-    this.initializeTagPills();
-    this.initializeFavorites();
-    this.updateRecentTemplates();
-
-    // Template card listeners
-    container.querySelectorAll('.template-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        // Don't trigger if clicking favorite star
-        if (e.target.classList.contains('template-favorite')) return;
-
-        const templateId = e.currentTarget.dataset.template;
+    container.querySelectorAll('[data-template]').forEach(button => {
+      const templateId = button.dataset.template;
+      const template = this.templates[templateId];
+      if (template) {
+        button.dataset.description = template.description || template.name;
+      }
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
         this.loadTemplate(templateId);
       });
     });
 
-    // Toolbar button listeners
     container.querySelectorAll('.toolbar-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const insert = e.target.dataset.insert;
@@ -2575,137 +2093,69 @@ set -e
       });
     });
 
-    // Snippet button listeners
-    container.querySelectorAll('.snippet-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const snippetId = e.currentTarget.dataset.snippet;
-        this.loadSnippet(snippetId);
-      });
-    });
-
-    // Initial filter
-    this.filterTemplates();
-
-    // Load default template
+    this.setDataFormat(this.currentDataFormat, { skipRender: true });
     this.loadTemplate('sql-insert');
   },
 
-  loadSnippet(snippetId) {
-    const snippet = this.snippets[snippetId];
-    if (!snippet) return;
-
-    this.currentSnippet = snippetId;
-
-    const snippetsInput = this.container.querySelector("#snippets-input");
-    const templateInput = this.container.querySelector("#template-input");
-
-    // Update active state
-    this.container.querySelectorAll('.snippet-btn').forEach(btn => {
-      btn.classList.remove('active');
-      if (btn.dataset.snippet === snippetId) {
-        btn.classList.add('active');
-      }
-    });
-
-    // Load snippet data and template
-    snippetsInput.value = snippet.json;
-    templateInput.value = snippet.template;
-
-    this.render();
-  },
-
-  setMode(mode) {
-    this.currentMode = mode;
-    const simplifiedBtn = this.container.querySelector("#simplified-mode-btn");
-    const advancedBtn = this.container.querySelector("#advanced-mode-btn");
-
-    if (mode === 'simplified') {
-      simplifiedBtn.classList.add('active');
-      advancedBtn.classList.remove('active');
-      this.container.querySelector('.tool-container').classList.remove('mode-advanced');
-    } else {
-      advancedBtn.classList.add('active');
-      simplifiedBtn.classList.remove('active');
-      this.container.querySelector('.tool-container').classList.add('mode-advanced');
-    }
-  },
-
-  setDataFormat(format) {
+  setDataFormat(format, options = {}) {
     this.currentDataFormat = format;
-    const jsonBtn = this.container.querySelector("#json-format-btn");
-    const textBtn = this.container.querySelector("#text-format-btn");
-    const csvBtn = this.container.querySelector("#csv-format-btn");
-    const snippetsBtn = this.container.querySelector("#snippets-format-btn");
-    const jsonSection = this.container.querySelector("#json-input-section");
-    const textSection = this.container.querySelector("#text-input-section");
-    const csvSection = this.container.querySelector("#csv-input-section");
-    const snippetsSection = this.container.querySelector("#snippets-input-section");
+    const select = this.container.querySelector("#data-format-select");
+    const dataInput = this.container.querySelector("#data-input");
+    const hint = this.container.querySelector("#data-format-hint");
 
-    // Update button states
-    jsonBtn.classList.remove('active');
-    textBtn.classList.remove('active');
-    csvBtn.classList.remove('active');
-    snippetsBtn.classList.remove('active');
+    if (select) {
+      select.value = format;
+    }
 
-    // Hide all sections
-    jsonSection.style.display = 'none';
-    textSection.style.display = 'none';
-    csvSection.style.display = 'none';
-    snippetsSection.style.display = 'none';
-
-    // Show selected section and activate button
-    if (format === 'json') {
-      jsonBtn.classList.add('active');
-      jsonSection.style.display = 'block';
-    } else if (format === 'text') {
-      textBtn.classList.add('active');
-      textSection.style.display = 'block';
-    } else if (format === 'csv') {
-      csvBtn.classList.add('active');
-      csvSection.style.display = 'block';
-    } else if (format === 'snippets') {
-      snippetsBtn.classList.add('active');
-      snippetsSection.style.display = 'block';
-      // Load first snippet by default if none selected
-      if (!this.currentSnippet) {
-        this.loadSnippet('sql-insert-basic');
+    if (dataInput && hint) {
+      if (format === 'text') {
+        dataInput.placeholder = 'name=John Doe\nemail=john@example.com\nage=30';
+        hint.textContent = 'Use one key=value or key: value pair per line.';
+      } else if (format === 'csv') {
+        dataInput.placeholder = 'name,email,age\nJohn Doe,john@example.com,30\nJane Smith,jane@example.com,25';
+        hint.textContent = 'Use the first row for headers and each following row as data.';
+      } else {
+        dataInput.placeholder = '{\n  "name": "John Doe",\n  "items": [1, 2, 3]\n}';
+        hint.textContent = 'Use a JSON object or array.';
       }
     }
 
-    this.render();
+    if (!options.skipRender) {
+      this.render();
+    }
   },
 
   loadTemplate(templateId) {
     const template = this.templates[templateId];
     if (!template) return;
 
-    const jsonInput = this.container.querySelector("#json-input");
-    const textInput = this.container.querySelector("#text-input");
-    const csvInput = this.container.querySelector("#csv-input");
+    const dataInput = this.container.querySelector("#data-input");
     const templateInput = this.container.querySelector("#template-input");
-
-    // Determine which data format to use
+    const summary = this.container.querySelector("#active-recipe-summary");
     const dataFormat = template.dataFormat || 'json';
 
-    // Switch to the appropriate data format
-    if (dataFormat !== this.currentDataFormat) {
-      this.setDataFormat(dataFormat);
+    this.currentTemplateId = templateId;
+    this.setDataFormat(dataFormat, { skipRender: true });
+
+    if (dataInput) {
+      if (dataFormat === 'text') {
+        dataInput.value = template.text || '';
+      } else if (dataFormat === 'csv') {
+        dataInput.value = template.csv || '';
+      } else {
+        dataInput.value = template.json || '{}';
+      }
     }
 
-    // Load the data based on format
-    if (dataFormat === 'json') {
-      jsonInput.value = template.json;
-    } else if (dataFormat === 'text') {
-      textInput.value = template.text;
-    } else if (dataFormat === 'csv') {
-      csvInput.value = template.csv;
-    }
-
-    // Load the template
     templateInput.value = template.template;
 
-    // Add to recent templates
-    this.addToRecentTemplates(templateId);
+    if (summary) {
+      summary.textContent = `Recipe: ${template.name}`;
+    }
+
+    this.container.querySelectorAll('.starter-recipe, .template-card').forEach(button => {
+      button.classList.toggle('active', button.dataset.template === templateId);
+    });
 
     this.render();
   },
@@ -2788,6 +2238,7 @@ set -e
   },
 
   render() {
+    const dataInput = this.container.querySelector("#data-input");
     const templateInput = this.container.querySelector("#template-input");
     const jsonError = this.container.querySelector("#json-error");
     const templateError = this.container.querySelector("#template-error");
@@ -2801,17 +2252,11 @@ set -e
     let data;
     try {
       if (this.currentDataFormat === 'json') {
-        const jsonInput = this.container.querySelector("#json-input");
-        data = JSON.parse(jsonInput.value || '{}');
+        data = JSON.parse(dataInput.value || '{}');
       } else if (this.currentDataFormat === 'text') {
-        const textInput = this.container.querySelector("#text-input");
-        data = this.parseKeyValueText(textInput.value);
+        data = this.parseKeyValueText(dataInput.value);
       } else if (this.currentDataFormat === 'csv') {
-        const csvInput = this.container.querySelector("#csv-input");
-        data = this.parseCSV(csvInput.value);
-      } else if (this.currentDataFormat === 'snippets') {
-        const snippetsInput = this.container.querySelector("#snippets-input");
-        data = JSON.parse(snippetsInput.value || '{}');
+        data = this.parseCSV(dataInput.value);
       }
       this.autocompleteKeys = this.extractKeys(data);
     } catch (e) {
@@ -3038,352 +2483,16 @@ set -e
     }
   },
 
-  initializeTagPills() {
-    // Collect all unique tags from templates
-    const tagsSet = new Set();
-    Object.values(this.templates).forEach(template => {
-      if (template.tags) {
-        template.tags.forEach(tag => tagsSet.add(tag));
-      }
-    });
-
-    this.allTags = Array.from(tagsSet).sort();
-
-    // Create tag pills
-    const tagPillsContainer = this.container.querySelector('#tag-pills');
-    if (!tagPillsContainer) return;
-
-    tagPillsContainer.innerHTML = this.allTags.map(tag => {
-      const isActive = this.selectedTags.includes(tag);
-      return `<span class="tag-pill${isActive ? ' active' : ''}" data-tag="${tag}">${tag}</span>`;
-    }).join('');
-
-    // Add click listeners
-    tagPillsContainer.querySelectorAll('.tag-pill').forEach(pill => {
-      pill.addEventListener('click', () => {
-        const tag = pill.dataset.tag;
-        this.toggleTag(tag);
-      });
-    });
-  },
-
-  initializeFavorites() {
-    // Add favorite stars to each template card
-    this.container.querySelectorAll('.template-card').forEach(card => {
-      const templateId = card.dataset.template;
-      const isFavorite = this.favorites.includes(templateId);
-
-      const star = document.createElement('span');
-      star.className = 'template-favorite' + (isFavorite ? ' active' : '');
-      star.textContent = '⭐';
-      star.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleFavorite(templateId);
-      });
-
-      card.appendChild(star);
-    });
-  },
-
-  toggleTag(tag) {
-    const index = this.selectedTags.indexOf(tag);
-    if (index > -1) {
-      this.selectedTags.splice(index, 1);
-    } else {
-      this.selectedTags.push(tag);
-    }
-
-    // Update pill UI
-    this.container.querySelectorAll('.tag-pill').forEach(pill => {
-      if (pill.dataset.tag === tag) {
-        pill.classList.toggle('active');
-      }
-    });
-
-    this.filterTemplates();
-    this.saveState();
-  },
-
-  toggleFavorite(templateId) {
-    const index = this.favorites.indexOf(templateId);
-    if (index > -1) {
-      this.favorites.splice(index, 1);
-    } else {
-      this.favorites.push(templateId);
-    }
-
-    // Update star UI
-    this.container.querySelectorAll('.template-card').forEach(card => {
-      if (card.dataset.template === templateId) {
-        const star = card.querySelector('.template-favorite');
-        if (star) {
-          star.classList.toggle('active');
-        }
-      }
-    });
-
-    this.filterTemplates();
-    this.saveState();
-  },
-
-  filterTemplates() {
-    const cards = this.container.querySelectorAll('.template-card');
-    let visibleCount = 0;
-    const totalCount = cards.length;
-
-    cards.forEach(card => {
-      const templateId = card.dataset.template;
-      const template = this.templates[templateId];
-
-      if (!template) {
-        card.classList.add('hidden');
-        return;
-      }
-
-      let matches = true;
-
-      // Filter by selected tags (AND logic)
-      if (this.selectedTags.length > 0) {
-        matches = this.selectedTags.every(selectedTag =>
-          template.tags && template.tags.includes(selectedTag)
-        );
-      }
-
-      // Filter by search query
-      if (matches && this.searchQuery) {
-        const searchableText = [
-          template.name,
-          template.description,
-          ...(template.tags || [])
-        ].join(' ').toLowerCase();
-
-        matches = searchableText.includes(this.searchQuery);
-      }
-
-      if (matches) {
-        card.classList.remove('hidden');
-        visibleCount++;
-      } else {
-        card.classList.add('hidden');
-      }
-    });
-
-    // Update count display
-    const countDisplay = this.container.querySelector('#template-count');
-    if (countDisplay) {
-      countDisplay.textContent = `Showing ${visibleCount} of ${totalCount} templates`;
-    }
-  },
-
-  loadState() {
-    try {
-      if (window.DevChef && window.DevChef.storage) {
-        const state = window.DevChef.storage.loadToolState('template-transform');
-        if (state) {
-          this.selectedTags = state.selectedTags || [];
-          this.favorites = state.favorites || [];
-          this.recentTemplates = state.recentTemplates || [];
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to load state:', e);
-    }
-  },
-
-  saveState() {
-    try {
-      if (window.DevChef && window.DevChef.storage) {
-        window.DevChef.storage.saveToolState('template-transform', {
-          selectedTags: this.selectedTags,
-          favorites: this.favorites,
-          recentTemplates: this.recentTemplates
-        });
-      }
-    } catch (e) {
-      console.warn('Failed to save state:', e);
-    }
-  },
-
-  addToRecentTemplates(templateId) {
-    // Remove if already exists
-    this.recentTemplates = this.recentTemplates.filter(id => id !== templateId);
-    // Add to beginning
-    this.recentTemplates.unshift(templateId);
-    // Keep only last 5
-    this.recentTemplates = this.recentTemplates.slice(0, 5);
-    this.saveState();
-    this.updateRecentTemplates();
-  },
-
-  updateRecentTemplates() {
-    const recentSection = this.container.querySelector('#recent-templates-section');
-    const recentContainer = this.container.querySelector('#recent-templates');
-
-    if (!recentSection || !recentContainer) return;
-
-    if (this.recentTemplates.length === 0) {
-      recentSection.style.display = 'none';
-      return;
-    }
-
-    recentSection.style.display = 'block';
-    recentContainer.innerHTML = this.recentTemplates.map(templateId => {
-      const template = this.templates[templateId];
-      if (!template) return '';
-      return `<button class="recent-template-chip" data-template="${templateId}">${template.name}</button>`;
-    }).join('');
-
-    // Add click listeners
-    recentContainer.querySelectorAll('.recent-template-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const templateId = chip.dataset.template;
-        this.loadTemplate(templateId);
-      });
-    });
-  },
-
   clearAll() {
-    if (!confirm('Clear all inputs? This cannot be undone.')) return;
-
-    const jsonInput = this.container.querySelector("#json-input");
-    const textInput = this.container.querySelector("#text-input");
-    const csvInput = this.container.querySelector("#csv-input");
-    const snippetsInput = this.container.querySelector("#snippets-input");
+    const dataInput = this.container.querySelector("#data-input");
     const templateInput = this.container.querySelector("#template-input");
 
-    if (jsonInput) jsonInput.value = '{}';
-    if (textInput) textInput.value = '';
-    if (csvInput) csvInput.value = '';
-    if (snippetsInput) snippetsInput.value = '{}';
+    if (dataInput) {
+      dataInput.value = this.currentDataFormat === 'json' ? '{}' : '';
+    }
     if (templateInput) templateInput.value = '';
 
     this.render();
-  },
-
-  saveCurrentWork() {
-    const data = {
-      mode: this.currentDataFormat,
-      jsonInput: this.container.querySelector("#json-input")?.value || '',
-      textInput: this.container.querySelector("#text-input")?.value || '',
-      csvInput: this.container.querySelector("#csv-input")?.value || '',
-      snippetsInput: this.container.querySelector("#snippets-input")?.value || '',
-      templateInput: this.container.querySelector("#template-input")?.value || ''
-    };
-
-    try {
-      if (window.DevChef && window.DevChef.storage) {
-        window.DevChef.storage.saveToolState('template-transform-draft', data);
-        this.showNotification('✅ Work saved!');
-      }
-    } catch (e) {
-      this.showNotification('❌ Failed to save');
-    }
-  },
-
-  shareTemplate() {
-    const templateInput = this.container.querySelector("#template-input");
-    const jsonInput = this.container.querySelector("#json-input");
-
-    if (!templateInput || !jsonInput) return;
-
-    const shareData = {
-      template: templateInput.value,
-      data: jsonInput.value
-    };
-
-    const encoded = btoa(JSON.stringify(shareData));
-    const url = `${window.location.origin}${window.location.pathname}?template=${encoded}`;
-
-    copyToClipboard(url, {
-      onSuccess: () => this.showNotification('🔗 Link copied to clipboard!'),
-      onError: () => this.showNotification('❌ Failed to copy link')
-    });
-  },
-
-  clearHistory() {
-    if (!confirm('Clear recent templates history?')) return;
-
-    this.recentTemplates = [];
-    this.saveState();
-    this.updateRecentTemplates();
-    this.showNotification('🗑️ History cleared');
-  },
-
-  showNotification(message) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 12px 20px;
-      background: rgba(0, 0, 0, 0.9);
-      color: white;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 500;
-      z-index: 10000;
-      animation: slideIn 0.3s ease;
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-      notification.style.opacity = '0';
-      notification.style.transform = 'translateY(-10px)';
-      notification.style.transition = 'all 0.3s ease';
-      setTimeout(() => notification.remove(), 300);
-    }, 2000);
-  },
-
-  setupKeyboardShortcuts() {
-    document.addEventListener('keydown', (e) => {
-      // Ctrl/Cmd + L: Clear all
-      if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
-        e.preventDefault();
-        this.clearAll();
-      }
-
-      // Ctrl/Cmd + S: Save current work
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        this.saveCurrentWork();
-      }
-
-      // Ctrl/Cmd + F: Focus search
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        e.preventDefault();
-        const searchInput = this.container.querySelector('#template-search');
-        searchInput?.focus();
-      }
-
-      // ?: Show keyboard shortcuts
-      if (e.key === '?' && !e.target.matches('input, textarea')) {
-        e.preventDefault();
-        this.showKeyboardShortcuts();
-      }
-    });
-  },
-
-  showKeyboardShortcuts() {
-    const shortcuts = [
-      { keys: 'Ctrl/Cmd + L', action: 'Clear all inputs' },
-      { keys: 'Ctrl/Cmd + S', action: 'Save current work' },
-      { keys: 'Ctrl/Cmd + F', action: 'Focus search' },
-      { keys: '?', action: 'Show this help' }
-    ];
-
-    const message = shortcuts.map(s => `${s.keys}: ${s.action}`).join('\n');
-    alert(`Keyboard Shortcuts:\n\n${message}`);
-  },
-
-  scheduleAutoSave() {
-    if (this.autoSaveTimer) {
-      clearTimeout(this.autoSaveTimer);
-    }
-
-    this.autoSaveTimer = setTimeout(() => {
-      this.saveCurrentWork();
-    }, 3000); // Auto-save after 3 seconds of inactivity
   },
 
   onInput(input, context) {

@@ -13,7 +13,7 @@
   "id": "ai-prompt-builder",
   "name": "AI Prompt Builder",
   "category": "Developer Tools",
-  "description": "Build structured AI prompts with five focused slots: task, role, context, format, and tone",
+  "description": "Build structured AI prompts fast with outcome-driven starter recipes and focused slots for task, role, context, format, and tone",
   "keywords": ["ai", "prompt", "llm", "chatgpt", "claude", "builder", "template", "tone"],
   "version": "13.0.0"
 }
@@ -21,7 +21,18 @@
 
 <!-- Tool UI Template -->
 <template id="tool-ui">
-  <div class="apb-tool">
+  <div class="apb-tool" data-preserve-legacy-controls>
+
+    <section class="apb-starters" aria-labelledby="apb-starters-title">
+      <div class="apb-section-head">
+        <div>
+          <h3 id="apb-starters-title" class="apb-section-title">Quick Starts</h3>
+          <p class="apb-section-copy">Pick a ready-made prompt recipe, then adjust the slots if needed.</p>
+        </div>
+      </div>
+      <div class="apb-starter-filters" id="apb-starter-filters"></div>
+      <div class="apb-starter-grid" id="apb-starter-grid"></div>
+    </section>
 
     <!-- Task slot — always open, required -->
     <div class="apb-slot apb-slot-task">
@@ -125,11 +136,118 @@
   .apb-tool {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    max-width: 680px;
+    gap: 12px;
+    max-width: 760px;
     margin: 0 auto;
     padding: 16px 12px;
     position: relative;
+  }
+
+  .apb-starters {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 2px 0 4px;
+  }
+
+  .apb-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .apb-section-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .apb-section-copy {
+    margin: 4px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+  }
+
+  .apb-starter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+
+  .apb-starter-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .apb-filter-chip {
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s, color 0.12s;
+  }
+
+  .apb-filter-chip:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+
+  .apb-filter-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .apb-starter-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 132px;
+    padding: 12px;
+    text-align: left;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--accent) 10%, var(--bg-secondary)) 0%, var(--bg-secondary) 100%);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: transform 0.14s, border-color 0.14s, box-shadow 0.14s;
+  }
+
+  .apb-starter-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .apb-starter-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent);
+  }
+
+  .apb-starter-title {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .apb-starter-meta {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .apb-starter-copy {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-secondary);
   }
 
   /* ── Slots ── */
@@ -414,6 +532,16 @@
   }
 
   .apb-toast.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 640px) {
+    .apb-tool {
+      padding-inline: 10px;
+    }
+
+    .apb-starter-grid {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 
 <!-- Module -->
@@ -435,6 +563,243 @@ import { copyToClipboard } from '../core/tool-utils.js';
 
 const STORAGE_KEY = 'aiPromptBuilder_v13';
 
+const STARTER_PRESETS = [
+  {
+    id: 'bug-report',
+    label: 'Bug Report Triage',
+    category: 'Debug',
+    description: 'Turn a raw issue into a clear repro, likely causes, and next steps.',
+    slots: {
+      task: 'Review this bug report and turn it into a concise triage summary with probable root causes, missing information, and recommended next actions.',
+      rolePresetId: 'reviewer',
+      contextText: 'Bug report:\n- What broke:\n- Expected behavior:\n- Actual behavior:\n- Steps to reproduce:\n- Error output:\n- Environment:',
+      formatPresetId: 'spec',
+      tonePresetId: 'technical',
+    }
+  },
+  {
+    id: 'feature-spec',
+    label: 'Feature Spec',
+    category: 'Product',
+    description: 'Convert a rough idea into scope, user stories, and implementation notes.',
+    slots: {
+      task: 'Convert this feature idea into a compact implementation brief with scope, user value, requirements, edge cases, and rollout considerations.',
+      rolePresetId: 'product_manager',
+      contextText: 'Feature idea:\nTarget users:\nConstraints:\nKnown dependencies:\nNon-goals:',
+      formatPresetId: 'spec',
+      tonePresetId: 'professional',
+    }
+  },
+  {
+    id: 'doc-rewrite',
+    label: 'Doc Rewrite',
+    category: 'Writing',
+    description: 'Rewrite rough technical notes into clean documentation.',
+    slots: {
+      task: 'Rewrite the material below into polished developer documentation that is easy to scan and safe to follow.',
+      rolePresetId: 'tech_writer',
+      contextText: 'Source notes:\n\n',
+      formatPresetId: 'steps',
+      tonePresetId: 'concise',
+    }
+  },
+  {
+    id: 'meeting-summary',
+    label: 'Meeting Summary',
+    category: 'Ops',
+    description: 'Extract decisions, action items, and follow-ups from messy notes.',
+    slots: {
+      task: 'Summarize these meeting notes into decisions made, open questions, owners, and next actions.',
+      rolePresetId: 'analyst',
+      contextText: 'Meeting notes:\n\n',
+      formatPresetId: 'table',
+      tonePresetId: 'professional',
+    }
+  },
+  {
+    id: 'code-explainer',
+    label: 'Code Explainer',
+    category: 'Dev',
+    description: 'Explain unfamiliar code with behavior, flow, and risks.',
+    slots: {
+      task: 'Explain this code for a teammate who needs to modify it soon. Focus on purpose, control flow, dependencies, and risky assumptions.',
+      rolePresetId: 'teacher',
+      contextText: 'Code snippet:\n\n',
+      formatPresetId: 'bullets',
+      tonePresetId: 'detailed',
+    }
+  },
+  {
+    id: 'test-plan',
+    label: 'Test Plan',
+    category: 'QA',
+    description: 'Generate practical test coverage from a feature or bug description.',
+    slots: {
+      task: 'Create a test plan that covers happy paths, edge cases, regressions, and suggested automation opportunities.',
+      rolePresetId: 'qa_lead',
+      contextText: 'Feature or bug context:\n\n',
+      formatPresetId: 'checklist',
+      tonePresetId: 'technical',
+    }
+  },
+  {
+    id: 'research-brief',
+    label: 'Research Brief',
+    category: 'Research',
+    description: 'Synthesize source material into findings, uncertainty, and recommendations.',
+    slots: {
+      task: 'Synthesize this material into key findings, uncertainties, and recommended follow-up questions.',
+      rolePresetId: 'researcher',
+      contextText: 'Source material:\n\n',
+      formatPresetId: 'summary',
+      tonePresetId: 'professional',
+    }
+  },
+  {
+    id: 'data-insights',
+    label: 'Data Insights',
+    category: 'Analysis',
+    description: 'Pull trends, anomalies, and hypotheses from raw data notes.',
+    slots: {
+      task: 'Analyze this dataset summary and surface patterns, anomalies, likely explanations, and what to investigate next.',
+      rolePresetId: 'data_analyst',
+      contextText: 'Dataset notes or sample rows:\n\n',
+      formatPresetId: 'table',
+      tonePresetId: 'technical',
+    }
+  },
+  {
+    id: 'rewrite-email',
+    label: 'Rewrite Email',
+    category: 'Comms',
+    description: 'Turn a rough draft into a cleaner message with the right tone.',
+    slots: {
+      task: 'Rewrite this email so it is clearer, shorter, and more effective while preserving the intent.',
+      rolePresetId: 'tech_writer',
+      contextText: 'Draft email:\n\nAudience:\nDesired outcome:',
+      formatPresetId: 'prose',
+      tonePresetId: 'professional',
+    }
+  },
+  {
+    id: 'prompt-from-goal',
+    label: 'Prompt Draft',
+    category: 'AI',
+    description: 'Generate a reusable prompt from a simple goal and constraints.',
+    slots: {
+      task: 'Create a reusable AI prompt that will reliably accomplish the goal described below. Include constraints, context handling, and output instructions.',
+      rolePresetId: 'prompt_engineer',
+      contextText: 'Goal:\nAudience:\nConstraints:\nSuccess criteria:',
+      formatPresetId: 'prompt',
+      tonePresetId: 'technical',
+    }
+  },
+  {
+    id: 'sql-from-request',
+    label: 'SQL Query Draft',
+    category: 'Dev',
+    description: 'Turn a plain-English data request into a query prompt with assumptions and output rules.',
+    slots: {
+      task: 'Write a SQL query for the request below. State assumptions, use safe joins, and explain any ambiguous parts briefly.',
+      rolePresetId: 'senior_dev',
+      contextText: 'Business question:\nSchema details:\nDialiect (Postgres, SQL Server, MySQL, etc.):\nImportant constraints:',
+      formatPresetId: 'code',
+      tonePresetId: 'technical',
+    }
+  },
+  {
+    id: 'api-integration',
+    label: 'API Integration Plan',
+    category: 'Dev',
+    description: 'Create a concrete plan for wiring a third-party API into an app.',
+    slots: {
+      task: 'Create an implementation plan for integrating this API, including auth flow, request patterns, failure handling, and testing.',
+      rolePresetId: 'architect',
+      contextText: 'API docs or notes:\nTarget app context:\nAuth method:\nKnown constraints:',
+      formatPresetId: 'playbook',
+      tonePresetId: 'technical',
+    }
+  },
+  {
+    id: 'incident-update',
+    label: 'Incident Update',
+    category: 'Ops',
+    description: 'Draft a status update that is calm, clear, and operationally useful.',
+    slots: {
+      task: 'Write an incident status update for stakeholders that explains current impact, known cause, mitigation progress, and next update timing.',
+      rolePresetId: 'analyst',
+      contextText: 'Incident details:\nCurrent customer impact:\nMitigation status:\nUnknowns:',
+      formatPresetId: 'prose',
+      tonePresetId: 'professional',
+    }
+  },
+  {
+    id: 'release-notes',
+    label: 'Release Notes',
+    category: 'Writing',
+    description: 'Summarize shipped changes into clean notes for users or teammates.',
+    slots: {
+      task: 'Convert these raw change notes into release notes that are easy to scan and useful for end users or internal teams.',
+      rolePresetId: 'tech_writer',
+      contextText: 'Shipped changes:\nAudience:\nAnything risky or breaking:',
+      formatPresetId: 'bullets',
+      tonePresetId: 'concise',
+    }
+  },
+  {
+    id: 'onboarding-guide',
+    label: 'Onboarding Guide',
+    category: 'Writing',
+    description: 'Produce a first-day or first-week guide from scattered internal notes.',
+    slots: {
+      task: 'Turn these notes into a practical onboarding guide for a new teammate, including first steps, dependencies, and common pitfalls.',
+      rolePresetId: 'teacher',
+      contextText: 'Raw onboarding notes:\nRole context:\nRequired tools and accounts:',
+      formatPresetId: 'steps',
+      tonePresetId: 'professional',
+    }
+  },
+  {
+    id: 'customer-reply',
+    label: 'Customer Reply',
+    category: 'Comms',
+    description: 'Write a professional customer-facing response from issue context.',
+    slots: {
+      task: 'Draft a customer response that acknowledges the issue, explains what is known, avoids overcommitting, and provides clear next steps.',
+      rolePresetId: 'tech_writer',
+      contextText: 'Customer message:\nInternal issue summary:\nAllowed commitments:\nDesired tone:',
+      formatPresetId: 'prose',
+      tonePresetId: 'professional',
+    }
+  },
+  {
+    id: 'learning-plan',
+    label: 'Learning Plan',
+    category: 'Learning',
+    description: 'Create a study plan with milestones, exercises, and output goals.',
+    slots: {
+      task: 'Create a practical learning plan for the topic below, including milestones, exercises, and ways to measure progress.',
+      rolePresetId: 'teacher',
+      contextText: 'Topic:\nCurrent level:\nTime available:\nGoal outcome:',
+      formatPresetId: 'steps',
+      tonePresetId: 'detailed',
+    }
+  },
+  {
+    id: 'retro-summary',
+    label: 'Retro Summary',
+    category: 'Ops',
+    description: 'Turn retrospective notes into themes, wins, and actions.',
+    slots: {
+      task: 'Summarize this retrospective into key themes, what worked, what did not, and the top follow-up actions.',
+      rolePresetId: 'product_manager',
+      contextText: 'Retro notes:\nParticipants:\nSprint or release context:',
+      formatPresetId: 'table',
+      tonePresetId: 'professional',
+    }
+  },
+];
+
 const TONES = [
   { id: 'professional', label: 'Professional', text: 'professional and business-appropriate' },
   { id: 'casual',       label: 'Casual',       text: 'casual and conversational' },
@@ -447,6 +812,8 @@ const TONES = [
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let state = {
+  starterPresetId: null,
+  starterFilter: 'All',
   task: '',
   rolePresetId: null,
   roleCustom: '',
@@ -531,6 +898,58 @@ function updateToneSummary() {
   $('apb-tone-slot').classList.toggle('filled', !!(state.tonePresetId || state.toneCustom.trim()));
 }
 
+function getStarterCategories() {
+  return ['All', ...new Set(STARTER_PRESETS.map(preset => preset.category))];
+}
+
+function renderStarterFilters() {
+  const wrap = $('apb-starter-filters');
+  wrap.innerHTML = '';
+
+  getStarterCategories().forEach(category => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'apb-filter-chip' + (category === state.starterFilter ? ' active' : '');
+    button.textContent = category;
+    button.addEventListener('click', () => {
+      state.starterFilter = category;
+      renderStarterFilters();
+      renderStarterPresets();
+      persist();
+    });
+    wrap.appendChild(button);
+  });
+}
+
+function renderStarterPresets() {
+  const grid = $('apb-starter-grid');
+  grid.innerHTML = '';
+
+  STARTER_PRESETS
+    .filter(preset => state.starterFilter === 'All' || preset.category === state.starterFilter)
+    .forEach(preset => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'apb-starter-card' + (preset.id === state.starterPresetId ? ' active' : '');
+    button.addEventListener('click', () => applyStarterPreset(preset.id));
+
+    const meta = document.createElement('div');
+    meta.className = 'apb-starter-meta';
+    meta.textContent = preset.category;
+
+    const title = document.createElement('div');
+    title.className = 'apb-starter-title';
+    title.textContent = preset.label;
+
+    const copy = document.createElement('div');
+    copy.className = 'apb-starter-copy';
+    copy.textContent = preset.description;
+
+    button.append(meta, title, copy);
+    grid.appendChild(button);
+    });
+}
+
 function buildPrompt() {
   const role = resolveRoleText(state.rolePresetId, state.roleCustom);
   const format = resolveFormatText(state.formatPresetId, state.formatCustom);
@@ -591,18 +1010,12 @@ function copyPrompt() {
 }
 
 function clearAll() {
+  state.starterPresetId = null;
+  state.starterFilter = 'All';
   state.task = ''; state.rolePresetId = null; state.roleCustom = '';
   state.contextText = ''; state.formatPresetId = null; state.formatCustom = '';
   state.tonePresetId = null; state.toneCustom = '';
-  $('apb-task').value = '';
-  $('apb-role-custom').value = '';
-  $('apb-context').value = '';
-  $('apb-format-custom').value = '';
-  $('apb-tone-custom').value = '';
-  renderPills('apb-role-pills', ROLES, null, reRoleSelect);
-  renderPills('apb-format-pills', FORMATS, null, reFormatSelect);
-  renderPills('apb-tone-pills', TONES, null, reToneSelect);
-  updateRoleSummary(); updateContextSummary(); updateFormatSummary(); updateToneSummary(); updateCharCount();
+  applyStateToDOM();
   persist();
 }
 
@@ -621,6 +1034,7 @@ function confirmSave() {
   if (!name) { toast('Enter a name', true); return; }
   try {
     const slots = {
+      starterPresetId: state.starterPresetId,
       task: state.task, rolePresetId: state.rolePresetId, roleCustom: state.roleCustom,
       contextText: state.contextText, formatPresetId: state.formatPresetId, formatCustom: state.formatCustom,
       tonePresetId: state.tonePresetId, toneCustom: state.toneCustom,
@@ -634,15 +1048,7 @@ function applyTemplate(name) {
   const slots = loadTemplate(name, state.templates);
   if (!slots) return;
   Object.assign(state, slots);
-  $('apb-task').value = state.task;
-  $('apb-role-custom').value = state.roleCustom;
-  $('apb-context').value = state.contextText;
-  $('apb-format-custom').value = state.formatCustom;
-  $('apb-tone-custom').value = state.toneCustom || '';
-  renderPills('apb-role-pills', ROLES, state.rolePresetId, reRoleSelect);
-  renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
-  renderPills('apb-tone-pills', TONES, state.tonePresetId, reToneSelect);
-  updateRoleSummary(); updateContextSummary(); updateFormatSummary(); updateToneSummary(); updateCharCount();
+  applyStateToDOM();
   persist(); toast(`Loaded "${name}"`);
 }
 
@@ -655,21 +1061,65 @@ function removeTemplate(name) {
 
 function reRoleSelect(id) {
   state.rolePresetId = id;
+  state.starterPresetId = null;
   renderPills('apb-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+  renderStarterPresets();
   updateRoleSummary(); updateCharCount(); persist();
 }
 
 function reFormatSelect(id) {
   state.formatPresetId = id;
+  state.starterPresetId = null;
   renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+  renderStarterPresets();
   updateFormatSummary(); updateCharCount(); persist();
 }
 
 function reToneSelect(id) {
   state.tonePresetId = id;
+  state.starterPresetId = null;
   if (id) { state.toneCustom = ''; $('apb-tone-custom').value = ''; }
   renderPills('apb-tone-pills', TONES, state.tonePresetId, reToneSelect);
+  renderStarterPresets();
   updateToneSummary(); updateCharCount(); persist();
+}
+
+function applyStarterPreset(id) {
+  const preset = STARTER_PRESETS.find(item => item.id === id);
+  if (!preset) return;
+
+  state = {
+    ...state,
+    starterPresetId: preset.id,
+    starterFilter: preset.category,
+    roleCustom: '',
+    formatCustom: '',
+    toneCustom: '',
+    ...preset.slots,
+  };
+
+  applyStateToDOM();
+  persist();
+}
+
+function applyStateToDOM() {
+  $('apb-task').value = state.task;
+  $('apb-role-custom').value = state.roleCustom;
+  $('apb-context').value = state.contextText;
+  $('apb-format-custom').value = state.formatCustom;
+  $('apb-tone-custom').value = state.toneCustom || '';
+  if (!state.starterFilter) state.starterFilter = 'All';
+  renderStarterFilters();
+  renderStarterPresets();
+  renderPills('apb-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+  renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+  renderPills('apb-tone-pills', TONES, state.tonePresetId, reToneSelect);
+  updateRoleSummary();
+  updateContextSummary();
+  updateFormatSummary();
+  updateToneSummary();
+  updateCharCount();
+  renderTemplates();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -678,26 +1128,13 @@ export function init(context) {
   container = context.container;
   restore();
 
-  renderPills('apb-role-pills', ROLES, state.rolePresetId, reRoleSelect);
-  renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
-  renderPills('apb-tone-pills', TONES, state.tonePresetId, reToneSelect);
-
-  $('apb-task').value = state.task;
-  $('apb-role-custom').value = state.roleCustom;
-  $('apb-context').value = state.contextText;
-  $('apb-format-custom').value = state.formatCustom;
-  $('apb-tone-custom').value = state.toneCustom || '';
-
-  updateRoleSummary();
-  updateContextSummary();
-  updateFormatSummary();
-  updateToneSummary();
-  updateCharCount();
-  renderTemplates();
+  applyStateToDOM();
 
   // Task input
   $('apb-task').addEventListener('input', e => {
     state.task = e.target.value;
+    state.starterPresetId = null;
+    renderStarterPresets();
     updateCharCount();
     persist();
   });
@@ -705,30 +1142,44 @@ export function init(context) {
   // Role custom text
   $('apb-role-custom').addEventListener('input', e => {
     state.roleCustom = e.target.value;
-    if (state.roleCustom.trim()) state.rolePresetId = null;
+    if (state.roleCustom.trim()) {
+      state.rolePresetId = null;
+      state.starterPresetId = null;
+    }
     renderPills('apb-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+    renderStarterPresets();
     updateRoleSummary(); updateCharCount(); persist();
   });
 
   // Context
   $('apb-context').addEventListener('input', e => {
     state.contextText = e.target.value;
+    state.starterPresetId = null;
+    renderStarterPresets();
     updateContextSummary(); updateCharCount(); persist();
   });
 
   // Format custom text
   $('apb-format-custom').addEventListener('input', e => {
     state.formatCustom = e.target.value;
-    if (state.formatCustom.trim()) state.formatPresetId = null;
+    if (state.formatCustom.trim()) {
+      state.formatPresetId = null;
+      state.starterPresetId = null;
+    }
     renderPills('apb-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+    renderStarterPresets();
     updateFormatSummary(); updateCharCount(); persist();
   });
 
   // Tone custom text
   $('apb-tone-custom').addEventListener('input', e => {
     state.toneCustom = e.target.value;
-    if (state.toneCustom.trim()) state.tonePresetId = null;
+    if (state.toneCustom.trim()) {
+      state.tonePresetId = null;
+      state.starterPresetId = null;
+    }
     renderPills('apb-tone-pills', TONES, state.tonePresetId, reToneSelect);
+    renderStarterPresets();
     updateToneSummary(); updateCharCount(); persist();
   });
 

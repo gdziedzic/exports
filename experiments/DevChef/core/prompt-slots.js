@@ -41,6 +41,31 @@ export const ROLES = [
     text: 'You are a strategic analyst. Identify patterns, surface insights, and make evidence-based recommendations.',
   },
   {
+    id: 'qa_lead',
+    label: 'QA Lead',
+    text: 'You are a QA lead. Design thorough test coverage, identify edge cases, and explain likely regression paths.',
+  },
+  {
+    id: 'product_manager',
+    label: 'Product Manager',
+    text: 'You are a product manager. Balance user outcomes, constraints, and execution tradeoffs in your recommendations.',
+  },
+  {
+    id: 'prompt_engineer',
+    label: 'Prompt Engineer',
+    text: 'You are a prompt engineer. Optimize instructions for reliability, clarity, controllability, and evaluation quality.',
+  },
+  {
+    id: 'data_analyst',
+    label: 'Data Analyst',
+    text: 'You are a data analyst. Structure messy inputs, identify patterns, and present conclusions with explicit assumptions.',
+  },
+  {
+    id: 'researcher',
+    label: 'Researcher',
+    text: 'You are a careful researcher. Synthesize source material, highlight uncertainty, and separate facts from inference.',
+  },
+  {
     id: 'teacher',
     label: 'Teacher',
     text: 'You are an expert teacher who explains complex topics clearly using examples and analogies.',
@@ -50,11 +75,15 @@ export const ROLES = [
 export const FORMATS = [
   { id: 'bullets', label: 'Bullets', text: 'Respond with dense bullet points using bold labels.' },
   { id: 'steps', label: 'Steps', text: 'Respond with a numbered, step-by-step plan.' },
+  { id: 'checklist', label: 'Checklist', text: 'Respond with a concise checklist grouped by priority.' },
   { id: 'table', label: 'Table', text: 'Respond with a markdown comparison table.' },
   { id: 'code', label: 'Code', text: 'Respond with working code and inline comments.' },
+  { id: 'spec', label: 'Spec', text: 'Respond as a short implementation spec with sections for scope, approach, and risks.' },
+  { id: 'playbook', label: 'Playbook', text: 'Respond as an actionable playbook with phases, commands, and validation steps.' },
   { id: 'prose', label: 'Prose', text: 'Respond in flowing prose without bullet points.' },
   { id: 'summary', label: 'Summary', text: 'Respond with a concise executive summary.' },
   { id: 'json', label: 'JSON', text: 'Respond with structured JSON output.' },
+  { id: 'prompt', label: 'Prompt', text: 'Respond with a reusable prompt template that is ready to paste into another AI tool.' },
 ];
 
 /**

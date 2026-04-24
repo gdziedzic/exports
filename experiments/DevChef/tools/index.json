@@ -837,8 +837,8 @@
       "chatgpt prompt"
     ],
     "examples": [
-      "Build structured prompt",
-      "Save reusable prompt template"
+      "Choose quick-start recipe",
+      "Draft prompt from common workflow"
     ],
     "maturity": "stable",
     "lastUpdated": "2026-04-23",
@@ -862,8 +862,8 @@
       "few shot prompt"
     ],
     "examples": [
-      "Compose prompt from slots",
-      "Manage prompt templates"
+      "Load advanced prompt pattern",
+      "Layer reliability directives"
     ],
     "maturity": "stable",
     "lastUpdated": "2026-04-23",

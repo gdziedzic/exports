@@ -38,6 +38,210 @@ class DevChefComponent extends HTMLElement {
   }
 }
 
+const COMPATIBLE_INPUT_TYPES = new Set([
+  'text',
+  'number',
+  'email',
+  'url',
+  'search',
+  'password'
+]);
+
+const SHARED_CONTROL_SELECTOR = [
+  'tool-button',
+  'tool-input',
+  'tool-textarea',
+  'tool-select',
+  'tool-file-input',
+  'tool-status'
+].join(',');
+
+const LEGACY_CONTROL_PRESERVE_SELECTOR = '[data-preserve-legacy-controls]';
+
+function reflectBooleanAttribute(element, name, value) {
+  if (value) {
+    element.setAttribute(name, '');
+  } else {
+    element.removeAttribute(name);
+  }
+}
+
+function copyAttributes(source, target, excluded = new Set()) {
+  Array.from(source.attributes).forEach(attr => {
+    if (excluded.has(attr.name)) return;
+    target.setAttribute(attr.name, attr.value);
+  });
+}
+
+function extractButtonParts(label) {
+  const text = (label || '').trim().replace(/\s+/g, ' ');
+  const match = text.match(/^([^\p{L}\p{N}]+)\s+(.*)$/u);
+  if (!match) {
+    return { icon: '', label: text || 'Button' };
+  }
+
+  return {
+    icon: match[1].trim(),
+    label: match[2].trim() || text || 'Button'
+  };
+}
+
+function getSelectOptions(select) {
+  return Array.from(select.options || []).map(option => ({
+    value: option.value,
+    label: option.textContent,
+    disabled: option.disabled
+  }));
+}
+
+function createReplacement(tagName, source, configure, excluded = []) {
+  const replacement = document.createElement(tagName);
+  copyAttributes(source, replacement, new Set(excluded));
+  configure?.(replacement, source);
+  source.replaceWith(replacement);
+  return replacement;
+}
+
+export function analyzeSharedControlUsage(root) {
+  const scope = root instanceof HTMLTemplateElement ? root.content : root;
+  const counts = {
+    shared: {
+      button: scope.querySelectorAll('tool-button').length,
+      input: scope.querySelectorAll('tool-input').length,
+      textarea: scope.querySelectorAll('tool-textarea').length,
+      select: scope.querySelectorAll('tool-select').length,
+      fileInput: scope.querySelectorAll('tool-file-input').length,
+      status: scope.querySelectorAll('tool-status').length
+    },
+    legacy: {
+      button: 0,
+      input: 0,
+      textarea: 0,
+      select: 0
+    }
+  };
+
+  scope.querySelectorAll('button').forEach(button => {
+    if (!button.closest(SHARED_CONTROL_SELECTOR)) {
+      counts.legacy.button += 1;
+    }
+  });
+
+  scope.querySelectorAll('textarea').forEach(textarea => {
+    if (!textarea.closest(SHARED_CONTROL_SELECTOR)) {
+      counts.legacy.textarea += 1;
+    }
+  });
+
+  scope.querySelectorAll('select').forEach(select => {
+    if (!select.closest(SHARED_CONTROL_SELECTOR)) {
+      counts.legacy.select += 1;
+    }
+  });
+
+  scope.querySelectorAll('input').forEach(input => {
+    if (input.closest(SHARED_CONTROL_SELECTOR)) return;
+    const type = (input.getAttribute('type') || 'text').toLowerCase();
+    if (COMPATIBLE_INPUT_TYPES.has(type)) {
+      counts.legacy.input += 1;
+    }
+  });
+
+  return counts;
+}
+
+export function upgradeLegacyControls(root) {
+  if (!root?.querySelectorAll) return;
+
+  root.querySelectorAll('textarea').forEach(textarea => {
+    if (textarea.closest(SHARED_CONTROL_SELECTOR)) return;
+    if (textarea.closest(LEGACY_CONTROL_PRESERVE_SELECTOR)) return;
+
+    createReplacement('tool-textarea', textarea, replacement => {
+      if (!replacement.hasAttribute('rows') && textarea.rows) {
+        replacement.setAttribute('rows', String(textarea.rows));
+      }
+      if (textarea.readOnly) {
+        replacement.setAttribute('readonly', '');
+      }
+      if (textarea.value && !replacement.hasAttribute('value')) {
+        replacement.setAttribute('value', textarea.value);
+      }
+      if (
+        textarea.classList.contains('schema-input') ||
+        textarea.classList.contains('command-input') ||
+        textarea.classList.contains('natural-input') ||
+        textarea.classList.contains('tool-textarea') ||
+        textarea.id === 'input' ||
+        textarea.id === 'output'
+      ) {
+        replacement.setAttribute('monospace', '');
+      }
+    }, ['rows']);
+  });
+
+  root.querySelectorAll('input').forEach(input => {
+    if (input.closest(SHARED_CONTROL_SELECTOR)) return;
+    if (input.closest(LEGACY_CONTROL_PRESERVE_SELECTOR)) return;
+
+    const type = (input.getAttribute('type') || 'text').toLowerCase();
+    if (!COMPATIBLE_INPUT_TYPES.has(type)) return;
+
+    createReplacement('tool-input', input, replacement => {
+      replacement.setAttribute('type', type);
+      if (input.readOnly) {
+        replacement.setAttribute('readonly', '');
+      }
+      if (input.value && !replacement.hasAttribute('value')) {
+        replacement.setAttribute('value', input.value);
+      }
+    }, ['readonly']);
+  });
+
+  root.querySelectorAll('select').forEach(select => {
+    if (select.closest(SHARED_CONTROL_SELECTOR)) return;
+    if (select.closest(LEGACY_CONTROL_PRESERVE_SELECTOR)) return;
+    if (select.multiple) return;
+
+    createReplacement('tool-select', select, replacement => {
+      replacement.setAttribute('options', JSON.stringify(getSelectOptions(select)));
+      if (select.value) {
+        replacement.setAttribute('value', select.value);
+      }
+      const placeholderOption = Array.from(select.options).find(option => option.disabled && !option.value);
+      if (placeholderOption) {
+        replacement.setAttribute('placeholder', placeholderOption.textContent.trim());
+      }
+    }, ['multiple']);
+  });
+
+  root.querySelectorAll('button').forEach(button => {
+    if (button.closest(SHARED_CONTROL_SELECTOR)) return;
+    if (button.closest('tool-file-input')) return;
+    if (button.closest(LEGACY_CONTROL_PRESERVE_SELECTOR)) return;
+
+    createReplacement('tool-button', button, replacement => {
+      const { icon, label } = extractButtonParts(button.textContent);
+      replacement.setAttribute('label', label);
+      if (icon) {
+        replacement.setAttribute('icon', icon);
+      }
+      if (button.disabled) {
+        replacement.setAttribute('disabled', '');
+      }
+
+      const variant = button.classList.contains('secondary') || button.classList.contains('secondary-action')
+        ? 'secondary'
+        : button.classList.contains('danger')
+          ? 'danger'
+          : button.classList.contains('success')
+            ? 'success'
+            : 'primary';
+      replacement.setAttribute('variant', variant);
+    }, ['type', 'disabled']);
+  });
+}
+
 // =============================================================================
 // 1. ToolButton
 // =============================================================================
@@ -123,6 +327,16 @@ class ToolButton extends DevChefComponent {
   setLabel(label) {
     this.setAttribute('label', label);
   }
+
+  click() { this.$('button')?.click(); }
+  focus() { this.$('button')?.focus(); }
+  blur() { this.$('button')?.blur(); }
+
+  get disabled() { return this.hasAttribute('disabled'); }
+  set disabled(value) { this.setDisabled(Boolean(value)); }
+
+  get value() { return this.getAttribute('label') || ''; }
+  set value(label) { this.setLabel(label); }
 }
 
 // =============================================================================
@@ -226,6 +440,20 @@ class ToolTextarea extends DevChefComponent {
   }
   clear()  { this.setValue(''); }
   focus()  { this.$('textarea')?.focus(); }
+  blur()   { this.$('textarea')?.blur(); }
+  select() { this.$('textarea')?.select(); }
+
+  get value() { return this.getValue(); }
+  set value(value) { this.setValue(value); }
+
+  get readOnly() { return this.hasAttribute('readonly'); }
+  set readOnly(value) { reflectBooleanAttribute(this, 'readonly', value); }
+
+  get placeholder() { return this.getAttribute('placeholder') || ''; }
+  set placeholder(value) { this.setAttribute('placeholder', value || ''); }
+
+  get rows() { return Number(this.getAttribute('rows') || 6); }
+  set rows(value) { this.setAttribute('rows', String(value)); }
 }
 
 // =============================================================================
@@ -302,7 +530,21 @@ class ToolInput extends DevChefComponent {
   }
   clear()    { this.setValue(''); }
   focus()    { this.$('input')?.focus(); }
+  blur()     { this.$('input')?.blur(); }
+  select()   { this.$('input')?.select?.(); }
   isValid()  { return this.$('input')?.checkValidity() ?? true; }
+
+  get value() { return this.getValue(); }
+  set value(value) { this.setValue(value); }
+
+  get type() { return this.getAttribute('type') || 'text'; }
+  set type(value) { this.setAttribute('type', value || 'text'); }
+
+  get readOnly() { return this.hasAttribute('readonly'); }
+  set readOnly(value) { reflectBooleanAttribute(this, 'readonly', value); }
+
+  get placeholder() { return this.getAttribute('placeholder') || ''; }
+  set placeholder(value) { this.setAttribute('placeholder', value || ''); }
 }
 
 // =============================================================================
@@ -319,6 +561,12 @@ class ToolInput extends DevChefComponent {
  * @fires change
  */
 class ToolSelect extends DevChefComponent {
+  constructor() {
+    super();
+    this._observer = null;
+    this._syncingFromMarkup = false;
+  }
+
   static get observedAttributes() {
     return ['options', 'value', 'placeholder'];
   }
@@ -326,9 +574,12 @@ class ToolSelect extends DevChefComponent {
   connectedCallback() {
     this.render();
     this._attachEventListeners();
+    this._observeMarkup();
   }
 
-  disconnectedCallback() {}
+  disconnectedCallback() {
+    this._observer?.disconnect();
+  }
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue !== newValue) this.render();
@@ -365,6 +616,30 @@ class ToolSelect extends DevChefComponent {
     });
   }
 
+  _observeMarkup() {
+    if (this._observer) return;
+
+    this._observer = new MutationObserver(() => {
+      if (this._syncingFromMarkup) return;
+      const hasDirectOptions = Array.from(this.children).some(child => {
+        return child.tagName === 'OPTION' || child.tagName === 'OPTGROUP';
+      });
+
+      if (!hasDirectOptions) return;
+
+      this._syncingFromMarkup = true;
+      const tempSelect = document.createElement('select');
+      tempSelect.innerHTML = this.innerHTML;
+      this.setAttribute('options', JSON.stringify(getSelectOptions(tempSelect)));
+      this.setAttribute('value', tempSelect.value || '');
+      this.render();
+      this._attachEventListeners();
+      this._syncingFromMarkup = false;
+    });
+
+    this._observer.observe(this, { childList: true });
+  }
+
   // Public API
   getValue()        { return this.$('select')?.value ?? ''; }
   setValue(value)   {
@@ -375,6 +650,22 @@ class ToolSelect extends DevChefComponent {
     this.emit('change', { value });
   }
   setOptions(opts)  { this.setAttribute('options', JSON.stringify(opts)); }
+  focus()           { this.$('select')?.focus(); }
+  blur()            { this.$('select')?.blur(); }
+
+  get value() { return this.getValue(); }
+  set value(value) { this.setValue(value); }
+
+  get disabled() { return this.$('select')?.disabled ?? false; }
+  set disabled(value) {
+    const select = this.$('select');
+    if (select) {
+      select.disabled = Boolean(value);
+    }
+  }
+
+  get options() { return this.$('select')?.options ?? []; }
+  get selectedIndex() { return this.$('select')?.selectedIndex ?? -1; }
 }
 
 // =============================================================================

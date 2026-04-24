@@ -12,7 +12,7 @@
 {
   "id": "prompt-forge",
   "name": "Prompt Forge",
-  "description": "Advanced prompt engineering: chain-of-thought, few-shot examples, variables, and template import/export",
+  "description": "Advanced prompt engineering with reusable strategy patterns, few-shot examples, chain-of-thought, and template import/export",
   "category": "Developer Tools",
   "keywords": ["prompt", "ai", "advanced", "chain-of-thought", "few-shot", "examples", "engineering", "llm", "claude", "chatgpt"],
   "version": "13.0.0"
@@ -21,7 +21,27 @@
 
 <!-- Tool UI Template -->
 <template id="tool-ui">
-  <div class="pf-tool">
+  <div class="pf-tool" data-preserve-legacy-controls>
+
+    <section class="pf-patterns" aria-labelledby="pf-patterns-title">
+      <div class="pf-section-head">
+        <div>
+          <h3 id="pf-patterns-title" class="pf-section-title">Prompt Patterns</h3>
+          <p class="pf-section-copy">Load an advanced scaffold, then tune examples, reasoning, and output constraints.</p>
+        </div>
+      </div>
+      <div class="pf-pattern-grid" id="pf-pattern-grid"></div>
+    </section>
+
+    <section class="pf-controls" aria-labelledby="pf-controls-title">
+      <div class="pf-section-head">
+        <div>
+          <h3 id="pf-controls-title" class="pf-section-title">Advanced Controls</h3>
+          <p class="pf-section-copy">Apply reliability directives that are useful when prompts need stronger structure.</p>
+        </div>
+      </div>
+      <div class="pf-control-grid" id="pf-control-grid"></div>
+    </section>
 
     <!-- Task slot — always open, required -->
     <div class="pf-slot pf-slot-task">
@@ -131,11 +151,132 @@
   .pf-tool {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    max-width: 680px;
+    gap: 12px;
+    max-width: 780px;
     margin: 0 auto;
     padding: 16px 12px;
     position: relative;
+  }
+
+  .pf-patterns {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 2px 0 4px;
+  }
+
+  .pf-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .pf-section-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .pf-section-copy {
+    margin: 4px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+  }
+
+  .pf-pattern-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+  }
+
+  .pf-control-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+
+  .pf-pattern-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 148px;
+    padding: 12px;
+    text-align: left;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--bg-secondary)) 0%, var(--bg-secondary) 100%);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: transform 0.14s, border-color 0.14s, box-shadow 0.14s;
+  }
+
+  .pf-pattern-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .pf-pattern-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent);
+  }
+
+  .pf-pattern-kicker {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .pf-pattern-title {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .pf-pattern-copy {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+  }
+
+  .pf-control-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 112px;
+    padding: 11px 12px;
+    text-align: left;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color 0.12s, transform 0.12s, box-shadow 0.12s;
+  }
+
+  .pf-control-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .pf-control-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary));
+  }
+
+  .pf-control-title {
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .pf-control-copy {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-secondary);
   }
 
   /* ── Slots ── */
@@ -570,6 +711,17 @@
     opacity: 1;
     transform: translateY(0);
   }
+
+  @media (max-width: 640px) {
+    .pf-tool {
+      padding-inline: 10px;
+    }
+
+    .pf-pattern-grid,
+    .pf-example-pair {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 
 <!-- Module -->
@@ -593,9 +745,265 @@ import { copyToClipboard } from '../core/tool-utils.js';
 
 const STORAGE_KEY = 'promptForge_v13';
 
+const ADVANCED_CONTROLS = [
+  {
+    id: 'clarify-first',
+    label: 'Clarify First',
+    text: 'If critical information is missing, ask up to three concise clarifying questions before answering.'
+  },
+  {
+    id: 'state-assumptions',
+    label: 'State Assumptions',
+    text: 'Explicitly list the assumptions you are making and mark them as assumptions.'
+  },
+  {
+    id: 'self-check',
+    label: 'Self-Check',
+    text: 'Before finalizing, perform a brief self-check for correctness, completeness, and consistency with the instructions.'
+  },
+  {
+    id: 'failure-modes',
+    label: 'Failure Modes',
+    text: 'Include likely failure modes, edge cases, or ways the proposed answer could go wrong.'
+  },
+  {
+    id: 'cite-evidence',
+    label: 'Use Evidence',
+    text: 'Ground the answer in the provided context and call out which details support each key conclusion.'
+  },
+  {
+    id: 'separate-facts',
+    label: 'Facts vs Inference',
+    text: 'Separate confirmed facts from inferences, hypotheses, or recommendations.'
+  },
+];
+
+const PATTERN_PRESETS = [
+  {
+    id: 'debug-investigation',
+    label: 'Debug Investigation',
+    family: 'Diagnosis',
+    description: 'Structure a failure analysis with evidence, hypotheses, and next experiments.',
+    guidance: [
+      'State observable symptoms before proposing root causes.',
+      'Rank likely causes and explain why each is plausible.',
+      'Recommend the next checks or logs that would reduce uncertainty fastest.'
+    ],
+    slots: {
+      task: 'Investigate the issue below and produce a diagnosis that prioritizes evidence, likely causes, and the next debugging actions.',
+      rolePresetId: 'reviewer',
+      contextText: 'System or code context:\nError output:\nWhat changed recently:\nObserved symptoms:\nWhat has already been tried:',
+      formatPresetId: 'playbook',
+      chainOfThought: true,
+      examples: [
+        {
+          input: 'API requests started returning 502 after a config rollout. Health checks are still green.',
+          output: 'Likely causes: mismatched upstream target, TLS handshake failure, stale secret. Next checks: compare deployed config, inspect proxy logs, validate upstream reachability from app host.'
+        }
+      ]
+    }
+  },
+  {
+    id: 'few-shot-transform',
+    label: 'Few-Shot Transform',
+    family: 'Transformation',
+    description: 'Teach the model a repeatable transformation with seeded examples.',
+    guidance: [
+      'Preserve the original meaning while matching the target style exactly.',
+      'Infer the transformation rule from the examples before applying it.',
+      'When unsure, prefer consistency with the examples over creativity.'
+    ],
+    slots: {
+      task: 'Apply the same transformation pattern shown in the examples to the final input.',
+      rolePresetId: 'prompt_engineer',
+      contextText: 'Transformation goal:\nInput constraints:\nWhat must stay unchanged:',
+      formatPresetId: 'prose',
+      chainOfThought: false,
+      examples: [
+        {
+          input: 'Draft: we had some downtime because the job queue got stuck',
+          output: 'Incident summary: background job processing stalled, causing a period of service degradation.'
+        },
+        {
+          input: 'Draft: we need to make the docs less confusing for setup',
+          output: 'Documentation improvement: simplify setup guidance and remove ambiguous instructions.'
+        }
+      ]
+    }
+  },
+  {
+    id: 'code-review-risks',
+    label: 'Code Review Risks',
+    family: 'Review',
+    description: 'Force a review mindset around regressions, security, and missing tests.',
+    guidance: [
+      'Lead with concrete findings, not summaries.',
+      'Call out behavior regressions, weak assumptions, and missing coverage.',
+      'Use severity language and propose the minimum effective fix.'
+    ],
+    slots: {
+      task: 'Review the change below and identify the most important bugs, regressions, risks, and missing tests.',
+      rolePresetId: 'security',
+      contextText: 'Diff or code excerpt:\nChange intent:\nRelevant runtime assumptions:',
+      formatPresetId: 'bullets',
+      chainOfThought: true,
+      examples: [
+        {
+          input: 'A PR adds user-controlled HTML rendering without sanitization.',
+          output: 'High severity: unsanitized HTML introduces an XSS path. Fix by sanitizing or rendering as text, and add a regression test for script injection.'
+        }
+      ]
+    }
+  },
+  {
+    id: 'test-generator',
+    label: 'Test Generator',
+    family: 'Quality',
+    description: 'Generate targeted tests from behavior, not just code shape.',
+    guidance: [
+      'Cover happy path, boundaries, invalid input, and regression cases.',
+      'Explain why each test exists and what bug it would catch.',
+      'Prefer small, independent cases that isolate one behavior each.'
+    ],
+    slots: {
+      task: 'Generate a focused automated test suite for the behavior described below.',
+      rolePresetId: 'qa_lead',
+      contextText: 'Feature behavior:\nCurrent implementation notes:\nKnown bugs or edge cases:\nTest framework:',
+      formatPresetId: 'code',
+      chainOfThought: true,
+      examples: [
+        {
+          input: 'A parser should reject empty IDs and trim surrounding whitespace.',
+          output: 'Include one success case with surrounding spaces, one failure case for empty string, and one regression case for whitespace-only input.'
+        }
+      ]
+    }
+  },
+  {
+    id: 'prompt-evaluator',
+    label: 'Prompt Evaluator',
+    family: 'AI Quality',
+    description: 'Critique and improve an existing prompt for reliability and control.',
+    guidance: [
+      'Identify ambiguity, missing constraints, and fragile instructions.',
+      'Separate diagnosis of the prompt from the rewritten prompt.',
+      'Define what a good answer should contain so the prompt is testable.'
+    ],
+    slots: {
+      task: 'Audit the prompt below, explain what makes it unreliable, and rewrite it to produce more consistent outputs.',
+      rolePresetId: 'prompt_engineer',
+      contextText: 'Existing prompt:\nObserved failure modes:\nTarget model or environment:',
+      formatPresetId: 'prompt',
+      chainOfThought: true,
+      examples: [
+        {
+          input: 'Write something about cloud costs.',
+          output: 'Improved prompt should define audience, scope, required sections, and decision criteria instead of relying on vague intent.'
+        }
+      ]
+    }
+  },
+  {
+    id: 'decision-memo',
+    label: 'Decision Memo',
+    family: 'Planning',
+    description: 'Compare options with tradeoffs, risks, and recommendation logic.',
+    guidance: [
+      'Frame the decision, options, tradeoffs, and recommendation separately.',
+      'Name assumptions and what evidence would change the recommendation.',
+      'Keep the recommendation tied to the stated constraints.'
+    ],
+    slots: {
+      task: 'Analyze the decision below and produce a recommendation memo that compares options and tradeoffs.',
+      rolePresetId: 'architect',
+      contextText: 'Decision to make:\nOptions under consideration:\nConstraints:\nSuccess criteria:\nKnown risks:',
+      formatPresetId: 'table',
+      chainOfThought: true,
+      examples: []
+    }
+  },
+  {
+    id: 'migration-plan',
+    label: 'Migration Plan',
+    family: 'Planning',
+    description: 'Map a phased migration with rollback, validation, and operational risk handling.',
+    guidance: [
+      'Break the migration into phases that can be validated independently.',
+      'Call out rollback triggers and data integrity risks.',
+      'Prefer changes that minimize blast radius during cutover.'
+    ],
+    slots: {
+      task: 'Create a migration plan for the system described below, including sequencing, rollback, validation, and operational safeguards.',
+      rolePresetId: 'architect',
+      contextText: 'Current system:\nTarget state:\nConstraints:\nDependencies:\nDowntime tolerance:',
+      formatPresetId: 'playbook',
+      chainOfThought: true,
+      examples: []
+    }
+  },
+  {
+    id: 'root-cause-postmortem',
+    label: 'Root Cause Postmortem',
+    family: 'Diagnosis',
+    description: 'Build a postmortem-oriented analysis from incident evidence.',
+    guidance: [
+      'Distinguish trigger, contributing factors, and systemic causes.',
+      'Focus corrective actions on preventing recurrence, not only restoring service.',
+      'Tie each action item to a specific failure in detection, process, or design.'
+    ],
+    slots: {
+      task: 'Turn the incident details below into a root-cause-focused postmortem with contributing factors and corrective actions.',
+      rolePresetId: 'analyst',
+      contextText: 'Timeline:\nImpact:\nTrigger event:\nRecovery actions:\nWhat remains uncertain:',
+      formatPresetId: 'spec',
+      chainOfThought: true,
+      examples: []
+    }
+  },
+  {
+    id: 'security-threat-model',
+    label: 'Threat Model',
+    family: 'Security',
+    description: 'Analyze assets, trust boundaries, attack paths, and mitigations.',
+    guidance: [
+      'Name assets, entry points, trust boundaries, and attacker goals.',
+      'Prioritize realistic attack paths instead of listing generic threats.',
+      'Recommend mitigations that reduce risk materially, not cosmetically.'
+    ],
+    slots: {
+      task: 'Create a threat model for the system below, identifying assets, trust boundaries, plausible attack paths, and practical mitigations.',
+      rolePresetId: 'security',
+      contextText: 'System description:\nUsers and actors:\nSensitive data:\nAuthentication and authorization model:\nKnown controls:',
+      formatPresetId: 'table',
+      chainOfThought: true,
+      examples: []
+    }
+  },
+  {
+    id: 'research-synthesis',
+    label: 'Research Synthesis',
+    family: 'Research',
+    description: 'Synthesize multiple sources into findings, evidence, and open questions.',
+    guidance: [
+      'Group findings by theme rather than source order.',
+      'Call out where evidence converges, conflicts, or is weak.',
+      'End with what should be investigated next.'
+    ],
+    slots: {
+      task: 'Synthesize the material below into a research brief with evidence-backed findings, gaps, and next questions.',
+      rolePresetId: 'researcher',
+      contextText: 'Sources or notes:\nDecision context:\nWhat matters most:',
+      formatPresetId: 'summary',
+      chainOfThought: true,
+      examples: []
+    }
+  },
+];
+
 // ── State ────────────────────────────────────────────────────────────────────
 
 let state = {
+  patternPresetId: null,
   task: '',
   rolePresetId: null,
   roleCustom: '',
@@ -603,6 +1011,7 @@ let state = {
   formatPresetId: null,
   formatCustom: '',
   chainOfThought: false,
+  directives: [],
   examples: [],          // [{ input: string, output: string }]
   templates: [],
 };
@@ -632,6 +1041,21 @@ function toast(msg, isError = false) {
   setTimeout(() => el.classList.remove('visible'), 2500);
 }
 
+function resolvePatternGuidance() {
+  if (!state.patternPresetId) return '';
+  const preset = PATTERN_PRESETS.find(item => item.id === state.patternPresetId);
+  if (!preset?.guidance?.length) return '';
+  return preset.guidance.map((line, index) => `${index + 1}. ${line}`).join('\n');
+}
+
+function resolveDirectiveText() {
+  if (!Array.isArray(state.directives) || state.directives.length === 0) return '';
+  const lines = ADVANCED_CONTROLS
+    .filter(control => state.directives.includes(control.id))
+    .map((control, index) => `${index + 1}. ${control.text}`);
+  return lines.length ? lines.join('\n') : '';
+}
+
 // ── Prompt assembly ───────────────────────────────────────────────────────────
 
 function buildPrompt() {
@@ -655,6 +1079,16 @@ function buildPrompt() {
     extras.push('Think step by step before giving your final answer.');
   }
 
+  const guidance = resolvePatternGuidance();
+  if (guidance) {
+    extras.push(`Strategy guidance:\n${guidance}`);
+  }
+
+  const directives = resolveDirectiveText();
+  if (directives) {
+    extras.push(`Reliability directives:\n${directives}`);
+  }
+
   if (extras.length === 0) return base;
   return base + '\n\n' + extras.join('\n\n');
 }
@@ -672,6 +1106,56 @@ function renderPills(containerId, items, activeId, onSelect) {
     btn.dataset.id = item.id;
     btn.addEventListener('click', () => onSelect(item.id === activeId ? null : item.id));
     wrap.appendChild(btn);
+  });
+}
+
+function renderPatternPresets() {
+  const grid = $('pf-pattern-grid');
+  grid.innerHTML = '';
+
+  PATTERN_PRESETS.forEach(preset => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pf-pattern-card' + (preset.id === state.patternPresetId ? ' active' : '');
+    button.addEventListener('click', () => applyPatternPreset(preset.id));
+
+    const kicker = document.createElement('div');
+    kicker.className = 'pf-pattern-kicker';
+    kicker.textContent = preset.family;
+
+    const title = document.createElement('div');
+    title.className = 'pf-pattern-title';
+    title.textContent = preset.label;
+
+    const copy = document.createElement('div');
+    copy.className = 'pf-pattern-copy';
+    copy.textContent = preset.description;
+
+    button.append(kicker, title, copy);
+    grid.appendChild(button);
+  });
+}
+
+function renderAdvancedControls() {
+  const grid = $('pf-control-grid');
+  grid.innerHTML = '';
+
+  ADVANCED_CONTROLS.forEach(control => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pf-control-card' + (state.directives.includes(control.id) ? ' active' : '');
+    button.addEventListener('click', () => toggleDirective(control.id));
+
+    const title = document.createElement('div');
+    title.className = 'pf-control-title';
+    title.textContent = control.label;
+
+    const copy = document.createElement('div');
+    copy.className = 'pf-control-copy';
+    copy.textContent = control.text;
+
+    button.append(title, copy);
+    grid.appendChild(button);
   });
 }
 
@@ -738,7 +1222,9 @@ function renderExamples() {
     inputTa.placeholder = 'e.g. "Translate this to French"';
     inputTa.value = ex.input;
     inputTa.addEventListener('input', e => {
+      state.patternPresetId = null;
       state.examples[i].input = e.target.value;
+      renderPatternPresets();
       updateExamplesSummary(); updateCharCount(); persist();
     });
     inputCol.appendChild(inputLabel);
@@ -754,7 +1240,9 @@ function renderExamples() {
     outputTa.placeholder = 'e.g. "Traduire ceci en français"';
     outputTa.value = ex.output;
     outputTa.addEventListener('input', e => {
+      state.patternPresetId = null;
       state.examples[i].output = e.target.value;
+      renderPatternPresets();
       updateExamplesSummary(); updateCharCount(); persist();
     });
     outputCol.appendChild(outputLabel);
@@ -766,7 +1254,9 @@ function renderExamples() {
     del.textContent = '×';
     del.title = 'Remove example';
     del.addEventListener('click', () => {
+      state.patternPresetId = null;
       state.examples.splice(i, 1);
+      renderPatternPresets();
       renderExamples(); updateExamplesSummary(); updateCharCount(); persist();
     });
 
@@ -834,6 +1324,7 @@ function copyPrompt() {
 }
 
 function clearAll() {
+  state.patternPresetId = null;
   state.task = '';
   state.rolePresetId = null;
   state.roleCustom = '';
@@ -841,6 +1332,7 @@ function clearAll() {
   state.formatPresetId = null;
   state.formatCustom = '';
   state.chainOfThought = false;
+  state.directives = [];
   state.examples = [];
   applyStateToDOM();
   persist();
@@ -861,9 +1353,10 @@ function confirmSave() {
   if (!name) { toast('Enter a name', true); return; }
   try {
     const slots = {
+      patternPresetId: state.patternPresetId,
       task: state.task, rolePresetId: state.rolePresetId, roleCustom: state.roleCustom,
       contextText: state.contextText, formatPresetId: state.formatPresetId, formatCustom: state.formatCustom,
-      chainOfThought: state.chainOfThought, examples: JSON.parse(JSON.stringify(state.examples)),
+      chainOfThought: state.chainOfThought, directives: [...state.directives], examples: JSON.parse(JSON.stringify(state.examples)),
     };
     state.templates = saveTemplate(name, slots, state.templates);
     renderTemplates();
@@ -929,7 +1422,9 @@ function handleImportFile(e) {
 
 function reRoleSelect(id) {
   state.rolePresetId = id;
+  state.patternPresetId = null;
   renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+  renderPatternPresets();
   updateRoleSummary();
   updateCharCount();
   persist();
@@ -937,8 +1432,43 @@ function reRoleSelect(id) {
 
 function reFormatSelect(id) {
   state.formatPresetId = id;
+  state.patternPresetId = null;
   renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+  renderPatternPresets();
   updateFormatSummary();
+  updateCharCount();
+  persist();
+}
+
+function applyPatternPreset(id) {
+  const preset = PATTERN_PRESETS.find(item => item.id === id);
+  if (!preset) return;
+
+  state = {
+    ...state,
+    patternPresetId: preset.id,
+    roleCustom: '',
+    formatCustom: '',
+    directives: [],
+    ...preset.slots,
+    examples: JSON.parse(JSON.stringify(preset.slots.examples || [])),
+  };
+
+  applyStateToDOM();
+  persist();
+}
+
+function toggleDirective(id) {
+  const next = new Set(state.directives || []);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  state.patternPresetId = null;
+  state.directives = [...next];
+  renderPatternPresets();
+  renderAdvancedControls();
   updateCharCount();
   persist();
 }
@@ -946,10 +1476,13 @@ function reFormatSelect(id) {
 // ── DOM sync ─────────────────────────────────────────────────────────────────
 
 function applyStateToDOM() {
+  if (!Array.isArray(state.directives)) state.directives = [];
   $('pf-task').value = state.task;
   $('pf-role-custom').value = state.roleCustom;
   $('pf-context').value = state.contextText;
   $('pf-format-custom').value = state.formatCustom;
+  renderPatternPresets();
+  renderAdvancedControls();
   renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
   renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
   updateRoleSummary();
@@ -968,27 +1501,13 @@ export function init(context) {
   container = context.container;
   restore();
   if (!state.examples) state.examples = [];
-
-  renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
-  renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
-
-  $('pf-task').value = state.task;
-  $('pf-role-custom').value = state.roleCustom;
-  $('pf-context').value = state.contextText;
-  $('pf-format-custom').value = state.formatCustom;
-
-  updateRoleSummary();
-  updateContextSummary();
-  updateFormatSummary();
-  updateCotButton();
-  renderExamples();
-  updateExamplesSummary();
-  updateCharCount();
-  renderTemplates();
+  applyStateToDOM();
 
   // Task input
   $('pf-task').addEventListener('input', e => {
     state.task = e.target.value;
+    state.patternPresetId = null;
+    renderPatternPresets();
     updateCharCount();
     persist();
   });
@@ -996,6 +1515,8 @@ export function init(context) {
   // Chain-of-thought toggle
   $('pf-cot-btn').addEventListener('click', () => {
     state.chainOfThought = !state.chainOfThought;
+    state.patternPresetId = null;
+    renderPatternPresets();
     updateCotButton();
     updateCharCount();
     persist();
@@ -1004,8 +1525,12 @@ export function init(context) {
   // Role custom text
   $('pf-role-custom').addEventListener('input', e => {
     state.roleCustom = e.target.value;
-    if (state.roleCustom.trim()) state.rolePresetId = null;
+    if (state.roleCustom.trim()) {
+      state.rolePresetId = null;
+      state.patternPresetId = null;
+    }
     renderPills('pf-role-pills', ROLES, state.rolePresetId, reRoleSelect);
+    renderPatternPresets();
     updateRoleSummary();
     updateCharCount();
     persist();
@@ -1014,6 +1539,8 @@ export function init(context) {
   // Context text
   $('pf-context').addEventListener('input', e => {
     state.contextText = e.target.value;
+    state.patternPresetId = null;
+    renderPatternPresets();
     updateContextSummary();
     updateCharCount();
     persist();
@@ -1022,8 +1549,12 @@ export function init(context) {
   // Format custom text
   $('pf-format-custom').addEventListener('input', e => {
     state.formatCustom = e.target.value;
-    if (state.formatCustom.trim()) state.formatPresetId = null;
+    if (state.formatCustom.trim()) {
+      state.formatPresetId = null;
+      state.patternPresetId = null;
+    }
     renderPills('pf-format-pills', FORMATS, state.formatPresetId, reFormatSelect);
+    renderPatternPresets();
     updateFormatSummary();
     updateCharCount();
     persist();
@@ -1033,7 +1564,9 @@ export function init(context) {
   $('pf-add-example-btn').addEventListener('click', () => {
     if (!state.examples) state.examples = [];
     if (state.examples.length >= 5) return;
+    state.patternPresetId = null;
     state.examples.push({ input: '', output: '' });
+    renderPatternPresets();
     renderExamples(); updateExamplesSummary(); persist();
     // Auto-open examples slot
     const slot = $('pf-examples-slot');
