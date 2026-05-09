@@ -34,6 +34,10 @@ Windows (cmd):
 
 Persistent env vars (PowerShell, survives restarts):
   [System.Environment]::SetEnvironmentVariable("CONFLUENCE_API_TOKEN", "your_token", "User")
+
+API version:
+  Uses Confluence REST API v2 (/wiki/api/v2/...).
+  Docs: https://developer.atlassian.com/cloud/confluence/rest/v2/
 """
 
 import base64
@@ -321,7 +325,7 @@ class ConfluenceClient:
         self._auth = base64.b64encode(f"{email}:{token}".encode()).decode()
 
     def _get(self, path: str, params: dict = None) -> dict:
-        url = f"{self.base_url}/rest/api{path}"
+        url = f"{self.base_url}/wiki/api/v2{path}"
         if params:
             url += "?" + urllib.parse.urlencode(params)
         req = urllib.request.Request(url, headers={
@@ -335,45 +339,62 @@ class ConfluenceClient:
             body = e.read().decode(errors="replace")
             raise RuntimeError(f"Confluence API {e.code} for {url}: {body}") from e
 
+    def _cursor_from_next(self, next_link: str) -> str | None:
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(next_link).query)
+        cursors = qs.get("cursor", [])
+        return cursors[0] if cursors else None
+
+    def _resolve_space_id(self, space_key: str) -> str:
+        data = self._get("/spaces", {"keys": space_key, "limit": 1})
+        results = data.get("results", [])
+        if not results:
+            raise RuntimeError(f"Space '{space_key}' not found")
+        return results[0]["id"]
+
     def get_page(self, page_id: str) -> dict:
-        return self._get(
-            f"/content/{page_id}",
-            {"expand": "body.storage,space,ancestors,metadata.labels,version"},
-        )
+        return self._get(f"/pages/{page_id}", {
+            "body-format": "storage",
+            "include-labels": "true",
+            "include-version": "true",
+        })
 
     def get_space_pages(self, space_key: str, limit: int = 100) -> list[dict]:
+        space_id = self._resolve_space_id(space_key)
         pages = []
-        start = 0
+        cursor = None
         while True:
-            data = self._get("/content", {
-                "spaceKey": space_key,
-                "type": "page",
-                "status": "current",
-                "expand": "body.storage,space,metadata.labels,version",
-                "limit": limit,
-                "start": start,
-            })
+            params = {"space-id": space_id, "body-format": "storage",
+                      "include-labels": "true", "include-version": "true", "limit": limit}
+            if cursor:
+                params["cursor"] = cursor
+            data = self._get("/pages", params)
             results = data.get("results", [])
             pages.extend(results)
-            if data.get("_links", {}).get("next"):
-                start += len(results)
+            next_link = data.get("_links", {}).get("next")
+            if next_link:
+                cursor = self._cursor_from_next(next_link)
+                if not cursor:
+                    break
             else:
                 break
         return pages
 
     def get_child_pages(self, page_id: str) -> list[dict]:
         pages = []
-        start = 0
+        cursor = None
         while True:
-            data = self._get(f"/content/{page_id}/child/page", {
-                "expand": "body.storage,space,metadata.labels,version",
-                "limit": 50,
-                "start": start,
-            })
+            params = {"body-format": "storage", "include-labels": "true",
+                      "include-version": "true", "limit": 50}
+            if cursor:
+                params["cursor"] = cursor
+            data = self._get(f"/pages/{page_id}/children", params)
             results = data.get("results", [])
             pages.extend(results)
-            if data.get("_links", {}).get("next"):
-                start += len(results)
+            next_link = data.get("_links", {}).get("next")
+            if next_link:
+                cursor = self._cursor_from_next(next_link)
+                if not cursor:
+                    break
             else:
                 break
         return pages
@@ -392,8 +413,9 @@ class ConfluenceClient:
 # ---------------------------------------------------------------------------
 
 def _page_labels(page: dict) -> list[str]:
+    # v2: labels at page.labels.results (with include-labels=true)
     try:
-        return [l["name"] for l in page["metadata"]["labels"]["results"]]
+        return [l["name"] for l in page["labels"]["results"]]
     except (KeyError, TypeError):
         return []
 
@@ -437,10 +459,11 @@ def write_page(page: dict, raw: Path, base_url: str, dedup: bool) -> str | None:
     storage_html = page.get("body", {}).get("storage", {}).get("value", "")
     markdown = storage_to_markdown(storage_html)
 
-    space_key = page.get("space", {}).get("key", "")
+    space_key = page.get("spaceId", "")
     labels = _page_labels(page)
     version = page.get("version", {}).get("number", 1)
-    modified = page.get("version", {}).get("when", "")
+    # v2 uses createdAt instead of when
+    modified = page.get("version", {}).get("createdAt", "")
 
     slug = _slug(title)
     filename = f"confluence-{page_id}-{slug}"
