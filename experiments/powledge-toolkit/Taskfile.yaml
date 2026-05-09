@@ -1,0 +1,106 @@
+version: '3'
+
+vars:
+  PYTHON: python
+
+tasks:
+
+  default:
+    desc: Show available tasks
+    silent: true
+    cmds:
+      - task --list
+
+  # ---------------------------------------------------------------------------
+  # Confluence ingestion
+  # ---------------------------------------------------------------------------
+
+  confluence:
+    desc: Ingest all pages/spaces defined in powledge.config.json
+    cmds:
+      - "{{.PYTHON}} ingest/confluence.py"
+
+  confluence:dry:
+    desc: Preview what would be ingested (no files written)
+    cmds:
+      - "{{.PYTHON}} ingest/confluence.py --dry-run"
+
+  confluence:page:
+    desc: "Ingest one or more pages by ID  (usage: task confluence:page -- 111 222 333)"
+    cmds:
+      - "{{.PYTHON}} ingest/confluence.py --page-id {{.CLI_ARGS}}"
+
+  confluence:space:
+    desc: "Ingest one or more spaces by key  (usage: task confluence:space -- ENG HR)"
+    cmds:
+      - "{{.PYTHON}} ingest/confluence.py --space-key {{.CLI_ARGS}}"
+
+  confluence:page:dry:
+    desc: "Dry-run for specific pages  (usage: task confluence:page:dry -- 111 222)"
+    cmds:
+      - "{{.PYTHON}} ingest/confluence.py --page-id {{.CLI_ARGS}} --dry-run"
+
+  # ---------------------------------------------------------------------------
+  # Inspect store
+  # ---------------------------------------------------------------------------
+
+  ls:raw:
+    desc: List files in raw/
+    silent: true
+    cmds:
+      - "{{.PYTHON}} -c \"
+import os, pathlib
+files = sorted(pathlib.Path('raw').glob('*.md'))
+print(f'{len(files)} raw files')
+for f in files: print(' ', f.name)
+\""
+
+  ls:knowledge:
+    desc: List files in knowledge/
+    silent: true
+    cmds:
+      - "{{.PYTHON}} -c \"
+import pathlib
+files = sorted(pathlib.Path('knowledge').glob('*.md'))
+print(f'{len(files)} knowledge files')
+for f in files: print(' ', f.name)
+\""
+
+  ls:index:
+    desc: List index entries with title and summary
+    silent: true
+    cmds:
+      - "{{.PYTHON}} -c \"
+import json, pathlib
+files = sorted(pathlib.Path('index').glob('*.index.json'))
+print(f'{len(files)} index entries')
+for f in files:
+    d = json.loads(f.read_text(encoding='utf-8'))
+    title = d.get('title', f.stem)
+    summary = d.get('summary', '')[:80]
+    print(f'  [{d.get(\\\"id\\\", \\\"?\\\")}] {title}')
+    if summary: print(f'      {summary}')
+\""
+
+  # ---------------------------------------------------------------------------
+  # Maintenance
+  # ---------------------------------------------------------------------------
+
+  status:
+    desc: Show counts for raw, knowledge, and index
+    silent: true
+    cmds:
+      - "{{.PYTHON}} -c \"
+import pathlib
+raw = list(pathlib.Path('raw').glob('*.md')) if pathlib.Path('raw').exists() else []
+know = list(pathlib.Path('knowledge').glob('*.md')) if pathlib.Path('knowledge').exists() else []
+idx = list(pathlib.Path('index').glob('*.index.json')) if pathlib.Path('index').exists() else []
+print(f'raw/       {len(raw)} files')
+print(f'knowledge/ {len(know)} files')
+print(f'index/     {len(idx)} entries')
+\""
+
+  init:
+    desc: Create raw/, knowledge/, and index/ directories
+    cmds:
+      - "{{.PYTHON}} -c \"from config import load_config, ensure_dirs; ensure_dirs(load_config()); print('Directories ready.')\""

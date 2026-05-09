@@ -1,0 +1,40 @@
+{
+  "dirs": {
+    "raw":       "raw",
+    "knowledge": "knowledge",
+    "index":     "index"
+  },
+  "ingest": {
+    "preferred_format": "markdown",
+    "fallback_formats": ["html", "txt", "pdf"],
+    "auto_etl_on_ingest": false,
+    "dedup_by": "source_url"
+  },
+  "etl": {
+    "include_source_metadata": true,
+    "overwrite_existing": false
+  },
+  "knowledge": {
+    "frontmatter_fields": ["id", "title", "source", "date", "tags", "type"],
+    "index_fields": ["id", "title", "summary", "tags", "source", "date"]
+  },
+  "claude": {
+    "model": "claude-sonnet-4-6",
+    "use_for_etl": true,
+    "use_for_query": true,
+    "context_chunks_limit": 10
+  },
+  "sources": {
+    "obsidian_vault": null,
+    "watch_dirs": []
+  },
+  "confluence": {
+    "base_url": null,
+    "email": null,
+    "space_keys": [],
+    "page_ids": [],
+    "include_child_pages": true,
+    "exclude_labels": ["draft", "archived"],
+    "page_limit": 100
+  }
+}
