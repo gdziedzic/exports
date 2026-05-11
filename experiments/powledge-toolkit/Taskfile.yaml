@@ -19,6 +19,7 @@ tasks:
     desc: Ingest all pages/spaces defined in powledge.config.json
     cmds:
       - "{{.PYTHON}} ingest/confluence.py"
+      - task: index:build
 
   confluence:dry:
     desc: Preview what would be ingested (no files written)
@@ -29,16 +30,41 @@ tasks:
     desc: "Ingest one or more pages by ID  (usage: task confluence:page -- 111 222 333)"
     cmds:
       - "{{.PYTHON}} ingest/confluence.py --page-id {{.CLI_ARGS}}"
+      - task: index:build
 
   confluence:space:
     desc: "Ingest one or more spaces by key  (usage: task confluence:space -- ENG HR)"
     cmds:
       - "{{.PYTHON}} ingest/confluence.py --space-key {{.CLI_ARGS}}"
+      - task: index:build
 
   confluence:page:dry:
     desc: "Dry-run for specific pages  (usage: task confluence:page:dry -- 111 222)"
     cmds:
       - "{{.PYTHON}} ingest/confluence.py --page-id {{.CLI_ARGS}} --dry-run"
+
+  # ---------------------------------------------------------------------------
+  # Index
+  # ---------------------------------------------------------------------------
+
+  index:build:
+    desc: Aggregate all index/*.index.json into index/all.json with related links
+    cmds:
+      - "{{.PYTHON}} etl/build-index.py"
+
+  # ---------------------------------------------------------------------------
+  # Search
+  # ---------------------------------------------------------------------------
+
+  search:index:
+    desc: "List all index entries as JSON  (add --tags, --search, --fields, --format as needed)"
+    cmds:
+      - "{{.PYTHON}} search/list-index.py {{.CLI_ARGS}}"
+
+  search:index:tags:
+    desc: "Filter index by tags  (usage: task search:index:tags -- ai etl)"
+    cmds:
+      - "{{.PYTHON}} search/list-index.py --tags \"{{.CLI_ARGS}}\""
 
   # ---------------------------------------------------------------------------
   # Inspect store
