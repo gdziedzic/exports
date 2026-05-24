@@ -32,6 +32,10 @@ FillIn1 := "", FillIn2 := "", FillIn3 := "", FillIn4 := "", FillIn5 := ""
 FillIn6 := "", FillIn7 := "", FillIn8 := "", FillIn9 := "", FillIn10 := ""
 FillIn11 := "", FillIn12 := "", FillIn13 := "", FillIn14 := "", FillIn15 := ""
 
+TVNodeFilter := {}
+CurrentCatFilter := "All"
+TVBuilding := false
+
 ; layout state
 LW := 0, LPad := 12, LPvX := 0, LPvW := 0, LRow2Y := 0, LBtnY := 0, LStatusY := 0
 
@@ -75,69 +79,69 @@ return
 ;  GUI CONSTRUCTION
 ; ============================================================
 BuildMainGUI:
-    Gui Main:New, +Resize +MinSize750x480, Prompt Manager
+    Gui Main:New, +Resize +MinSize820x480, Prompt Manager
     Gui Main:Default
     Gui Main:Color, 181825
 
     ; ── Toolbar ────────────────────────────────────────────
     Gui Font, s11 cCDD6F4, Segoe UI
     Gui Add, Text, x12 y12 w50 h36 +0x200 vLblSearch, Search
-    Gui Add, Edit, x66 y12 w192 h26 vSearchBox gOnSearch +Background313244
-
-    Gui Add, Text, x270 y12 w60 h36 +0x200 vLblCat, Category
-    Gui Add, DropDownList, x334 y12 w160 vCatFilter gOnCatFilter Choose1, All|Favorites|Most Used
+    Gui Add, Edit, x66 y12 w280 h26 vSearchBox gOnSearch +Background313244
 
     Gui Font, s9 c6C7086, Segoe UI
-    Gui Add, Text, x500 y12 w200 h36 +0x200 vSnippetCount, 0 snippets
+    Gui Add, Text, x360 y12 w200 h36 +0x200 vSnippetCount, 0 snippets
     Gui Font, s8 c6C7086, Segoe UI
-    Gui Add, Text, x700 y12 w200 h36 +0x200 +Right vHintText, F=Fav  D=Dup  Enter=Paste  Esc=Hide
+    Gui Add, Text, x570 y12 w280 h36 +0x200 +Right vHintText, F=Fav  D=Dup  Enter=Paste  Esc=Hide
     Gui Font, s11 cCDD6F4, Segoe UI
 
+    ; ── Category tree (navigation sidebar) ────────────────
+    Gui Add, TreeView, x12 y56 w170 h400 vMainTV gOnTVSelect +Background313244 +cCDD6F4
+
     ; ── Snippet list (multi-select enabled) ────────────────
-    Gui Add, ListView, x12 y56 w300 h400 vSnippetLV gOnLVSelect +LV0x10000 AltSubmit +Background313244 +cCDD6F4, Name|Cat|#
-    LV_ModifyCol(1, 185, "Name")
-    LV_ModifyCol(2, 80, "Cat")
+    Gui Add, ListView, x190 y56 w230 h400 vSnippetLV gOnLVSelect +LV0x10000 AltSubmit +Background313244 +cCDD6F4, Name|Cat|#
+    LV_ModifyCol(1, 150, "Name")
+    LV_ModifyCol(2, 50, "Cat")
     LV_ModifyCol(3, 30, "#")
     LV_ModifyCol(3, "Integer Right")
 
     ; ── Preview pane ───────────────────────────────────────
     Gui Font, s13 cB4BEFE Bold, Segoe UI
-    Gui Add, Text, x324 y56 w400 h24 +0x200 vPreviewTitle, Select a snippet...
+    Gui Add, Text, x432 y56 w360 h24 +0x200 vPreviewTitle, Select a snippet...
     Gui Font, s11 cCDD6F4 Norm, Segoe UI
 
     ; expand toggle
     Gui Font, s9 cA6ADC8, Segoe UI
-    Gui Add, CheckBox, x750 y58 w100 h20 vExpandChk gOnToggleExpand, Expand
+    Gui Add, CheckBox, x840 y58 w80 h20 vExpandChk gOnToggleExpand, Expand
     Gui Font, s11 cCDD6F4, Segoe UI
 
     Gui Font, s9 cFAB387, Segoe UI
-    Gui Add, Text, x324 y82 w580 h18 vPreviewTags,
+    Gui Add, Text, x432 y82 w476 h18 vPreviewTags,
     Gui Font, s10 cCDD6F4, Consolas
-    Gui Add, Edit, x324 y104 w580 h352 vPreviewBox ReadOnly +Multi +WantReturn +Background1e1e2e
+    Gui Add, Edit, x432 y104 w476 h352 vPreviewBox ReadOnly +Multi +WantReturn +Background1e1e2e
     Gui Font, s11 cCDD6F4, Segoe UI
 
     ; ── Buttons ────────────────────────────────────────────
     Gui Font, s10 cCDD6F4, Segoe UI
-    Gui Add, Button, x12  y466 w58 h32 gOnAdd      vBtnAdd,    +Add
-    Gui Add, Button, x74  y466 w58 h32 gOnDuplicate vBtnDup,   Dup
-    Gui Add, Button, x136 y466 w58 h32 gOnEdit     vBtnEdit,   Edit
-    Gui Add, Button, x198 y466 w58 h32 gOnDelete   vBtnDel,    Del
+    Gui Add, Button, x12  y466 w54 h32 gOnAdd      vBtnAdd,    +Add
+    Gui Add, Button, x70  y466 w54 h32 gOnDuplicate vBtnDup,   Dup
+    Gui Add, Button, x128 y466 w54 h32 gOnEdit     vBtnEdit,   Edit
+    Gui Add, Button, x186 y466 w54 h32 gOnDelete   vBtnDel,    Del
 
-    Gui Add, Button, x324 y466 w64  h32 gOnToggleFav vBtnFav,  ★ Fav
-    Gui Add, Button, x392 y466 w75  h32 gOnCopy     vBtnCopy,  &Copy
-    Gui Add, Button, x471 y466 w105 h32 gOnInsert   vBtnPaste, &Paste+Close
-    Gui Add, Button, x580 y466 w80  h32 gOnExportLib vBtnExpLib, Export All
-    Gui Add, Button, x664 y466 w80  h32 gOnImportLib vBtnImpLib, Import
+    Gui Add, Button, x432 y466 w64  h32 gOnToggleFav vBtnFav,  ★ Fav
+    Gui Add, Button, x500 y466 w75  h32 gOnCopy     vBtnCopy,  &Copy
+    Gui Add, Button, x579 y466 w105 h32 gOnInsert   vBtnPaste, &Paste+Close
+    Gui Add, Button, x688 y466 w80  h32 gOnExportLib vBtnExpLib, Export All
+    Gui Add, Button, x772 y466 w80  h32 gOnImportLib vBtnImpLib, Import
 
     ; ── Status bar ─────────────────────────────────────────
     Gui Font, s9 c6C7086, Segoe UI
-    Gui Add, Text, x12  y502 w310 h20 +0x200 vStatusLeft, Ready
-    Gui Add, Text, x324 y502 w580 h20 +0x200 +Right vStatusRight, Auto: {clipboard} {date} {datetime}  |  @{Name}
+    Gui Add, Text, x12  y502 w240 h20 +0x200 vStatusLeft, Ready
+    Gui Add, Text, x432 y502 w476 h20 +0x200 +Right vStatusRight, Auto: {clipboard} {date} {datetime}  |  @{Name}
     Gui Font, s11 cCDD6F4, Segoe UI
 
-    GoSub BuildCategoryDropdown
+    GoSub BuildCategoryTree
     GoSub RefreshList
-    Gui Main:Show, w920 h530, Prompt Manager
+    Gui Main:Show, w960 h530, Prompt Manager
 return
 
 ; ── Resize handler ─────────────────────────────────────────
@@ -145,47 +149,50 @@ MainGuiSize:
     if (A_EventInfo = 1) ; minimized
         return
     W := A_GuiWidth, H := A_GuiHeight
-    Pad := 12
-    ListW := Floor(W * 0.33)
-    if (ListW < 220)
-        ListW := 220
-    PvX := Pad + ListW + Pad
+    Pad := 12, Gap := 8
+    TreeW := 170
+    LvX := Pad + TreeW + Gap
+    ListW := Floor((W - LvX - Pad) * 0.33)
+    if (ListW < 180)
+        ListW := 180
+    PvX := LvX + ListW + Gap
     PvW := W - PvX - Pad
     BtnY := H - 64
     StatusY := H - 28
-    Row2Y := 56
-    ListH := BtnY - Row2Y - 8
+    ListH := BtnY - 56 - 8
 
     ; toolbar
-    srchW := ListW - 54
-    GuiControl Move, SearchBox, % "x66 w" srchW
-    catLblX := Pad + ListW + Pad
-    GuiControl Move, LblCat, % "x" catLblX
-    catDDX := catLblX + 64
-    GuiControl Move, CatFilter, % "x" catDDX
-    cntX := catDDX + 168
+    srchW := Floor(W * 0.26)
+    if (srchW < 150)
+        srchW := 150
+    GuiControl Move, SearchBox, % "w" srchW
+    cntX := 66 + srchW + 12
     GuiControl Move, SnippetCount, % "x" cntX
-    hintX := W - 212
-    GuiControl Move, HintText, % "x" hintX " w200"
+    hintX := W - 292
+    GuiControl Move, HintText, % "x" hintX " w280"
+
+    ; tree
+    GuiControl Move, MainTV, % "w" TreeW " h" ListH
 
     ; list
-    GuiControl Move, SnippetLV, % "w" ListW " h" ListH
-    LV_ModifyCol(1, ListW - 130)
+    GuiControl Move, SnippetLV, % "x" LvX " w" ListW " h" ListH
+    LV_ModifyCol(1, ListW - 85)
 
     ; preview
-    GuiControl Move, PreviewTitle, % "x" PvX " w" (PvW - 110)
-    expX := W - Pad - 100
+    GuiControl Move, PreviewTitle, % "x" PvX " w" (PvW - 90)
+    expX := W - Pad - 80
     GuiControl Move, ExpandChk, % "x" expX
     GuiControl Move, PreviewTags, % "x" PvX " w" PvW
-    pvY := 104
-    pvH := BtnY - pvY - 8
+    pvH := BtnY - 104 - 8
     GuiControl Move, PreviewBox, % "x" PvX " w" PvW " h" pvH
 
-    ; buttons
+    ; buttons – left cluster (under tree+list)
     GuiControl Move, BtnAdd,   % "y" BtnY
     GuiControl Move, BtnDup,   % "y" BtnY
     GuiControl Move, BtnEdit,  % "y" BtnY
     GuiControl Move, BtnDel,   % "y" BtnY
+
+    ; buttons – preview cluster
     GuiControl Move, BtnFav,   % "x" PvX " y" BtnY
     bx2 := PvX + 68
     GuiControl Move, BtnCopy,  % "x" bx2 " y" BtnY
@@ -205,7 +212,18 @@ MainGuiSize:
 ;  EVENT HANDLERS
 ; ============================================================
 OnSearch:
-OnCatFilter:
+    GoSub RefreshList
+    return
+
+OnTVSelect:
+    if (TVBuilding || A_GuiEvent != "S")
+        return
+    Gui Main:Default
+    nodeID := TV_GetSelection()
+    if (TVNodeFilter.HasKey(nodeID))
+        CurrentCatFilter := TVNodeFilter[nodeID]
+    else
+        CurrentCatFilter := "All"
     GoSub RefreshList
     return
 
@@ -583,7 +601,7 @@ OnImportLib:
     }
     if (imported > 0) {
         GoSub SaveAllSnippets
-        GoSub BuildCategoryDropdown
+        GoSub BuildCategoryTree
         GoSub RefreshList
     }
     GuiControl Main:, StatusLeft, % "Imported " imported " snippets"
@@ -652,7 +670,7 @@ OnDelete:
             Snippets.Delete(id)
         SelectedID := ""
         GoSub SaveAllSnippets
-        GoSub BuildCategoryDropdown
+        GoSub BuildCategoryTree
         GoSub RefreshList
         GoSub UpdatePreview
     }
@@ -932,7 +950,7 @@ EditorSave:
     Snippets[id] := {name: EdName, category: EdCat, group: EdGroup, tags: EdTags, content: EdContent, fav: oldFav, uses: oldUses}
     GoSub SaveAllSnippets
     Gui Main:Default
-    GoSub BuildCategoryDropdown
+    GoSub BuildCategoryTree
     GoSub RefreshList
     ; select the saved snippet
     for row, rid in FilteredIDs {
@@ -952,19 +970,52 @@ EditorGuiEscape:
     return
 
 ; ============================================================
-;  BUILD CATEGORY DROPDOWN (dynamic with sub-categories)
+;  BUILD CATEGORY TREE (navigation sidebar)
 ; ============================================================
-BuildCategoryDropdown:
+BuildCategoryTree:
     Gui Main:Default
-    ; collect unique category and category/group combos
-    baseCats := ["Coding","Writing","System","Workflow","Custom"]
-    catSet := {}
+    TVBuilding := true
+    TV_Delete()
+    TVNodeFilter := {}
+
+    ; count snippets per category/group
+    catCounts := {}
+    grpCounts := {}
+    totalCount := 0, favCount := 0, usedCount := 0
     for id, s in Snippets {
-        if (s.category != "")
-            catSet[s.category] := true
+        totalCount++
+        if (s.fav)
+            favCount++
+        if (s.uses > 0)
+            usedCount++
+        cat := (s.category != "") ? s.category : "Custom"
+        catCounts[cat] := (catCounts.HasKey(cat) ? catCounts[cat] : 0) + 1
+        if (s.group != "") {
+            gkey := cat . Chr(2) . s.group
+            grpCounts[gkey] := (grpCounts.HasKey(gkey) ? grpCounts[gkey] : 0) + 1
+        }
     }
-    ; add any custom categories not in base list
-    for cat, v in catSet {
+
+    ; special top-level nodes
+    ; ≡ All  ★ Favorites  ▲ Most Used
+    nAll  := TV_Add(Chr(8801) " All  (" totalCount ")", 0, "")
+    TVNodeFilter[nAll]  := "All"
+    nFav  := TV_Add(Chr(9733) " Favorites  (" favCount ")", 0, "")
+    TVNodeFilter[nFav]  := "Favorites"
+    nUsed := TV_Add(Chr(9650) " Most Used  (" usedCount ")", 0, "")
+    TVNodeFilter[nUsed] := "Most Used"
+
+    ; category icon map  λ ✏ ⚙ ⇆ ◆
+    catIcons := {}
+    catIcons["Coding"]   := Chr(955)   ; λ  lambda
+    catIcons["Writing"]  := Chr(9999)  ; ✏  pencil
+    catIcons["System"]   := Chr(9881)  ; ⚙  gear
+    catIcons["Workflow"] := Chr(8646)  ; ⇆  arrows
+    catIcons["Custom"]   := Chr(9670)  ; ◆  diamond
+
+    ; build ordered category list
+    baseCats := ["Coding","Writing","System","Workflow","Custom"]
+    for cat, cnt in catCounts {
         found := false
         for i, bc in baseCats
             if (bc = cat)
@@ -972,22 +1023,40 @@ BuildCategoryDropdown:
         if (!found)
             baseCats.Push(cat)
     }
-    ; build group entries
-    groupEntries := {}
-    for id, s in Snippets {
-        if (s.group != "" && s.category != "") {
-            key := s.category "/" s.group
-            groupEntries[key] := true
+
+    ; add category nodes with sub-group children
+    for i, cat in baseCats {
+        if (!catCounts.HasKey(cat))
+            continue
+        icon := catIcons.HasKey(cat) ? catIcons[cat] : Chr(9670)
+        nCat := TV_Add(icon " " cat "  (" catCounts[cat] ")", 0, "")
+        TVNodeFilter[nCat] := cat
+        hasGroups := false
+        for gkey, gcnt in grpCounts {
+            splitAt := InStr(gkey, Chr(2))
+            if (!splitAt)
+                continue
+            gcat := SubStr(gkey, 1, splitAt - 1)
+            grp  := SubStr(gkey, splitAt + 1)
+            if (gcat != cat)
+                continue
+            ; ▸ sub-group node
+            nGrp := TV_Add("  " Chr(9656) " " grp "  (" gcnt ")", nCat, "")
+            TVNodeFilter[nGrp] := cat "/" grp
+            hasGroups := true
+        }
+        if (hasGroups)
+            TV_Modify(nCat, "Expand")
+    }
+
+    ; re-select node matching CurrentCatFilter
+    for nodeId, filterVal in TVNodeFilter {
+        if (filterVal = CurrentCatFilter) {
+            TV_Modify(nodeId, "Select")
+            break
         }
     }
-    ; build dropdown string
-    ddList := "All|Favorites|Most Used"
-    for i, cat in baseCats
-        ddList .= "|" cat
-    for key, v in groupEntries
-        ddList .= "|  " key   ; indented
-    GuiControl Main:, CatFilter, |%ddList%
-    GuiControl Main:Choose, CatFilter, 1
+    TVBuilding := false
     return
 
 ; ============================================================
@@ -996,10 +1065,7 @@ BuildCategoryDropdown:
 RefreshList:
     Gui Main:Default
     GuiControlGet, searchTerm, Main:, SearchBox
-    GuiControlGet, catText, Main:, CatFilter
-
-    ; trim whitespace from indented group entries
-    catText := RegExReplace(catText, "^\s+")
+    catText := CurrentCatFilter
 
     StringLower, searchTerm, searchTerm
 
@@ -1063,9 +1129,12 @@ RefreshList:
         dispName := s.name
         if (s.fav)
             dispName := Chr(9733) " " dispName
-        dispCat := s.category
-        if (s.group != "")
-            dispCat .= "/" s.group
+        if (catText = "All" || catText = "Favorites" || catText = "Most Used")
+            dispCat := s.category . (s.group != "" ? "/" . s.group : "")
+        else if (InStr(catText, "/"))
+            dispCat := ""
+        else
+            dispCat := s.group
         LV_Add("", dispName, dispCat, s.uses)
     }
 
