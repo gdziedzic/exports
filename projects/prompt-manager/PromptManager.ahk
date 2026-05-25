@@ -1383,7 +1383,8 @@ InitHistory:
     IniRead, _hsecs, %HistoryFile%
     if (_hsecs = "ERROR")
         return
-    Loop Parse, _hsecs, `n, `r {
+    Loop Parse, _hsecs, `n, `r
+    {
         if (A_LoopField = "")
             continue
         RegExMatch(A_LoopField, "^h(\d+)$", _hm)
