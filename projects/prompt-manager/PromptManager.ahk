@@ -1095,12 +1095,32 @@ RefreshList:
             if (s.category != catText)
                 continue
         }
-        ; search
+        ; search — tier 1=exact name, 2=name starts-with, 3=name contains,
+        ;          4=tag match, 5=group match, 6=content-only
+        tierKey := "0"
         if (searchTerm != "") {
             haystack := s.name " " s.tags " " s.group " " s.content
             StringLower, haystack, haystack
             if !InStr(haystack, searchTerm)
                 continue
+            nameLower2 := s.name
+            StringLower, nameLower2, nameLower2
+            tagsLower := s.tags
+            StringLower, tagsLower, tagsLower
+            grpLower := s.group
+            StringLower, grpLower, grpLower
+            if (nameLower2 = searchTerm)
+                tierKey := "1"
+            else if (SubStr(nameLower2, 1, StrLen(searchTerm)) = searchTerm)
+                tierKey := "2"
+            else if (InStr(nameLower2, searchTerm))
+                tierKey := "3"
+            else if (InStr(tagsLower, searchTerm))
+                tierKey := "4"
+            else if (InStr(grpLower, searchTerm))
+                tierKey := "5"
+            else
+                tierKey := "6"
         }
         favKey := s.fav ? "0" : "1"
         usesKey := 99999 - s.uses
@@ -1110,7 +1130,7 @@ RefreshList:
         nameLower := s.name
         StringLower, nameLower, nameLower
         sep := Chr(1)
-        sortLines .= favKey . sep . usesPad . sep . nameLower . sep . id "`n"
+        sortLines .= tierKey . sep . favKey . sep . usesPad . sep . nameLower . sep . id "`n"
     }
 
     Sort sortLines
