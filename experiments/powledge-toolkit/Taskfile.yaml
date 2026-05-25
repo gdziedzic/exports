@@ -16,9 +16,10 @@ tasks:
   # ---------------------------------------------------------------------------
 
   confluence:
-    desc: Ingest all pages/spaces defined in powledge.config.json
+    desc: Ingest all pages/spaces, run ETL, then rebuild aggregated index
     cmds:
       - "{{.PYTHON}} ingest/confluence.py"
+      - "{{.PYTHON}} etl/process.py --pending"
       - task: index:build
 
   confluence:dry:
@@ -27,21 +28,37 @@ tasks:
       - "{{.PYTHON}} ingest/confluence.py --dry-run"
 
   confluence:page:
-    desc: "Ingest one or more pages by ID  (usage: task confluence:page -- 111 222 333)"
+    desc: "Ingest pages by ID, run ETL, rebuild index  (usage: task confluence:page -- 111 222 333)"
     cmds:
       - "{{.PYTHON}} ingest/confluence.py --page-id {{.CLI_ARGS}}"
+      - "{{.PYTHON}} etl/process.py --pending"
       - task: index:build
 
   confluence:space:
-    desc: "Ingest one or more spaces by key  (usage: task confluence:space -- ENG HR)"
+    desc: "Ingest spaces by key, run ETL, rebuild index  (usage: task confluence:space -- ENG HR)"
     cmds:
       - "{{.PYTHON}} ingest/confluence.py --space-key {{.CLI_ARGS}}"
+      - "{{.PYTHON}} etl/process.py --pending"
       - task: index:build
 
   confluence:page:dry:
     desc: "Dry-run for specific pages  (usage: task confluence:page:dry -- 111 222)"
     cmds:
       - "{{.PYTHON}} ingest/confluence.py --page-id {{.CLI_ARGS}} --dry-run"
+
+  # ---------------------------------------------------------------------------
+  # ETL
+  # ---------------------------------------------------------------------------
+
+  etl:process:
+    desc: "Run ETL on raw files  (usage: task etl:process -- --all | --pending | path/to/file.md)"
+    cmds:
+      - "{{.PYTHON}} etl/process.py {{.CLI_ARGS}}"
+
+  etl:process:pending:
+    desc: Process only raw files not yet converted to knowledge/
+    cmds:
+      - "{{.PYTHON}} etl/process.py --pending"
 
   # ---------------------------------------------------------------------------
   # Index
@@ -65,6 +82,11 @@ tasks:
     desc: "Filter index by tags  (usage: task search:index:tags -- ai etl)"
     cmds:
       - "{{.PYTHON}} search/list-index.py --tags \"{{.CLI_ARGS}}\""
+
+  search:query:
+    desc: "Answer a question from the knowledge base  (usage: task search:query -- 'What is X?')"
+    cmds:
+      - "{{.PYTHON}} search/query.py {{.CLI_ARGS}}"
 
   # ---------------------------------------------------------------------------
   # Inspect store
