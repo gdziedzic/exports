@@ -39,6 +39,10 @@ TVBuilding := false
 ; layout state
 LW := 0, LPad := 12, LPvX := 0, LPvW := 0, LRow2Y := 0, LBtnY := 0, LStatusY := 0
 
+; ── History ────────────────────────────────────────────────
+HistoryFile := A_ScriptDir . "\prompts_history.ini"
+HistoryNextEntry := 1
+
 ; ── Dark-mode Edit controls ────────────────────────────────
 hBrushEdit := DllCall("CreateSolidBrush", "UInt", 0x443231, "Ptr")
 hBrushPreview := DllCall("CreateSolidBrush", "UInt", 0x2e1e1e, "Ptr")
@@ -66,6 +70,7 @@ IfNotExist, %DataFile%
     GoSub CreateSampleData
 
 GoSub LoadAllSnippets
+GoSub InitHistory
 GoSub BuildMainGUI
 return
 
@@ -126,6 +131,7 @@ BuildMainGUI:
     Gui Add, Button, x70  y466 w54 h32 gOnDuplicate vBtnDup,   Dup
     Gui Add, Button, x128 y466 w54 h32 gOnEdit     vBtnEdit,   Edit
     Gui Add, Button, x186 y466 w54 h32 gOnDelete   vBtnDel,    Del
+    Gui Add, Button, x248 y466 w68  h32 gShowHistoryBrowser vBtnHistory, History
 
     Gui Add, Button, x432 y466 w64  h32 gOnToggleFav vBtnFav,  ★ Fav
     Gui Add, Button, x500 y466 w75  h32 gOnCopy     vBtnCopy,  &Copy
@@ -187,10 +193,11 @@ MainGuiSize:
     GuiControl Move, PreviewBox, % "x" PvX " w" PvW " h" pvH
 
     ; buttons – left cluster (under tree+list)
-    GuiControl Move, BtnAdd,   % "y" BtnY
-    GuiControl Move, BtnDup,   % "y" BtnY
-    GuiControl Move, BtnEdit,  % "y" BtnY
-    GuiControl Move, BtnDel,   % "y" BtnY
+    GuiControl Move, BtnAdd,     % "y" BtnY
+    GuiControl Move, BtnDup,     % "y" BtnY
+    GuiControl Move, BtnEdit,    % "y" BtnY
+    GuiControl Move, BtnDel,     % "y" BtnY
+    GuiControl Move, BtnHistory, % "y" BtnY
 
     ; buttons – preview cluster
     GuiControl Move, BtnFav,   % "x" PvX " y" BtnY
@@ -667,6 +674,8 @@ OnDelete:
     IfMsgBox Yes
     {
         for i, id in selIDs
+            AppendHistoryEntry(id, "delete")
+        for i, id in selIDs
             Snippets.Delete(id)
         SelectedID := ""
         GoSub SaveAllSnippets
@@ -923,6 +932,8 @@ ShowEditorDialog:
 
     Gui Font, s10 cCDD6F4, Segoe UI
     bY := edH - 52
+    if (EditorID != "")
+        Gui Add, Button, x16 y%bY% w150 h36 gEditorRestorePrev, ← Restore Previous
     Gui Add, Button, x400 y%bY% w104 h36 gEditorSave Default, &Save
     Gui Add, Button, x512 y%bY% w92  h36 gEditorCancel, Cancel
 
@@ -946,6 +957,8 @@ EditorSave:
     if (Snippets.HasKey(id)) {
         oldFav := Snippets[id].fav
         oldUses := Snippets[id].uses
+        if (EditorID != "")
+            AppendHistoryEntry(id, "edit")
     }
     Snippets[id] := {name: EdName, category: EdCat, group: EdGroup, tags: EdTags, content: EdContent, fav: oldFav, uses: oldUses}
     GoSub SaveAllSnippets
@@ -1360,4 +1373,174 @@ CreateSampleData:
         IniWrite, % s.fav,      %DataFile%, %sec%, fav
         IniWrite, % s.uses,     %DataFile%, %sec%, uses
     }
+return
+
+; ============================================================
+;  HISTORY  (append-only change log + restore)
+; ============================================================
+InitHistory:
+    HistoryNextEntry := 1
+    IniRead, _hsecs, %HistoryFile%
+    if (_hsecs = "ERROR")
+        return
+    Loop Parse, _hsecs, `n, `r {
+        if (A_LoopField = "")
+            continue
+        RegExMatch(A_LoopField, "^h(\d+)$", _hm)
+        if (_hm) {
+            n := _hm1 + 0
+            if (n >= HistoryNextEntry)
+                HistoryNextEntry := n + 1
+        }
+    }
+return
+
+AppendHistoryEntry(id, operation) {
+    global HistoryFile, HistoryNextEntry, Snippets
+    if (!Snippets.HasKey(id))
+        return
+    s := Snippets[id]
+    sec := "h" HistoryNextEntry
+    FormatTime, hts,, yyyy-MM-dd HH:mm:ss
+    IniWrite, %hts%,       %HistoryFile%, %sec%, timestamp
+    IniWrite, %operation%, %HistoryFile%, %sec%, operation
+    IniWrite, %id%,        %HistoryFile%, %sec%, snippet_id
+    IniWrite, % s.name,     %HistoryFile%, %sec%, name
+    IniWrite, % s.category, %HistoryFile%, %sec%, category
+    IniWrite, % s.group,    %HistoryFile%, %sec%, group
+    IniWrite, % s.tags,     %HistoryFile%, %sec%, tags
+    hEncoded := s.content
+    StringReplace, hEncoded, hEncoded, `n, ``n, All
+    StringReplace, hEncoded, hEncoded, %A_Tab%, ``t, All
+    IniWrite, %hEncoded%,  %HistoryFile%, %sec%, content
+    IniWrite, % s.fav,     %HistoryFile%, %sec%, fav
+    IniWrite, % s.uses,    %HistoryFile%, %sec%, uses
+    HistoryNextEntry++
+    PruneOldHistory()
+}
+
+PruneOldHistory() {
+    global HistoryFile, HistoryNextEntry
+    maxEntries := 100
+    firstKeep := HistoryNextEntry - maxEntries
+    if (firstKeep <= 1)
+        return
+    Loop, % firstKeep - 1 {
+        IniDelete, %HistoryFile%, % "h" A_Index
+    }
+}
+
+GetLatestHistoryEntry(snippetId) {
+    global HistoryFile, HistoryNextEntry
+    n := HistoryNextEntry - 1
+    while (n >= 1) {
+        IniRead, _hsid, %HistoryFile%, % "h" n, snippet_id, __MISSING__
+        if (_hsid = snippetId)
+            return n
+        n--
+    }
+    return 0
+}
+
+; ── Restore previous version inside editor ─────────────────
+EditorRestorePrev:
+    entryNum := GetLatestHistoryEntry(EditorID)
+    if (entryNum = 0) {
+        MsgBox 48, No History, No previous version found for this snippet.
+        return
+    }
+    hsec := "h" entryNum
+    IniRead, rName,    %HistoryFile%, %hsec%, name,
+    IniRead, rCat,     %HistoryFile%, %hsec%, category,
+    IniRead, rGroup,   %HistoryFile%, %hsec%, group,
+    IniRead, rTags,    %HistoryFile%, %hsec%, tags,
+    IniRead, rContent, %HistoryFile%, %hsec%, content,
+    IniRead, rTs,      %HistoryFile%, %hsec%, timestamp,
+    StringReplace, rContent, rContent, ``n, `n, All
+    StringReplace, rContent, rContent, ``t, %A_Tab%, All
+    Gui Editor:Default
+    GuiControl,, EdName,    %rName%
+    GuiControl Text, EdCat,   %rCat%
+    GuiControl Text, EdGroup, %rGroup%
+    GuiControl,, EdTags,    %rTags%
+    GuiControl,, EdContent, %rContent%
+    ToolTip, Restored version from: %rTs%
+    SetTimer, ClearRestoreToolTip, -3000
+return
+
+ClearRestoreToolTip:
+    ToolTip
+return
+
+; ── History browser (main window) ──────────────────────────
+ShowHistoryBrowser:
+    Gui HistBrowser:New, +OwnerMain, Snippet History
+    Gui HistBrowser:Default
+    Gui HistBrowser:Color, 181825
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x12 y12 w700 h20, History (newest first) — select an entry and click Restore to recover it
+    Gui Font, s10 cCDD6F4, Segoe UI
+    Gui Add, ListView, x12 y36 w700 h380 vHistLV +Background313244 +cCDD6F4, #|Timestamp|Snippet Name|Operation
+    LV_ModifyCol(1, 40)
+    LV_ModifyCol(2, 155)
+    LV_ModifyCol(3, 310)
+    LV_ModifyCol(4, 90)
+    n := HistoryNextEntry - 1
+    while (n >= 1) {
+        IniRead, hts, %HistoryFile%, % "h" n, timestamp,
+        IniRead, hnm, %HistoryFile%, % "h" n, name,
+        IniRead, hop, %HistoryFile%, % "h" n, operation,
+        if (hts != "")
+            LV_Add("", n, hts, hnm, hop)
+        n--
+    }
+    if (LV_GetCount() = 0)
+        LV_Add("", "", "No history recorded yet", "", "")
+    Gui Font, s10 cCDD6F4, Segoe UI
+    Gui Add, Button, x12  y426 w130 h32 gHistBrowserRestore Default, Restore Selected
+    Gui Add, Button, x150 y426 w80  h32 gHistBrowserClose,           Close
+    Gui HistBrowser:Show, w730 h470, Snippet History
+return
+
+HistBrowserRestore:
+    Gui HistBrowser:Default
+    selRow := LV_GetNext(0)
+    if (!selRow) {
+        MsgBox 48, Select Entry, Please select a history entry first.
+        return
+    }
+    LV_GetText(entryNum, selRow, 1)
+    entryNum := entryNum + 0
+    if (entryNum = 0)
+        return
+    hsec := "h" entryNum
+    IniRead, rId,      %HistoryFile%, %hsec%, snippet_id, 0
+    IniRead, rName,    %HistoryFile%, %hsec%, name,
+    IniRead, rCat,     %HistoryFile%, %hsec%, category,
+    IniRead, rGroup,   %HistoryFile%, %hsec%, group,
+    IniRead, rTags,    %HistoryFile%, %hsec%, tags,
+    IniRead, rContent, %HistoryFile%, %hsec%, content,
+    IniRead, rFav,     %HistoryFile%, %hsec%, fav,        0
+    IniRead, rUses,    %HistoryFile%, %hsec%, uses,       0
+    StringReplace, rContent, rContent, ``n, `n, All
+    StringReplace, rContent, rContent, ``t, %A_Tab%, All
+    rId := rId + 0
+    if (rId = 0)
+        return
+    Snippets[rId] := {name: rName, category: rCat, group: rGroup, tags: rTags
+        , content: rContent, fav: rFav + 0, uses: rUses + 0}
+    if (rId >= NextID)
+        NextID := rId + 1
+    Gui HistBrowser:Destroy
+    Gui Main:Default
+    GoSub SaveAllSnippets
+    GoSub BuildCategoryTree
+    GoSub RefreshList
+    GuiControl,, StatusLeft, % "Restored: " rName
+return
+
+HistBrowserClose:
+HistBrowserGuiClose:
+HistBrowserGuiEscape:
+    Gui HistBrowser:Destroy
 return
