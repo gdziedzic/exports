@@ -769,7 +769,15 @@ ParsePlaceholders:
     seen := {}
     pos := 1
     while (pos := RegExMatch(FillInContent, "\{([^{}\n]+)\}", match, pos)) {
-        phName := match1
+        phFull := match1
+        colonPos := InStr(phFull, ":")
+        if (colonPos) {
+            phName    := SubStr(phFull, 1, colonPos - 1)
+            phDefault := SubStr(phFull, colonPos + 1)
+        } else {
+            phName    := phFull
+            phDefault := ""
+        }
         if (phName = "clipboard" || phName = "date" || phName = "datetime") {
             pos += StrLen(match)
             continue
@@ -777,7 +785,7 @@ ParsePlaceholders:
         if (!seen.HasKey(phName)) {
             seen[phName] := true
             FillInCount++
-            FillInPlaceholders.Push({name: phName, token: match})
+            FillInPlaceholders.Push({name: phName, default: phDefault})
             if (FillInCount >= 15)
                 break
         }
@@ -807,12 +815,13 @@ ShowFillInDialog:
     editW := fiW - editX - 16
     Loop % FillInCount {
         idx := A_Index
-        phName := FillInPlaceholders[idx].name
+        phName    := FillInPlaceholders[idx].name
+        phDefault := FillInPlaceholders[idx].default
         Gui Font, s10 cFAB387, Consolas
         Gui Add, Text, x8 y%yPos% w%labelW% h26 +0x200 +Right, {%phName%}
         Gui Font, s10 cCDD6F4, Segoe UI
         editOpt := "x" editX " y" yPos " w" editW " h26 vFillIn" idx " +Background313244"
-        Gui Add, Edit, %editOpt%
+        Gui Add, Edit, %editOpt%, %phDefault%
         yPos += fieldH
     }
     yPos += 12
@@ -833,10 +842,10 @@ FillInSubmit:
     Gui FillIn:Submit
     Loop % FillInCount {
         idx := A_Index
-        token := FillInPlaceholders[idx].token
+        phName := FillInPlaceholders[idx].name
         val := FillIn%idx%
         if (val != "")
-            StringReplace, FillInContent, FillInContent, %token%, %val%, All
+            FillInContent := RegExReplace(FillInContent, "\{" phName "(?::[^{}]*)?\}", val)
     }
     GoSub IncrementUses
     GoSub DoFinalAction
@@ -852,10 +861,10 @@ FillInCopyOnly:
     Gui FillIn:Submit
     Loop % FillInCount {
         idx := A_Index
-        token := FillInPlaceholders[idx].token
+        phName := FillInPlaceholders[idx].name
         val := FillIn%idx%
         if (val != "")
-            StringReplace, FillInContent, FillInContent, %token%, %val%, All
+            FillInContent := RegExReplace(FillInContent, "\{" phName "(?::[^{}]*)?\}", val)
     }
     GoSub IncrementUses
     Clipboard := FillInContent
@@ -926,7 +935,7 @@ ShowEditorDialog:
     Gui Font, s9 c6C7086, Segoe UI
     Gui Add, Text, x16 y130 w80 h20, CONTENT
     Gui Font, s9 cA6ADC8, Segoe UI
-    Gui Add, Text, x100 y130 w504 h20, {placeholder}  {clipboard}  {date}  {datetime}  @{Name}
+    Gui Add, Text, x100 y130 w504 h20, {placeholder}  {name:default}  {clipboard}  {date}  {datetime}  @{Name}
     Gui Font, s10 cCDD6F4, Consolas
     Gui Add, Edit, x16 y150 w588 h350 vEdContent +Multi +WantReturn +WantTab +Background1e1e2e, %EdContentVal%
 
