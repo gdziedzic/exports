@@ -8,7 +8,7 @@
 ;  Sub-categories (group field)
 ;  Multi-select bulk actions
 ;  Resizable layout
-;  Import/Export full library
+;  Import/Export full library + Markdown library export
 ;  Live preview expansion toggle
 ; ============================================================
 #NoEnv
@@ -136,8 +136,9 @@ BuildMainGUI:
     Gui Add, Button, x432 y466 w64  h32 gOnToggleFav vBtnFav,  ★ Fav
     Gui Add, Button, x500 y466 w75  h32 gOnCopy     vBtnCopy,  &Copy
     Gui Add, Button, x579 y466 w105 h32 gOnInsert   vBtnPaste, &Paste+Close
-    Gui Add, Button, x688 y466 w80  h32 gOnExportLib vBtnExpLib, Export All
-    Gui Add, Button, x772 y466 w80  h32 gOnImportLib vBtnImpLib, Import
+    Gui Add, Button, x688 y466 w78  h32 gOnExportLib vBtnExpLib, Export
+    Gui Add, Button, x770 y466 w78  h32 gOnExportMarkdown vBtnExpMd, Export MD
+    Gui Add, Button, x852 y466 w72  h32 gOnImportLib vBtnImpLib, Import
 
     ; ── Status bar ─────────────────────────────────────────
     Gui Font, s9 c6C7086, Segoe UI
@@ -207,8 +208,10 @@ MainGuiSize:
     GuiControl Move, BtnPaste, % "x" bx3 " y" BtnY
     bx4 := bx3 + 109
     GuiControl Move, BtnExpLib, % "x" bx4 " y" BtnY
-    bx5 := bx4 + 84
-    GuiControl Move, BtnImpLib, % "x" bx5 " y" BtnY
+    bx5 := bx4 + 82
+    GuiControl Move, BtnExpMd, % "x" bx5 " y" BtnY
+    bx6 := bx5 + 82
+    GuiControl Move, BtnImpLib, % "x" bx6 " y" BtnY
 
     ; status
     GuiControl Move, StatusLeft,  % "y" StatusY " w" (PvX - Pad)
@@ -306,6 +309,8 @@ UpdatePreview:
         tagLine .= "/" s.group
     if (s.tags != "")
         tagLine .= "  —  " s.tags
+    if (s.model != "")
+        tagLine .= "  —  model: " s.model
     if (s.uses > 0)
         tagLine .= "  —  used " s.uses "x"
     GuiControl Main:, PreviewTags, %tagLine%
@@ -332,6 +337,8 @@ UpdatePreview:
         incPos += StrLen(incM)
     }
     statusTxt := charCnt " chars"
+    if (s.updated != "")
+        statusTxt .= "  |  updated " s.updated
     if (phCnt > 0)
         statusTxt .= "  |  " phCnt " placeholder" (phCnt > 1 ? "s" : "")
     if (incCnt > 0)
@@ -552,6 +559,49 @@ WriteSnippetToFile:
     IniWrite, %encoded%,    %outPath%, %sec%, content
     IniWrite, % s.fav,      %outPath%, %sec%, fav
     IniWrite, % s.uses,     %outPath%, %sec%, uses
+    IniWrite, % s.uid,      %outPath%, %sec%, uid
+    IniWrite, % s.description, %outPath%, %sec%, description
+    IniWrite, % s.model,    %outPath%, %sec%, model
+    IniWrite, % s.source,   %outPath%, %sec%, source
+    IniWrite, % s.created,  %outPath%, %sec%, created
+    IniWrite, % s.updated,  %outPath%, %sec%, updated
+    return
+
+OnExportMarkdown:
+    if (Snippets.Count() = 0) {
+        MsgBox 48, Export Markdown, No snippets to export.
+        return
+    }
+    FileSelectFolder, mdDir, *%A_ScriptDir%, 3, Export Markdown Library
+    if (mdDir = "")
+        return
+    FileCreateDir, %mdDir%
+    exported := 0
+    for id, s in Snippets {
+        fileName := Format("{:03}", id) "-" SlugifyFileName(s.name) ".md"
+        outFile := mdDir . "\" . fileName
+        md := "---`n"
+        md .= "uid: " EscapeYaml(s.uid) "`n"
+        md .= "name: " EscapeYaml(s.name) "`n"
+        md .= "category: " EscapeYaml(s.category) "`n"
+        md .= "group: " EscapeYaml(s.group) "`n"
+        md .= "tags: " EscapeYaml(s.tags) "`n"
+        md .= "description: " EscapeYaml(s.description) "`n"
+        md .= "model: " EscapeYaml(s.model) "`n"
+        md .= "source: " EscapeYaml(s.source) "`n"
+        md .= "favorite: " s.fav "`n"
+        md .= "uses: " s.uses "`n"
+        md .= "created: " EscapeYaml(s.created) "`n"
+        md .= "updated: " EscapeYaml(s.updated) "`n"
+        md .= "---`n`n"
+        md .= s.content "`n"
+        FileDelete, %outFile%
+        FileAppend, %md%, %outFile%, UTF-8
+        exported++
+    }
+    GuiControl Main:, StatusLeft, % "Exported " exported " Markdown prompts"
+    ToolTip % "Exported " exported " Markdown prompts!"
+    SetTimer RemoveTooltip, -1200
     return
 
 OnImportLib:
@@ -577,10 +627,26 @@ OnImportLib:
         IniRead, raw,  %inPath%, %sec%, content, ???
         IniRead, fv,   %inPath%, %sec%, fav, 0
         IniRead, us,   %inPath%, %sec%, uses, 0
+        IniRead, uid,  %inPath%, %sec%, uid,
+        IniRead, desc, %inPath%, %sec%, description,
+        IniRead, mdl,  %inPath%, %sec%, model,
+        IniRead, src,  %inPath%, %sec%, source,
+        IniRead, crt,  %inPath%, %sec%, created,
+        IniRead, upd,  %inPath%, %sec%, updated,
         if (grp = "ERROR")
             grp := ""
         if (tgs = "ERROR")
             tgs := ""
+        if (desc = "ERROR")
+            desc := ""
+        if (mdl = "ERROR")
+            mdl := ""
+        if (src = "ERROR")
+            src := ""
+        if (crt = "ERROR" || crt = "")
+            crt := NowStamp()
+        if (upd = "ERROR" || upd = "")
+            upd := crt
         StringReplace, decoded, raw, ``n, `n, All
         StringReplace, decoded, decoded, ``t, %A_Tab%, All
         ; check for duplicate name and generate unique suffix
@@ -602,7 +668,11 @@ OnImportLib:
             if (dupeSuffix > 100)
                 break
         }
-        Snippets[NextID] := {name: nm, category: cat, group: grp, tags: tgs, content: decoded, fav: fv + 0, uses: us + 0}
+        if (uid = "ERROR" || uid = "" || SnippetUidExists(uid))
+            uid := GenerateSnippetUid()
+        Snippets[NextID] := {name: nm, category: cat, group: grp, tags: tgs
+            , content: decoded, fav: fv + 0, uses: us + 0, uid: uid
+            , description: desc, model: mdl, source: src, created: crt, updated: upd}
         NextID++
         imported++
     }
@@ -627,6 +697,9 @@ OnDuplicate:
     EdCatVal := s.category
     EdGroupVal := s.group
     EdTagsVal := s.tags
+    EdDescVal := s.description
+    EdModelVal := s.model
+    EdSourceVal := "duplicate-of:" s.uid
     GoSub ShowEditorDialog
     return
 
@@ -638,6 +711,9 @@ OnAdd:
     EdCatVal := "Coding"
     EdGroupVal := ""
     EdTagsVal := ""
+    EdDescVal := ""
+    EdModelVal := ""
+    EdSourceVal := ""
     GoSub ShowEditorDialog
     return
 
@@ -651,6 +727,9 @@ OnEdit:
     EdCatVal := s.category
     EdGroupVal := s.group
     EdTagsVal := s.tags
+    EdDescVal := s.description
+    EdModelVal := s.model
+    EdSourceVal := s.source
     GoSub ShowEditorDialog
     return
 
@@ -881,10 +960,10 @@ FillInGuiEscape:
     return
 
 ; ============================================================
-;  EDITOR DIALOG (with group/sub-category field)
+;  EDITOR DIALOG (with metadata fields)
 ; ============================================================
 ShowEditorDialog:
-    edW := 620, edH := 560
+    edW := 620, edH := 660
 
     Gui Editor:New, +OwnerMain, % (EditorID = "" ? "Add Snippet" : "Edit Snippet")
     Gui Editor:Default
@@ -933,11 +1012,23 @@ ShowEditorDialog:
     Gui Add, Edit, x290 y92 w314 h28 vEdTags +Background313244, %EdTagsVal%
 
     Gui Font, s9 c6C7086, Segoe UI
-    Gui Add, Text, x16 y130 w80 h20, CONTENT
+    Gui Add, Text, x16 y130 w100 h20, DESCRIPTION
+    Gui Font, s11 cCDD6F4, Segoe UI
+    Gui Add, Edit, x16 y150 w588 h28 vEdDesc +Background313244, %EdDescVal%
+
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x16 y188 w80 h20, MODEL
+    Gui Add, Text, x222 y188 w80 h20, SOURCE
+    Gui Font, s11 cCDD6F4, Segoe UI
+    Gui Add, Edit, x16 y208 w190 h28 vEdModel +Background313244, %EdModelVal%
+    Gui Add, Edit, x222 y208 w382 h28 vEdSource +Background313244, %EdSourceVal%
+
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x16 y246 w80 h20, CONTENT
     Gui Font, s9 cA6ADC8, Segoe UI
-    Gui Add, Text, x100 y130 w504 h20, {placeholder}  {name:default}  {clipboard}  {date}  {datetime}  @{Name}
+    Gui Add, Text, x100 y246 w504 h20, {placeholder}  {name:default}  {clipboard}  {date}  {datetime}  @{Name}
     Gui Font, s10 cCDD6F4, Consolas
-    Gui Add, Edit, x16 y150 w588 h350 vEdContent +Multi +WantReturn +WantTab +Background1e1e2e, %EdContentVal%
+    Gui Add, Edit, x16 y266 w588 h330 vEdContent +Multi +WantReturn +WantTab +Background1e1e2e, %EdContentVal%
 
     Gui Font, s10 cCDD6F4, Segoe UI
     bY := edH - 52
@@ -962,14 +1053,24 @@ EditorSave:
     } else {
         id := EditorID
     }
-    oldFav := 0, oldUses := 0
+    oldFav := 0, oldUses := 0, oldUid := "", oldCreated := ""
     if (Snippets.HasKey(id)) {
         oldFav := Snippets[id].fav
         oldUses := Snippets[id].uses
+        oldUid := Snippets[id].uid
+        oldCreated := Snippets[id].created
         if (EditorID != "")
             AppendHistoryEntry(id, "edit")
     }
-    Snippets[id] := {name: EdName, category: EdCat, group: EdGroup, tags: EdTags, content: EdContent, fav: oldFav, uses: oldUses}
+    now := NowStamp()
+    if (oldUid = "")
+        oldUid := GenerateSnippetUid()
+    if (oldCreated = "")
+        oldCreated := now
+    Snippets[id] := {name: EdName, category: EdCat, group: EdGroup, tags: EdTags
+        , content: EdContent, fav: oldFav, uses: oldUses, uid: oldUid
+        , description: EdDesc, model: EdModel, source: EdSource
+        , created: oldCreated, updated: now}
     GoSub SaveAllSnippets
     Gui Main:Default
     GoSub BuildCategoryTree
@@ -1226,13 +1327,33 @@ LoadAllSnippets:
         IniRead, raw,  %DataFile%, %sec%, content, ???
         IniRead, fv,   %DataFile%, %sec%, fav, 0
         IniRead, us,   %DataFile%, %sec%, uses, 0
+        IniRead, uid,  %DataFile%, %sec%, uid,
+        IniRead, desc, %DataFile%, %sec%, description,
+        IniRead, mdl,  %DataFile%, %sec%, model,
+        IniRead, src,  %DataFile%, %sec%, source,
+        IniRead, crt,  %DataFile%, %sec%, created,
+        IniRead, upd,  %DataFile%, %sec%, updated,
         StringReplace, decoded, raw, ``n, `n, All
         StringReplace, decoded, decoded, ``t, %A_Tab%, All
         if (grp = "ERROR")
             grp := ""
         if (tgs = "ERROR")
             tgs := ""
-        Snippets[id] := {name: nm, category: cat, group: grp, tags: tgs, content: decoded, fav: fv + 0, uses: us + 0}
+        if (desc = "ERROR")
+            desc := ""
+        if (mdl = "ERROR")
+            mdl := ""
+        if (src = "ERROR")
+            src := ""
+        if (crt = "ERROR" || crt = "")
+            crt := NowStamp()
+        if (upd = "ERROR" || upd = "")
+            upd := crt
+        if (uid = "ERROR" || uid = "")
+            uid := GenerateSnippetUid()
+        Snippets[id] := {name: nm, category: cat, group: grp, tags: tgs
+            , content: decoded, fav: fv + 0, uses: us + 0, uid: uid
+            , description: desc, model: mdl, source: src, created: crt, updated: upd}
         if (id >= NextID)
             NextID := id + 1
     }
@@ -1252,6 +1373,12 @@ SaveAllSnippets:
         IniWrite, %encoded%,    %DataFile%, %sec%, content
         IniWrite, % s.fav,      %DataFile%, %sec%, fav
         IniWrite, % s.uses,     %DataFile%, %sec%, uses
+        IniWrite, % s.uid,      %DataFile%, %sec%, uid
+        IniWrite, % s.description, %DataFile%, %sec%, description
+        IniWrite, % s.model,    %DataFile%, %sec%, model
+        IniWrite, % s.source,   %DataFile%, %sec%, source
+        IniWrite, % s.created,  %DataFile%, %sec%, created
+        IniWrite, % s.updated,  %DataFile%, %sec%, updated
     }
 return
 
@@ -1381,6 +1508,14 @@ CreateSampleData:
         IniWrite, %encoded%,    %DataFile%, %sec%, content
         IniWrite, % s.fav,      %DataFile%, %sec%, fav
         IniWrite, % s.uses,     %DataFile%, %sec%, uses
+        IniWrite, % GenerateSnippetUid(), %DataFile%, %sec%, uid
+        emptyMeta := ""
+        IniWrite, %emptyMeta%,  %DataFile%, %sec%, description
+        IniWrite, %emptyMeta%,  %DataFile%, %sec%, model
+        IniWrite, sample,       %DataFile%, %sec%, source
+        now := NowStamp()
+        IniWrite, %now%,        %DataFile%, %sec%, created
+        IniWrite, %now%,        %DataFile%, %sec%, updated
     }
 return
 
@@ -1425,6 +1560,12 @@ AppendHistoryEntry(id, operation) {
     IniWrite, %hEncoded%,  %HistoryFile%, %sec%, content
     IniWrite, % s.fav,     %HistoryFile%, %sec%, fav
     IniWrite, % s.uses,    %HistoryFile%, %sec%, uses
+    IniWrite, % s.uid,     %HistoryFile%, %sec%, uid
+    IniWrite, % s.description, %HistoryFile%, %sec%, description
+    IniWrite, % s.model,   %HistoryFile%, %sec%, model
+    IniWrite, % s.source,  %HistoryFile%, %sec%, source
+    IniWrite, % s.created, %HistoryFile%, %sec%, created
+    IniWrite, % s.updated, %HistoryFile%, %sec%, updated
     HistoryNextEntry++
     PruneOldHistory()
 }
@@ -1464,6 +1605,9 @@ EditorRestorePrev:
     IniRead, rCat,     %HistoryFile%, %hsec%, category,
     IniRead, rGroup,   %HistoryFile%, %hsec%, group,
     IniRead, rTags,    %HistoryFile%, %hsec%, tags,
+    IniRead, rDesc,    %HistoryFile%, %hsec%, description,
+    IniRead, rModel,   %HistoryFile%, %hsec%, model,
+    IniRead, rSource,  %HistoryFile%, %hsec%, source,
     IniRead, rContent, %HistoryFile%, %hsec%, content,
     IniRead, rTs,      %HistoryFile%, %hsec%, timestamp,
     StringReplace, rContent, rContent, ``n, `n, All
@@ -1473,6 +1617,9 @@ EditorRestorePrev:
     GuiControl Text, EdCat,   %rCat%
     GuiControl Text, EdGroup, %rGroup%
     GuiControl,, EdTags,    %rTags%
+    GuiControl,, EdDesc,    %rDesc%
+    GuiControl,, EdModel,   %rModel%
+    GuiControl,, EdSource,  %rSource%
     GuiControl,, EdContent, %rContent%
     ToolTip, Restored version from: %rTs%
     SetTimer, ClearRestoreToolTip, -3000
@@ -1532,13 +1679,33 @@ HistBrowserRestore:
     IniRead, rContent, %HistoryFile%, %hsec%, content,
     IniRead, rFav,     %HistoryFile%, %hsec%, fav,        0
     IniRead, rUses,    %HistoryFile%, %hsec%, uses,       0
+    IniRead, rUid,     %HistoryFile%, %hsec%, uid,
+    IniRead, rDesc,    %HistoryFile%, %hsec%, description,
+    IniRead, rModel,   %HistoryFile%, %hsec%, model,
+    IniRead, rSource,  %HistoryFile%, %hsec%, source,
+    IniRead, rCreated, %HistoryFile%, %hsec%, created,
+    IniRead, rUpdated, %HistoryFile%, %hsec%, updated,
     StringReplace, rContent, rContent, ``n, `n, All
     StringReplace, rContent, rContent, ``t, %A_Tab%, All
     rId := rId + 0
     if (rId = 0)
         return
+    if (rUid = "ERROR" || rUid = "")
+        rUid := GenerateSnippetUid()
+    if (rDesc = "ERROR")
+        rDesc := ""
+    if (rModel = "ERROR")
+        rModel := ""
+    if (rSource = "ERROR")
+        rSource := ""
+    if (rCreated = "ERROR" || rCreated = "")
+        rCreated := NowStamp()
+    if (rUpdated = "ERROR" || rUpdated = "")
+        rUpdated := rCreated
     Snippets[rId] := {name: rName, category: rCat, group: rGroup, tags: rTags
-        , content: rContent, fav: rFav + 0, uses: rUses + 0}
+        , content: rContent, fav: rFav + 0, uses: rUses + 0, uid: rUid
+        , description: rDesc, model: rModel, source: rSource
+        , created: rCreated, updated: rUpdated}
     if (rId >= NextID)
         NextID := rId + 1
     Gui HistBrowser:Destroy
@@ -1554,3 +1721,47 @@ HistBrowserGuiClose:
 HistBrowserGuiEscape:
     Gui HistBrowser:Destroy
 return
+
+; ============================================================
+;  METADATA / SYNC HELPERS
+; ============================================================
+NowStamp() {
+    FormatTime, ts,, yyyy-MM-dd HH:mm:ss
+    return ts
+}
+
+GenerateSnippetUid() {
+    FormatTime, ts,, yyyyMMddHHmmss
+    Random, r1, 100000, 999999
+    Random, r2, 100000, 999999
+    return "pm-" ts "-" r1 r2
+}
+
+SnippetUidExists(uid) {
+    global Snippets
+    for id, s in Snippets {
+        if (s.uid = uid)
+            return true
+    }
+    return false
+}
+
+SlugifyFileName(name) {
+    slug := name
+    StringLower, slug, slug
+    slug := RegExReplace(slug, "[^a-z0-9]+", "-")
+    slug := RegExReplace(slug, "^-+|-+$", "")
+    if (slug = "")
+        slug := "prompt"
+    if (StrLen(slug) > 80)
+        slug := SubStr(slug, 1, 80)
+    return slug
+}
+
+EscapeYaml(value) {
+    value := "" value
+    value := StrReplace(value, "'", "''")
+    StringReplace, value, value, `r, , All
+    StringReplace, value, value, `n, \n, All
+    return "'" value "'"
+}
