@@ -162,6 +162,11 @@ print(f'knowledge/ {len(know)} files')
 print(f'index/     {len(idx)} entries')
 \""
 
+  ui:
+    desc: "Start the Powledge web UI  (default port 7700, usage: task ui -- 8080)"
+    cmds:
+      - "{{.PYTHON}} server.py {{.CLI_ARGS}}"
+
   init:
     desc: Create raw/, knowledge/, and index/ directories
     cmds:

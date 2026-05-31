@@ -1,12 +1,16 @@
 {
   "dirs": {
-    "raw":       "raw",
+    "raw": "raw",
     "knowledge": "knowledge",
-    "index":     "index"
+    "index": "index"
   },
   "ingest": {
     "preferred_format": "markdown",
-    "fallback_formats": ["html", "txt", "pdf"],
+    "fallback_formats": [
+      "html",
+      "txt",
+      "pdf"
+    ],
     "auto_etl_on_ingest": false,
     "dedup_by": "source_url"
   },
@@ -15,8 +19,22 @@
     "overwrite_existing": false
   },
   "knowledge": {
-    "frontmatter_fields": ["id", "title", "source", "date", "tags", "type"],
-    "index_fields": ["id", "title", "summary", "tags", "source", "date"]
+    "frontmatter_fields": [
+      "id",
+      "title",
+      "source",
+      "date",
+      "tags",
+      "type"
+    ],
+    "index_fields": [
+      "id",
+      "title",
+      "summary",
+      "tags",
+      "source",
+      "date"
+    ]
   },
   "claude": {
     "model": "claude-sonnet-4-6",
@@ -34,7 +52,18 @@
     "space_keys": [],
     "page_ids": [],
     "include_child_pages": true,
-    "exclude_labels": ["draft", "archived"],
+    "exclude_labels": [
+      "draft",
+      "archived"
+    ],
     "page_limit": 100
+  },
+  "ui": {
+    "backup_on_update": true,
+    "max_backups_per_entry": 10,
+    "max_content_bytes": 1045504,
+    "require_title": true,
+    "default_type": "manual",
+    "default_tags": []
   }
 }
