@@ -60,6 +60,11 @@ tasks:
     cmds:
       - "{{.PYTHON}} etl/process.py --pending"
 
+  etl:refresh-summary:
+    desc: "Regenerate summary for a single knowledge entry  (usage: task etl:refresh-summary -- <entry-id>)"
+    cmds:
+      - "{{.PYTHON}} etl/refresh-summary.py {{.CLI_ARGS}}"
+
   # ---------------------------------------------------------------------------
   # Index
   # ---------------------------------------------------------------------------

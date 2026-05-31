@@ -7,8 +7,10 @@ Usage:
 """
 
 import json
+import os
 import re
 import shutil
+import tempfile
 import subprocess
 import sys
 import time
@@ -227,6 +229,219 @@ def create_backup(kd, entry_id, content, max_keep=10):
             old.unlink()
 
 
+# ── validations ───────────────────────────────────────────────────────────────
+
+def run_validations(root):
+    """Run all validation checks and return (checks_list, elapsed_ms)."""
+    t0 = time.perf_counter()
+    checks = []
+
+    def check(id_, label, script, status, message):
+        checks.append({"id": id_, "label": label, "script": script, "status": status, "message": message})
+
+    def _preview(s):
+        items = sorted(s)[:3]
+        return ", ".join(items) + ("…" if len(s) > 3 else "")
+
+    # ── System ───────────────────────────────────────────────────────────────
+    vi = sys.version_info
+    py_ok = vi >= (3, 9)
+    check("sys_python", "Python version", "python",
+          "ok" if py_ok else "error",
+          f"Python {vi.major}.{vi.minor}.{vi.micro}" + ("" if py_ok else " — requires 3.9+"))
+
+    usage = shutil.disk_usage(root)
+    free_mb = usage.free // (1024 * 1024)
+    check("sys_disk", "Free disk space", root.name,
+          "ok" if free_mb >= 100 else ("warn" if free_mb >= 20 else "error"),
+          f"{free_mb:,} MB free")
+
+    # ── Configuration ────────────────────────────────────────────────────────
+    cfg = {}
+    config_f = root / "powledge.config.json"
+    if config_f.exists():
+        try:
+            cfg = json.loads(config_f.read_text("utf-8"))
+            check("config_exists", "Config file", "powledge.config.json", "ok", "Valid JSON")
+        except Exception as e:
+            check("config_exists", "Config file", "powledge.config.json", "error", f"Invalid JSON: {e}")
+    else:
+        check("config_exists", "Config file", "powledge.config.json", "error", "File not found")
+
+    dirs_cfg = cfg.get("dirs", {})
+    missing_keys = [k for k in ("raw", "knowledge", "index") if not dirs_cfg.get(k)]
+    if missing_keys:
+        check("config_dirs", "Directory config", "powledge.config.json", "error",
+              f"Missing dirs keys: {', '.join(missing_keys)}")
+    else:
+        check("config_dirs", "Directory config", "powledge.config.json", "ok",
+              "All required dir keys present")
+
+    # deep type checks — one check summarising all issues
+    type_issues = []
+    for k, v in dirs_cfg.items():
+        if not isinstance(v, str) or not v:
+            type_issues.append(f"dirs.{k} must be a non-empty string")
+    claude_cfg = cfg.get("claude", {})
+    limit = claude_cfg.get("context_chunks_limit")
+    if limit is not None and (not isinstance(limit, int) or limit <= 0):
+        type_issues.append(f"claude.context_chunks_limit must be a positive int (got {limit!r})")
+    ui_cfg = cfg.get("ui", {})
+    for bk in ("backup_on_update", "require_title"):
+        if bk in ui_cfg and not isinstance(ui_cfg[bk], bool):
+            type_issues.append(f"ui.{bk} must be bool (got {type(ui_cfg[bk]).__name__})")
+    for ik, min_v in (("max_backups_per_entry", 0), ("max_content_bytes", 1024)):
+        v = ui_cfg.get(ik)
+        if v is not None:
+            if not isinstance(v, int):
+                type_issues.append(f"ui.{ik} must be int (got {type(v).__name__})")
+            elif v < min_v:
+                type_issues.append(f"ui.{ik} must be >= {min_v} (got {v})")
+    dt = ui_cfg.get("default_tags")
+    if dt is not None and (not isinstance(dt, list) or any(not isinstance(t, str) for t in dt)):
+        type_issues.append("ui.default_tags must be a list of strings")
+    if type_issues:
+        check("config_types", "Config value types", "powledge.config.json", "error",
+              f"{len(type_issues)} issue(s): {'; '.join(type_issues)}")
+    else:
+        check("config_types", "Config value types", "powledge.config.json", "ok",
+              "All config values are correctly typed")
+
+    # ── Environment ──────────────────────────────────────────────────────────
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    uses_claude = claude_cfg.get("use_for_etl") or claude_cfg.get("use_for_query")
+    if api_key:
+        check("env_api_key", "ANTHROPIC_API_KEY", "environment", "ok", "API key is set")
+    else:
+        check("env_api_key", "ANTHROPIC_API_KEY", "environment",
+              "error" if uses_claude else "warn",
+              "Not set — Claude features will fail if enabled")
+
+    # ── Directories ──────────────────────────────────────────────────────────
+    for key in ("raw", "knowledge", "index"):
+        rel = dirs_cfg.get(key, key)
+        d = root / rel
+        if not d.exists():
+            check(f"dir_{key}", f"{key.capitalize()} directory", rel, "warn",
+                  "Does not exist yet — will be created on first use")
+            continue
+        try:
+            fd, tmp = tempfile.mkstemp(dir=d)
+            os.close(fd)
+            os.unlink(tmp)
+            check(f"dir_{key}", f"{key.capitalize()} directory", rel, "ok", "Exists and writable")
+        except Exception:
+            check(f"dir_{key}", f"{key.capitalize()} directory", rel, "error",
+                  "Exists but not writable — check permissions")
+
+    # ── Scripts (existence + syntax) ──────────────────────────────────────────
+    script_list = [
+        ("script_etl_process",       "ETL: process.py",         "etl/process.py"),
+        ("script_etl_build_index",   "ETL: build-index.py",     "etl/build-index.py"),
+        ("script_etl_refresh",       "ETL: refresh-summary.py", "etl/refresh-summary.py"),
+        ("script_search_query",      "Search: query.py",        "search/query.py"),
+        ("script_search_list_index", "Search: list-index.py",   "search/list-index.py"),
+        ("script_ingest_confluence", "Ingest: confluence.py",   "ingest/confluence.py"),
+        ("script_config",            "Config loader",           "config.py"),
+        ("script_server",            "Server",                  "server.py"),
+    ]
+    for id_, label, rel in script_list:
+        p = root / rel
+        if not p.exists():
+            check(id_, label, rel, "error", "Script missing")
+            continue
+        try:
+            compile(p.read_text("utf-8", errors="replace"), str(p), "exec")
+            check(id_, label, rel, "ok", "Found, syntax OK")
+        except SyntaxError as e:
+            check(id_, label, rel, "error", f"Syntax error at line {e.lineno}: {e.msg}")
+
+    # ── Data health ──────────────────────────────────────────────────────────
+    id_dir   = root / dirs_cfg.get("index",     "index")
+    raw_dir  = root / dirs_cfg.get("raw",       "raw")
+    kn_dir   = root / dirs_cfg.get("knowledge", "knowledge")
+    all_json = id_dir / "all.json"
+
+    if all_json.exists():
+        try:
+            data = json.loads(all_json.read_text("utf-8"))
+            n = len(data.get("entries", []))
+            check("data_index_all", "Aggregated index", "index/all.json", "ok",
+                  f"Valid — {n} entr{'y' if n == 1 else 'ies'}")
+        except Exception as e:
+            check("data_index_all", "Aggregated index", "index/all.json", "error",
+                  f"Invalid JSON: {e}")
+    else:
+        check("data_index_all", "Aggregated index", "index/all.json", "warn",
+              "Not found — run Rebuild Index to generate")
+
+    if raw_dir.exists() and kn_dir.exists():
+        raw_stems = {f.stem for f in raw_dir.glob("*.md")}
+        kn_stems  = {f.stem for f in kn_dir.glob("*.md")}
+        pending = len(raw_stems - kn_stems)
+        if pending:
+            check("data_pending_etl", "Pending ETL", "raw/", "warn",
+                  f"{pending} raw file(s) not yet processed — run ETL")
+        else:
+            check("data_pending_etl", "Pending ETL", "raw/", "ok",
+                  "All raw files processed" if raw_stems else "No raw files yet")
+    else:
+        check("data_pending_etl", "Pending ETL", "raw/", "ok", "No data directories yet")
+
+    if id_dir.exists() and kn_dir.exists():
+        idx_stems = {f.stem[:-len(".index")] for f in id_dir.glob("*.index.json")}
+        kn_stems  = {f.stem for f in kn_dir.glob("*.md")}
+        orphaned  = idx_stems - kn_stems
+        missing   = kn_stems - idx_stems
+        check("data_orphaned_indexes", "Orphaned index entries", "index/",
+              "ok" if not orphaned else "warn",
+              "All index entries have matching knowledge files" if not orphaned else
+              f"{len(orphaned)} index file(s) without knowledge file: {_preview(orphaned)}")
+        check("data_missing_indexes", "Un-indexed knowledge files", "knowledge/",
+              "ok" if not missing else "warn",
+              "All knowledge files are indexed" if not missing else
+              f"{len(missing)} knowledge file(s) with no index entry: {_preview(missing)}")
+
+    if all_json.exists():
+        try:
+            entries = json.loads(all_json.read_text("utf-8")).get("entries", [])
+            stale = sum(
+                1 for e in entries
+                if (idx_f := id_dir / f"{e['id']}.index.json").exists()
+                and json.loads(idx_f.read_text("utf-8")).get("summary_stale")
+            )
+            check("data_stale_summaries", "Stale summaries", "index/",
+                  "ok" if not stale else "warn",
+                  "All summaries up to date" if not stale else f"{stale} entries need summary refresh")
+        except Exception:
+            pass
+
+    # ── Confluence ───────────────────────────────────────────────────────────
+    conf = cfg.get("confluence", {})
+    if conf.get("base_url"):
+        check("confluence_url", "Confluence base URL", "powledge.config.json", "ok", conf["base_url"])
+    else:
+        check("confluence_url", "Confluence base URL", "powledge.config.json", "warn",
+              "Not configured — Confluence ingestion unavailable")
+    if conf.get("email"):
+        check("confluence_creds", "Confluence credentials", "powledge.config.json", "ok", conf["email"])
+    else:
+        check("confluence_creds", "Confluence credentials", "powledge.config.json", "warn",
+              "Email not configured — Confluence ingestion unavailable")
+    space_or_pages = conf.get("space_keys") or conf.get("page_ids")
+    if space_or_pages:
+        parts = []
+        if conf.get("space_keys"): parts.append(f"spaces: {conf['space_keys']}")
+        if conf.get("page_ids"):   parts.append(f"pages: {conf['page_ids']}")
+        check("confluence_scope", "Confluence scope", "powledge.config.json", "ok", "  ".join(parts))
+    else:
+        check("confluence_scope", "Confluence scope", "powledge.config.json", "warn",
+              "No space_keys or page_ids configured — nothing to ingest")
+
+    elapsed_ms = round((time.perf_counter() - t0) * 1000)
+    return checks, elapsed_ms
+
+
 # ── request handler ───────────────────────────────────────────────────────────
 
 class Handler(BaseHTTPRequestHandler):
@@ -305,10 +520,23 @@ class Handler(BaseHTTPRequestHandler):
     # GET
 
     def handle_get(self, path, qs):
-        cfg = self.cfg()
-        kd = get_dir(cfg, "knowledge")
-        id_ = get_dir(cfg, "index")
-        rd  = get_dir(cfg, "raw")
+        if path == "validate":
+            checks, elapsed_ms = run_validations(ROOT)
+            return self.json_out({
+                "checks":     checks,
+                "ok":         sum(1 for c in checks if c["status"] == "ok"),
+                "warn":       sum(1 for c in checks if c["status"] == "warn"),
+                "error":      sum(1 for c in checks if c["status"] == "error"),
+                "elapsed_ms": elapsed_ms,
+            })
+
+        try:
+            cfg = self.cfg()
+            kd = get_dir(cfg, "knowledge")
+            id_ = get_dir(cfg, "index")
+            rd  = get_dir(cfg, "raw")
+        except Exception as e:
+            return self.err(f"Config error: {e} — check powledge.config.json", 503)
 
         if path == "index":
             f = id_ / "all.json"
@@ -508,9 +736,12 @@ class Handler(BaseHTTPRequestHandler):
     # POST
 
     def handle_post(self, path, data):
-        cfg = self.cfg()
-        kd  = get_dir(cfg, "knowledge")
-        id_ = get_dir(cfg, "index")
+        try:
+            cfg = self.cfg()
+            kd  = get_dir(cfg, "knowledge")
+            id_ = get_dir(cfg, "index")
+        except Exception as e:
+            return self.err(f"Config error: {e} — check powledge.config.json", 503)
 
         if path == "knowledge":
             title    = (data.get("title") or "").strip()
@@ -686,9 +917,12 @@ class Handler(BaseHTTPRequestHandler):
     # PUT
 
     def handle_put(self, path, data):
-        cfg = self.cfg()
-        kd  = get_dir(cfg, "knowledge")
-        id_ = get_dir(cfg, "index")
+        try:
+            cfg = self.cfg()
+            kd  = get_dir(cfg, "knowledge")
+            id_ = get_dir(cfg, "index")
+        except Exception as e:
+            return self.err(f"Config error: {e} — check powledge.config.json", 503)
 
         if path == "config":
             f = ROOT / "powledge.config.json"
@@ -737,10 +971,13 @@ class Handler(BaseHTTPRequestHandler):
     # DELETE
 
     def handle_delete(self, path):
-        cfg = self.cfg()
-        kd  = get_dir(cfg, "knowledge")
-        id_ = get_dir(cfg, "index")
-        rd  = get_dir(cfg, "raw")
+        try:
+            cfg = self.cfg()
+            kd  = get_dir(cfg, "knowledge")
+            id_ = get_dir(cfg, "index")
+            rd  = get_dir(cfg, "raw")
+        except Exception as e:
+            return self.err(f"Config error: {e} — check powledge.config.json", 503)
 
         if path.startswith("knowledge/"):
             entry_id = unquote(path[10:])
