@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>devps1 dashboard</title>
+<style>
+  :root {
+    --page:          #f9f9f7;
+    --surface:       #fcfcfb;
+    --ink:           #0b0b0b;
+    --ink-2:         #52514e;
+    --muted:         #898781;
+    --grid:          #e1e0d9;
+    --baseline:      #c3c2b7;
+    --border:        rgba(11,11,11,0.10);
+    --accent:        #2a78d6;
+    --accent-mid:    #86b6ef;
+    --accent-soft:   #cde2fb;
+    --good:          #006300;
+    --running:       #0ca30c;
+    --s1: #2a78d6; --s2: #1baf7a; --s3: #eda100; --s4: #008300;
+    --s5: #4a3aa7; --s6: #e34948; --s7: #e87ba4; --s8: #eb6834;
+    --s-other: #898781;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page:          #0d0d0d;
+      --surface:       #1a1a19;
+      --ink:           #ffffff;
+      --ink-2:         #c3c2b7;
+      --muted:         #898781;
+      --grid:          #2c2c2a;
+      --baseline:      #383835;
+      --border:        rgba(255,255,255,0.10);
+      --accent:        #3987e5;
+      --accent-mid:    #1c5cab;
+      --accent-soft:   #104281;
+      --good:          #0ca30c;
+      --running:       #0ca30c;
+      --s1: #3987e5; --s2: #199e70; --s3: #c98500; --s4: #008300;
+      --s5: #9085e9; --s6: #e66767; --s7: #d55181; --s8: #d95926;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, .mono {
+    font-family: ui-monospace, Consolas, "Cascadia Mono", monospace;
+    font-size: 0.92em;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px 48px; }
+
+  /* ---------- header ---------- */
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+    padding: 20px 0 16px;
+  }
+  header h1 { font-size: 20px; font-weight: 650; margin: 0; letter-spacing: -0.01em; }
+  header .src { color: var(--muted); font-size: 13px; }
+  header .spacer { flex: 1; }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  button, label.btn {
+    font: inherit; font-size: 13px; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px; cursor: pointer;
+  }
+  button:hover, label.btn:hover { border-color: var(--baseline); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { filter: brightness(1.08); }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .seg button { border: 0; border-radius: 0; padding: 6px 11px; background: transparent; }
+  .seg button + button { border-left: 1px solid var(--border); }
+  .seg button.on { background: var(--accent); color: #fff; }
+  .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; user-select: none; }
+  .toggle input { accent-color: var(--accent); }
+
+  /* ---------- empty state ---------- */
+  .empty {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 48px 32px; text-align: center; margin-top: 24px;
+  }
+  .empty h2 { font-size: 18px; margin: 0 0 8px; }
+  .empty p { color: var(--ink-2); max-width: 560px; margin: 6px auto; }
+  .empty .actions { margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .empty .hint { font-size: 12px; color: var(--muted); margin-top: 18px; }
+
+  /* ---------- stat tiles ---------- */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 8px; }
+  .tile {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .tile .label { font-size: 12px; color: var(--ink-2); }
+  .tile .value { font-size: 30px; font-weight: 600; line-height: 1.2; margin-top: 2px; }
+  .tile .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ---------- sections ---------- */
+  section { margin-top: 28px; }
+  section h2 {
+    font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--muted); margin: 0 0 10px;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px;
+  }
+
+  /* ---------- kanban board ---------- */
+  .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+  .bcol { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px; min-height: 90px; }
+  .bcol h3 {
+    font-size: 12px; font-weight: 600; margin: 0 0 8px; color: var(--ink-2);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .bcol h3 .cdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .bcol h3 .n { margin-left: auto; color: var(--muted); font-weight: 400; }
+  .bcard { background: var(--page); border: 1px solid var(--grid); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 12px; }
+  .bcard .btitle { color: var(--ink); font-size: 13px; margin-top: 3px; }
+  .bcard .bmeta { display: flex; align-items: center; gap: 5px; color: var(--muted); margin-top: 4px; }
+  .bcard .bwait { color: var(--ink-2); margin-top: 4px; }
+  .bnone { color: var(--muted); text-align: center; font-size: 12px; padding: 10px 0; }
+
+  /* ---------- current work cards ---------- */
+  .now-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+  .task-card .top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    display: inline-block; font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+    background: var(--page); border: 1px solid var(--border); border-radius: 6px;
+    padding: 1px 7px; color: var(--ink);
+  }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .proj { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
+  .task-card .title { font-size: 15px; font-weight: 600; margin: 6px 0 2px; }
+  .task-card .meta { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; }
+  .task-card .meta .run { color: var(--running); font-weight: 600; }
+  .meter { margin-top: 12px; }
+  .meter .bar-track { height: 6px; border-radius: 3px; background: var(--accent-soft); overflow: hidden; }
+  .meter .bar-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+  .meter .cap { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+  .task-card .note { font-size: 13px; color: var(--ink-2); margin-top: 10px; border-top: 1px solid var(--grid); padding-top: 8px; }
+  .task-card .note .t { color: var(--muted); font-size: 11px; }
+
+  /* ---------- chart ---------- */
+  .chart-card { padding: 16px 16px 10px; }
+  .chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .chart-head .big { font-size: 26px; font-weight: 600; }
+  .chart-head .cap { font-size: 12px; color: var(--muted); }
+  .chart { position: relative; height: 150px; margin-top: 12px; }
+  .chart .gridline { position: absolute; left: 0; right: 0; border-top: 1px solid var(--grid); }
+  .chart .gtick { position: absolute; right: 0; transform: translateY(-100%); font-size: 11px; color: var(--muted); background: var(--surface); padding-left: 4px; }
+  .bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 3px; border-bottom: 1px solid var(--baseline); }
+  .day { flex: 1 1 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; min-width: 0; cursor: default; }
+  .day .bar { width: 100%; max-width: 24px; background: var(--accent); border-radius: 4px 4px 0 0; }
+  .day.dim .bar { background: var(--accent-mid); }
+  .day:hover .bar { filter: brightness(1.12); }
+  .day .toplabel { position: absolute; top: -2px; transform: translateY(-100%); font-size: 11px; color: var(--ink-2); font-weight: 600; }
+  .xlabels { display: flex; gap: 3px; margin-top: 4px; }
+  .xlabels .xl { flex: 1 1 0; text-align: center; font-size: 10px; color: var(--muted); overflow: hidden; white-space: nowrap; min-width: 0; }
+  .tooltip {
+    position: fixed; z-index: 10; pointer-events: none; display: none;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18); padding: 8px 10px; font-size: 12px; max-width: 260px;
+  }
+  .tooltip .th { font-weight: 600; margin-bottom: 4px; }
+  .tooltip .row { display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
+  .tooltip .row .n { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--ink); }
+  details.tableview { margin-top: 8px; }
+  details.tableview summary { font-size: 12px; color: var(--muted); cursor: pointer; }
+  details.tableview table { border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+  details.tableview td, details.tableview th { padding: 2px 12px 2px 0; text-align: left; font-variant-numeric: tabular-nums; }
+  details.tableview th { color: var(--muted); font-weight: 500; }
+
+  /* ---------- columns: timeline + side ---------- */
+  .cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; align-items: start; }
+  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+  .timeline .dayhead {
+    font-size: 12px; font-weight: 600; color: var(--ink-2);
+    margin: 14px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--grid);
+  }
+  .timeline .dayhead:first-child { margin-top: 0; }
+  .entry { display: flex; gap: 10px; padding: 4px 0; align-items: baseline; }
+  .entry .time { font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: var(--muted); flex: none; width: 38px; }
+  .entry .msg { min-width: 0; }
+  .entry .msg .txt { color: var(--ink); }
+  .entry .tags { display: inline-flex; gap: 6px; margin-right: 6px; vertical-align: baseline; }
+  .showmore { margin-top: 12px; width: 100%; }
+  .side .item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--grid); align-items: baseline; }
+  .side .item:last-child { border-bottom: 0; }
+  .side .item .what { min-width: 0; flex: 1; }
+  .side .item .when { font-size: 12px; color: var(--muted); flex: none; }
+  .side .item .t { font-size: 13px; }
+  .side h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 4px; }
+  .side .card + .card { margin-top: 12px; }
+  .none { color: var(--muted); font-size: 13px; padding: 8px 0; }
+  .archived-tag { font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 0 6px; }
+
+  footer { margin-top: 40px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--grid); padding-top: 14px; }
+  footer code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>devps1 dashboard</h1>
+    <span class="src" id="src"></span>
+    <span class="spacer"></span>
+    <div class="controls" id="controls" hidden>
+      <div class="seg" id="rangeSeg">
+        <button data-days="7">7d</button>
+        <button data-days="14" class="on">14d</button>
+        <button data-days="30">30d</button>
+      </div>
+      <label class="toggle"><input type="checkbox" id="showArchived"> include archived</label>
+      <button id="rescanBtn">Rescan</button>
+      <button id="changeBtn">Change folder…</button>
+    </div>
+  </header>
+
+  <div class="empty" id="empty">
+    <h2>All your dev.ps1 work, one page</h2>
+    <p>Pick the folder that contains your projects (e.g. <code class="mono">C:\Users\g\Projects</code>).
+       The dashboard scans it for <code class="mono">.dev/</code> folders and aggregates current tasks,
+       daily logs and completed work — entirely in your browser, nothing leaves your machine.</p>
+    <p>Folders named <code class="mono">archive</code>/<code class="mono">archived</code> and projects with
+       <code class="mono">"archived": true</code> in <code class="mono">.dev/config.json</code> are hidden by default.</p>
+    <div class="actions">
+      <button class="primary" id="pickBtn">Choose projects folder</button>
+      <button id="reconnectBtn" hidden></button>
+      <label class="btn" id="fallbackLbl" hidden>Choose folder (fallback)<input type="file" id="fallbackInput" webkitdirectory hidden></label>
+      <button id="demoBtn">Load demo data</button>
+    </div>
+    <div class="hint" id="emptyHint"></div>
+  </div>
+
+  <div id="content" hidden>
+    <div class="tiles" id="tiles"></div>
+
+    <section id="boardSec">
+      <h2>Board</h2>
+      <div class="board" id="board"></div>
+    </section>
+
+    <section id="nowSec">
+      <h2>Current work</h2>
+      <div class="now-grid" id="nowGrid"></div>
+    </section>
+
+    <section>
+      <h2>Activity</h2>
+      <div class="card chart-card">
+        <div class="chart-head">
+          <div><span class="big" id="chartTotal"></span> <span class="cap">log entries in the last <span id="chartDays"></span> days</span></div>
+          <div class="cap" id="chartPeak"></div>
+        </div>
+        <div class="chart" id="chart"></div>
+        <div class="xlabels" id="xlabels"></div>
+        <details class="tableview"><summary>View as table</summary><div id="chartTable"></div></details>
+      </div>
+    </section>
+
+    <section>
+      <div class="cols">
+        <div>
+          <h2>Recent activity</h2>
+          <div class="card timeline" id="timeline"></div>
+        </div>
+        <div class="side">
+          <h2>&nbsp;</h2>
+          <div class="card">
+            <h3>Recently completed</h3>
+            <div id="doneList"></div>
+          </div>
+          <div class="card">
+            <h3>Open tasks</h3>
+            <div id="openList"></div>
+          </div>
+          <div class="card">
+            <h3>Projects</h3>
+            <div id="projList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Reads <code>.dev/current.json</code>, <code>.dev/tasks/*.md</code>, <code>.dev/logs/*.md</code> and
+      <code>.dev/cache/done-*.json</code> from every project under the chosen folder.
+      Hidden by default: folders named <code>archive</code>/<code>archived</code>/<code>_archive</code>,
+      projects with <code>"archived": true</code> in <code>.dev/config.json</code>, and tasks completed
+      before the selected range — flip “include archived” to see everything.
+      Data never leaves the browser.
+    </footer>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+'use strict';
+
+/* ============================== state ============================== */
+
+const state = {
+  projects: [],        // [{name, path, archived, current, tasks, logDays, done, workflows}]
+  rangeDays: 14,
+  showArchived: false,
+  sourceName: '',
+  rootHandle: null,    // FileSystemDirectoryHandle when using FSA API
+};
+
+const SKIP_DIRS = new Set(['.git', 'node_modules', '.venv', 'venv', '__pycache__',
+  'dist', 'build', 'out', 'bin', 'obj', 'target', '.next', '.idea', '.vs', 'vendor', 'packages']);
+const ARCHIVE_RE = /^(\.|_)?archived?$|^archives$|^z[_-]?archive/i;
+const MAX_DEPTH = 6;
+const BUILTIN_WORKFLOWS = {
+  simple:  ['start','implement','commit','push','pr','review','qa','merge','done'],
+  gitflow: ['start','implement','commit','push','pr','review','qa','merge','sync','pull','done'],
+};
+const BOARD_STAGES = ['In Development', 'Code Review', 'QA Testing', 'Ready for Release'];
+const STAGE_COLORS = {
+  'In Development':    'var(--s1)',
+  'Code Review':       'var(--s5)',
+  'QA Testing':        'var(--s3)',
+  'Ready for Release': 'var(--s2)',
+  'Done':              'var(--s4)',
+};
+
+/* ============================== utils ============================== */
+
+const $ = (id) => document.getElementById(id);
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function parseDate(v) {
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d) ? null : d;
+}
+
+function dayKey(d) {
+  const p = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+
+function fmtDay(key) {
+  const d = new Date(key + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function ago(d) {
+  if (!d) return '';
+  const s = (Date.now() - d.getTime()) / 1000;
+  if (s < 90) return 'just now';
+  if (s < 5400) return Math.round(s / 60) + 'm ago';
+  if (s < 129600) return Math.round(s / 3600) + 'h ago';
+  return Math.round(s / 86400) + 'd ago';
+}
+
+function trackedTime(sessions) {
+  if (!Array.isArray(sessions) || !sessions.length) return { text: '', running: false };
+  let ms = 0, running = false;
+  for (const s of sessions) {
+    const a = parseDate(s && s.start);
+    if (!a) continue;
+    let b = parseDate(s && s.end);
+    if (!b) { b = new Date(); running = true; }
+    if (b > a) ms += b - a;
+  }
+  const h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60;
+  return { text: h + 'h ' + String(m).padStart(2, '0') + 'm', running };
+}
+
+/* Project colors: fixed slots assigned once per scan, alphabetical over ALL
+   scanned projects (incl. archived) so filters never repaint survivors. */
+function assignColors() {
+  const names = state.projects.map(p => p.name).sort((a, b) => a.localeCompare(b));
+  const map = {};
+  names.forEach((n, i) => { map[n] = i < 8 ? 'var(--s' + (i + 1) + ')' : 'var(--s-other)'; });
+  for (const p of state.projects) p.color = map[p.name];
+}
+
+/* ============================== parsing ============================== */
+
+// "- HH:mm — [TASK-1] message"  (em dash written by dev.ps1; tolerate -/–)
+const LOG_LINE = /^-\s+(\d{1,2}:\d{2})\s+[—–-]+\s+(?:\[([^\]]+)\]\s*)?(.*)$/;
+
+function parseLogFile(name, text) {
+  const m = name.match(/^(\d{4}-\d{2}-\d{2})\.md$/);
+  if (!m) return null;
+  const entries = [];
+  for (const line of text.split(/\r?\n/)) {
+    const e = line.match(LOG_LINE);
+    if (e) entries.push({ time: e[1], taskId: e[2] || '', msg: e[3].trim() });
+  }
+  return { date: m[1], entries };
+}
+
+function parseTaskFile(name, text, lastModified) {
+  const id = name.replace(/\.md$/i, '');
+  const grab = (re) => { const m = text.match(re); return m ? m[1].trim() : ''; };
+  const notes = [];
+  let inNotes = false;
+  for (const line of text.split(/\r?\n/)) {
+    if (/^##\s+Notes\b/.test(line)) { inNotes = true; continue; }
+    if (inNotes && /^##\s/.test(line)) break;
+    if (inNotes) { const e = line.match(LOG_LINE); if (e) notes.push({ time: e[1], msg: e[3].trim() }); }
+  }
+  return {
+    id,
+    started: parseDate(grab(/^Started:\s*(.+)$/m)),
+    completed: parseDate(grab(/^Completed:\s*(.+)$/m)),
+    openTodos: (text.match(/^\s*-\s\[\s\]/gm) || []).length,
+    doneTodos: (text.match(/^\s*-\s\[[xX]\]/gm) || []).length,
+    lastNote: notes.length ? notes[notes.length - 1] : null,
+    modified: lastModified ? new Date(lastModified) : null,
+  };
+}
+
+function parseDoneFile(name, obj) {
+  if (!obj || !obj.taskId) return null;
+  let completed = null;
+  const m = name.match(/-(\d{8})-(\d{4})\.json$/);
+  if (m) completed = parseDate(m[1].slice(0,4) + '-' + m[1].slice(4,6) + '-' + m[1].slice(6,8) +
+                              'T' + m[2].slice(0,2) + ':' + m[2].slice(2,4) + ':00');
+  const sessions = Array.isArray(obj.sessions) ? obj.sessions : [];
+  if (!completed) {
+    for (const s of sessions) { const e = parseDate(s && s.end); if (e && (!completed || e > completed)) completed = e; }
+  }
+  return { id: obj.taskId, title: obj.taskTitle || '', completed, tracked: trackedTime(sessions).text };
+}
+
+function workflowSteps(project, wfName) {
+  const w = project.workflows && project.workflows[wfName];
+  if (w && Array.isArray(w.steps)) return w.steps.map(s => (s && s.name) || 'step');
+  return BUILTIN_WORKFLOWS[wfName] || null;
+}
+
+/* ============================ scanning ============================ */
+
+function newProject(name, path, archived) {
+  return { name, path, archived, current: null, tasks: [], logDays: [], done: [], workflows: null, color: '' };
+}
+
+function ingestDevFile(project, sub, name, text, lastModified) {
+  try {
+    if (sub === '' && name === 'current.json') {
+      project.current = JSON.parse(text);
+    } else if (sub === '' && name === 'config.json') {
+      const cfg = JSON.parse(text);
+      if (cfg && cfg.archived === true) project.archived = true;
+      if (cfg && cfg.workflows) project.workflows = cfg.workflows;
+    } else if (sub === 'tasks' && /\.md$/i.test(name)) {
+      project.tasks.push(parseTaskFile(name, text, lastModified));
+    } else if (sub === 'logs' && /\.md$/i.test(name)) {
+      const log = parseLogFile(name, text);
+      if (log) project.logDays.push(log);
+    } else if (sub === 'cache' && /^done-.*\.json$/i.test(name)) {
+      const d = parseDoneFile(name, JSON.parse(text));
+      if (d) project.done.push(d);
+    }
+  } catch (e) { /* one bad file never breaks the scan */ }
+}
+
+/* --- File System Access API scan --- */
+
+async function scanDirHandle(root) {
+  const projects = [];
+  async function walk(dir, path, depth, archived) {
+    let dev = null;
+    const subdirs = [];
+    for await (const [name, handle] of dir.entries()) {
+      if (handle.kind !== 'directory') continue;
+      if (name === '.dev') { dev = handle; continue; }
+      if (SKIP_DIRS.has(name) || name.startsWith('.')) continue;
+      subdirs.push([name, handle]);
+    }
+    if (dev) {
+      const project = newProject(dir === root ? (root.name || 'root') : path.split('/').pop(), path, archived);
+      await scanDevHandle(dev, project);
+      projects.push(project);
+    }
+    if (depth >= MAX_DEPTH) return;
+    for (const [name, handle] of subdirs) {
+      await walk(handle, path ? path + '/' + name : name, depth + 1, archived || ARCHIVE_RE.test(name));
+    }
+  }
+  await walk(root, '', 0, false);
+  return projects;
+}
+
+async function scanDevHandle(dev, project) {
+  async function readInto(sub) {
+    let dir = dev;
+    if (sub) {
+      try { dir = await dev.getDirectoryHandle(sub); } catch (e) { return; }
+    }
+    for await (const [name, handle] of dir.entries()) {
+      if (handle.kind !== 'file') continue;
+      try {
+        const f = await handle.getFile();
+        ingestDevFile(project, sub, name, await f.text(), f.lastModified);
+      } catch (e) { /* skip unreadable */ }
+    }
+  }
+  await readInto('');
+  await readInto('tasks');
+  await readInto('logs');
+  await readInto('cache');
+}
+
+/* --- webkitdirectory fallback scan (Firefox/Safari) --- */
+
+async function scanFileList(files) {
+  const byProject = new Map();
+  for (const f of files) {
+    const rel = (f.webkitRelativePath || '').replace(/\\/g, '/');
+    const i = rel.indexOf('/.dev/');
+    if (i < 0) continue;
+    const projPath = rel.slice(0, i);
+    const parts = projPath.split('/');
+    if (parts.slice(0, -1).some(seg => SKIP_DIRS.has(seg))) continue;
+    const inner = rel.slice(i + 6).split('/'); // after ".dev/"
+    if (inner.length > 2) continue;
+    const sub = inner.length === 2 ? inner[0] : '';
+    if (sub && !['tasks', 'logs', 'cache', 'templates'].includes(sub)) continue;
+    if (!byProject.has(projPath)) {
+      const archived = parts.some(seg => ARCHIVE_RE.test(seg));
+      byProject.set(projPath, newProject(parts[parts.length - 1] || parts[0], projPath, archived));
+    }
+    const project = byProject.get(projPath);
+    try {
+      ingestDevFile(project, sub, inner[inner.length - 1], await f.text(), f.lastModified);
+    } catch (e) { /* skip */ }
+  }
+  return [...byProject.values()];
+}
+
+/* ==================== handle persistence (IndexedDB) ==================== */
+
+function idb() {
+  return new Promise((res, rej) => {
+    const rq = indexedDB.open('devps1-dashboard', 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore('kv');
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+async function kvSet(key, val) {
+  try {
+    const db = await idb();
+    await new Promise((res, rej) => {
+      const tx = db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').put(val, key);
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    });
+  } catch (e) { /* private mode etc. */ }
+}
+async function kvGet(key) {
+  try {
+    const db = await idb();
+    return await new Promise((res, rej) => {
+      const rq = db.transaction('kv').objectStore('kv').get(key);
+      rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error);
+    });
+  } catch (e) { return undefined; }
+}
+
+/* ============================ actions ============================ */
+
+async function pickFolder() {
+  try {
+    const handle = await window.showDirectoryPicker({ mode: 'read' });
+    state.rootHandle = handle;
+    await kvSet('root', handle);
+    await runScan();
+  } catch (e) { /* user cancelled */ }
+}
+
+async function reconnect() {
+  const handle = await kvGet('root');
+  if (!handle) return;
+  if (await handle.requestPermission({ mode: 'read' }) !== 'granted') return;
+  state.rootHandle = handle;
+  await runScan();
+}
+
+async function runScan() {
+  if (!state.rootHandle) return;
+  $('src').textContent = 'scanning…';
+  state.projects = await scanDirHandle(state.rootHandle);
+  state.sourceName = state.rootHandle.name;
+  finishScan();
+}
+
+async function runFallbackScan(files) {
+  $('src').textContent = 'scanning…';
+  state.projects = await scanFileList(files);
+  state.sourceName = files.length && files[0].webkitRelativePath
+    ? files[0].webkitRelativePath.split('/')[0] : 'selected folder';
+  finishScan();
+}
+
+function finishScan() {
+  assignColors();
+  $('empty').hidden = true;
+  $('content').hidden = false;
+  $('controls').hidden = false;
+  $('rescanBtn').hidden = !state.rootHandle;
+  $('src').textContent = state.sourceName + ' · ' + state.projects.length + ' project' +
+    (state.projects.length === 1 ? '' : 's') + ' · scanned ' + new Date().toLocaleTimeString();
+  render();
+}
+
+/* ============================ view model ============================ */
+
+function buildView() {
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  cutoff.setDate(cutoff.getDate() - (state.rangeDays - 1));
+  const cutoffKey = dayKey(cutoff);
+
+  const projects = state.projects.filter(p => state.showArchived || !p.archived);
+
+  // day buckets for the chart
+  const days = [];
+  const byDay = {};
+  for (let i = 0; i < state.rangeDays; i++) {
+    const d = new Date(cutoff); d.setDate(d.getDate() + i);
+    const k = dayKey(d);
+    const bucket = { key: k, total: 0, perProject: {}, weekend: [0, 6].includes(d.getDay()) };
+    days.push(bucket); byDay[k] = bucket;
+  }
+
+  const activity = []; // flattened log entries in range
+  let lastActivity = {}; // project name -> latest "date time"
+
+  for (const p of projects) {
+    for (const log of p.logDays) {
+      if (log.date < cutoffKey) continue;
+      const bucket = byDay[log.date];
+      for (const e of log.entries) {
+        if (bucket) {
+          bucket.total++;
+          bucket.perProject[p.name] = (bucket.perProject[p.name] || 0) + 1;
+        }
+        activity.push({ date: log.date, time: e.time, taskId: e.taskId, msg: e.msg, project: p });
+        const stamp = log.date + ' ' + e.time;
+        if (!lastActivity[p.name] || stamp > lastActivity[p.name]) lastActivity[p.name] = stamp;
+      }
+    }
+  }
+  activity.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+
+  // completed tasks: merge cache/done-*.json with task files carrying "Completed:"
+  const doneMap = new Map();
+  for (const p of projects) {
+    for (const d of p.done) {
+      const key = p.name + '/' + d.id;
+      const prev = doneMap.get(key);
+      if (!prev || (d.completed && (!prev.completed || d.completed > prev.completed))) {
+        doneMap.set(key, { ...d, project: p });
+      }
+    }
+    for (const t of p.tasks) {
+      if (!t.completed) continue;
+      const key = p.name + '/' + t.id;
+      if (!doneMap.has(key)) doneMap.set(key, { id: t.id, title: '', completed: t.completed, tracked: '', project: p });
+    }
+  }
+  let done = [...doneMap.values()].sort((a, b) => (b.completed || 0) - (a.completed || 0));
+  if (!state.showArchived) done = done.filter(d => d.completed && dayKey(d.completed) >= cutoffKey);
+
+  // current tasks
+  const current = [];
+  for (const p of projects) {
+    const c = p.current;
+    if (!c || !c.taskId) continue;
+    const steps = workflowSteps(p, c.workflow || '');
+    const stepIdx = typeof c.workflowStep === 'number' ? c.workflowStep : parseInt(c.workflowStep, 10) || 0;
+    const taskFile = p.tasks.find(t => t.id === c.taskId);
+    current.push({
+      project: p, id: c.taskId, title: c.taskTitle || '',
+      stage: c.stage || (steps && stepIdx >= steps.length ? 'Done' : 'In Development'),
+      waitingOn: c.waitingOn || '',
+      branch: c.branch || '', jiraUrl: c.jiraUrl || '',
+      started: parseDate(c.startedAt),
+      tracked: trackedTime(c.sessions),
+      workflow: c.workflow || '', steps, stepIdx,
+      openTodos: taskFile ? taskFile.openTodos : null,
+      lastNote: taskFile ? taskFile.lastNote : null,
+      lastSeen: lastActivity[p.name] || '',
+    });
+  }
+  current.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
+
+  // open (not completed, not current) tasks, recently touched
+  const open = [];
+  for (const p of projects) {
+    const currentId = p.current && p.current.taskId;
+    for (const t of p.tasks) {
+      if (t.completed || t.id === currentId) continue;
+      const seen = t.modified || t.started;
+      if (!state.showArchived && (!seen || dayKey(seen) < cutoffKey)) continue;
+      open.push({ ...t, project: p, seen });
+    }
+  }
+  open.sort((a, b) => (b.seen || 0) - (a.seen || 0));
+
+  return { projects, days, activity, done, current, open, cutoffKey };
+}
+
+/* ============================ rendering ============================ */
+
+function dotHtml(p) { return '<span class="dot" style="background:' + p.color + '"></span>'; }
+function projHtml(p) {
+  return '<span class="proj">' + dotHtml(p) + esc(p.name) +
+    (p.archived ? ' <span class="archived-tag">archived</span>' : '') + '</span>';
+}
+
+function render() {
+  const v = buildView();
+  renderTiles(v);
+  renderBoard(v);
+  renderCurrent(v);
+  renderChart(v);
+  renderTimeline(v);
+  renderSide(v);
+}
+
+function renderTiles(v) {
+  const activeProjects = new Set(v.activity.map(a => a.project.name));
+  for (const c of v.current) activeProjects.add(c.project.name);
+  const tiles = [
+    { label: 'Active tasks', value: v.current.length, sub: v.current.filter(c => c.tracked.running).length + ' running' },
+    { label: 'Waiting on others', value: v.current.filter(c => c.waitingOn).length, sub: 'review / QA hand-offs' },
+    { label: 'Projects active', value: activeProjects.size, sub: 'of ' + v.projects.length + ' scanned' },
+    { label: 'Log entries', value: v.activity.length, sub: 'last ' + state.rangeDays + ' days' },
+    { label: 'Tasks completed', value: v.done.filter(d => d.completed && dayKey(d.completed) >= v.cutoffKey).length, sub: 'last ' + state.rangeDays + ' days' },
+  ];
+  $('tiles').innerHTML = tiles.map(t =>
+    '<div class="tile"><div class="label">' + esc(t.label) + '</div>' +
+    '<div class="value">' + esc(t.value) + '</div>' +
+    '<div class="sub">' + esc(t.sub) + '</div></div>').join('');
+}
+
+function renderBoard(v) {
+  // Fixed known stages first (color per stage, never repainted), any custom
+  // stage names from user workflows inserted before Done.
+  const cols = [...BOARD_STAGES];
+  for (const c of v.current) {
+    if (c.stage && c.stage !== 'Done' && !cols.includes(c.stage)) cols.push(c.stage);
+  }
+  cols.push('Done');
+
+  const byStage = {};
+  for (const c of v.current) {
+    const s = cols.includes(c.stage) ? c.stage : 'In Development';
+    (byStage[s] = byStage[s] || []).push(c);
+  }
+  const doneCards = v.done.slice(0, 8);
+
+  $('board').innerHTML = cols.map(stage => {
+    let cards;
+    if (stage === 'Done') {
+      cards = doneCards.map(d =>
+        '<div class="bcard"><span class="badge">' + esc(d.id) + '</span>' +
+        (d.title ? '<div class="btitle">' + esc(d.title) + '</div>' : '') +
+        '<div class="bmeta">' + dotHtml(d.project) + esc(d.project.name) +
+        (d.completed ? ' · ' + esc(ago(d.completed)) : '') + '</div></div>').join('');
+    } else {
+      cards = (byStage[stage] || []).map(c =>
+        '<div class="bcard"><span class="badge">' + esc(c.id) + '</span>' +
+        (c.title ? '<div class="btitle">' + esc(c.title) + '</div>' : '') +
+        '<div class="bmeta">' + dotHtml(c.project) + esc(c.project.name) +
+        (c.started ? ' · ' + esc(ago(c.started)) : '') + '</div>' +
+        (c.waitingOn ? '<div class="bwait">&#9203; waiting on ' + esc(c.waitingOn) + '</div>' : '') +
+        '</div>').join('');
+    }
+    const n = stage === 'Done' ? doneCards.length : (byStage[stage] || []).length;
+    return '<section class="bcol"><h3><span class="cdot" style="background:' +
+      (STAGE_COLORS[stage] || 'var(--s-other)') + '"></span>' + esc(stage) +
+      '<span class="n">' + n + '</span></h3>' + (cards || '<div class="bnone">—</div>') + '</section>';
+  }).join('');
+}
+
+function renderCurrent(v) {
+  if (!v.current.length) {
+    $('nowGrid').innerHTML = '<div class="card none">No active task in any project. Start one with ' +
+      '<code class="mono">.\\dev.ps1 start ABC-123</code></div>';
+    return;
+  }
+  $('nowGrid').innerHTML = v.current.map(c => {
+    let meter = '';
+    if (c.steps && c.steps.length) {
+      const pct = Math.min(100, Math.round(100 * c.stepIdx / c.steps.length));
+      const next = c.stepIdx < c.steps.length ? 'next: ' + esc(c.steps[c.stepIdx]) : 'complete';
+      meter = '<div class="meter"><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+        '<div class="cap"><span>' + esc(c.workflow) + ' · ' + c.stepIdx + '/' + c.steps.length + ' steps</span><span>' + next + '</span></div></div>';
+    }
+    const meta = [];
+    if (c.stage) meta.push(esc(c.stage));
+    if (c.waitingOn) meta.push('&#9203; waiting on ' + esc(c.waitingOn));
+    if (c.branch) meta.push('<span class="mono">' + esc(c.branch) + '</span>');
+    if (c.started) meta.push('started ' + esc(ago(c.started)));
+    if (c.tracked.text) meta.push('<span' + (c.tracked.running ? ' class="run"' : '') + '>' +
+      esc(c.tracked.text) + (c.tracked.running ? ' · running' : '') + '</span>');
+    if (c.openTodos != null) meta.push(c.openTodos + ' open TODO' + (c.openTodos === 1 ? '' : 's'));
+    const note = c.lastNote
+      ? '<div class="note"><span class="t">' + esc(c.lastNote.time) + '</span> ' + esc(c.lastNote.msg) + '</div>' : '';
+    const title = c.title ? esc(c.title) : '<span style="color:var(--muted)">(no title)</span>';
+    const id = c.jiraUrl
+      ? '<a class="badge" href="' + esc(c.jiraUrl) + '" target="_blank" rel="noopener">' + esc(c.id) + '</a>'
+      : '<span class="badge">' + esc(c.id) + '</span>';
+    return '<div class="card task-card">' +
+      '<div class="top">' + id + projHtml(c.project) + '</div>' +
+      '<div class="title">' + title + '</div>' +
+      '<div class="meta">' + meta.join('<span>·</span>') + '</div>' +
+      meter + note + '</div>';
+  }).join('');
+}
+
+function renderChart(v) {
+  const days = v.days;
+  const max = Math.max(1, ...days.map(d => d.total));
+  const total = days.reduce((s, d) => s + d.total, 0);
+  $('chartTotal').textContent = total.toLocaleString();
+  $('chartDays').textContent = state.rangeDays;
+  const peak = days.reduce((a, b) => (b.total > a.total ? b : a), days[0]);
+  $('chartPeak').textContent = peak.total ? 'peak ' + peak.total + ' on ' + fmtDay(peak.key) : '';
+
+  // gridlines at max and a clean mid value, positioned by value
+  // (bars max out at 140px inside the 150px-tall chart area)
+  const topPct = (val) => ((1 - (140 / 150) * (val / max)) * 100).toFixed(1);
+  const mid = Math.round(max / 2);
+  let glines = '<div class="gridline" style="top:' + topPct(max) + '%"><span class="gtick">' + max + '</span></div>';
+  if (mid > 0 && mid < max) {
+    glines += '<div class="gridline" style="top:' + topPct(mid) + '%"><span class="gtick">' + mid + '</span></div>';
+  }
+
+  const bars = days.map((d, i) => {
+    const h = d.total ? Math.max(3, Math.round(140 * d.total / max)) : 0;
+    const label = (d.total === max && max > 0 && d === peak) ? '<span class="toplabel">' + d.total + '</span>' : '';
+    return '<div class="day' + (d.weekend ? ' dim' : '') + '" data-i="' + i + '">' + label +
+      '<div class="bar" style="height:' + h + 'px"></div></div>';
+  }).join('');
+  $('chart').innerHTML = glines + '<div class="bars">' + bars + '</div>';
+
+  const step = Math.ceil(days.length / 10);
+  $('xlabels').innerHTML = days.map((d, i) => {
+    const show = i % step === 0 || i === days.length - 1;
+    const dt = new Date(d.key + 'T00:00:00');
+    return '<span class="xl">' + (show ? esc(dt.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })) : '') + '</span>';
+  }).join('');
+
+  $('chartTable').innerHTML = '<table><tr><th>Day</th><th>Entries</th></tr>' +
+    days.map(d => '<tr><td>' + esc(fmtDay(d.key)) + '</td><td>' + d.total + '</td></tr>').join('') + '</table>';
+
+  // hover tooltip with per-project breakdown
+  const tip = $('tooltip');
+  const colorOf = {}; for (const p of v.projects) colorOf[p.name] = p.color;
+  $('chart').querySelectorAll('.day').forEach(el => {
+    const d = days[+el.dataset.i];
+    el.addEventListener('mousemove', (ev) => {
+      const rows = Object.entries(d.perProject).sort((a, b) => b[1] - a[1]).map(([name, n]) =>
+        '<div class="row"><span class="dot" style="background:' + colorOf[name] + '"></span>' +
+        esc(name) + '<span class="n">' + n + '</span></div>').join('');
+      tip.innerHTML = '<div class="th">' + esc(fmtDay(d.key)) + ' · ' + d.total + ' entr' + (d.total === 1 ? 'y' : 'ies') + '</div>' + rows;
+      tip.style.display = 'block';
+      const x = Math.min(ev.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
+      tip.style.left = x + 'px';
+      tip.style.top = Math.max(8, ev.clientY - tip.offsetHeight - 12) + 'px';
+    });
+    el.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  });
+}
+
+let timelineExpanded = false;
+function renderTimeline(v) {
+  const LIMIT = 40;
+  const entries = timelineExpanded ? v.activity : v.activity.slice(0, LIMIT);
+  if (!entries.length) {
+    $('timeline').innerHTML = '<div class="none">No log entries in the last ' + state.rangeDays +
+      ' days. Notes land here: <code class="mono">.\\dev.ps1 note "..."</code></div>';
+    return;
+  }
+  let html = '', lastDate = '';
+  for (const e of entries) {
+    if (e.date !== lastDate) {
+      html += '<div class="dayhead">' + esc(fmtDay(e.date)) + '</div>';
+      lastDate = e.date;
+    }
+    const task = e.taskId ? '<span class="badge">' + esc(e.taskId) + '</span>' : '';
+    html += '<div class="entry"><span class="time">' + esc(e.time) + '</span>' +
+      '<span class="msg"><span class="tags">' + projHtml(e.project) + task + '</span>' +
+      '<span class="txt">' + esc(e.msg) + '</span></span></div>';
+  }
+  if (!timelineExpanded && v.activity.length > LIMIT) {
+    html += '<button class="showmore" id="showMoreBtn">Show all ' + v.activity.length + ' entries</button>';
+  }
+  $('timeline').innerHTML = html;
+  const btn = $('showMoreBtn');
+  if (btn) btn.addEventListener('click', () => { timelineExpanded = true; render(); });
+}
+
+function renderSide(v) {
+  $('doneList').innerHTML = v.done.length ? v.done.slice(0, 12).map(d =>
+    '<div class="item"><div class="what"><div class="t"><span class="badge">' + esc(d.id) + '</span> ' +
+    (d.title ? esc(d.title) : '') + '</div><div class="proj" style="margin-top:2px">' + dotHtml(d.project) +
+    esc(d.project.name) + (d.tracked ? ' · ' + esc(d.tracked) : '') + '</div></div>' +
+    '<span class="when">' + esc(d.completed ? ago(d.completed) : '') + '</span></div>').join('')
+    : '<div class="none">Nothing completed in the last ' + state.rangeDays + ' days.</div>';
+
+  $('openList').innerHTML = v.open.length ? v.open.slice(0, 12).map(t =>
+    '<div class="item"><div class="what"><div class="t"><span class="badge">' + esc(t.id) + '</span></div>' +
+    '<div class="proj" style="margin-top:2px">' + dotHtml(t.project) + esc(t.project.name) +
+    (t.openTodos ? ' · ' + t.openTodos + ' TODO' + (t.openTodos === 1 ? '' : 's') : '') + '</div></div>' +
+    '<span class="when">' + esc(t.seen ? ago(t.seen) : '') + '</span></div>').join('')
+    : '<div class="none">No dormant tasks touched in range.</div>';
+
+  const counts = {};
+  for (const a of v.activity) counts[a.project.name] = (counts[a.project.name] || 0) + 1;
+  $('projList').innerHTML = v.projects
+    .slice().sort((a, b) => (counts[b.name] || 0) - (counts[a.name] || 0))
+    .map(p => '<div class="item"><div class="what"><span class="proj">' + projHtml(p) + '</span></div>' +
+      '<span class="when">' + (counts[p.name] || 0) + ' entr' + ((counts[p.name] || 0) === 1 ? 'y' : 'ies') + '</span></div>')
+    .join('') || '<div class="none">No projects found.</div>';
+}
+
+/* ============================ demo data ============================ */
+
+function loadDemo() {
+  const now = new Date();
+  const iso = (daysAgo, h, m) => {
+    const d = new Date(now); d.setDate(d.getDate() - daysAgo); d.setHours(h, m, 0, 0);
+    return d.toISOString();
+  };
+  const key = (daysAgo) => { const d = new Date(now); d.setDate(d.getDate() - daysAgo); return dayKey(d); };
+  const stamp = (daysAgo, hm) => { const d = new Date(now); d.setDate(d.getDate() - daysAgo);
+    return dayKey(d).replace(/-/g, '') + '-' + hm; };
+
+  const web = newProject('webshop', 'webshop', false);
+  web.current = {
+    taskId: 'SHOP-412', taskTitle: 'Checkout fails for guest users', startedAt: iso(1, 9, 10),
+    branch: 'feature/SHOP-412-checkout-fails-for-guest-users', jiraUrl: '',
+    workflow: 'simple', workflowStep: 2, stage: 'In Development', waitingOn: '',
+    sessions: [{ start: iso(1, 9, 10), end: iso(1, 12, 0) }, { start: iso(0, 8, 45), end: null }],
+  };
+  web.tasks = [
+    parseTaskFile('SHOP-412.md', '# SHOP-412\n\nStarted: ' + iso(1, 9, 10) +
+      '\n\n## Notes\n\n- 09:40 — guest session cookie dropped on redirect\n- 11:05 — repro found: only with express shipping\n\n## TODO\n\n- [x] Understand task\n- [ ] Implement\n- [ ] Test\n- [ ] Commit / PR\n', now - 3600000),
+    parseTaskFile('SHOP-398.md', '# SHOP-398\n\nStarted: ' + iso(6, 10, 0) + '\n\n## TODO\n\n- [ ] Implement\n- [ ] Test\n', now - 3 * 86400000),
+  ];
+  web.logDays = [
+    { date: key(0), entries: [
+      { time: '08:45', taskId: 'SHOP-412', msg: 'Resumed' },
+      { time: '09:12', taskId: 'SHOP-412', msg: 'Fix works locally, adding regression test' },
+      { time: '11:30', taskId: 'SHOP-412', msg: 'Committed: guard guest session on redirect' }]},
+    { date: key(1), entries: [
+      { time: '09:10', taskId: 'SHOP-412', msg: 'Started work: Checkout fails for guest users' },
+      { time: '09:40', taskId: 'SHOP-412', msg: 'guest session cookie dropped on redirect' },
+      { time: '11:05', taskId: 'SHOP-412', msg: 'repro found: only with express shipping' }]},
+    { date: key(4), entries: [
+      { time: '14:20', taskId: 'SHOP-401', msg: 'Committed: bump payment SDK' },
+      { time: '16:05', taskId: 'SHOP-401', msg: 'Done' }]},
+    { date: key(6), entries: [{ time: '10:00', taskId: 'SHOP-398', msg: 'Started work: Slow product search' }]},
+  ];
+  web.done = [parseDoneFile('done-SHOP-401-' + stamp(4, '1605') + '.json',
+    { taskId: 'SHOP-401', taskTitle: 'Bump payment SDK to 3.2', sessions: [{ start: iso(4, 13, 30), end: iso(4, 16, 5) }] })];
+
+  const api = newProject('billing-api', 'billing-api', false);
+  api.current = {
+    taskId: 'BILL-77', taskTitle: 'Invoice rounding drift on yearly plans', startedAt: iso(3, 13, 0),
+    branch: 'feature/BILL-77-invoice-rounding-drift', jiraUrl: '',
+    workflow: 'gitflow', workflowStep: 5, stage: 'Code Review', waitingOn: 'Marek',
+    assignees: { Reviewer: 'Marek' },
+    sessions: [{ start: iso(3, 13, 0), end: iso(3, 17, 30) }, { start: iso(2, 9, 0), end: iso(2, 11, 15) }],
+  };
+  api.tasks = [parseTaskFile('BILL-77.md', '# BILL-77\n\nStarted: ' + iso(3, 13, 0) +
+    '\n\n## Notes\n\n- 10:20 — drift comes from per-line rounding, must round at invoice level\n\n## TODO\n\n- [x] Understand task\n- [x] Implement\n- [ ] Test\n', now - 2 * 86400000)];
+  api.logDays = [
+    { date: key(2), entries: [
+      { time: '09:00', taskId: 'BILL-77', msg: 'Resumed' },
+      { time: '10:20', taskId: 'BILL-77', msg: 'drift comes from per-line rounding' },
+      { time: '11:10', taskId: 'BILL-77', msg: 'Pushed feature/BILL-77-invoice-rounding-drift' }]},
+    { date: key(3), entries: [
+      { time: '13:00', taskId: 'BILL-77', msg: 'Started work: Invoice rounding drift on yearly plans' },
+      { time: '15:45', taskId: 'BILL-77', msg: 'reproduced with 3-seat yearly plan + coupon' }]},
+    { date: key(9), entries: [
+      { time: '11:00', taskId: 'BILL-70', msg: 'Committed: webhook retries' },
+      { time: '12:30', taskId: 'BILL-70', msg: 'Done' }]},
+  ];
+  api.done = [parseDoneFile('done-BILL-70-' + stamp(9, '1230') + '.json',
+    { taskId: 'BILL-70', taskTitle: 'Webhook retries with backoff', sessions: [{ start: iso(9, 9, 0), end: iso(9, 12, 30) }] })];
+
+  const app = newProject('mobile-app', 'mobile-app', false);
+  app.current = {
+    taskId: 'APP-23', taskTitle: 'Push notifications silently dropped on Android', startedAt: iso(5, 10, 0),
+    branch: 'feature/APP-23-push-notifications-dropped', jiraUrl: '',
+    workflow: 'simple', workflowStep: 6, stage: 'QA Testing', waitingOn: 'Alicja',
+    assignees: { Reviewer: 'Marek', QA: 'Alicja' },
+    sessions: [{ start: iso(5, 10, 0), end: iso(5, 16, 0) }],
+  };
+  app.logDays = [
+    { date: key(1), entries: [{ time: '13:20', taskId: 'APP-23', msg: 'Handed off qa to Alicja' }] },
+    { date: key(5), entries: [{ time: '10:00', taskId: 'APP-23', msg: 'Started work: Push notifications silently dropped' }] },
+  ];
+
+  const legacy = newProject('legacy-crm', 'archive/legacy-crm', true);
+  legacy.logDays = [{ date: key(2), entries: [{ time: '15:00', taskId: 'CRM-9', msg: 'security patch backport' }] }];
+  legacy.done = [parseDoneFile('done-CRM-9-' + stamp(2, '1600') + '.json',
+    { taskId: 'CRM-9', taskTitle: 'Backport security patch', sessions: [{ start: iso(2, 14, 0), end: iso(2, 16, 0) }] })];
+
+  state.projects = [web, api, app, legacy];
+  state.sourceName = 'demo data';
+  state.rootHandle = null;
+  finishScan();
+}
+
+/* ============================ wiring ============================ */
+
+$('pickBtn').addEventListener('click', pickFolder);
+$('changeBtn').addEventListener('click', pickFolder);
+$('rescanBtn').addEventListener('click', runScan);
+$('demoBtn').addEventListener('click', loadDemo);
+$('reconnectBtn').addEventListener('click', reconnect);
+$('fallbackInput').addEventListener('change', (e) => runFallbackScan([...e.target.files]));
+$('showArchived').addEventListener('change', (e) => { state.showArchived = e.target.checked; render(); });
+$('rangeSeg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+  state.rangeDays = +b.dataset.days;
+  $('rangeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  timelineExpanded = false;
+  render();
+}));
+
+(async function initPage() {
+  if (/[?&#]demo\b/.test(location.search + location.hash)) { loadDemo(); return; }
+  if (!window.showDirectoryPicker) {
+    $('pickBtn').hidden = true;
+    $('fallbackLbl').hidden = false;
+    $('emptyHint').textContent = 'This browser has no folder-access API; the fallback picker re-reads the folder each time. Chrome or Edge give the best experience (remembered folder + one-click rescan).';
+  } else {
+    const saved = await kvGet('root');
+    if (saved) {
+      const btn = $('reconnectBtn');
+      btn.hidden = false;
+      btn.textContent = 'Reopen "' + saved.name + '"';
+    }
+  }
+})();
+</script>
+</body>
+</html>
