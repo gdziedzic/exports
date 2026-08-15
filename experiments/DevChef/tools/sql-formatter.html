@@ -13,8 +13,8 @@
   "id": "sql-formatter",
   "name": "SQL Formatter",
   "category": "Database",
-  "description": "Format and beautify SQL queries with syntax highlighting",
-  "version": "1.0.0"
+  "description": "Format and beautify SQL queries with configurable layout, casing and dialect options",
+  "version": "2.0.0"
 }
 </script>
 
@@ -22,7 +22,7 @@
 <template id="tool-ui">
   <div class="tool-container">
     <div class="tool-header">
-      <h2 class="tool-title">SQL Formatter & Beautifier</h2>
+      <h2 class="tool-title">SQL Formatter &amp; Beautifier</h2>
       <p class="tool-description">Format, beautify, and analyze SQL queries for SQL Server, MySQL, PostgreSQL</p>
     </div>
 
@@ -42,28 +42,169 @@
     </div>
 
     <div class="tool-section">
+      <label class="section-label">Presets</label>
+      <div class="presets-row">
+        <button class="preset-btn secondary" data-preset="standard">Standard</button>
+        <button class="preset-btn secondary" data-preset="expanded">Expanded</button>
+        <button class="preset-btn secondary" data-preset="compact">Compact</button>
+        <button class="preset-btn secondary" data-preset="river">River (right-aligned)</button>
+        <button class="preset-btn secondary" data-preset="comma-first">Comma-first</button>
+      </div>
+    </div>
+
+    <div class="tool-section">
       <label class="section-label">Formatting Options</label>
-      <div class="format-options">
-        <label>
-          <span>Indentation:</span>
-          <select id="indent-size">
-            <option value="2">2 spaces</option>
-            <option value="4" selected>4 spaces</option>
-            <option value="tab">Tab</option>
-          </select>
-        </label>
-        <label>
-          <span>Keyword Case:</span>
-          <select id="keyword-case">
-            <option value="upper" selected>UPPERCASE</option>
-            <option value="lower">lowercase</option>
-            <option value="preserve">Preserve</option>
-          </select>
-        </label>
-        <label>
-          <input type="checkbox" id="new-line-before-keyword" checked>
-          <span>New line before keywords</span>
-        </label>
+
+      <div class="options-group">
+        <div class="options-group-title">Layout</div>
+        <div class="format-options">
+          <label>
+            <span>Dialect:</span>
+            <select id="dialect">
+              <option value="tsql" selected>SQL Server (T-SQL)</option>
+              <option value="mysql">MySQL / MariaDB</option>
+              <option value="postgres">PostgreSQL</option>
+              <option value="standard">Standard SQL</option>
+            </select>
+          </label>
+          <label>
+            <span>Indentation:</span>
+            <select id="indent-size">
+              <option value="2">2 spaces</option>
+              <option value="4" selected>4 spaces</option>
+              <option value="8">8 spaces</option>
+              <option value="tab">Tab</option>
+            </select>
+          </label>
+          <label>
+            <span>Keyword layout:</span>
+            <select id="keyword-layout">
+              <option value="stacked" selected>Stacked (body below)</option>
+              <option value="inline">Inline (body beside)</option>
+              <option value="river">River (right-aligned)</option>
+            </select>
+          </label>
+          <label>
+            <span>Column lists:</span>
+            <select id="list-style">
+              <option value="break" selected>One item per line</option>
+              <option value="inline">Keep inline</option>
+              <option value="auto">Auto (wrap over max width)</option>
+            </select>
+          </label>
+          <label>
+            <span>Comma position:</span>
+            <select id="comma-position">
+              <option value="trailing" selected>Trailing (end of line)</option>
+              <option value="leading">Leading (start of line)</option>
+            </select>
+          </label>
+          <label>
+            <span>Max line width:</span>
+            <input type="number" id="max-width" min="40" max="500" step="10" value="80">
+          </label>
+        </div>
+      </div>
+
+      <div class="options-group">
+        <div class="options-group-title">Casing</div>
+        <div class="format-options">
+          <label>
+            <span>Keyword case:</span>
+            <select id="keyword-case">
+              <option value="upper" selected>UPPERCASE</option>
+              <option value="lower">lowercase</option>
+              <option value="capitalize">Capitalize</option>
+              <option value="preserve">Preserve</option>
+            </select>
+          </label>
+          <label>
+            <span>Function case:</span>
+            <select id="function-case">
+              <option value="upper" selected>UPPERCASE</option>
+              <option value="lower">lowercase</option>
+              <option value="capitalize">Capitalize</option>
+              <option value="preserve">Preserve</option>
+            </select>
+          </label>
+          <label>
+            <span>Data type case:</span>
+            <select id="datatype-case">
+              <option value="upper" selected>UPPERCASE</option>
+              <option value="lower">lowercase</option>
+              <option value="capitalize">Capitalize</option>
+              <option value="preserve">Preserve</option>
+            </select>
+          </label>
+          <label>
+            <span>Identifier case:</span>
+            <select id="identifier-case">
+              <option value="preserve" selected>Preserve</option>
+              <option value="upper">UPPERCASE</option>
+              <option value="lower">lowercase</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="options-group">
+        <div class="options-group-title">Line breaks</div>
+        <div class="format-options checkbox-options">
+          <label>
+            <input type="checkbox" id="new-line-before-keyword" checked>
+            <span>New line before keywords</span>
+          </label>
+          <label>
+            <input type="checkbox" id="break-joins" checked>
+            <span>New line before JOINs</span>
+          </label>
+          <label>
+            <input type="checkbox" id="break-logical" checked>
+            <span>Break before AND / OR</span>
+          </label>
+          <label>
+            <input type="checkbox" id="on-new-line">
+            <span>JOIN ... ON on its own line</span>
+          </label>
+          <label>
+            <input type="checkbox" id="expand-case" checked>
+            <span>Expand CASE expressions</span>
+          </label>
+          <label>
+            <input type="checkbox" id="indent-subqueries" checked>
+            <span>Indent subqueries &amp; CTEs</span>
+          </label>
+          <label>
+            <input type="checkbox" id="blank-line-between-statements" checked>
+            <span>Blank line between statements</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="options-group">
+        <div class="options-group-title">Cleanup</div>
+        <div class="format-options checkbox-options">
+          <label>
+            <input type="checkbox" id="strip-comments">
+            <span>Remove comments</span>
+          </label>
+          <label>
+            <input type="checkbox" id="trailing-semicolon">
+            <span>Ensure trailing semicolon</span>
+          </label>
+          <label>
+            <input type="checkbox" id="minify-keep-comments">
+            <span>Minify keeps comments</span>
+          </label>
+          <label>
+            <input type="checkbox" id="live-format" checked>
+            <span>Re-format on option change</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="options-actions">
+        <button id="reset-options-btn" class="secondary">Reset to defaults</button>
       </div>
     </div>
 
@@ -71,6 +212,7 @@
       <button id="format-btn">Format SQL</button>
       <button id="minify-btn" class="secondary">Minify</button>
       <button id="copy-btn" class="secondary">Copy Result</button>
+      <button id="use-output-btn" class="secondary">Use Result as Input</button>
     </div>
 
     <div class="tool-section">
@@ -95,10 +237,35 @@
 
 <!-- Tool Styles -->
 <style>
+  .options-group {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+  }
+
+  .options-group-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+
+  .options-actions {
+    margin-top: 4px;
+  }
+
   .format-options {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px 16px;
+  }
+
+  .format-options.checkbox-options {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   }
 
   .format-options label {
@@ -108,15 +275,41 @@
     font-size: 14px;
   }
 
-  .format-options select {
+  .format-options label > span:first-child {
+    flex: 0 0 auto;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .format-options select,
+  .format-options input[type="number"] {
+    flex: 1 1 auto;
     width: auto;
-    padding: 6px 12px;
+    min-width: 0;
+    padding: 6px 10px;
     font-size: 13px;
   }
 
   .format-options input[type="checkbox"] {
     width: auto;
     cursor: pointer;
+  }
+
+  .presets-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .preset-btn {
+    font-size: 13px;
+    padding: 8px 14px;
+    margin: 0;
+  }
+
+  .preset-btn.active {
+    background: var(--accent);
+    color: white;
   }
 
   .templates-grid {
@@ -183,6 +376,9 @@
   #output {
     min-height: 300px;
     font-family: var(--font-mono);
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
   }
 </style>
 
@@ -252,7 +448,7 @@
     letter-spacing: 0.5px;
   }
 
-  textarea, select {
+  textarea, select, input[type="number"] {
     width: 100%;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
@@ -299,7 +495,194 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
-import { copyToClipboard } from '../core/tool-utils.js';
+import { copyToClipboard, saveToolState, loadToolState } from '../core/tool-utils.js';
+
+/* ------------------------------------------------------------------ *
+ * Word sets
+ * ------------------------------------------------------------------ */
+
+const KEYWORDS = new Set([
+  'ADD', 'ALL', 'ALTER', 'AND', 'ANY', 'AS', 'ASC', 'BEGIN', 'BETWEEN', 'BREAK', 'BY',
+  'CASCADE', 'CASE', 'CATCH', 'CHECK', 'CLOSE', 'CLUSTERED', 'COLLATE', 'COLUMN', 'COMMIT',
+  'CONSTRAINT', 'CONTINUE', 'CREATE', 'CROSS', 'CURRENT', 'CURSOR', 'DATABASE', 'DECLARE',
+  'DEFAULT', 'DELETE', 'DESC', 'DISTINCT', 'DO', 'DROP', 'ELSE', 'END', 'ESCAPE', 'EXCEPT',
+  'EXEC', 'EXECUTE', 'EXISTS', 'EXPLAIN', 'FALSE', 'FETCH', 'FILTER', 'FIRST', 'FOLLOWING',
+  'FOR', 'FOREIGN', 'FROM', 'FULL', 'FUNCTION', 'GO', 'GOTO', 'GRANT', 'GROUP', 'HAVING',
+  'IDENTITY', 'IF', 'IGNORE', 'ILIKE', 'IN', 'INDEX', 'INNER', 'INSERT', 'INTERSECT',
+  'INTO', 'IS', 'JOIN', 'KEY', 'LAST', 'LATERAL', 'LEFT', 'LIKE', 'LIMIT', 'MATCHED', 'MERGE',
+  'NATURAL', 'NEXT', 'NOCOUNT', 'NOLOCK', 'NONCLUSTERED', 'NOT', 'NULL', 'NULLS', 'OFFSET',
+  'ON', 'ONLY', 'OPEN', 'OPTION', 'OR', 'ORDER', 'OUTER', 'OUTPUT', 'OVER', 'PARTITION',
+  'PERCENT', 'PIVOT', 'PRECEDING', 'PRIMARY', 'PROCEDURE', 'RANGE', 'REFERENCES', 'RETURN',
+  'RETURNING', 'REVOKE', 'RIGHT', 'ROLLBACK', 'ROW', 'ROWCOUNT', 'ROWS', 'SCHEMA', 'SELECT',
+  'SET', 'SOME', 'TABLE', 'TEMP', 'TEMPORARY', 'THEN', 'TIES', 'TO', 'TOP', 'TRAN',
+  'TRANSACTION', 'TRIGGER', 'TRUE', 'TRUNCATE', 'TRY', 'UNBOUNDED', 'UNION', 'UNIQUE',
+  'UNPIVOT', 'UPDATE', 'USE', 'USING', 'VALUES', 'VIEW', 'WHEN', 'WHERE', 'WHILE',
+  'WINDOW', 'WITH', 'WITHIN', 'APPLY', 'CONFLICT', 'DISTINCTROW', 'STRAIGHT_JOIN'
+]);
+
+const FUNCTIONS = new Set([
+  'ABS', 'ARRAY_AGG', 'AVG', 'CAST', 'CEILING', 'CEIL', 'CHARINDEX', 'CHOOSE', 'COALESCE',
+  'CONCAT', 'CONCAT_WS', 'CONVERT', 'COUNT', 'COUNT_BIG', 'CUME_DIST', 'CURRENT_DATE',
+  'CURRENT_TIMESTAMP', 'DATEADD', 'DATEDIFF', 'DATENAME', 'DATEPART', 'DATE_TRUNC', 'DAY',
+  'DENSE_RANK', 'EXP', 'EXTRACT', 'FIRST_VALUE', 'FLOOR', 'FORMAT', 'GENERATE_SERIES',
+  'GETDATE', 'GETUTCDATE', 'GREATEST', 'GROUP_CONCAT', 'IIF', 'ISNULL', 'ISNUMERIC',
+  'JSON_QUERY', 'JSON_VALUE', 'LAG', 'LAST_VALUE', 'LEAD', 'LEAST', 'LEFT', 'LEN', 'LENGTH',
+  'LISTAGG', 'LOG', 'LOWER', 'LTRIM', 'MAX', 'MIN', 'MONTH', 'NEWID', 'NOW', 'NTILE',
+  'NULLIF', 'PARSE', 'PATINDEX', 'PERCENTILE_CONT', 'PERCENT_RANK', 'POWER', 'RAND', 'RANK',
+  'REPLACE', 'REPLICATE', 'REVERSE', 'RIGHT', 'ROUND', 'ROW_NUMBER', 'RTRIM', 'SIGN',
+  'SPLIT_PART', 'SQRT', 'STDEV', 'STRING_AGG', 'STRING_SPLIT', 'STUFF', 'SUBSTRING', 'SUM',
+  'SYSDATETIME', 'TO_CHAR', 'TO_DATE', 'TRIM', 'TRY_CAST', 'TRY_CONVERT', 'TRY_PARSE',
+  'UNNEST', 'UPPER', 'VAR', 'YEAR'
+]);
+
+const DATATYPES = new Set([
+  'BIGINT', 'BIGSERIAL', 'BINARY', 'BIT', 'BLOB', 'BOOL', 'BOOLEAN', 'CHAR', 'CLOB', 'DATE',
+  'DATETIME', 'DATETIME2', 'DATETIMEOFFSET', 'DECIMAL', 'DOUBLE', 'ENUM', 'FLOAT',
+  'GEOGRAPHY', 'GEOMETRY', 'HIERARCHYID', 'IMAGE', 'INT', 'INTEGER', 'INTERVAL', 'JSON',
+  'JSONB', 'MONEY', 'NCHAR', 'NTEXT', 'NUMERIC', 'NVARCHAR', 'PRECISION', 'REAL',
+  'ROWVERSION', 'SERIAL', 'SMALLDATETIME', 'SMALLINT', 'SMALLMONEY', 'SQL_VARIANT', 'TEXT',
+  'TIME', 'TIMESTAMP', 'TIMESTAMPTZ', 'TINYINT', 'UNIQUEIDENTIFIER', 'UUID', 'VARBINARY',
+  'VARCHAR', 'XML'
+]);
+
+/** Clause keywords that start a new line at the current statement indent. */
+const TOP_LEVEL = [
+  ['WITH'], ['SELECT'], ['FROM'], ['WHERE'], ['GROUP', 'BY'], ['HAVING'], ['ORDER', 'BY'],
+  ['LIMIT'], ['OFFSET'], ['FETCH', 'NEXT'], ['FETCH', 'FIRST'], ['UNION', 'ALL'], ['UNION'],
+  ['EXCEPT'], ['INTERSECT'], ['INSERT', 'INTO'], ['INSERT'], ['VALUES'], ['UPDATE'], ['SET'],
+  ['DELETE', 'FROM'], ['DELETE'], ['MERGE', 'INTO'], ['MERGE'], ['USING'],
+  ['WHEN', 'NOT', 'MATCHED'], ['WHEN', 'MATCHED'], ['RETURNING'], ['OUTPUT'], ['INTO'],
+  ['FOR', 'UPDATE'], ['WINDOW'], ['ON', 'CONFLICT']
+];
+
+/** Clauses whose body is a comma separated list. */
+const LIST_CLAUSES = new Set([
+  'SELECT', 'FROM', 'GROUP BY', 'ORDER BY', 'SET', 'VALUES', 'RETURNING', 'OUTPUT', 'INTO'
+]);
+
+const JOINS = [
+  ['LEFT', 'OUTER', 'JOIN'], ['RIGHT', 'OUTER', 'JOIN'], ['FULL', 'OUTER', 'JOIN'],
+  ['INNER', 'JOIN'], ['LEFT', 'JOIN'], ['RIGHT', 'JOIN'], ['FULL', 'JOIN'],
+  ['CROSS', 'JOIN'], ['NATURAL', 'JOIN'], ['STRAIGHT_JOIN'], ['CROSS', 'APPLY'],
+  ['OUTER', 'APPLY'], ['JOIN']
+];
+
+/** BEGIN followed by one of these does not open an indented block. */
+const BEGIN_NON_BLOCK = new Set(['TRANSACTION', 'TRAN', 'DISTRIBUTED']);
+
+/** Keywords that always keep a space before "(", however the source was written. */
+const SPACED_BEFORE_PAREN = new Set([
+  'ALL', 'AND', 'ANY', 'AS', 'BETWEEN', 'BY', 'CHECK', 'ELSE', 'EXISTS', 'FOREIGN', 'FROM',
+  'IN', 'INTO', 'KEY', 'NOT', 'ON', 'OR', 'OVER', 'PRIMARY', 'PROCEDURE', 'REFERENCES',
+  'RETURNS', 'SELECT', 'SOME', 'TABLE', 'THEN', 'UNION', 'UNIQUE', 'USING', 'VALUES',
+  'VIEW', 'WHEN', 'WHERE', 'WITH'
+]);
+
+const NO_SPACE_BEFORE = new Set([',', ';', ')', '.', '::']);
+const NO_SPACE_AFTER = new Set(['.', '::', '(']);
+const UNARY_CONTEXT = new Set([
+  '(', ',', '=', '<', '>', '<=', '>=', '<>', '!=', '+', '-', '*', '/', '%', 'AND', 'OR',
+  'NOT', 'THEN', 'ELSE', 'WHEN', 'RETURN', 'BY'
+]);
+
+const DEFAULT_OPTIONS = {
+  dialect: 'tsql',
+  indentSize: '4',
+  keywordLayout: 'stacked',
+  listStyle: 'break',
+  commaPosition: 'trailing',
+  maxWidth: 80,
+  keywordCase: 'upper',
+  functionCase: 'upper',
+  datatypeCase: 'upper',
+  identifierCase: 'preserve',
+  breakKeywords: true,
+  breakJoins: true,
+  breakLogical: true,
+  onNewLine: false,
+  expandCase: true,
+  indentSubqueries: true,
+  blankLineBetweenStatements: true,
+  stripComments: false,
+  trailingSemicolon: false,
+  minifyKeepComments: false,
+  liveFormat: true
+};
+
+const PRESETS = {
+  standard: {},
+  expanded: {
+    keywordLayout: 'stacked', listStyle: 'break', breakKeywords: true, breakJoins: true,
+    breakLogical: true, onNewLine: true, expandCase: true, indentSubqueries: true,
+    blankLineBetweenStatements: true
+  },
+  compact: {
+    keywordLayout: 'inline', listStyle: 'inline', breakLogical: false, onNewLine: false,
+    expandCase: false, indentSubqueries: false, blankLineBetweenStatements: false,
+    indentSize: '2'
+  },
+  river: {
+    keywordLayout: 'river', listStyle: 'break', breakKeywords: true, breakJoins: true,
+    breakLogical: true, onNewLine: false
+  },
+  'comma-first': {
+    keywordLayout: 'stacked', listStyle: 'break', commaPosition: 'leading',
+    breakKeywords: true, breakJoins: true, breakLogical: true
+  }
+};
+
+/** Maps option keys to the DOM ids of their controls. */
+const CONTROLS = {
+  dialect: 'dialect',
+  indentSize: 'indent-size',
+  keywordLayout: 'keyword-layout',
+  listStyle: 'list-style',
+  commaPosition: 'comma-position',
+  maxWidth: 'max-width',
+  keywordCase: 'keyword-case',
+  functionCase: 'function-case',
+  datatypeCase: 'datatype-case',
+  identifierCase: 'identifier-case',
+  breakKeywords: 'new-line-before-keyword',
+  breakJoins: 'break-joins',
+  breakLogical: 'break-logical',
+  onNewLine: 'on-new-line',
+  expandCase: 'expand-case',
+  indentSubqueries: 'indent-subqueries',
+  blankLineBetweenStatements: 'blank-line-between-statements',
+  stripComments: 'strip-comments',
+  trailingSemicolon: 'trailing-semicolon',
+  minifyKeepComments: 'minify-keep-comments',
+  liveFormat: 'live-format'
+};
+
+/* ------------------------------------------------------------------ *
+ * Helpers
+ * ------------------------------------------------------------------ */
+
+function applyCase(value, mode) {
+  switch (mode) {
+    case 'upper': return value.toUpperCase();
+    case 'lower': return value.toLowerCase();
+    case 'capitalize': return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+    default: return value;
+  }
+}
+
+/** Longest phrase from `phrases` matching the word tokens starting at `k`. */
+function matchPhrase(toks, k, phrases) {
+  let best = null;
+  for (const phrase of phrases) {
+    if (best && phrase.length <= best.length) continue;
+    let ok = true;
+    for (let d = 0; d < phrase.length; d++) {
+      const tk = toks[k + d];
+      if (!tk || tk.type !== 'word' || tk.upper !== phrase[d]) { ok = false; break; }
+    }
+    if (ok) best = phrase;
+  }
+  return best;
+}
 
 export const DevChefTool = {
   container: null,
@@ -307,50 +690,778 @@ export const DevChefTool = {
   schemaData: null,
   selectedTable: null,
 
-  keywords: [
-    'SELECT', 'FROM', 'WHERE', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE',
-    'CREATE', 'TABLE', 'ALTER', 'DROP', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'OUTER',
-    'ON', 'AS', 'AND', 'OR', 'NOT', 'IN', 'BETWEEN', 'LIKE', 'IS', 'NULL',
-    'ORDER', 'BY', 'GROUP', 'HAVING', 'LIMIT', 'OFFSET', 'UNION', 'ALL',
-    'DISTINCT', 'COUNT', 'SUM', 'AVG', 'MAX', 'MIN', 'CASE', 'WHEN', 'THEN',
-    'ELSE', 'END', 'IF', 'EXISTS', 'PROCEDURE', 'FUNCTION', 'BEGIN', 'DECLARE',
-    'EXEC', 'EXECUTE', 'RETURN', 'WITH', 'GO', 'USE', 'DATABASE'
-  ],
+  // Kept for the stats panel and for callers relying on the old property.
+  keywords: Array.from(KEYWORDS),
+
+  /* ---------------------------------------------------------------- *
+   * Lifecycle
+   * ---------------------------------------------------------------- */
 
   init(container, context) {
     this.container = container;
     this.context = context;
 
-    const inputEl = container.querySelector("#input");
-    const formatBtn = container.querySelector("#format-btn");
-    const minifyBtn = container.querySelector("#minify-btn");
-    const copyBtn = container.querySelector("#copy-btn");
-    const loadSchemaBtn = container.querySelector("#load-schema-btn");
-    const tableSelector = container.querySelector("#table-selector");
+    const inputEl = container.querySelector('#input');
+    inputEl?.addEventListener('input', (e) => context.setInput(e.target.value));
 
-    inputEl?.addEventListener("input", (e) => {
-      context.setInput(e.target.value);
+    container.querySelector('#format-btn')?.addEventListener('click', () => this.formatSQL());
+    container.querySelector('#minify-btn')?.addEventListener('click', () => this.minifySQL());
+    container.querySelector('#copy-btn')?.addEventListener('click', () => this.copyOutput());
+    container.querySelector('#use-output-btn')?.addEventListener('click', () => this.useOutputAsInput());
+    container.querySelector('#load-schema-btn')?.addEventListener('click', () => this.loadFromJsonSchema());
+    container.querySelector('#table-selector')?.addEventListener('change', () => this.selectTableFromSchema());
+    container.querySelector('#reset-options-btn')?.addEventListener('click', () => {
+      this.setOptions(DEFAULT_OPTIONS);
+      this.persistOptions();
+      this.reformatIfLive();
     });
 
-    formatBtn?.addEventListener("click", () => this.formatSQL());
-    minifyBtn?.addEventListener("click", () => this.minifySQL());
-    copyBtn?.addEventListener("click", () => this.copyOutput());
-    loadSchemaBtn?.addEventListener("click", () => this.loadFromJsonSchema());
-    tableSelector?.addEventListener("change", () => this.selectTableFromSchema());
+    container.querySelectorAll('.preset-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        this.setOptions({ ...DEFAULT_OPTIONS, ...(PRESETS[btn.dataset.preset] || {}) });
+        this.markActivePreset(btn.dataset.preset);
+        this.persistOptions();
+        this.reformatIfLive();
+      });
+    });
 
-    // Template buttons
-    const templateBtns = container.querySelectorAll(".template-btn");
-    templateBtns.forEach(btn => {
-      btn.addEventListener("click", () => {
+    Object.values(CONTROLS).forEach((id) => {
+      const el = container.querySelector(`#${id}`);
+      el?.addEventListener('change', () => {
+        this.markActivePreset(null);
+        this.persistOptions();
+        this.reformatIfLive();
+      });
+    });
+
+    container.querySelectorAll('.template-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
         const template = this.getTemplate(btn.dataset.template);
         if (inputEl) inputEl.value = template;
         context.setInput(template);
       });
     });
+
+    const saved = loadToolState('sql-formatter');
+    if (saved && saved.options) this.setOptions({ ...DEFAULT_OPTIONS, ...saved.options });
   },
 
+  /* ---------------------------------------------------------------- *
+   * Options
+   * ---------------------------------------------------------------- */
+
+  getOptions() {
+    const q = (id) => this.container?.querySelector(`#${id}`);
+    const opts = { ...DEFAULT_OPTIONS };
+
+    for (const [key, id] of Object.entries(CONTROLS)) {
+      const el = q(id);
+      if (!el) continue;
+      if (el.type === 'checkbox') opts[key] = el.checked;
+      else if (el.type === 'number') opts[key] = parseInt(el.value, 10) || DEFAULT_OPTIONS[key];
+      else opts[key] = el.value;
+    }
+
+    opts.indent = opts.indentSize === 'tab' ? '\t' : ' '.repeat(parseInt(opts.indentSize, 10) || 4);
+    opts.maxWidth = Math.max(40, Math.min(500, opts.maxWidth));
+    return opts;
+  },
+
+  setOptions(opts) {
+    for (const [key, id] of Object.entries(CONTROLS)) {
+      const el = this.container?.querySelector(`#${id}`);
+      if (!el || opts[key] === undefined) continue;
+      if (el.type === 'checkbox') el.checked = !!opts[key];
+      else el.value = String(opts[key]);
+    }
+  },
+
+  persistOptions() {
+    const opts = this.getOptions();
+    delete opts.indent;
+    saveToolState('sql-formatter', { options: opts });
+  },
+
+  markActivePreset(name) {
+    this.container?.querySelectorAll('.preset-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.preset === name);
+    });
+  },
+
+  reformatIfLive() {
+    const opts = this.getOptions();
+    if (!opts.liveFormat) return;
+    const outputEl = this.container?.querySelector('#output');
+    if (outputEl && outputEl.value.trim()) this.formatSQL();
+  },
+
+  readInput() {
+    const inputEl = this.container?.querySelector('#input');
+    if (inputEl && inputEl.value) return inputEl.value;
+    return this.context?.getInput() || '';
+  },
+
+  /* ---------------------------------------------------------------- *
+   * Tokenizer
+   * ---------------------------------------------------------------- */
+
+  tokenize(sql, dialect) {
+    const backslashEscapes = dialect === 'mysql';
+    const hashComments = dialect === 'mysql';
+    const brackets = dialect === 'tsql' || dialect === 'standard';
+    const doubleQuoteIsString = dialect === 'mysql';
+
+    const RE = {
+      ws: /\s+/y,
+      lineComment: hashComments ? /(?:--|#)[^\n]*/y : /--[^\n]*/y,
+      blockComment: /\/\*[\s\S]*?(?:\*\/|$)/y,
+      string: backslashEscapes
+        ? /[NnEeBbXx]?'(?:\\[\s\S]|''|[^'])*'?/y
+        : /[NnEeBbXx]?'(?:''|[^'])*'?/y,
+      dquote: /"(?:""|[^"])*"?/y,
+      backtick: /`(?:``|[^`])*`?/y,
+      bracket: /\[[^\]]*\]?/y,
+      number: /(?:0[xX][0-9a-fA-F]+|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)/y,
+      variable: /(?:@@?[A-Za-z0-9_#$]+|:[A-Za-z_][A-Za-z0-9_]*|\$\d+|\?)/y,
+      operator: /(?:<=>|->>|::|->|>=|<=|<>|!=|!<|!>|\|\||\+=|-=|\*=|\/=|%=|&=|\|=|\^=|<<|>>|:=|[-+*/%=<>&|^~!])/y,
+      punct: /[.,;()[\]{}]/y,
+      word: /[A-Za-z_#-￿][A-Za-z0-9_$#-￿]*/y
+    };
+
+    const tokens = [];
+    let i = 0;
+
+    const tryMatch = (re, type) => {
+      re.lastIndex = i;
+      const m = re.exec(sql);
+      if (!m || m.index !== i) return false;
+      tokens.push({ type, value: m[0] });
+      i = re.lastIndex;
+      return true;
+    };
+
+    while (i < sql.length) {
+      const ch = sql[i];
+
+      if (tryMatch(RE.ws, 'ws')) continue;
+      if ((ch === '-' || ch === '#') && tryMatch(RE.lineComment, 'lcomment')) continue;
+      if (ch === '/' && tryMatch(RE.blockComment, 'bcomment')) continue;
+      if (tryMatch(RE.string, 'string')) continue;
+      if (ch === '"' && tryMatch(RE.dquote, doubleQuoteIsString ? 'string' : 'ident')) continue;
+      if (ch === '`' && tryMatch(RE.backtick, 'ident')) continue;
+      if (ch === '[' && brackets && tryMatch(RE.bracket, 'ident')) continue;
+      if (tryMatch(RE.number, 'number')) continue;
+      if (tryMatch(RE.word, 'word')) continue;
+      if ((ch === '@' || ch === ':' || ch === '$' || ch === '?') && tryMatch(RE.variable, 'variable')) continue;
+      if (tryMatch(RE.operator, 'operator')) continue;
+      if (tryMatch(RE.punct, 'punct')) continue;
+
+      // Unknown character - keep it verbatim so nothing is silently lost.
+      tokens.push({ type: 'other', value: ch });
+      i++;
+    }
+
+    return tokens;
+  },
+
+  /** Drops whitespace, records newline counts and pre-computes word metadata. */
+  prepareTokens(sql, o) {
+    const raw = this.tokenize(sql, o.dialect);
+    const toks = [];
+    let pendingNl = 0;
+
+    let pendingSpace = false;
+
+    for (const t of raw) {
+      if (t.type === 'ws') {
+        pendingNl += (t.value.match(/\n/g) || []).length;
+        pendingSpace = true;
+        continue;
+      }
+      if (o.stripComments && (t.type === 'lcomment' || t.type === 'bcomment')) continue;
+      t.nlBefore = pendingNl;
+      t.spaceBefore = pendingSpace;
+      pendingNl = 0;
+      pendingSpace = false;
+      if (t.type === 'word') t.upper = t.value.toUpperCase();
+      toks.push(t);
+    }
+
+    // A word is a function call when it is a known function, or when the author
+    // wrote "(" with no space after it (so "Users (a, b)" stays a column list).
+    for (let k = 0; k < toks.length; k++) {
+      const t = toks[k];
+      const paren = toks[k + 1];
+      if (!paren || paren.value !== '(') continue;
+      if (t.type === 'word' && SPACED_BEFORE_PAREN.has(t.upper)) continue;
+      if (t.type === 'word' && FUNCTIONS.has(t.upper)) { t.isCall = true; continue; }
+      if ((t.type === 'word' || t.type === 'ident') && !paren.spaceBefore) {
+        t.isCall = true;
+      }
+    }
+
+    return toks;
+  },
+
+  textOf(t, o) {
+    if (t.type !== 'word') return t.value;
+    const u = t.upper;
+    if (t.isCall && FUNCTIONS.has(u)) return applyCase(t.value, o.functionCase);
+    if (DATATYPES.has(u) && !KEYWORDS.has(u)) return applyCase(t.value, o.datatypeCase);
+    if (KEYWORDS.has(u)) return applyCase(t.value, o.keywordCase);
+    if (DATATYPES.has(u)) return applyCase(t.value, o.datatypeCase);
+    return applyCase(t.value, o.identifierCase);
+  },
+
+  /* ---------------------------------------------------------------- *
+   * Formatter
+   * ---------------------------------------------------------------- */
+
+  /** Approximate rendered width of tokens [from, to). */
+  measure(toks, from, to, o) {
+    let width = 0;
+    for (let k = from; k < to && k < toks.length; k++) {
+      width += this.textOf(toks[k], o).length + 1;
+    }
+    return width;
+  },
+
+  /** Index just past the matching ")" for the "(" at index `k`. */
+  findGroupEnd(toks, k) {
+    let depth = 0;
+    for (let j = k; j < toks.length; j++) {
+      if (toks[j].value === '(') depth++;
+      else if (toks[j].value === ')') {
+        depth--;
+        if (depth === 0) return j;
+      }
+    }
+    return toks.length;
+  },
+
+  /** Index where the clause starting at `k` ends (next clause, join, or terminator). */
+  findClauseEnd(toks, k) {
+    let depth = 0;
+    for (let j = k; j < toks.length; j++) {
+      const t = toks[j];
+      if (t.value === '(') { depth++; continue; }
+      if (t.value === ')') {
+        if (depth === 0) return j;
+        depth--;
+        continue;
+      }
+      if (depth > 0) continue;
+      if (t.value === ';') return j;
+      if (j > k && t.type === 'word' && (matchPhrase(toks, j, TOP_LEVEL) || matchPhrase(toks, j, JOINS))) {
+        return j;
+      }
+    }
+    return toks.length;
+  },
+
+  /** True when tokens [from, to) contain a "=" outside of any parentheses. */
+  hasTopLevelAssign(toks, from, to) {
+    let depth = 0;
+    for (let j = from; j < to && j < toks.length; j++) {
+      const v = toks[j].value;
+      if (v === '(') depth++;
+      else if (v === ')') depth--;
+      else if (depth === 0 && v === '=') return true;
+    }
+    return false;
+  },
+
+  computeRiverWidth(toks) {
+    let width = 6;
+    for (let k = 0; k < toks.length; k++) {
+      if (toks[k].type !== 'word') continue;
+      const p = matchPhrase(toks, k, TOP_LEVEL) || matchPhrase(toks, k, JOINS);
+      if (p) width = Math.max(width, p.join(' ').length);
+    }
+    return Math.min(width, 12);
+  },
+
+  formatSQLText(sql, o) {
+    const toks = this.prepareTokens(sql, o);
+    if (!toks.length) return '';
+
+    const unit = o.indent;
+    const river = o.keywordLayout === 'river' ? this.computeRiverWidth(toks) : 0;
+
+    const lines = [];
+    let line = '';
+    let prevText = '';
+    let noSpaceNext = false;
+    let betweenGuard = 0;
+
+    const makeFrame = (kind, indent, itemIndent, extra = {}) => ({
+      kind,
+      block: kind !== 'inline' && kind !== 'case',
+      indent,
+      itemIndent,
+      listIndent: itemIndent,
+      listBreak: false,
+      ...extra
+    });
+
+    let frames = [makeFrame('root', '', unit)];
+    const top = () => frames[frames.length - 1];
+
+    const flush = () => { lines.push(line.replace(/\s+$/, '')); line = ''; };
+    const startLine = (prefix) => {
+      if (line.trim() !== '') flush();
+      line = prefix;
+      prevText = '';
+      noSpaceNext = false;
+    };
+    const emit = (text, force) => {
+      const noSpace = force || noSpaceNext || line.trim() === '' ||
+        NO_SPACE_BEFORE.has(text) || NO_SPACE_AFTER.has(prevText);
+      line += (noSpace ? '' : ' ') + text;
+      prevText = text;
+      noSpaceNext = false;
+    };
+    const currentLineIndent = () => (line.match(/^[ \t]*/) || [''])[0];
+    const blankLine = () => {
+      if (line.trim() !== '') flush();
+      if (lines.length && lines[lines.length - 1] !== '') lines.push('');
+      line = '';
+      prevText = '';
+    };
+
+    /** A comment on its own line adopts the indent of the code that follows it. */
+    const commentIndent = (frame, k) => {
+      for (let j = k + 1; j < toks.length; j++) {
+        const next = toks[j];
+        if (next.type === 'lcomment' || next.type === 'bcomment') continue;
+        if (next.type === 'word' && (matchPhrase(toks, j, TOP_LEVEL) ||
+            ['BEGIN', 'END', 'GO', 'CREATE', 'ALTER', 'DROP', 'DECLARE', 'EXEC', 'IF']
+              .includes(next.upper))) {
+          return frame.indent;
+        }
+        return frame.itemIndent;
+      }
+      return frame.indent;
+    };
+
+    /** Decide whether a clause/group should break its comma list onto lines. */
+    const shouldBreakList = (from, to) => {
+      if (!o.breakKeywords) return false;
+      if (o.listStyle === 'inline') return false;
+      let hasComma = false;
+      let depth = 0;
+      for (let j = from; j < to; j++) {
+        if (toks[j].value === '(') depth++;
+        else if (toks[j].value === ')') depth--;
+        else if (toks[j].value === ',' && depth === 0) { hasComma = true; break; }
+      }
+      if (!hasComma) return false;
+      if (o.listStyle === 'break') return true;
+      return this.measure(toks, from, to, o) > o.maxWidth;
+    };
+
+    for (let k = 0; k < toks.length; k++) {
+      const t = toks[k];
+      const frame = top();
+
+      /* -- comments ------------------------------------------------ */
+      if (t.type === 'lcomment') {
+        // A comment that trailed code in the source stays on that code's line.
+        if (t.nlBefore === 0 && line.trim() === '' && lines.length) {
+          let li = lines.length - 1;
+          while (li >= 0 && lines[li] === '') li--;
+          if (li >= 0) { lines[li] += ' ' + t.value; continue; }
+        }
+        if (t.nlBefore > 0 || line.trim() === '') startLine(commentIndent(frame, k));
+        emit(t.value);
+        flush();
+        continue;
+      }
+      if (t.type === 'bcomment') {
+        if (t.nlBefore > 0 && o.breakKeywords) startLine(commentIndent(frame, k));
+        emit(t.value);
+        if (t.value.includes('\n')) flush();
+        continue;
+      }
+
+      /* -- statement terminators ----------------------------------- */
+      if (t.value === ';') {
+        emit(';', true);
+        flush();
+        // Close anything the statement left open, but stay inside BEGIN blocks.
+        while (frames.length > 1 && top().kind !== 'begin') frames.pop();
+        const home = top();
+        home.itemIndent = home.indent + unit;
+        home.listIndent = home.itemIndent;
+        home.listBreak = false;
+        const after = toks[k + 1];
+        const closesBlock = !after ||
+          (after.type === 'word' && (after.upper === 'END' || after.upper === 'GO')) ||
+          after.value === ')';
+        if (o.blankLineBetweenStatements && !closesBlock) blankLine();
+        continue;
+      }
+      if (t.type === 'word' && t.upper === 'GO' && !t.isCall) {
+        startLine('');
+        emit(this.textOf(t, o));
+        flush();
+        if (o.blankLineBetweenStatements) blankLine();
+        frames = [makeFrame('root', '', unit)];
+        continue;
+      }
+
+      /* -- parentheses --------------------------------------------- */
+      if (t.value === '(') {
+        const groupEnd = this.findGroupEnd(toks, k);
+        const inner = toks[k + 1];
+        const isSubquery = !!inner && inner.type === 'word' &&
+          (inner.upper === 'SELECT' || inner.upper === 'WITH');
+        const isCallParen = !!toks[k - 1] && !!toks[k - 1].isCall;
+
+        let block = false;
+        if (o.breakKeywords) {
+          if (isSubquery && o.indentSubqueries) block = true;
+          else if (o.listStyle !== 'inline' &&
+                   line.length + this.measure(toks, k, groupEnd + 1, o) > o.maxWidth &&
+                   shouldBreakList(k + 1, groupEnd)) {
+            block = true;
+          }
+        }
+
+        emit('(', isCallParen);
+
+        if (block) {
+          const openIndent = currentLineIndent();
+          const bodyIndent = openIndent + unit;
+          frames.push(makeFrame('paren-block', bodyIndent, bodyIndent, {
+            listBreak: shouldBreakList(k + 1, groupEnd) || isSubquery,
+            closeIndent: openIndent
+          }));
+          startLine(bodyIndent);
+        } else {
+          frames.push({ kind: 'inline', block: false, indent: '', itemIndent: '', listBreak: false });
+        }
+        continue;
+      }
+
+      if (t.value === ')') {
+        // Unwind any CASE frames left open inside this group.
+        while (frames.length > 1 && top().kind === 'case') frames.pop();
+        const closed = frames.length > 1 ? frames.pop() : null;
+        if (closed && closed.kind === 'paren-block') startLine(closed.closeIndent);
+        emit(')', true);
+        continue;
+      }
+
+      /* -- commas -------------------------------------------------- */
+      if (t.value === ',') {
+        if (!frame.listBreak) { emit(',', true); continue; }
+        if (o.commaPosition === 'leading') {
+          const base = frame.itemIndent;
+          const commaIndent = base.length >= 2 && !base.includes('\t')
+            ? base.slice(0, -2)
+            : base;
+          startLine(commaIndent);
+          emit(',', true);
+        } else {
+          emit(',', true);
+          startLine(frame.itemIndent);
+        }
+        continue;
+      }
+
+      if (t.type !== 'word') {
+        const text = this.textOf(t, o);
+        const before = prevText;
+        emit(text);
+        if ((text === '-' || text === '+') &&
+            (before === '' || UNARY_CONTEXT.has(before.toUpperCase()))) {
+          noSpaceNext = true;
+        }
+        continue;
+      }
+
+      /* -- CASE / WHEN / ELSE / END -------------------------------- */
+      if (t.upper === 'CASE' && o.expandCase && o.breakKeywords) {
+        const base = currentLineIndent();
+        emit(this.textOf(t, o));
+        frames.push({
+          kind: 'case', block: false, indent: base, itemIndent: base + unit, listBreak: false
+        });
+        continue;
+      }
+      if ((t.upper === 'WHEN' || t.upper === 'ELSE') && frame.kind === 'case') {
+        startLine(frame.itemIndent);
+        emit(this.textOf(t, o));
+        continue;
+      }
+      if (t.upper === 'END' && frame.kind === 'case') {
+        frames.pop();
+        startLine(frame.indent);
+        emit(this.textOf(t, o));
+        continue;
+      }
+
+      /* -- BEGIN / END blocks -------------------------------------- */
+      if (t.upper === 'BEGIN' && o.breakKeywords) {
+        const next = toks[k + 1];
+        const opensBlock = !next || next.type !== 'word' || !BEGIN_NON_BLOCK.has(next.upper);
+        startLine(frame.indent);
+        emit(this.textOf(t, o));
+        if (opensBlock) {
+          const body = frame.indent + unit;
+          const isTryCatch = next && next.type === 'word' &&
+            (next.upper === 'TRY' || next.upper === 'CATCH');
+          if (isTryCatch) { emit(this.textOf(next, o)); k++; }
+          frames.push(makeFrame('begin', body, body + unit, { closeIndent: frame.indent }));
+          startLine(body);
+        }
+        continue;
+      }
+      if (t.upper === 'END' && frame.kind === 'begin' && o.breakKeywords) {
+        frames.pop();
+        startLine(frame.closeIndent);
+        emit(this.textOf(t, o));
+        const next = toks[k + 1];
+        if (next && next.type === 'word' && (next.upper === 'TRY' || next.upper === 'CATCH')) {
+          emit(this.textOf(next, o));
+          k++;
+        }
+        continue;
+      }
+
+      /* -- clause and join keywords -------------------------------- */
+      if (frame.block && o.breakKeywords) {
+        const joinPhrase = o.breakJoins ? matchPhrase(toks, k, JOINS) : null;
+        const clausePhrase = joinPhrase ? null : matchPhrase(toks, k, TOP_LEVEL);
+        const phrase = joinPhrase || clausePhrase;
+
+        if (phrase) {
+          const words = toks.slice(k, k + phrase.length).map((w) => this.textOf(w, o)).join(' ');
+          const canonical = phrase.join(' ');
+          const body = k + phrase.length;
+          const clauseEnd = this.findClauseEnd(toks, body);
+
+          // "SET NOCOUNT ON" / "SET @x = 1" are statements, not UPDATE column lists.
+          const isColumnSet = canonical !== 'SET' ||
+            (toks[body] && toks[body].type !== 'variable' && this.hasTopLevelAssign(toks, body, clauseEnd));
+
+          // Joins keep their table on the keyword line; they sit with the
+          // FROM list in stacked layout and in the keyword column otherwise.
+          const stacked = o.keywordLayout === 'stacked';
+          const isMergeBranch = canonical === 'WHEN MATCHED' || canonical === 'WHEN NOT MATCHED';
+          if (isMergeBranch) {
+            while (frames.length > 1 && top().kind === 'merge') frames.pop();
+          }
+          const home = top();
+          const keywordIndent = joinPhrase && stacked ? home.listIndent : home.indent;
+
+          startLine(keywordIndent);
+
+          if (o.keywordLayout === 'river') {
+            line = keywordIndent + words.padStart(river);
+            prevText = words;
+            noSpaceNext = false;
+            home.itemIndent = keywordIndent + ' '.repeat(river + 1);
+            if (!joinPhrase) home.listIndent = home.itemIndent;
+          } else {
+            emit(words);
+            home.itemIndent = keywordIndent + unit;
+            if (!joinPhrase) home.listIndent = home.itemIndent;
+            if (stacked && !joinPhrase && !isMergeBranch && isColumnSet && clauseEnd > body) {
+              startLine(home.itemIndent);
+            }
+          }
+
+          home.listBreak = isColumnSet && !isMergeBranch &&
+            (LIST_CLAUSES.has(canonical) || !!joinPhrase) &&
+            shouldBreakList(body, clauseEnd);
+
+          // A MERGE branch owns the statement that follows it, so indent it.
+          if (isMergeBranch) {
+            const branchIndent = home.indent + unit;
+            frames.push(makeFrame('merge', branchIndent, branchIndent + unit));
+          }
+
+          k += phrase.length - 1;
+          continue;
+        }
+
+        if (t.upper === 'ON' && o.onNewLine) {
+          startLine(frame.itemIndent);
+          emit(this.textOf(t, o));
+          continue;
+        }
+
+        if ((t.upper === 'AND' || t.upper === 'OR') && o.breakLogical) {
+          if (t.upper === 'AND' && betweenGuard > 0) {
+            betweenGuard--;
+          } else {
+            startLine(frame.itemIndent);
+            emit(this.textOf(t, o));
+            continue;
+          }
+        }
+      }
+
+      if (t.upper === 'BETWEEN') betweenGuard++;
+
+      emit(this.textOf(t, o));
+    }
+
+    if (line.trim() !== '') flush();
+
+    // Trim blank lines only - leading indentation matters in river layout.
+    let result = lines
+      .join('\n')
+      .replace(/[ \t]+$/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/^\n+/, '')
+      .replace(/\s+$/, '');
+
+    if (o.trailingSemicolon && result && !/[;]\s*$/.test(result) && !/\bGO\s*$/i.test(result)) {
+      result += ';';
+    }
+
+    return result;
+  },
+
+  minifySQLText(sql, o) {
+    const toks = this.prepareTokens(sql, { ...o, stripComments: !o.minifyKeepComments });
+    let out = '';
+    let prev = '';
+
+    for (const t of toks) {
+      if (t.type === 'lcomment') {
+        // A line comment must terminate with a newline or it swallows the rest.
+        out += (out && !out.endsWith('\n') ? ' ' : '') + t.value + '\n';
+        prev = '';
+        continue;
+      }
+      const text = this.textOf(t, o);
+      const noSpace = !out || out.endsWith('\n') ||
+        NO_SPACE_BEFORE.has(text) || NO_SPACE_AFTER.has(prev) ||
+        /[-+*/%=<>&|^~!(,;]$/.test(prev) || /^[-+*/%=<>&|^~!]/.test(text);
+      out += (noSpace ? '' : ' ') + text;
+      prev = text;
+    }
+
+    return out.trim();
+  },
+
+  /* ---------------------------------------------------------------- *
+   * Actions
+   * ---------------------------------------------------------------- */
+
+  formatSQL() {
+    const sql = this.readInput();
+    if (!sql.trim()) return;
+
+    const o = this.getOptions();
+    let formatted;
+    try {
+      formatted = this.formatSQLText(sql, o);
+    } catch (error) {
+      console.error('SQL formatting failed:', error);
+      formatted = sql;
+    }
+
+    this.context.setOutput(formatted);
+    this.updateStats(sql, formatted);
+  },
+
+  minifySQL() {
+    const sql = this.readInput();
+    if (!sql.trim()) return;
+
+    const o = this.getOptions();
+    let minified;
+    try {
+      minified = this.minifySQLText(sql, o);
+    } catch (error) {
+      console.error('SQL minify failed:', error);
+      minified = sql.replace(/\s+/g, ' ').trim();
+    }
+
+    this.context.setOutput(minified);
+    this.updateStats(sql, minified);
+  },
+
+  useOutputAsInput() {
+    const output = this.context.getOutput();
+    if (!output) return;
+    const inputEl = this.container?.querySelector('#input');
+    if (inputEl) inputEl.value = output;
+    this.context.setInput(output);
+  },
+
+  updateStats(original, formatted) {
+    const statsEl = this.container?.querySelector('#stats');
+    if (!statsEl) return;
+
+    const originalLines = original.split('\n').length;
+    const formattedLines = formatted.split('\n').length;
+    const originalChars = original.length;
+    const formattedChars = formatted.length;
+    const longestLine = formatted.split('\n').reduce((m, l) => Math.max(m, l.length), 0);
+
+    const toks = this.prepareTokens(original, { ...this.getOptions(), stripComments: true });
+    let keywordCount = 0;
+    let statements = 0;
+    for (const t of toks) {
+      if (t.type === 'word' && KEYWORDS.has(t.upper)) keywordCount++;
+      if (t.value === ';') statements++;
+    }
+    if (!statements && toks.length) statements = 1;
+
+    statsEl.innerHTML = `
+      <div class="stat-item">
+        <span class="stat-label">Lines</span>
+        <span class="stat-value">${originalLines} → ${formattedLines}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Characters</span>
+        <span class="stat-value">${originalChars} → ${formattedChars}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Keywords</span>
+        <span class="stat-value">${keywordCount}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Statements</span>
+        <span class="stat-value">${statements}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Longest line</span>
+        <span class="stat-value">${longestLine}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Change</span>
+        <span class="stat-value">${formattedChars > originalChars ? '+' : ''}${formattedChars - originalChars}</span>
+      </div>
+    `;
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (!output) return;
+    copyToClipboard(output, {
+      onSuccess: () => {
+        const copyBtn = this.container.querySelector('#copy-btn');
+        if (!copyBtn) return;
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = '✓ Copied!';
+        setTimeout(() => { copyBtn.textContent = originalText; }, 2000);
+      }
+    });
+  },
+
+  /* ---------------------------------------------------------------- *
+   * JSON schema + templates
+   * ---------------------------------------------------------------- */
+
   loadFromJsonSchema() {
-    const jsonSchemaInput = this.container.querySelector("#json-schema-input");
+    const jsonSchemaInput = this.container.querySelector('#json-schema-input');
     const json = jsonSchemaInput?.value || '';
 
     if (!json.trim()) {
@@ -371,20 +1482,17 @@ export const DevChefTool = {
         return;
       }
 
-      // Show table selector
-      const tableSelectorContainer = this.container.querySelector("#table-selector-container");
-      const tableSelector = this.container.querySelector("#table-selector");
+      const tableSelectorContainer = this.container.querySelector('#table-selector-container');
+      const tableSelector = this.container.querySelector('#table-selector');
 
       tableSelectorContainer.style.display = 'block';
       tableSelector.innerHTML = this.schemaData.tables.map((table, index) =>
         `<option value="${index}">${table.schema || 'dbo'}.${table.name}</option>`
       ).join('');
 
-      // Select first table
       this.selectTableFromSchema();
 
       alert(`Successfully loaded schema with ${this.schemaData.tables.length} table(s)! Templates will now use actual table/column names.`);
-
     } catch (error) {
       alert(`Error parsing JSON: ${error.message}`);
       console.error(error);
@@ -392,133 +1500,19 @@ export const DevChefTool = {
   },
 
   selectTableFromSchema() {
-    const tableSelector = this.container.querySelector("#table-selector");
-    const selectedIndex = parseInt(tableSelector.value);
+    const tableSelector = this.container.querySelector('#table-selector');
+    const selectedIndex = parseInt(tableSelector.value, 10);
 
     if (this.schemaData && this.schemaData.tables[selectedIndex]) {
       this.selectedTable = this.schemaData.tables[selectedIndex];
     }
   },
 
-  formatSQL() {
-    const sql = this.context.getInput();
-    if (!sql.trim()) return;
-
-    const indentSize = this.container.querySelector("#indent-size")?.value || "4";
-    const keywordCase = this.container.querySelector("#keyword-case")?.value || "upper";
-    const newLineBeforeKeyword = this.container.querySelector("#new-line-before-keyword")?.checked || false;
-
-    const indent = indentSize === "tab" ? "\t" : " ".repeat(parseInt(indentSize));
-
-    let formatted = sql.trim();
-
-    // Apply keyword case
-    if (keywordCase !== 'preserve') {
-      this.keywords.forEach(keyword => {
-        const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-        formatted = formatted.replace(regex, match => {
-          return keywordCase === 'upper' ? match.toUpperCase() : match.toLowerCase();
-        });
-      });
-    }
-
-    // Add new lines before major keywords
-    if (newLineBeforeKeyword) {
-      const majorKeywords = ['SELECT', 'FROM', 'WHERE', 'JOIN', 'INNER JOIN', 'LEFT JOIN',
-                             'RIGHT JOIN', 'ORDER BY', 'GROUP BY', 'HAVING', 'UNION'];
-      majorKeywords.forEach(keyword => {
-        const regex = new RegExp(`\\s+(${keyword})\\s+`, 'gi');
-        formatted = formatted.replace(regex, `\n${keyword} `);
-      });
-    }
-
-    // Basic indentation
-    let level = 0;
-    const lines = formatted.split('\n');
-    formatted = lines.map(line => {
-      line = line.trim();
-      if (!line) return '';
-
-      // Decrease indent for closing keywords
-      if (/^(END|ELSE)/i.test(line)) {
-        level = Math.max(0, level - 1);
-      }
-
-      const indented = indent.repeat(level) + line;
-
-      // Increase indent for opening keywords
-      if (/^(BEGIN|IF|CASE|WHEN)/i.test(line)) {
-        level++;
-      }
-
-      return indented;
-    }).join('\n');
-
-    this.context.setOutput(formatted);
-    this.updateStats(sql, formatted);
-  },
-
-  minifySQL() {
-    const sql = this.context.getInput();
-    if (!sql.trim()) return;
-
-    // Remove extra whitespace and newlines
-    const minified = sql
-      .replace(/\s+/g, ' ')
-      .replace(/\s*,\s*/g, ',')
-      .replace(/\s*\(\s*/g, '(')
-      .replace(/\s*\)\s*/g, ')')
-      .replace(/\s*=\s*/g, '=')
-      .trim();
-
-    this.context.setOutput(minified);
-    this.updateStats(sql, minified);
-  },
-
-  updateStats(original, formatted) {
-    const statsEl = this.container.querySelector("#stats");
-    if (!statsEl) return;
-
-    const originalLines = original.split('\n').length;
-    const formattedLines = formatted.split('\n').length;
-    const originalChars = original.length;
-    const formattedChars = formatted.length;
-
-    // Count keywords
-    let keywordCount = 0;
-    this.keywords.forEach(keyword => {
-      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-      const matches = original.match(regex);
-      if (matches) keywordCount += matches.length;
-    });
-
-    statsEl.innerHTML = `
-      <div class="stat-item">
-        <span class="stat-label">Lines</span>
-        <span class="stat-value">${originalLines} → ${formattedLines}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Characters</span>
-        <span class="stat-value">${originalChars} → ${formattedChars}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Keywords</span>
-        <span class="stat-value">${keywordCount}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Change</span>
-        <span class="stat-value">${formattedChars > originalChars ? '+' : ''}${formattedChars - originalChars}</span>
-      </div>
-    `;
-  },
-
   getTemplate(type) {
-    // If schema is loaded, generate schema-aware templates
     if (this.selectedTable) {
       return this.getSchemaAwareTemplate(type);
     }
 
-    // Otherwise, return generic templates
     const templates = {
       'select': `SELECT
     column1,
@@ -588,7 +1582,6 @@ GO`
     const tableName = `[${table.schema || 'dbo'}].[${table.name}]`;
     const columns = table.columns || [];
 
-    // Get first few non-identity columns for examples
     const dataColumns = columns.filter(c => !c.isIdentity && !c.isPrimaryKey).slice(0, 3);
     const allColumns = columns.slice(0, 5);
     const pkColumn = columns.find(c => c.isPrimaryKey) || { name: 'Id' };
@@ -682,24 +1675,8 @@ GO`;
     return '';
   },
 
-  copyOutput() {
-    const output = this.context.getOutput();
-    if (output) {
-      copyToClipboard(output, {
-        onSuccess: () => {
-          const copyBtn = this.container.querySelector("#copy-btn");
-          const originalText = copyBtn.textContent;
-          copyBtn.textContent = "✓ Copied!";
-          setTimeout(() => {
-            copyBtn.textContent = originalText;
-          }, 2000);
-        }
-      });
-    }
-  },
-
-  onInput(input, context) {
-    return { output: "" };
+  onInput() {
+    return { output: '' };
   }
 };
 
@@ -724,7 +1701,11 @@ if (typeof window !== 'undefined' && !window.DevChef) {
 
       const template = document.querySelector('#tool-ui');
       if (template) {
+        // Replacing body content detaches the in-body <style> tags, so keep
+        // references and put them back afterwards.
+        const styles = Array.from(document.body.querySelectorAll('style'));
         document.body.innerHTML = template.innerHTML;
+        styles.forEach(style => document.body.appendChild(style));
         DevChefTool.init(document.body, standaloneContext);
       }
     }

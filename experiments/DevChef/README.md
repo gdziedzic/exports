@@ -762,7 +762,7 @@ DevChef includes 31+ built-in tools organized by category:
 - **FIX Parser**: Parse and analyze FIX protocol messages
 
 ### SQL & Database
-- **SQL Formatter**: Format SQL queries
+- **SQL Formatter**: Format SQL queries (dialect-aware layout, casing, comma and line-break options)
 - **SQL Data Generator**: Generate test data for SQL
 - **Table Schema Generator**: Generate table schemas
 - **SQL Join Helper**: Help construct SQL joins

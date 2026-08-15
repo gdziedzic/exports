@@ -321,7 +321,9 @@
       "sql",
       "database",
       "format",
-      "query"
+      "query",
+      "beautify",
+      "minify"
     ],
     "aliases": [
       "format sql",
@@ -330,11 +332,14 @@
     ],
     "examples": [
       "Format SELECT query",
-      "Normalize SQL indentation"
+      "Normalize SQL indentation",
+      "Switch to leading commas",
+      "Right-align keywords in river layout",
+      "Lowercase keywords and uppercase identifiers"
     ],
     "maturity": "stable",
     "lastUpdated": "2026-04-23",
-    "testCoverage": "manual-smoke"
+    "testCoverage": "unit"
   },
   {
     "file": "csv-json-converter.html",
