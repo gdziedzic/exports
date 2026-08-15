@@ -3,7 +3,7 @@
  * Full offline PWA support with intelligent caching & performance optimization
  */
 
-const CACHE_VERSION = 'devchef-v7.0.0';
+const CACHE_VERSION = 'devchef-v11.5.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const TOOLS_CACHE = `${CACHE_VERSION}-tools`;

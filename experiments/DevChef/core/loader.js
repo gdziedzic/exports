@@ -73,6 +73,39 @@ export function getLoadingErrors() {
   return loadingErrors;
 }
 
+/** Theme custom properties the app shell owns; tools must not redefine them. */
+const APP_THEME_TOKEN = /^--(bg-|text-|border-|accent|surface|shadow-|font-|radius-|spacing-|success|error|warning|info)/;
+
+/**
+ * Keep page-level styling from a tool file inside the workspace.
+ *
+ * Tool styles are injected into #workspace while the tool is open. Single-file
+ * tools also have to work when opened directly, so they declare `:root`, `html`
+ * and `body` rules. Injected as-is those rules redefine the app's theme tokens
+ * for the whole shell - which is why the dark theme stayed light whenever such
+ * a tool was open. Here the app-owned tokens are dropped and the remaining
+ * page-level selectors are rewritten to #workspace, so a tool keeps its own
+ * custom properties and layout without overriding the shell.
+ *
+ * @param {string} css - Inline CSS from the tool file
+ * @returns {string} CSS that is safe to inject into the workspace
+ */
+function scopeToolStyle(css) {
+  if (!css || typeof css !== 'string') return '';
+
+  const withoutAppTokens = css.replace(/:root\s*\{([^}]*)\}/g, (match, body) => {
+    const kept = body
+      .split(';')
+      .map(declaration => declaration.trim())
+      .filter(Boolean)
+      .filter(declaration => !APP_THEME_TOKEN.test(declaration.split(':')[0].trim()));
+
+    return kept.length ? `:root {\n  ${kept.join(';\n  ')};\n}` : '';
+  });
+
+  return withoutAppTokens.replace(/(^|[\s,{}>+~])(:root|html|body)(?=[\s,{:.[>+~])/g, '$1#workspace');
+}
+
 /**
  * Load a single tool from an HTML file
  * @param {string} path - Path to the tool HTML file
@@ -110,13 +143,16 @@ async function loadTool(path, indexMetadata = {}) {
     }
     const templateHtml = template.innerHTML;
 
-    // Extract styles (inline and external)
+    // Extract styles (inline and external). Prefer the tool's own style block;
+    // #standalone-styles is chrome for opening the file directly and is only
+    // used when the tool ships nothing else.
     let style = "";
 
     // Get inline styles
-    const styleTag = doc.querySelector("style");
+    const styleTag = doc.querySelector("style:not(#standalone-styles)")
+      || doc.querySelector("style");
     if (styleTag) {
-      style += styleTag.innerHTML;
+      style += scopeToolStyle(styleTag.innerHTML);
     }
 
     // Get external stylesheets

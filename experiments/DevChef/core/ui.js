@@ -126,7 +126,7 @@ export function openTool(id, context, workspace = "#workspace", updateUrl = true
 function renderHomeContent(container) {
   container.innerHTML = `
     <div class="welcome-screen">
-      <h2>Welcome to DevChef V11</h2>
+      <h2>Welcome to DevChef V11.5</h2>
       <p>True game changer workflow hub for fast offline-first tool work</p>
       <p>Press <kbd>Ctrl+K</kbd> for Command Palette or <kbd>/</kbd> to jump into search</p>
       <p style="margin-top: 18px; color: var(--text-secondary);">

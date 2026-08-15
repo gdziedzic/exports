@@ -1,8 +1,21 @@
-# DevChef V7 - State-of-the-Art Excellence ✨
+# DevChef V11.5 ✨
 
-**✨ Flawless UX | Smooth Animations | Delightful Interactions**
+**Offline-first developer tools | Calm, modern shell | Keyboard-first flow**
 
-The **STATE-OF-THE-ART** developer productivity platform with **FLAWLESS USER EXPERIENCE**, buttery-smooth animations, delightful micro-interactions, beautiful loading states, comprehensive accessibility, and performance optimizations that make every interaction feel magical.
+A browser-based micro-tool engine: 30+ self-contained developer utilities behind a command
+palette, a fuzzy tool search, and a workspace that works with no network and no build step.
+
+---
+
+## 🎯 What's New in V11.5
+
+- **Simpler shell design**: one accent colour, quieter surfaces, and a sidebar header that
+  wraps instead of overflowing. Hover changes colour rather than nudging elements around.
+- **Sharper focus**: consistent focus rings, thin scrollbars, sticky search with a `/` hint,
+  and a single soft accent wash on the canvas instead of competing gradients.
+- **Macro recorder removed**: recording and replaying action sequences is gone, along with
+  its `Ctrl+Shift+M` shortcut and pattern-based macro suggestions. Batch processing
+  (`Ctrl+Shift+B`) and command history (`Ctrl+Shift+H`) are unchanged.
 
 ---
 
@@ -156,21 +169,14 @@ window.universalFavorites.executeItem('snippet', snippetId);
 
 ---
 
-### 🔴 **Productivity Engine** - Macros, Batch & Automation
+### ⚡ **Productivity Engine** - Batch & Automation
 
-Record actions, process batches, automate workflows - eliminate repetitive tasks forever.
+Process batches, replay commands, automate workflows - eliminate repetitive tasks forever.
 
 **Features:**
-- **Macro Recording**: Record and replay any sequence of actions
 - **Batch Processing**: Process multiple items simultaneously or sequentially
 - **Command History**: Access and replay any previous command
-- **Pattern Detection**: AI suggests macros when repetitive patterns detected
-- **Export Macros**: Share macros with team or backup
-
-**Macro Recording:**
-- `Ctrl+Shift+M` / `Cmd+Shift+M` - Start/Stop Recording
-- Records: Tool switches, input changes, all actions
-- Replay with custom delay and loop count
+- **Workflow Automation**: Saved automations run your routine steps
 
 **Batch Processing:**
 - `Ctrl+Shift+B` / `Cmd+Shift+B` - Open Batch Processor
@@ -185,14 +191,11 @@ Record actions, process batches, automate workflows - eliminate repetitive tasks
 
 **How to use:**
 ```javascript
-// Start recording macro
-window.productivityEngine.startRecording('My Workflow');
+// Open the batch processor
+window.productivityEngine.showBatchProcessor();
 
-// Stop and save
-window.productivityEngine.stopRecording();
-
-// Play macro with 500ms delay, 3 loops
-window.productivityEngine.playMacro(macroId, { delay: 500, loop: 3 });
+// Replay the most recent command
+window.productivityEngine.replayCommand(0);
 ```
 
 ---
@@ -210,7 +213,7 @@ Your productivity command center - one click away from everything.
 
 **Quick Panel Actions:**
 - ⭐ Favorites - ✨ Recent - 🔍 Search - 📝 Snippets
-- 🔴 Macros - ⚡ Batch - 📜 History - 🛠️ DevTools
+- ⚡ Batch - 📜 History - 🛠️ DevTools
 - 🚀 Performance - ⚡ Quick Actions
 
 **Keyboard Shortcuts:**
@@ -297,7 +300,6 @@ window.workflowSnapshots.importSnapshots(jsonData, true);
 - `Ctrl+Shift+Q` - Quick Panel (Hub)
 - `Ctrl+Shift+F` - Universal Favorites
 - `Ctrl+Shift+R` - Recently Used
-- `Ctrl+Shift+M` - Record/Stop Macro
 - `Ctrl+Shift+B` - Batch Processor
 - `Ctrl+Shift+H` - Command History
 - `Ctrl+Shift+S` - Save Workflow Snapshot
@@ -569,7 +571,6 @@ The Smart Context Engine is your AI assistant that observes your work, learns fr
 - **Smart Suggestions**: Predicts next tools with confidence scoring
 - **Workflow Detection**: Identifies repeated patterns and suggests automation
 - **Clipboard Intelligence**: Analyzes clipboard content and suggests relevant transformations
-- **Keyboard Pattern Analysis**: Detects repetitive key sequences for macro suggestions
 - **Adaptive Learning**: Gets smarter the more you use it
 - **Context-Aware Help**: Shows tips and shortcuts based on current activity
 
@@ -694,7 +695,6 @@ Paste any data and instantly see all possible transformations with live previews
 - **Multi-Panel Workspaces**: Split-screen layouts (horizontal, vertical, grid) for working with multiple tools simultaneously
 - **Productivity Analytics**: Track usage patterns, get insights, and receive personalized productivity recommendations
 - **Quick Actions**: Lightning-fast command runner (Ctrl+Space) for common workflows and actions
-- **Macro Recording**: Record and replay repetitive actions across tools
 - **Deep Linking**: Share specific tool configurations via URLs
 - **Drag-and-Drop File Support**: Drop files directly into tools for instant processing
 
@@ -1341,7 +1341,6 @@ Built with vanilla JavaScript, HTML, and CSS - no frameworks required!
 - ⚡ **Multi-Panel Workspaces**: Split-screen layouts (horizontal, vertical, grid) for working with multiple tools
 - ⚡ **Productivity Analytics**: Track usage patterns, get insights, and personalized recommendations
 - ⚡ **Quick Actions (Ctrl+Space)**: Lightning-fast command runner for common workflows
-- ⚡ **Macro Recording**: Record and replay repetitive actions across tools
 - ⚡ **Deep Linking**: Share tool configurations via URLs
 - ⚡ **Drag-and-Drop**: Drop files directly into tools for processing
 

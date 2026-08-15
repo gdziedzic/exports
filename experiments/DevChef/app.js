@@ -71,7 +71,7 @@ import { showToolHealthDashboard } from './core/tool-health.js';
 
 let deferredInstallPrompt = null;
 let serviceWorkerRegistration = null;
-const APP_VERSION = '11.0';
+const APP_VERSION = '11.5';
 const APP_TAGLINE = 'True Game Changer, Zero-Friction Flow';
 
 /**
@@ -403,12 +403,12 @@ async function init() {
   console.log(`✓ DevChef V${APP_VERSION} ${APP_TAGLINE} ready - ${toolCount} tools loaded 🚀🌙`);
   console.log(`🎨 V11 Features: Quick Resume | Clipboard Sprint | Clip-to-Snippet | Smart Automation | One-Click Home`);
   console.log(`⚡ Core Features: Performance Monitor | Advanced Search (Ctrl+K) | DevTools (F12)`);
-  console.log(`🌙 ULTIMATE Features: Snippets++ | Universal Favorites | Macros | Batch | Quick Panel`);
+  console.log(`🌙 ULTIMATE Features: Snippets++ | Universal Favorites | Batch | Quick Panel`);
   console.log(``);
   console.log(`📌 ULTIMATE SHORTCUTS:`);
   console.log(`   ⚡ Quick Panel: Ctrl+Shift+Q  |  🚀 V11 Boost: Ctrl+Shift+0  |  🏠 Home: DevChef title  |  🎯 Focus Mode: Ctrl+Shift+9`);
   console.log(`   1️⃣ Resume: Ctrl+Shift+1  |  2️⃣ Clipboard Sprint: Ctrl+Shift+2  |  3️⃣ Clip→Snippet: Ctrl+Shift+3`);
-  console.log(`   🔴 Macro: Ctrl+Shift+M  |  ⚡ Batch: Ctrl+Shift+B  |  📜 History: Ctrl+Shift+H`);
+  console.log(`   ⚡ Batch: Ctrl+Shift+B  |  📜 History: Ctrl+Shift+H`);
   console.log(`   🔍 Search: Ctrl+K / Ctrl+Shift+F  |  📝 Snippets: Ctrl+B  |  🛠️ DevTools: F12`);
   console.log(``);
   console.log(`🚀 PRODUCTIVITY TO THE MOON! 🌙`);
@@ -715,7 +715,7 @@ function initializeUltimateFeatures() {
   console.log('   🌙 MOON-SHOT PRODUCTIVITY MODE ACTIVATED');
   console.log('   - Snippets Plus: Variable substitution {{var}} & templates');
   console.log('   - Universal Favorites: Unified favorites (Ctrl+Alt+F)');
-  console.log('   - Productivity Engine: Macros (Ctrl+Shift+M), Batch (Ctrl+Shift+B)');
+  console.log('   - Productivity Engine: Batch (Ctrl+Shift+B), History (Ctrl+Shift+H)');
   console.log('   - Quick Panel: Floating action button (Ctrl+Shift+Q)');
   console.log('   - Deep Search: Search all content (Ctrl+Shift+F)');
   console.log('   ⚡ ONE-CLICK EVERYTHING | 🎯 ZERO FRICTION | 🔥 MAX EFFICIENCY');

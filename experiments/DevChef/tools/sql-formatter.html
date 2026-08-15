@@ -18,478 +18,495 @@
 }
 </script>
 
-<!-- Tool UI Template -->
+<!-- Tool UI Template. Presets, templates and every option control are rendered
+     from the data in the module, so this skeleton only holds the layout. -->
 <template id="tool-ui">
-  <div class="tool-container">
-    <div class="tool-header">
-      <h2 class="tool-title">SQL Formatter &amp; Beautifier</h2>
-      <p class="tool-description">Format, beautify, and analyze SQL queries for SQL Server, MySQL, PostgreSQL</p>
-    </div>
-
-    <div class="tool-section">
-      <label class="section-label">Load from JSON Schema</label>
-      <textarea id="json-schema-input" placeholder='Paste JSON schema here (format: {"tables": [{"name": "Users", "schema": "dbo", "columns": [...]}]})'></textarea>
-      <div id="table-selector-container" style="display: none; margin-top: 12px;">
-        <label for="table-selector">Select Table for Templates:</label>
-        <select id="table-selector"></select>
+  <div class="tool-container sqlf" data-preserve-legacy-controls>
+    <header class="sqlf-bar">
+      <div class="sqlf-bar__title">
+        <h2>SQL Formatter</h2>
+        <p>Beautify, minify and measure SQL for T-SQL, MySQL and PostgreSQL</p>
       </div>
-      <button id="load-schema-btn" class="secondary">Load from JSON Schema</button>
-    </div>
-
-    <div class="tool-section">
-      <label class="section-label" for="input">SQL Query</label>
-      <textarea id="input" placeholder="Paste your SQL query here..."></textarea>
-    </div>
-
-    <div class="tool-section">
-      <label class="section-label">Presets</label>
-      <div class="presets-row">
-        <button class="preset-btn secondary" data-preset="standard">Standard</button>
-        <button class="preset-btn secondary" data-preset="expanded">Expanded</button>
-        <button class="preset-btn secondary" data-preset="compact">Compact</button>
-        <button class="preset-btn secondary" data-preset="river">River (right-aligned)</button>
-        <button class="preset-btn secondary" data-preset="comma-first">Comma-first</button>
+      <div class="sqlf-bar__inline" data-slot="toolbar"></div>
+      <div class="sqlf-bar__actions">
+        <button id="format-btn" class="btn btn--primary" type="button">Format</button>
+        <button id="minify-btn" class="btn" type="button">Minify</button>
       </div>
-    </div>
+    </header>
 
-    <div class="tool-section">
-      <label class="section-label">Formatting Options</label>
+    <div class="chips chips--presets" data-slot="presets" role="group" aria-label="Formatting presets"></div>
 
-      <div class="options-group">
-        <div class="options-group-title">Layout</div>
-        <div class="format-options">
-          <label>
-            <span>Dialect:</span>
-            <select id="dialect">
-              <option value="tsql" selected>SQL Server (T-SQL)</option>
-              <option value="mysql">MySQL / MariaDB</option>
-              <option value="postgres">PostgreSQL</option>
-              <option value="standard">Standard SQL</option>
-            </select>
-          </label>
-          <label>
-            <span>Indentation:</span>
-            <select id="indent-size">
-              <option value="2">2 spaces</option>
-              <option value="4" selected>4 spaces</option>
-              <option value="8">8 spaces</option>
-              <option value="tab">Tab</option>
-            </select>
-          </label>
-          <label>
-            <span>Keyword layout:</span>
-            <select id="keyword-layout">
-              <option value="stacked" selected>Stacked (body below)</option>
-              <option value="inline">Inline (body beside)</option>
-              <option value="river">River (right-aligned)</option>
-            </select>
-          </label>
-          <label>
-            <span>Column lists:</span>
-            <select id="list-style">
-              <option value="break" selected>One item per line</option>
-              <option value="inline">Keep inline</option>
-              <option value="auto">Auto (wrap over max width)</option>
-            </select>
-          </label>
-          <label>
-            <span>Comma position:</span>
-            <select id="comma-position">
-              <option value="trailing" selected>Trailing (end of line)</option>
-              <option value="leading">Leading (start of line)</option>
-            </select>
-          </label>
-          <label>
-            <span>Max line width:</span>
-            <input type="number" id="max-width" min="40" max="500" step="10" value="80">
-          </label>
+    <div class="panes">
+      <section class="pane">
+        <div class="pane__head">
+          <h3>SQL</h3>
+          <span class="pane__meta" id="input-meta"></span>
+          <button id="clear-btn" class="btn btn--ghost" type="button">Clear</button>
         </div>
-      </div>
+        <div class="chips" data-slot="templates" role="group" aria-label="Insert a starter statement"></div>
+        <textarea id="input" class="editor" spellcheck="false"
+          placeholder="Paste SQL here — Ctrl+Enter formats"></textarea>
+        <details class="drawer">
+          <summary>Load table names from a JSON schema</summary>
+          <div class="drawer__body">
+            <textarea id="json-schema-input" class="editor editor--sm" spellcheck="false"
+              placeholder='{"tables": [{"name": "Users", "schema": "dbo", "columns": [...]}]}'></textarea>
+            <div class="drawer__row">
+              <button id="load-schema-btn" class="btn" type="button">Load schema</button>
+              <select id="table-selector" aria-label="Table used by the starter statements" hidden></select>
+            </div>
+            <p id="schema-status" class="status" role="status"></p>
+          </div>
+        </details>
+      </section>
 
-      <div class="options-group">
-        <div class="options-group-title">Casing</div>
-        <div class="format-options">
-          <label>
-            <span>Keyword case:</span>
-            <select id="keyword-case">
-              <option value="upper" selected>UPPERCASE</option>
-              <option value="lower">lowercase</option>
-              <option value="capitalize">Capitalize</option>
-              <option value="preserve">Preserve</option>
-            </select>
-          </label>
-          <label>
-            <span>Function case:</span>
-            <select id="function-case">
-              <option value="upper" selected>UPPERCASE</option>
-              <option value="lower">lowercase</option>
-              <option value="capitalize">Capitalize</option>
-              <option value="preserve">Preserve</option>
-            </select>
-          </label>
-          <label>
-            <span>Data type case:</span>
-            <select id="datatype-case">
-              <option value="upper" selected>UPPERCASE</option>
-              <option value="lower">lowercase</option>
-              <option value="capitalize">Capitalize</option>
-              <option value="preserve">Preserve</option>
-            </select>
-          </label>
-          <label>
-            <span>Identifier case:</span>
-            <select id="identifier-case">
-              <option value="preserve" selected>Preserve</option>
-              <option value="upper">UPPERCASE</option>
-              <option value="lower">lowercase</option>
-            </select>
-          </label>
+      <section class="pane">
+        <div class="pane__head">
+          <h3>Result</h3>
+          <span class="pane__meta" id="output-meta"></span>
+          <button id="copy-btn" class="btn btn--ghost" type="button">Copy</button>
+          <button id="use-output-btn" class="btn btn--ghost" type="button">Use as input</button>
         </div>
-      </div>
-
-      <div class="options-group">
-        <div class="options-group-title">Line breaks</div>
-        <div class="format-options checkbox-options">
-          <label>
-            <input type="checkbox" id="new-line-before-keyword" checked>
-            <span>New line before keywords</span>
-          </label>
-          <label>
-            <input type="checkbox" id="break-joins" checked>
-            <span>New line before JOINs</span>
-          </label>
-          <label>
-            <input type="checkbox" id="break-logical" checked>
-            <span>Break before AND / OR</span>
-          </label>
-          <label>
-            <input type="checkbox" id="on-new-line">
-            <span>JOIN ... ON on its own line</span>
-          </label>
-          <label>
-            <input type="checkbox" id="expand-case" checked>
-            <span>Expand CASE expressions</span>
-          </label>
-          <label>
-            <input type="checkbox" id="indent-subqueries" checked>
-            <span>Indent subqueries &amp; CTEs</span>
-          </label>
-          <label>
-            <input type="checkbox" id="blank-line-between-statements" checked>
-            <span>Blank line between statements</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="options-group">
-        <div class="options-group-title">Cleanup</div>
-        <div class="format-options checkbox-options">
-          <label>
-            <input type="checkbox" id="strip-comments">
-            <span>Remove comments</span>
-          </label>
-          <label>
-            <input type="checkbox" id="trailing-semicolon">
-            <span>Ensure trailing semicolon</span>
-          </label>
-          <label>
-            <input type="checkbox" id="minify-keep-comments">
-            <span>Minify keeps comments</span>
-          </label>
-          <label>
-            <input type="checkbox" id="live-format" checked>
-            <span>Re-format on option change</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="options-actions">
-        <button id="reset-options-btn" class="secondary">Reset to defaults</button>
-      </div>
+        <textarea id="output" class="editor" readonly spellcheck="false"
+          placeholder="Formatted SQL lands here"></textarea>
+        <div id="stats" class="stats" aria-live="polite"></div>
+      </section>
     </div>
 
-    <div class="tool-section">
-      <button id="format-btn">Format SQL</button>
-      <button id="minify-btn" class="secondary">Minify</button>
-      <button id="copy-btn" class="secondary">Copy Result</button>
-      <button id="use-output-btn" class="secondary">Use Result as Input</button>
-    </div>
-
-    <div class="tool-section">
-      <label class="section-label" for="output">Formatted SQL</label>
-      <textarea id="output" readonly></textarea>
-      <div id="stats" class="stats"></div>
-    </div>
-
-    <div class="tool-section">
-      <label class="section-label">Quick SQL Templates</label>
-      <div class="templates-grid">
-        <button class="template-btn" data-template="select">SELECT</button>
-        <button class="template-btn" data-template="insert">INSERT</button>
-        <button class="template-btn" data-template="update">UPDATE</button>
-        <button class="template-btn" data-template="delete">DELETE</button>
-        <button class="template-btn" data-template="create-table">CREATE TABLE</button>
-        <button class="template-btn" data-template="stored-proc">STORED PROC</button>
+    <details id="options-panel" class="options" open>
+      <summary>
+        <span>Formatting options</span>
+        <span id="options-badge" class="badge" hidden></span>
+      </summary>
+      <div class="options__body" data-slot="options"></div>
+      <div class="options__foot">
+        <button id="reset-options-btn" class="btn btn--ghost" type="button">Reset to defaults</button>
       </div>
-    </div>
+    </details>
   </div>
 </template>
 
-<!-- Tool Styles -->
+<!-- Tool Styles. The layout is a container query away from one column, so the
+     same markup works in the DevChef workspace and in a standalone window. -->
 <style>
-  .options-group {
-    margin-bottom: 16px;
-    padding: 12px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-  }
-
-  .options-group-title {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-secondary);
-    margin-bottom: 10px;
-  }
-
-  .options-actions {
-    margin-top: 4px;
-  }
-
-  .format-options {
+  .sqlf {
+    container-type: inline-size;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 12px 16px;
+    gap: 14px;
+    accent-color: var(--accent);
+    font-family: var(--font-sans);
+    color: var(--text-primary);
   }
 
-  .format-options.checkbox-options {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  .sqlf :is(h2, h3) { margin: 0; font-weight: 650; }
+  .sqlf p { margin: 0; }
+
+  /* ---------- Top bar ---------- */
+
+  .sqlf-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
   }
 
-  .format-options label {
+  .sqlf-bar__title { margin-inline-end: auto; }
+  .sqlf-bar__title h2 { font-size: clamp(18px, 2.2cqi + 14px, 24px); }
+
+  .sqlf-bar__title p {
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-wrap: balance;
+  }
+
+  .sqlf-bar__inline,
+  .sqlf-bar__actions {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
   }
 
-  .format-options label > span:first-child {
-    flex: 0 0 auto;
-    color: var(--text-secondary);
-    font-size: 13px;
-  }
+  .sqlf-bar__inline .field { gap: 6px; }
+  .sqlf-bar__inline select { min-width: 150px; }
 
-  .format-options select,
-  .format-options input[type="number"] {
-    flex: 1 1 auto;
-    width: auto;
-    min-width: 0;
-    padding: 6px 10px;
-    font-size: 13px;
-  }
+  /* ---------- Buttons and chips ---------- */
 
-  .format-options input[type="checkbox"] {
-    width: auto;
+  .sqlf .btn {
+    --btn-bg: var(--bg-secondary);
+    margin: 0;
+    padding: 8px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 8px);
+    background: var(--btn-bg);
+    color: var(--text-primary);
+    font: 500 13px var(--font-sans);
+    line-height: 1.2;
     cursor: pointer;
+    transition: background-color .15s, border-color .15s, transform .15s;
   }
 
-  .presets-row {
+  .sqlf .btn:hover { --btn-bg: color-mix(in oklab, var(--accent) 12%, var(--bg-secondary)); }
+  .sqlf .btn:active { transform: translateY(1px); }
+  .sqlf .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .sqlf .btn--primary {
+    --btn-bg: var(--accent);
+    border-color: transparent;
+    color: #fff;
+    padding-inline: 20px;
+  }
+
+  .sqlf .btn--primary:hover { --btn-bg: var(--accent-hover); }
+
+  .sqlf .btn--ghost {
+    --btn-bg: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
+    padding: 6px 10px;
+  }
+
+  .sqlf .btn--ghost:hover { color: var(--text-primary); }
+
+  .chips {
     display: flex;
     flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chips:empty { display: none; }
+
+  .sqlf .chip {
+    margin: 0;
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: 500 12px var(--font-sans);
+    cursor: pointer;
+    transition: background-color .15s, color .15s, border-color .15s;
+  }
+
+  .sqlf .chip:hover {
+    color: var(--text-primary);
+    background: color-mix(in oklab, var(--accent) 10%, transparent);
+  }
+
+  .sqlf .chip[aria-pressed="true"] {
+    background: color-mix(in oklab, var(--accent) 18%, transparent);
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+
+  /* ---------- Editor panes ---------- */
+
+  .panes {
+    display: grid;
+    gap: 14px;
+  }
+
+  @container (min-width: 820px) {
+    .panes { grid-template-columns: 1fr 1fr; }
+  }
+
+  .pane {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg, 12px);
+    background: var(--bg-secondary);
+  }
+
+  .pane__head {
+    display: flex;
+    align-items: center;
     gap: 8px;
   }
 
-  .preset-btn {
-    font-size: 13px;
-    padding: 8px 14px;
-    margin: 0;
+  .pane__head h3 {
+    font-size: 12px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
   }
 
-  .preset-btn.active {
-    background: var(--accent);
-    color: white;
+  .pane__meta {
+    margin-inline-end: auto;
+    font: 400 12px var(--font-mono);
+    color: var(--text-secondary);
   }
 
-  .templates-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 12px;
-  }
-
-  .template-btn {
-    padding: 10px 16px;
-    margin: 0;
-    background: var(--bg-secondary);
+  .sqlf .editor {
+    width: 100%;
+    flex: 1;
+    min-height: clamp(240px, 40vh, 460px);
+    padding: 12px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-primary);
     color: var(--text-primary);
-    font-size: 13px;
+    font: 13px/1.6 var(--font-mono);
+    tab-size: 4;
+    white-space: pre;
+    overflow: auto;
+    overflow-wrap: normal;
+    scrollbar-gutter: stable;
+    resize: vertical;
+    transition: border-color .15s, box-shadow .15s;
   }
 
-  .template-btn:hover {
-    background: var(--accent);
-    color: white;
+  .sqlf .editor:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent);
   }
+
+  .sqlf .editor--sm { min-height: 110px; }
+  .sqlf #output { background: color-mix(in oklab, var(--accent) 4%, var(--bg-primary)); }
+
+  /* ---------- Stats ---------- */
 
   .stats {
-    margin-top: 12px;
-    padding: 12px;
-    background: var(--bg-secondary);
-    border-radius: 6px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 12px;
-    font-size: 13px;
-  }
-
-  .stat-item {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
-  .stat-label {
+  .stats:empty { display: none; }
+
+  .stat {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: var(--radius-full, 999px);
+    background: var(--bg-tertiary);
+    font-size: 12px;
+  }
+
+  .stat-label { color: var(--text-secondary); }
+  .stat-value { font-family: var(--font-mono); font-weight: 600; }
+  .stat--warn .stat-value { color: var(--warning); }
+
+  /* ---------- Schema drawer ---------- */
+
+  .drawer > summary,
+  .options > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 2px;
     color: var(--text-secondary);
-    font-size: 11px;
-    text-transform: uppercase;
-  }
-
-  .stat-value {
-    color: var(--text-primary);
-    font-weight: 600;
-    font-family: var(--font-mono);
-  }
-
-  #json-schema-input {
-    min-height: 100px;
-    font-family: var(--font-mono);
     font-size: 13px;
-    margin-bottom: 8px;
+    cursor: pointer;
+    list-style-position: inside;
   }
 
-  #table-selector {
-    width: 100%;
-    margin-top: 8px;
+  .drawer > summary:hover,
+  .options > summary:hover { color: var(--text-primary); }
+
+  .drawer__body {
+    display: grid;
+    gap: 8px;
+    padding-top: 8px;
   }
 
-  #input,
-  #output {
-    min-height: 300px;
-    font-family: var(--font-mono);
-    white-space: pre;
-    overflow-wrap: normal;
-    overflow-x: auto;
+  .drawer__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .sqlf .status:empty { display: none; }
+
+  .sqlf .status {
+    padding: 6px 10px;
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-tertiary);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .sqlf .status[data-type="success"] { color: var(--success); }
+  .sqlf .status[data-type="error"] { color: var(--error); }
+
+  /* ---------- Options panel ---------- */
+
+  .options {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg, 12px);
+    background: var(--bg-secondary);
+    padding: 10px 14px;
+  }
+
+  .options > summary { font-weight: 600; color: var(--text-primary); }
+
+  .badge {
+    padding: 2px 8px;
+    border-radius: var(--radius-full, 999px);
+    background: color-mix(in oklab, var(--accent) 20%, transparent);
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .options__body {
+    display: grid;
+    gap: 14px;
+    padding: 12px 0;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  .options__foot {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 4px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .group { display: grid; gap: 10px; align-content: start; }
+
+  .group__title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .field > span { color: var(--text-secondary); }
+
+  .sqlf :is(.field select, .field input[type="number"]) {
+    width: auto;
+    flex: 1 1 130px;
+    min-width: 0;
+    max-width: 220px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font: 13px var(--font-sans);
+  }
+
+  .sqlf :is(.field select, .field input[type="number"]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  /* Checkbox rendered as a switch, without losing the native input. */
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .toggle input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle__track {
+    flex: none;
+    width: 32px;
+    height: 18px;
+    padding: 2px;
+    border-radius: var(--radius-full, 999px);
+    background: var(--bg-tertiary);
+    box-shadow: inset 0 0 0 1px var(--border-color);
+    transition: background-color .18s;
+  }
+
+  .toggle__track::before {
+    content: "";
+    display: block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--bg-primary);
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, .3));
+    transition: translate .18s ease;
+  }
+
+  .toggle:has(input:checked) .toggle__track { background: var(--accent); }
+  .toggle:has(input:checked) .toggle__track::before { translate: 14px 0; }
+  .toggle:has(input:focus-visible) .toggle__track { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sqlf *, .sqlf *::before { transition-duration: 0s; }
   }
 </style>
 
-<!-- Standalone Styles -->
+<!-- Standalone Styles: design tokens and page chrome only. Everything the tool
+     itself draws lives in the stylesheet above, which DevChef also injects. -->
 <style id="standalone-styles">
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
   :root {
+    color-scheme: light dark;
     --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --bg-tertiary: #e0e0e0;
-    --border-color: #d0d0d0;
-    --text-primary: #2c3e50;
-    --text-secondary: #7f8c8d;
-    --accent: #3498db;
-    --accent-hover: #2980b9;
-    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --bg-secondary: #f6f7f9;
+    --bg-tertiary: #e8eaed;
+    --border-color: #d8dce2;
+    --text-primary: #1a2332;
+    --text-secondary: #6b7280;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --success: #16a34a;
+    --warning: #d97706;
+    --error: #dc2626;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .12);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-full: 999px;
+    --font-mono: 'Geist Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #16181d;
+      --bg-secondary: #1e2127;
+      --bg-tertiary: #2a2e36;
+      --border-color: #353a44;
+      --text-primary: #e6e8ec;
+      --text-secondary: #9aa3b2;
+      --accent: #5b9dff;
+      --accent-hover: #7cb2ff;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, .5);
+    }
   }
 
   body {
-    font-family: var(--font-sans);
+    min-height: 100dvh;
+    padding: clamp(16px, 3vw, 32px);
     background: var(--bg-primary);
     color: var(--text-primary);
-    padding: 24px;
-    line-height: 1.6;
+    font-family: var(--font-sans);
+    line-height: 1.55;
   }
 
   .tool-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .tool-header {
-    margin-bottom: 32px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid var(--border-color);
-  }
-
-  .tool-title {
-    font-size: 32px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-  }
-
-  .tool-description {
-    font-size: 16px;
-    color: var(--text-secondary);
-  }
-
-  .tool-section {
-    margin-bottom: 24px;
-  }
-
-  .section-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  textarea, select, input[type="number"] {
-    width: 100%;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 12px;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    border-radius: 6px;
-    resize: vertical;
-    transition: all 0.2s;
-  }
-
-  textarea {
-    min-height: 150px;
-  }
-
-  button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: var(--font-sans);
-    margin-right: 8px;
-  }
-
-  button:hover {
-    background: var(--accent-hover);
-  }
-
-  button.secondary {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-
-  button.secondary:hover {
-    background: var(--border-color);
+    max-width: 1400px;
+    margin-inline: auto;
   }
 </style>
 
@@ -585,28 +602,83 @@ const UNARY_CONTEXT = new Set([
   'NOT', 'THEN', 'ELSE', 'WHEN', 'RETURN', 'BY'
 ]);
 
-const DEFAULT_OPTIONS = {
-  dialect: 'tsql',
-  indentSize: '4',
-  keywordLayout: 'stacked',
-  listStyle: 'break',
-  commaPosition: 'trailing',
-  maxWidth: 80,
-  keywordCase: 'upper',
-  functionCase: 'upper',
-  datatypeCase: 'upper',
-  identifierCase: 'preserve',
-  breakKeywords: true,
-  breakJoins: true,
-  breakLogical: true,
-  onNewLine: false,
-  expandCase: true,
-  indentSubqueries: true,
-  blankLineBetweenStatements: true,
-  stripComments: false,
-  trailingSemicolon: false,
-  minifyKeepComments: false,
-  liveFormat: true
+/* ------------------------------------------------------------------ *
+ * Option schema
+ *
+ * Single source of truth: the controls, their defaults, and the option
+ * keys the formatter reads all come from this list.
+ * ------------------------------------------------------------------ */
+
+const CASES = [
+  ['upper', 'UPPERCASE'], ['lower', 'lowercase'],
+  ['capitalize', 'Capitalize'], ['preserve', 'Preserve']
+];
+
+const OPTION_GROUPS = {
+  toolbar: null,           // rendered in the top bar instead of the panel
+  layout: 'Layout',
+  casing: 'Casing',
+  breaks: 'Line breaks',
+  cleanup: 'Cleanup'
+};
+
+const OPTIONS = [
+  { key: 'dialect', id: 'dialect', group: 'toolbar', label: 'Dialect', value: 'tsql', choices: [
+    ['tsql', 'SQL Server (T-SQL)'], ['mysql', 'MySQL / MariaDB'],
+    ['postgres', 'PostgreSQL'], ['standard', 'Standard SQL']
+  ] },
+  { key: 'liveFormat', id: 'live-format', group: 'toolbar', label: 'Auto-format', value: true },
+
+  { key: 'indentSize', id: 'indent-size', group: 'layout', label: 'Indentation', value: '4', choices: [
+    ['2', '2 spaces'], ['4', '4 spaces'], ['8', '8 spaces'], ['tab', 'Tab']
+  ] },
+  { key: 'keywordLayout', id: 'keyword-layout', group: 'layout', label: 'Keyword layout', value: 'stacked', choices: [
+    ['stacked', 'Body below'], ['inline', 'Body beside'], ['river', 'River (right-aligned)']
+  ] },
+  { key: 'listStyle', id: 'list-style', group: 'layout', label: 'Column lists', value: 'break', choices: [
+    ['break', 'One per line'], ['inline', 'Keep inline'], ['auto', 'Wrap over max width']
+  ] },
+  { key: 'commaPosition', id: 'comma-position', group: 'layout', label: 'Commas', value: 'trailing', choices: [
+    ['trailing', 'End of line'], ['leading', 'Start of line']
+  ] },
+  { key: 'maxWidth', id: 'max-width', group: 'layout', label: 'Max line width', value: 80,
+    min: 40, max: 500, step: 10 },
+
+  { key: 'keywordCase', id: 'keyword-case', group: 'casing', label: 'Keywords', value: 'upper', choices: CASES },
+  { key: 'functionCase', id: 'function-case', group: 'casing', label: 'Functions', value: 'upper', choices: CASES },
+  { key: 'datatypeCase', id: 'datatype-case', group: 'casing', label: 'Data types', value: 'upper', choices: CASES },
+  { key: 'identifierCase', id: 'identifier-case', group: 'casing', label: 'Identifiers', value: 'preserve',
+    choices: CASES.filter(([v]) => v !== 'capitalize') },
+
+  { key: 'breakKeywords', id: 'new-line-before-keyword', group: 'breaks', label: 'New line before keywords', value: true },
+  { key: 'breakJoins', id: 'break-joins', group: 'breaks', label: 'New line before JOINs', value: true },
+  { key: 'breakLogical', id: 'break-logical', group: 'breaks', label: 'Break before AND / OR', value: true },
+  { key: 'onNewLine', id: 'on-new-line', group: 'breaks', label: 'JOIN … ON on its own line', value: false },
+  { key: 'expandCase', id: 'expand-case', group: 'breaks', label: 'Expand CASE expressions', value: true },
+  { key: 'indentSubqueries', id: 'indent-subqueries', group: 'breaks', label: 'Indent subqueries & CTEs', value: true },
+  { key: 'blankLineBetweenStatements', id: 'blank-line-between-statements', group: 'breaks', label: 'Blank line between statements', value: true },
+
+  { key: 'stripComments', id: 'strip-comments', group: 'cleanup', label: 'Remove comments', value: false },
+  { key: 'trailingSemicolon', id: 'trailing-semicolon', group: 'cleanup', label: 'Ensure trailing semicolon', value: false },
+  { key: 'minifyKeepComments', id: 'minify-keep-comments', group: 'cleanup', label: 'Minify keeps comments', value: false }
+];
+
+const DEFAULT_OPTIONS = Object.fromEntries(OPTIONS.map((o) => [o.key, o.value]));
+
+/** Maps option keys to the DOM ids of their controls. */
+const CONTROLS = Object.fromEntries(OPTIONS.map((o) => [o.key, o.id]));
+
+const TEMPLATES = [
+  ['select', 'SELECT'], ['insert', 'INSERT'], ['update', 'UPDATE'],
+  ['delete', 'DELETE'], ['create-table', 'CREATE TABLE'], ['stored-proc', 'STORED PROC']
+];
+
+const PRESET_LABELS = {
+  standard: 'Standard',
+  expanded: 'Expanded',
+  compact: 'Compact',
+  river: 'River',
+  'comma-first': 'Comma-first'
 };
 
 const PRESETS = {
@@ -629,31 +701,6 @@ const PRESETS = {
     keywordLayout: 'stacked', listStyle: 'break', commaPosition: 'leading',
     breakKeywords: true, breakJoins: true, breakLogical: true
   }
-};
-
-/** Maps option keys to the DOM ids of their controls. */
-const CONTROLS = {
-  dialect: 'dialect',
-  indentSize: 'indent-size',
-  keywordLayout: 'keyword-layout',
-  listStyle: 'list-style',
-  commaPosition: 'comma-position',
-  maxWidth: 'max-width',
-  keywordCase: 'keyword-case',
-  functionCase: 'function-case',
-  datatypeCase: 'datatype-case',
-  identifierCase: 'identifier-case',
-  breakKeywords: 'new-line-before-keyword',
-  breakJoins: 'break-joins',
-  breakLogical: 'break-logical',
-  onNewLine: 'on-new-line',
-  expandCase: 'expand-case',
-  indentSubqueries: 'indent-subqueries',
-  blankLineBetweenStatements: 'blank-line-between-statements',
-  stripComments: 'strip-comments',
-  trailingSemicolon: 'trailing-semicolon',
-  minifyKeepComments: 'minify-keep-comments',
-  liveFormat: 'live-format'
 };
 
 /* ------------------------------------------------------------------ *
@@ -684,11 +731,53 @@ function matchPhrase(toks, k, phrases) {
   return best;
 }
 
+/* ------------------------------------------------------------------ *
+ * Control rendering
+ * ------------------------------------------------------------------ */
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"]/g, (ch) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+}
+
+function renderControl(o) {
+  const attrs = `id="${o.id}" data-option="${o.key}"`;
+
+  if (o.choices) {
+    const choices = o.choices
+      .map(([value, label]) =>
+        `<option value="${value}"${value === String(o.value) ? ' selected' : ''}>${label}</option>`)
+      .join('');
+    return `<label class="field"><span>${o.label}</span><select ${attrs}>${choices}</select></label>`;
+  }
+
+  if (typeof o.value === 'number') {
+    return `<label class="field"><span>${o.label}</span>` +
+      `<input type="number" ${attrs} min="${o.min}" max="${o.max}" step="${o.step}" value="${o.value}"></label>`;
+  }
+
+  return `<label class="toggle"><input type="checkbox" ${attrs}${o.value ? ' checked' : ''}>` +
+    `<span class="toggle__track"></span><span>${o.label}</span></label>`;
+}
+
+function renderGroup(group, title) {
+  const fields = OPTIONS.filter((o) => o.group === group).map(renderControl).join('');
+  return `<div class="group"><div class="group__title">${title}</div>${fields}</div>`;
+}
+
+function renderChips(entries, kind) {
+  return entries
+    .map(([value, label]) =>
+      `<button type="button" class="chip ${kind}-btn" data-${kind}="${value}">${label}</button>`)
+    .join('');
+}
+
 export const DevChefTool = {
   container: null,
   context: null,
   schemaData: null,
   selectedTable: null,
+  liveTimer: null,
 
   // Kept for the stats panel and for callers relying on the old property.
   keywords: Array.from(KEYWORDS),
@@ -701,49 +790,74 @@ export const DevChefTool = {
     this.container = container;
     this.context = context;
 
+    this.renderChrome();
+    this.restoreState();
+    this.bindEvents();
+    this.syncOptionState();
+    this.updateMeta();
+  },
+
+  cleanup() {
+    clearTimeout(this.liveTimer);
+  },
+
+  /** Fills the template's slots from OPTIONS, PRESETS and TEMPLATES. */
+  renderChrome() {
+    const fill = (slot, html) => {
+      const el = this.container.querySelector(`[data-slot="${slot}"]`);
+      if (el) el.innerHTML = html;
+    };
+
+    fill('toolbar', OPTIONS.filter((o) => o.group === 'toolbar').map(renderControl).join(''));
+    fill('options', Object.entries(OPTION_GROUPS)
+      .filter(([, title]) => title)
+      .map(([group, title]) => renderGroup(group, title))
+      .join(''));
+    fill('presets', renderChips(
+      Object.keys(PRESETS).map((name) => [name, PRESET_LABELS[name] || name]), 'preset'));
+    fill('templates', renderChips(TEMPLATES, 'template'));
+  },
+
+  bindEvents() {
+    const container = this.container;
+
+    container.addEventListener('click', (event) => {
+      const btn = event.target.closest?.('button');
+      if (!btn) return;
+      if (btn.dataset.preset) return this.applyPreset(btn.dataset.preset);
+      if (btn.dataset.template) return this.insertTemplate(btn.dataset.template);
+
+      ({
+        'format-btn': () => this.formatSQL(),
+        'minify-btn': () => this.minifySQL(),
+        'copy-btn': () => this.copyOutput(),
+        'use-output-btn': () => this.useOutputAsInput(),
+        'clear-btn': () => this.clear(),
+        'load-schema-btn': () => this.loadFromJsonSchema(),
+        'reset-options-btn': () => this.applyOptions(DEFAULT_OPTIONS)
+      })[btn.id]?.();
+    });
+
+    container.addEventListener('change', (event) => {
+      if (event.target.id === 'table-selector') this.selectTableFromSchema();
+      else if (event.target.dataset?.option) this.onOptionsChanged();
+    });
+
     const inputEl = container.querySelector('#input');
-    inputEl?.addEventListener('input', (e) => context.setInput(e.target.value));
-
-    container.querySelector('#format-btn')?.addEventListener('click', () => this.formatSQL());
-    container.querySelector('#minify-btn')?.addEventListener('click', () => this.minifySQL());
-    container.querySelector('#copy-btn')?.addEventListener('click', () => this.copyOutput());
-    container.querySelector('#use-output-btn')?.addEventListener('click', () => this.useOutputAsInput());
-    container.querySelector('#load-schema-btn')?.addEventListener('click', () => this.loadFromJsonSchema());
-    container.querySelector('#table-selector')?.addEventListener('change', () => this.selectTableFromSchema());
-    container.querySelector('#reset-options-btn')?.addEventListener('click', () => {
-      this.setOptions(DEFAULT_OPTIONS);
-      this.persistOptions();
-      this.reformatIfLive();
+    inputEl?.addEventListener('input', () => {
+      this.context.setInput(inputEl.value);
+      this.updateMeta();
+      this.scheduleLiveFormat();
     });
 
-    container.querySelectorAll('.preset-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.setOptions({ ...DEFAULT_OPTIONS, ...(PRESETS[btn.dataset.preset] || {}) });
-        this.markActivePreset(btn.dataset.preset);
-        this.persistOptions();
-        this.reformatIfLive();
-      });
+    inputEl?.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
+        this.formatSQL();
+      }
     });
 
-    Object.values(CONTROLS).forEach((id) => {
-      const el = container.querySelector(`#${id}`);
-      el?.addEventListener('change', () => {
-        this.markActivePreset(null);
-        this.persistOptions();
-        this.reformatIfLive();
-      });
-    });
-
-    container.querySelectorAll('.template-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const template = this.getTemplate(btn.dataset.template);
-        if (inputEl) inputEl.value = template;
-        context.setInput(template);
-      });
-    });
-
-    const saved = loadToolState('sql-formatter');
-    if (saved && saved.options) this.setOptions({ ...DEFAULT_OPTIONS, ...saved.options });
+    container.querySelector('#options-panel')?.addEventListener('toggle', () => this.persistOptions());
   },
 
   /* ---------------------------------------------------------------- *
@@ -776,23 +890,64 @@ export const DevChefTool = {
     }
   },
 
+  applyOptions(opts) {
+    this.setOptions(opts);
+    this.onOptionsChanged();
+  },
+
+  applyPreset(name) {
+    this.applyOptions({ ...DEFAULT_OPTIONS, ...(PRESETS[name] || {}) });
+  },
+
+  onOptionsChanged() {
+    this.syncOptionState();
+    this.persistOptions();
+    this.reformatIfLive();
+  },
+
+  /** Lights up the preset the controls currently match and counts overrides. */
+  syncOptionState() {
+    const current = this.getOptions();
+    const matches = (opts) => OPTIONS.every((o) => String(opts[o.key]) === String(current[o.key]));
+    const active = Object.keys(PRESETS).find((name) => matches({ ...DEFAULT_OPTIONS, ...PRESETS[name] }));
+
+    this.container?.querySelectorAll('.preset-btn').forEach((btn) => {
+      btn.setAttribute('aria-pressed', String(btn.dataset.preset === active));
+    });
+
+    const badge = this.container?.querySelector('#options-badge');
+    if (!badge) return;
+    const changed = OPTIONS.filter((o) => String(current[o.key]) !== String(o.value)).length;
+    badge.textContent = `${changed} changed`;
+    badge.hidden = changed === 0;
+  },
+
+  restoreState() {
+    const saved = loadToolState('sql-formatter') || {};
+    if (saved.options) this.setOptions({ ...DEFAULT_OPTIONS, ...saved.options });
+
+    const panel = this.container?.querySelector('#options-panel');
+    if (panel && typeof saved.optionsOpen === 'boolean') panel.open = saved.optionsOpen;
+  },
+
   persistOptions() {
     const opts = this.getOptions();
     delete opts.indent;
-    saveToolState('sql-formatter', { options: opts });
-  },
-
-  markActivePreset(name) {
-    this.container?.querySelectorAll('.preset-btn').forEach((btn) => {
-      btn.classList.toggle('active', btn.dataset.preset === name);
+    saveToolState('sql-formatter', {
+      options: opts,
+      optionsOpen: !!this.container?.querySelector('#options-panel')?.open
     });
   },
 
   reformatIfLive() {
-    const opts = this.getOptions();
-    if (!opts.liveFormat) return;
-    const outputEl = this.container?.querySelector('#output');
-    if (outputEl && outputEl.value.trim()) this.formatSQL();
+    if (!this.container?.querySelector('#live-format')?.checked) return;
+    if (this.readInput().trim()) this.formatSQL();
+  },
+
+  scheduleLiveFormat() {
+    clearTimeout(this.liveTimer);
+    if (!this.container?.querySelector('#live-format')?.checked) return;
+    this.liveTimer = setTimeout(() => this.formatSQL(), 250);
   },
 
   readInput() {
@@ -1354,106 +1509,124 @@ export const DevChefTool = {
    * ---------------------------------------------------------------- */
 
   formatSQL() {
-    const sql = this.readInput();
-    if (!sql.trim()) return;
-
-    const o = this.getOptions();
-    let formatted;
-    try {
-      formatted = this.formatSQLText(sql, o);
-    } catch (error) {
-      console.error('SQL formatting failed:', error);
-      formatted = sql;
-    }
-
-    this.context.setOutput(formatted);
-    this.updateStats(sql, formatted);
+    this.transform((sql, o) => this.formatSQLText(sql, o), (sql) => sql);
   },
 
   minifySQL() {
+    this.transform((sql, o) => this.minifySQLText(sql, o), (sql) => sql.replace(/\s+/g, ' ').trim());
+  },
+
+  /** Read, transform, publish, measure - shared by Format and Minify. */
+  transform(run, fallback) {
+    clearTimeout(this.liveTimer);
+
     const sql = this.readInput();
     if (!sql.trim()) return;
 
-    const o = this.getOptions();
-    let minified;
+    let result;
     try {
-      minified = this.minifySQLText(sql, o);
+      result = run(sql, this.getOptions());
     } catch (error) {
-      console.error('SQL minify failed:', error);
-      minified = sql.replace(/\s+/g, ' ').trim();
+      console.error('SQL transform failed:', error);
+      result = fallback(sql);
     }
 
-    this.context.setOutput(minified);
-    this.updateStats(sql, minified);
+    this.context.setOutput(result);
+    this.updateStats(sql, result);
+    this.updateMeta();
   },
 
   useOutputAsInput() {
     const output = this.context.getOutput();
     if (!output) return;
+    this.setInputValue(output);
+  },
+
+  insertTemplate(type) {
+    const template = this.getTemplate(type);
+    if (!template) return;
+    this.setInputValue(template);
+    this.reformatIfLive();
+  },
+
+  clear() {
+    this.setInputValue('');
+    this.context.setOutput('');
+    const statsEl = this.container?.querySelector('#stats');
+    if (statsEl) statsEl.innerHTML = '';
+    this.updateMeta();
+  },
+
+  setInputValue(value) {
     const inputEl = this.container?.querySelector('#input');
-    if (inputEl) inputEl.value = output;
-    this.context.setInput(output);
+    if (inputEl) inputEl.value = value;
+    this.context.setInput(value);
+    this.updateMeta();
+  },
+
+  /** Line and character counts next to each pane title. */
+  updateMeta() {
+    const describe = (text) => {
+      if (!text) return '';
+      const lines = text.split('\n').length;
+      return `${lines} ${lines === 1 ? 'line' : 'lines'} · ${text.length} chars`;
+    };
+
+    for (const [metaId, editorId] of [['#input-meta', '#input'], ['#output-meta', '#output']]) {
+      const metaEl = this.container?.querySelector(metaId);
+      if (metaEl) metaEl.textContent = describe(this.container?.querySelector(editorId)?.value || '');
+    }
   },
 
   updateStats(original, formatted) {
     const statsEl = this.container?.querySelector('#stats');
     if (!statsEl) return;
 
-    const originalLines = original.split('\n').length;
-    const formattedLines = formatted.split('\n').length;
-    const originalChars = original.length;
-    const formattedChars = formatted.length;
-    const longestLine = formatted.split('\n').reduce((m, l) => Math.max(m, l.length), 0);
-
-    const toks = this.prepareTokens(original, { ...this.getOptions(), stripComments: true });
-    let keywordCount = 0;
+    const options = this.getOptions();
+    const toks = this.prepareTokens(original, { ...options, stripComments: true });
+    let keywords = 0;
     let statements = 0;
     for (const t of toks) {
-      if (t.type === 'word' && KEYWORDS.has(t.upper)) keywordCount++;
+      if (t.type === 'word' && KEYWORDS.has(t.upper)) keywords++;
       if (t.value === ';') statements++;
     }
     if (!statements && toks.length) statements = 1;
 
-    statsEl.innerHTML = `
-      <div class="stat-item">
-        <span class="stat-label">Lines</span>
-        <span class="stat-value">${originalLines} → ${formattedLines}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Characters</span>
-        <span class="stat-value">${originalChars} → ${formattedChars}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Keywords</span>
-        <span class="stat-value">${keywordCount}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Statements</span>
-        <span class="stat-value">${statements}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Longest line</span>
-        <span class="stat-value">${longestLine}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Change</span>
-        <span class="stat-value">${formattedChars > originalChars ? '+' : ''}${formattedChars - originalChars}</span>
-      </div>
-    `;
+    const longest = formatted.split('\n').reduce((m, l) => Math.max(m, l.length), 0);
+    const delta = formatted.length - original.length;
+
+    const stats = [
+      ['Lines', `${original.split('\n').length} → ${formatted.split('\n').length}`],
+      ['Characters', `${original.length} → ${formatted.length}`],
+      ['Keywords', keywords],
+      ['Statements', statements],
+      ['Longest line', longest, longest > options.maxWidth ? 'warn' : ''],
+      ['Change', `${delta > 0 ? '+' : ''}${delta}`]
+    ];
+
+    statsEl.innerHTML = stats.map(([label, value, tone]) =>
+      `<span class="stat${tone ? ` stat--${tone}` : ''}">` +
+      `<span class="stat-label">${label}</span><span class="stat-value">${value}</span></span>`
+    ).join('');
   },
 
   copyOutput() {
     const output = this.context.getOutput();
     if (!output) return;
+
+    const copyBtn = this.container?.querySelector('#copy-btn');
     copyToClipboard(output, {
-      onSuccess: () => {
-        const copyBtn = this.container.querySelector('#copy-btn');
-        if (!copyBtn) return;
-        const originalText = copyBtn.textContent;
-        copyBtn.textContent = '✓ Copied!';
-        setTimeout(() => { copyBtn.textContent = originalText; }, 2000);
-      }
+      onSuccess: () => this.flashButton(copyBtn, '✓ Copied'),
+      onError: () => this.flashButton(copyBtn, '✗ Failed')
     });
+  },
+
+  flashButton(button, message) {
+    if (!button) return;
+    const original = button.dataset.label || button.textContent;
+    button.dataset.label = original;
+    button.textContent = message;
+    setTimeout(() => { button.textContent = original; }, 1600);
   },
 
   /* ---------------------------------------------------------------- *
@@ -1461,51 +1634,46 @@ export const DevChefTool = {
    * ---------------------------------------------------------------- */
 
   loadFromJsonSchema() {
-    const jsonSchemaInput = this.container.querySelector('#json-schema-input');
-    const json = jsonSchemaInput?.value || '';
+    const json = this.container.querySelector('#json-schema-input')?.value || '';
+    if (!json.trim()) return this.setSchemaStatus('Paste a JSON schema first.', 'error');
 
-    if (!json.trim()) {
-      alert('Please paste a JSON schema');
-      return;
-    }
-
+    let parsed;
     try {
-      this.schemaData = JSON.parse(json);
-
-      if (!this.schemaData.tables || !Array.isArray(this.schemaData.tables)) {
-        alert('Invalid schema format. Expected: {"tables": [...]}');
-        return;
-      }
-
-      if (this.schemaData.tables.length === 0) {
-        alert('No tables found in schema');
-        return;
-      }
-
-      const tableSelectorContainer = this.container.querySelector('#table-selector-container');
-      const tableSelector = this.container.querySelector('#table-selector');
-
-      tableSelectorContainer.style.display = 'block';
-      tableSelector.innerHTML = this.schemaData.tables.map((table, index) =>
-        `<option value="${index}">${table.schema || 'dbo'}.${table.name}</option>`
-      ).join('');
-
-      this.selectTableFromSchema();
-
-      alert(`Successfully loaded schema with ${this.schemaData.tables.length} table(s)! Templates will now use actual table/column names.`);
+      parsed = JSON.parse(json);
     } catch (error) {
-      alert(`Error parsing JSON: ${error.message}`);
-      console.error(error);
+      return this.setSchemaStatus(`Could not parse JSON: ${error.message}`, 'error');
     }
+
+    if (!Array.isArray(parsed.tables) || parsed.tables.length === 0) {
+      return this.setSchemaStatus('Expected {"tables": [...]} with at least one table.', 'error');
+    }
+
+    this.schemaData = parsed;
+
+    const tableSelector = this.container.querySelector('#table-selector');
+    if (tableSelector) {
+      tableSelector.innerHTML = parsed.tables
+        .map((table, index) => `<option value="${index}">${escapeHtml(`${table.schema || 'dbo'}.${table.name}`)}</option>`)
+        .join('');
+      tableSelector.hidden = false;
+    }
+
+    this.selectTableFromSchema();
+    this.setSchemaStatus(
+      `Loaded ${parsed.tables.length} table(s) - starter statements now use real names.`, 'success');
   },
 
   selectTableFromSchema() {
-    const tableSelector = this.container.querySelector('#table-selector');
-    const selectedIndex = parseInt(tableSelector.value, 10);
+    const index = parseInt(this.container.querySelector('#table-selector')?.value, 10);
+    const table = this.schemaData?.tables?.[index];
+    if (table) this.selectedTable = table;
+  },
 
-    if (this.schemaData && this.schemaData.tables[selectedIndex]) {
-      this.selectedTable = this.schemaData.tables[selectedIndex];
-    }
+  setSchemaStatus(message, type) {
+    const statusEl = this.container?.querySelector('#schema-status');
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.dataset.type = type;
   },
 
   getTemplate(type) {
@@ -1683,32 +1851,28 @@ GO`;
 // Standalone mode initialization
 if (typeof window !== 'undefined' && !window.DevChef) {
   document.addEventListener('DOMContentLoaded', () => {
-    const isStandalone = !document.querySelector('#workspace');
+    const template = document.querySelector('#tool-ui');
+    if (!template || document.querySelector('#workspace')) return;
 
-    if (isStandalone) {
-      const standaloneContext = {
-        input: "",
-        output: "",
-        setInput(val) { this.input = val; },
-        setOutput(val) {
-          this.output = val;
-          const outputEl = document.querySelector("#output");
-          if (outputEl) outputEl.value = val;
-        },
-        getInput() { return this.input; },
-        getOutput() { return this.output; }
-      };
+    const standaloneContext = {
+      input: '',
+      output: '',
+      setInput(value) { this.input = value; },
+      setOutput(value) {
+        this.output = value;
+        const outputEl = document.querySelector('#output');
+        if (outputEl) outputEl.value = value;
+      },
+      getInput() { return this.input; },
+      getOutput() { return this.output; }
+    };
 
-      const template = document.querySelector('#tool-ui');
-      if (template) {
-        // Replacing body content detaches the in-body <style> tags, so keep
-        // references and put them back afterwards.
-        const styles = Array.from(document.body.querySelectorAll('style'));
-        document.body.innerHTML = template.innerHTML;
-        styles.forEach(style => document.body.appendChild(style));
-        DevChefTool.init(document.body, standaloneContext);
-      }
-    }
+    // Replacing body content detaches the in-body <style> tags, so keep
+    // references and put them back afterwards.
+    const styles = Array.from(document.body.querySelectorAll('style'));
+    document.body.innerHTML = template.innerHTML;
+    styles.forEach((style) => document.body.appendChild(style));
+    DevChefTool.init(document.body, standaloneContext);
   });
 }
 </script>

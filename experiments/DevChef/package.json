@@ -1,6 +1,6 @@
 {
   "name": "devchef",
-  "version": "7.0.0",
+  "version": "11.5.0",
   "description": "DevChef V7 - State-of-the-art developer productivity platform with flawless UX",
   "type": "module",
   "scripts": {

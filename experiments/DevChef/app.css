@@ -8218,3 +8218,399 @@ body.sidebar-compact .getting-started-panel {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================================
+   V11.5 Design Layer - quieter surfaces, one accent, no chrome overflow
+   Appended last so it wins on source order. Presentation only: no rule here
+   changes layout semantics, only how the shell looks and reacts.
+   ============================================================================ */
+
+:root {
+  --edge: color-mix(in oklch, var(--border-color) 72%, transparent);
+  --tint: color-mix(in oklch, var(--accent) 10%, transparent);
+  --tint-strong: color-mix(in oklch, var(--accent) 16%, transparent);
+  --raise: color-mix(in oklch, var(--bg-primary) 92%, var(--accent) 8%);
+  --ring: 0 0 0 3px color-mix(in oklch, var(--accent) 24%, transparent);
+  --motion: 170ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* ---- Canvas: one soft accent wash instead of competing gradients ---- */
+
+body {
+  background:
+    radial-gradient(900px 620px at 8% -10%, color-mix(in oklch, var(--accent) 9%, transparent), transparent 70%),
+    var(--bg-primary);
+}
+
+#main {
+  background: transparent;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--accent) 28%, transparent);
+}
+
+#sidebar,
+#tool-list,
+#workspace {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--text-secondary) 35%, transparent) transparent;
+}
+
+/* ---- Sidebar shell ---- */
+
+#sidebar {
+  width: 292px;
+  overflow-x: hidden;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--edge);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* The sidebar is a flex column: without this the recents block and the
+   getting-started panel get squashed to slivers when the tool list is long. */
+#sidebar > * {
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+#sidebar > #tool-list {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#sidebar header {
+  position: relative;
+  padding: 16px 16px 14px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--edge);
+  backdrop-filter: none;
+}
+
+/* Fancy, cheap: a single accent hairline under the brand block. */
+#sidebar header::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent 70%);
+  opacity: 0.55;
+}
+
+/* Brand on its own row, then every header icon - including the ones other
+   modules inject straight into .header-content - as one even toolbar grid. */
+.header-content {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.header-content > div:first-child {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.header-actions {
+  display: contents;
+}
+
+.brand-home-btn {
+  max-width: 100%;
+  min-width: 0;
+}
+
+#sidebar h1 {
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+#sidebar .subtitle {
+  font-size: 11px;
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The badge sits inside the gradient-clipped h1, so it needs its own fill. */
+.version-badge {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  background: var(--tint-strong);
+  color: color-mix(in oklch, var(--accent) 45%, var(--text-primary));
+  -webkit-text-fill-color: currentColor;
+  border: 1px solid color-mix(in oklch, var(--accent) 32%, transparent);
+  box-shadow: none;
+}
+
+.header-content > button,
+.header-actions > button,
+#sidebar #clarity-toggle-btn,
+#sidebar #save-snapshot-btn,
+#sidebar #manage-snapshots-btn,
+#sidebar #theme-toggle {
+  width: 100%;
+  height: 32px;
+  padding: 0;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  box-shadow: none;
+  transition: background-color var(--motion), border-color var(--motion);
+}
+
+.header-content > button:hover,
+.header-actions > button:hover,
+#sidebar #clarity-toggle-btn:hover,
+#sidebar #save-snapshot-btn:hover,
+#sidebar #manage-snapshots-btn:hover,
+#sidebar #theme-toggle:hover {
+  background: var(--tint);
+  border-color: var(--edge);
+  transform: none;
+}
+
+.header-content .action-icon,
+.header-content .theme-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* An empty recents block should not reserve space. */
+#recent-tools:empty {
+  display: none !important;
+}
+
+/* Clarity mode collapses these to max-height 0, but padding and borders kept
+   leaving ~25px slivers between the search box and the tool list. */
+body.clarity-mode #recent-tools,
+body.clarity-mode .getting-started-panel,
+body.clarity-mode #sidebar .subtitle {
+  padding-block: 0;
+  margin-block: 0;
+  border-width: 0;
+}
+
+/* ---- Search ---- */
+
+.search-box {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 12px 14px;
+  background: color-mix(in oklch, var(--bg-secondary) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--edge);
+}
+
+/* #sidebar prefix: tools/shared-styles.css loads after app.css and would
+   otherwise win the padding/height on this input. */
+#sidebar .search-box input {
+  height: 38px;
+  padding: 9px 38px 9px 34px;
+  border-radius: 10px;
+  border: 1px solid var(--edge);
+  background: var(--bg-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+#sidebar .search-box input:focus {
+  border-color: var(--accent);
+  box-shadow: var(--ring);
+}
+
+.search-icon {
+  left: 24px;
+  right: auto;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+/* Slash hint that steps aside once the field is in use. */
+.search-box::after {
+  content: "/";
+  position: absolute;
+  top: 50%;
+  right: 24px;
+  translate: 0 -50%;
+  padding: 1px 6px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  font: 600 10px/1.4 var(--font-mono);
+  color: var(--text-secondary);
+  pointer-events: none;
+  transition: opacity var(--motion);
+}
+
+.search-box:focus-within::after {
+  opacity: 0;
+}
+
+/* ---- Productivity rail: quiet chips instead of a wall of blue ---- */
+
+.v10-productivity-rail {
+  margin: 12px 14px;
+  padding: 12px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: var(--raise);
+  box-shadow: none;
+}
+
+.v10-rail-header {
+  flex-wrap: wrap;
+  row-gap: 2px;
+  margin-bottom: 10px;
+}
+
+.v10-rail-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.v10-rail-shortcuts {
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+.v10-rail-btn {
+  padding: 7px 6px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--edge);
+  box-shadow: none;
+}
+
+.v10-rail-btn:hover {
+  background: var(--tint);
+  color: var(--text-primary);
+  transform: none;
+}
+
+/* ---- Tool list ---- */
+
+.category-header {
+  padding: 14px 18px 6px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  opacity: 0.8;
+}
+
+.tool-item {
+  margin: 1px 10px;
+  padding: 9px 12px;
+  gap: 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: background-color var(--motion), color var(--motion);
+}
+
+.tool-item:hover {
+  transform: none;
+  color: var(--text-primary);
+  background: var(--tint);
+  border-color: transparent;
+}
+
+.tool-name {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tool-item.active {
+  background: var(--tint-strong);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tool-item.active::before {
+  left: 3px;
+  width: 3px;
+  height: 56%;
+  border-radius: 999px;
+}
+
+.tool-metadata-tag {
+  background: color-mix(in oklch, var(--text-secondary) 12%, transparent);
+  border-color: transparent;
+  font-size: 9.5px;
+}
+
+.recent-tool-item:hover {
+  transform: none;
+  background: var(--tint);
+  color: var(--text-primary);
+}
+
+/* ---- Workspace ---- */
+
+#workspace {
+  padding-inline: clamp(18px, 3vw, 44px);
+}
+
+.tool-header {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.welcome-screen h2 {
+  letter-spacing: -0.03em;
+}
+
+.welcome-screen kbd {
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: var(--raise);
+  box-shadow: none;
+}
+
+/* ---- Controls: hover changes colour, not position ---- */
+
+button:hover,
+.icon-btn:hover,
+#theme-toggle:hover,
+#save-snapshot-btn:hover,
+#manage-snapshots-btn:hover {
+  transform: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.tool-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.quick-panel-fab {
+  box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
