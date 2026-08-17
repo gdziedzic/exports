@@ -7,6 +7,7 @@ import { getLoadingErrors } from './loader.js';
 import { ToolRegistry } from './registry.js';
 import { getToolIndexFilename, normalizeToolIndexEntry, validateToolMetadataIndex } from './tool-metadata.js';
 import { analyzeSharedControlUsage } from './components.js';
+import { escapeHtml } from './tool-utils.js';
 
 const REQUIRED_MANIFEST_FIELDS = ['id', 'name', 'category', 'description'];
 const TOOL_INDEX_PATH = './tools/index.json';
@@ -626,10 +627,4 @@ function statusIcon(status) {
 
 function normalizePath(path) {
   return path.replace(/\\/g, '/').replace(/^\.\//, '');
-}
-
-function escapeHtml(value) {
-  const div = document.createElement('div');
-  div.textContent = value == null ? '' : String(value);
-  return div.innerHTML;
 }

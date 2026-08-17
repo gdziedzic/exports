@@ -9,6 +9,7 @@ import { searchTools, highlightMatches, groupByCategory } from './search-unified
 import { notifications } from './notifications.js';
 import { workflowSnapshots } from './workflowsnapshots.js';
 import { upgradeLegacyControls } from './components.js';
+import { escapeHtml } from './tool-utils.js';
 
 let currentToolId = null;
 let workspaceStyleElement = null;
@@ -1162,13 +1163,3 @@ export async function importWorkflowSnapshots() {
   input.click();
 }
 
-/**
- * Escape HTML to prevent XSS
- * @param {string} text - Text to escape
- * @returns {string} Escaped text
- */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}

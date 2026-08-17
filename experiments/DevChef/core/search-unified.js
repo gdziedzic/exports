@@ -13,6 +13,7 @@
 
 import { storage } from './storage.js';
 import { getToolSearchMetadata } from './tool-metadata.js';
+import { escapeHtml } from './tool-utils.js';
 
 // ============================================================================
 // CONSTANTS
@@ -156,17 +157,6 @@ export function highlightMatches(text, query) {
   }
 
   return result || text;
-}
-
-/**
- * Escape HTML for safe display
- * @param {string} text - Text to escape
- * @returns {string} Escaped text
- */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 // ============================================================================

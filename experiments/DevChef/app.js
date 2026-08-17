@@ -4,6 +4,7 @@
  */
 
 import { context } from './core/state.js';
+import { escapeHtml } from './core/tool-utils.js';
 import { initializeTools, getLoadingErrors } from './core/loader.js';
 import { renderToolList, showCommandPalette, openTool, showHome, updateRecentTools, toggleFavorite, exportSettings, importSettings, clearHistory, showStorageStats, getCurrentToolId, saveCurrentWorkflow, showWorkflowSnapshotsManager } from './core/ui.js';
 import { ToolRegistry } from './core/registry.js';
@@ -1585,15 +1586,6 @@ function showLoadingErrors() {
   healthBtn.addEventListener('click', () => {
     showToolHealthDashboard(context);
   });
-}
-
-/**
- * Escape HTML for safe display
- */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 /**

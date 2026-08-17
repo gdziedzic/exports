@@ -100,7 +100,7 @@ export function truncateText(text, maxLength = 100) {
  */
 export function escapeHtml(text) {
   const div = document.createElement('div');
-  div.textContent = text;
+  div.textContent = text == null ? '' : String(text);
   return div.innerHTML;
 }
 
