@@ -450,6 +450,8 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -470,13 +472,20 @@ export const DevChefTool = {
         const targetId = btn.dataset.target;
         const targetEl = container.querySelector(`#${targetId}`);
         if (targetEl) {
-          navigator.clipboard.writeText(targetEl.value);
-          btn.textContent = "✓";
-          setTimeout(() => {
-            btn.textContent = "📋";
-          }, 1500);
+          copyToClipboard(targetEl.value, {
+            onSuccess: () => {
+              btn.textContent = "✓";
+              setTimeout(() => { btn.textContent = "📋"; }, 1500);
+            }
+          });
         }
       });
+    });
+
+    // Delegated listener for dynamically generated color swatches
+    container.addEventListener('click', (e) => {
+      const el = e.target.closest('[data-copy]');
+      if (el) copyToClipboard(el.dataset.copy);
     });
 
     // Theme tabs
@@ -608,7 +617,7 @@ export const DevChefTool = {
     shadesContainer.innerHTML = shades.map(shade => {
       const color = this.adjustBrightness(hex, shade.percent);
       return `
-        <div class="shade-item" style="background: ${color};" onclick="navigator.clipboard.writeText('${color}')">
+        <div class="shade-item" style="background: ${color};" data-copy="${color}">
           ${shade.label}
         </div>
       `;
@@ -708,7 +717,7 @@ export const DevChefTool = {
       <div class="palette-card">
         <div class="palette-colors">
           ${theme.colors.map(color => `
-            <div class="palette-color" style="background: ${color};" onclick="navigator.clipboard.writeText('${color}')">
+            <div class="palette-color" style="background: ${color};" data-copy="${color}">
               <span class="palette-color-code">${color}</span>
             </div>
           `).join('')}
@@ -729,7 +738,7 @@ export const DevChefTool = {
       <div class="palette-card">
         <div class="palette-colors">
           ${colors.map(color => `
-            <div class="palette-color" style="background: ${color};" onclick="navigator.clipboard.writeText('${color}')">
+            <div class="palette-color" style="background: ${color};" data-copy="${color}">
               <span class="palette-color-code">${color}</span>
             </div>
           `).join('')}
@@ -821,7 +830,7 @@ export const DevChefTool = {
       <div class="analysis-result">
         <div class="analysis-label">Colors (${colors.length})</div>
         <div class="color-chips">
-          ${colors.map(c => `<div class="color-chip" style="background: ${c};" data-color="${c}" onclick="navigator.clipboard.writeText('${c}')"></div>`).join('')}
+          ${colors.map(c => `<div class="color-chip" style="background: ${c};" data-color="${c}" data-copy="${c}"></div>`).join('')}
         </div>
       </div>
       <div class="analysis-result">

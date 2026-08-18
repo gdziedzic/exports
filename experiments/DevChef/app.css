@@ -103,6 +103,27 @@ body {
   letter-spacing: -0.5px;
 }
 
+.brand-home-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.brand-home-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+  border-radius: 10px;
+}
+
+.brand-home-btn:hover .version-badge,
+.brand-home-btn:hover h1 {
+  filter: brightness(1.05);
+}
+
 #sidebar .subtitle {
   font-size: 12px;
   color: var(--text-secondary);
@@ -251,6 +272,26 @@ body {
   background: var(--bg-hover);
   color: var(--accent);
   transform: translateX(4px);
+}
+
+.tool-metadata-tags {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.tool-metadata-tag {
+  max-width: 74px;
+  padding: 2px 5px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tool-item.active {
@@ -953,21 +994,393 @@ button.secondary:hover {
   word-break: break-word;
 }
 
+.open-health-btn,
 .open-console-btn {
   width: 100%;
   margin-top: 8px;
-  padding: 8px 12px;
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   cursor: pointer;
-  transition: background 0.2s ease;
+  font-size: 12px;
+  font-weight: 600;
 }
 
+.open-health-btn:hover,
 .open-console-btn:hover {
-  background: var(--accent-hover);
+  background: var(--bg-hover);
+}
+
+/* Tool Health Dashboard */
+.tool-health-dashboard {
+  min-height: 100%;
+  padding: 28px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.tool-health-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.tool-health-header h2 {
+  margin: 0 0 6px 0;
+  font-size: 28px;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.tool-health-header p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.tool-health-header code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+}
+
+.tool-health-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tool-health-loading,
+.tool-health-empty {
+  padding: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.tool-health-empty.error {
+  border-color: var(--error);
+  color: var(--text-primary);
+}
+
+.tool-health-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tool-health-card {
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.tool-health-card span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tool-health-card strong {
+  display: block;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.tool-health-card.pass {
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.tool-health-card.warn {
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.tool-health-card.fail {
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.tool-health-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.tool-health-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tool-health-filters tool-button {
+  display: inline-block;
+}
+
+.tool-health-filters tool-button.active .tool-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.tool-health-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tool-health-entry {
+  border: 1px solid var(--border-color);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  overflow: hidden;
+}
+
+.tool-health-entry.pass {
+  border-left-color: #22c55e;
+}
+
+.tool-health-entry.warn {
+  border-left-color: #f59e0b;
+}
+
+.tool-health-entry.fail {
+  border-left-color: var(--error);
+}
+
+.tool-health-entry-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+}
+
+.tool-health-entry-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 16px 12px 16px;
+}
+
+.tool-health-entry-main h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.tool-health-entry-main p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.tool-health-status {
+  min-width: 48px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tool-health-status.pass {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.tool-health-status.warn {
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+}
+
+.tool-health-status.fail {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--error);
+}
+
+.tool-health-counts {
+  text-align: right;
+}
+
+.tool-health-counts strong,
+.tool-health-counts span {
+  display: block;
+}
+
+.tool-health-counts span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.tool-health-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+  padding: 0 16px 16px 16px;
+}
+
+.tool-health-metadata-panel {
+  margin: 0 16px 16px 16px;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+}
+
+.tool-health-metadata-grid {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.7fr) minmax(0, 1.35fr) minmax(0, 1.35fr);
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--border-color);
+}
+
+.tool-health-metadata-grid > div {
+  min-width: 0;
+  padding: 8px 10px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.tool-health-metadata-grid .tool-health-metadata-head {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tool-health-metadata-findings {
+  margin-top: 14px;
+}
+
+.tool-health-metadata-findings h4 {
+  margin: 0 0 8px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tool-health-metadata-findings p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.tool-health-metadata-finding {
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--warning);
+  background: var(--warning-bg, rgba(217, 119, 6, 0.08));
+  font-size: 12px;
+}
+
+.tool-health-metadata-finding + .tool-health-metadata-finding {
+  margin-top: 6px;
+}
+
+.tool-health-metadata-finding.error {
+  border-left-color: var(--error);
+  background: var(--error-bg, rgba(220, 38, 38, 0.08));
+}
+
+.tool-health-muted {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.tool-health-check {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  background: var(--bg-primary);
+}
+
+.tool-health-check > span {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.tool-health-check.pass > span {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.tool-health-check.warn > span {
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+}
+
+.tool-health-check.fail > span {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--error);
+}
+
+.tool-health-check strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.tool-health-check p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .tool-health-dashboard {
+    padding: 18px;
+  }
+
+  .tool-health-header,
+  .tool-health-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tool-health-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tool-health-entry-main {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-health-metadata-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-health-counts {
+    text-align: left;
+  }
 }
 
 /* ============================================
@@ -7803,5 +8216,401 @@ body.sidebar-compact .getting-started-panel {
 @media (max-width: 900px) {
   .v10-rail-actions {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================================
+   V11.5 Design Layer - quieter surfaces, one accent, no chrome overflow
+   Appended last so it wins on source order. Presentation only: no rule here
+   changes layout semantics, only how the shell looks and reacts.
+   ============================================================================ */
+
+:root {
+  --edge: color-mix(in oklch, var(--border-color) 72%, transparent);
+  --tint: color-mix(in oklch, var(--accent) 10%, transparent);
+  --tint-strong: color-mix(in oklch, var(--accent) 16%, transparent);
+  --raise: color-mix(in oklch, var(--bg-primary) 92%, var(--accent) 8%);
+  --ring: 0 0 0 3px color-mix(in oklch, var(--accent) 24%, transparent);
+  --motion: 170ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* ---- Canvas: one soft accent wash instead of competing gradients ---- */
+
+body {
+  background:
+    radial-gradient(900px 620px at 8% -10%, color-mix(in oklch, var(--accent) 9%, transparent), transparent 70%),
+    var(--bg-primary);
+}
+
+#main {
+  background: transparent;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--accent) 28%, transparent);
+}
+
+#sidebar,
+#tool-list,
+#workspace {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--text-secondary) 35%, transparent) transparent;
+}
+
+/* ---- Sidebar shell ---- */
+
+#sidebar {
+  width: 292px;
+  overflow-x: hidden;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--edge);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* The sidebar is a flex column: without this the recents block and the
+   getting-started panel get squashed to slivers when the tool list is long. */
+#sidebar > * {
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+#sidebar > #tool-list {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#sidebar header {
+  position: relative;
+  padding: 16px 16px 14px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--edge);
+  backdrop-filter: none;
+}
+
+/* Fancy, cheap: a single accent hairline under the brand block. */
+#sidebar header::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent 70%);
+  opacity: 0.55;
+}
+
+/* Brand on its own row, then every header icon - including the ones other
+   modules inject straight into .header-content - as one even toolbar grid. */
+.header-content {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.header-content > div:first-child {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.header-actions {
+  display: contents;
+}
+
+.brand-home-btn {
+  max-width: 100%;
+  min-width: 0;
+}
+
+#sidebar h1 {
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+#sidebar .subtitle {
+  font-size: 11px;
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The badge sits inside the gradient-clipped h1, so it needs its own fill. */
+.version-badge {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  background: var(--tint-strong);
+  color: color-mix(in oklch, var(--accent) 45%, var(--text-primary));
+  -webkit-text-fill-color: currentColor;
+  border: 1px solid color-mix(in oklch, var(--accent) 32%, transparent);
+  box-shadow: none;
+}
+
+.header-content > button,
+.header-actions > button,
+#sidebar #clarity-toggle-btn,
+#sidebar #save-snapshot-btn,
+#sidebar #manage-snapshots-btn,
+#sidebar #theme-toggle {
+  width: 100%;
+  height: 32px;
+  padding: 0;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  box-shadow: none;
+  transition: background-color var(--motion), border-color var(--motion);
+}
+
+.header-content > button:hover,
+.header-actions > button:hover,
+#sidebar #clarity-toggle-btn:hover,
+#sidebar #save-snapshot-btn:hover,
+#sidebar #manage-snapshots-btn:hover,
+#sidebar #theme-toggle:hover {
+  background: var(--tint);
+  border-color: var(--edge);
+  transform: none;
+}
+
+.header-content .action-icon,
+.header-content .theme-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* An empty recents block should not reserve space. */
+#recent-tools:empty {
+  display: none !important;
+}
+
+/* Clarity mode collapses these to max-height 0, but padding and borders kept
+   leaving ~25px slivers between the search box and the tool list. */
+body.clarity-mode #recent-tools,
+body.clarity-mode .getting-started-panel,
+body.clarity-mode #sidebar .subtitle {
+  padding-block: 0;
+  margin-block: 0;
+  border-width: 0;
+}
+
+/* ---- Search ---- */
+
+.search-box {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 12px 14px;
+  background: color-mix(in oklch, var(--bg-secondary) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--edge);
+}
+
+/* #sidebar prefix: tools/shared-styles.css loads after app.css and would
+   otherwise win the padding/height on this input. */
+#sidebar .search-box input {
+  height: 38px;
+  padding: 9px 38px 9px 34px;
+  border-radius: 10px;
+  border: 1px solid var(--edge);
+  background: var(--bg-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+#sidebar .search-box input:focus {
+  border-color: var(--accent);
+  box-shadow: var(--ring);
+}
+
+.search-icon {
+  left: 24px;
+  right: auto;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+/* Slash hint that steps aside once the field is in use. */
+.search-box::after {
+  content: "/";
+  position: absolute;
+  top: 50%;
+  right: 24px;
+  translate: 0 -50%;
+  padding: 1px 6px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  font: 600 10px/1.4 var(--font-mono);
+  color: var(--text-secondary);
+  pointer-events: none;
+  transition: opacity var(--motion);
+}
+
+.search-box:focus-within::after {
+  opacity: 0;
+}
+
+/* ---- Productivity rail: quiet chips instead of a wall of blue ---- */
+
+.v10-productivity-rail {
+  margin: 12px 14px;
+  padding: 12px;
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: var(--raise);
+  box-shadow: none;
+}
+
+.v10-rail-header {
+  flex-wrap: wrap;
+  row-gap: 2px;
+  margin-bottom: 10px;
+}
+
+.v10-rail-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.v10-rail-shortcuts {
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+.v10-rail-btn {
+  padding: 7px 6px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--edge);
+  box-shadow: none;
+}
+
+.v10-rail-btn:hover {
+  background: var(--tint);
+  color: var(--text-primary);
+  transform: none;
+}
+
+/* ---- Tool list ---- */
+
+.category-header {
+  padding: 14px 18px 6px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  opacity: 0.8;
+}
+
+.tool-item {
+  margin: 1px 10px;
+  padding: 9px 12px;
+  gap: 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: background-color var(--motion), color var(--motion);
+}
+
+.tool-item:hover {
+  transform: none;
+  color: var(--text-primary);
+  background: var(--tint);
+  border-color: transparent;
+}
+
+.tool-name {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tool-item.active {
+  background: var(--tint-strong);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tool-item.active::before {
+  left: 3px;
+  width: 3px;
+  height: 56%;
+  border-radius: 999px;
+}
+
+.tool-metadata-tag {
+  background: color-mix(in oklch, var(--text-secondary) 12%, transparent);
+  border-color: transparent;
+  font-size: 9.5px;
+}
+
+.recent-tool-item:hover {
+  transform: none;
+  background: var(--tint);
+  color: var(--text-primary);
+}
+
+/* ---- Workspace ---- */
+
+#workspace {
+  padding-inline: clamp(18px, 3vw, 44px);
+}
+
+.tool-header {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.welcome-screen h2 {
+  letter-spacing: -0.03em;
+}
+
+.welcome-screen kbd {
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: var(--raise);
+  box-shadow: none;
+}
+
+/* ---- Controls: hover changes colour, not position ---- */
+
+button:hover,
+.icon-btn:hover,
+#theme-toggle:hover,
+#save-snapshot-btn:hover,
+#manage-snapshots-btn:hover {
+  transform: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.tool-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.quick-panel-fab {
+  box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
   }
 }

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tool Shell Demo - DevChef Tool</title>
+  <link rel="stylesheet" href="shared-styles.css">
+</head>
+<body>
+
+<script type="devchef-manifest">
+{
+  "id": "tool-shell-demo",
+  "name": "Tool Shell Demo",
+  "category": "DevChef",
+  "description": "Reference implementation for reusable tool shell helpers",
+  "version": "1.0.0",
+  "keywords": ["shell", "components", "demo", "developer"]
+}
+</script>
+
+<template id="tool-ui">
+  <div class="tool-container tool-shell">
+    <div class="tool-header">
+      <h2 class="tool-title">Tool Shell Demo</h2>
+      <p class="tool-description">Reference tool for shared input/output panels, actions, validation, examples, import/export, and persisted settings.</p>
+    </div>
+
+    <div class="tool-section tool-shell-examples">
+      <label class="section-label">Examples</label>
+      <div class="tool-shell-action-row">
+        <tool-button variant="secondary" label="Headers" data-example-id="headers"></tool-button>
+        <tool-button variant="secondary" label="List" data-example-id="list"></tool-button>
+      </div>
+    </div>
+
+    <div class="tool-section tool-shell-settings">
+      <label class="tool-shell-setting">
+        <span class="section-label">Transform</span>
+        <tool-select
+          id="transform-mode"
+          value="uppercase"
+          options='[
+            {"value":"uppercase","label":"Uppercase"},
+            {"value":"lowercase","label":"Lowercase"},
+            {"value":"title","label":"Title Case"},
+            {"value":"reverse-lines","label":"Reverse Lines"}
+          ]'>
+        </tool-select>
+      </label>
+
+      <label class="tool-shell-setting">
+        <span class="section-label">Prefix</span>
+        <tool-input id="line-prefix" placeholder="Optional line prefix"></tool-input>
+      </label>
+
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+        <input type="checkbox" id="trim-lines" checked>
+        Trim lines
+      </label>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Import</label>
+      <tool-file-input id="import-file" label="Import Text File"></tool-file-input>
+    </div>
+
+    <div class="tool-shell-grid">
+      <div class="tool-section tool-shell-panel">
+        <label class="section-label" for="input">Input</label>
+        <tool-textarea id="input" placeholder="Enter text to transform..." rows="10" monospace></tool-textarea>
+      </div>
+
+      <div class="tool-section tool-shell-panel">
+        <label class="section-label" for="output">Output</label>
+        <tool-textarea id="output" readonly rows="10" monospace></tool-textarea>
+      </div>
+    </div>
+
+    <div class="tool-section tool-shell-actions">
+      <div class="tool-shell-action-row">
+        <tool-button id="process-btn" variant="primary" label="Transform"></tool-button>
+        <tool-button id="copy-btn" variant="secondary" label="Copy Result"></tool-button>
+        <tool-button id="export-btn" variant="secondary" label="Export"></tool-button>
+        <tool-button id="clear-btn" variant="secondary" label="Clear"></tool-button>
+        <tool-button id="reset-btn" variant="secondary" label="Reset"></tool-button>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <tool-status id="status"></tool-status>
+    </div>
+  </div>
+</template>
+
+<script type="module">
+import '../core/components.js';
+import { createToolShell } from '../core/tool-shell.js';
+
+const examples = [
+  {
+    id: 'headers',
+    label: 'Headers',
+    input: 'content-type: application/json\nx-request-id: abc-123\ncache-control: no-cache'
+  },
+  {
+    id: 'list',
+    label: 'List',
+    input: 'alpha\nbeta\ngamma\ndelta'
+  }
+];
+
+export const DevChefTool = {
+  shell: null,
+
+  init(container, context) {
+    this.shell = createToolShell(container, context, {
+      toolId: 'tool-shell-demo',
+      autoProcess: false,
+      clearOutputOnInput: true,
+      exportFilename: 'tool-shell-demo-output.txt',
+      examples,
+      settings: [
+        { key: 'mode', selector: '#transform-mode', defaultValue: 'uppercase' },
+        { key: 'prefix', selector: '#line-prefix', defaultValue: '' },
+        { key: 'trimLines', selector: '#trim-lines', defaultValue: true }
+      ],
+      validate(input) {
+        return input.trim() ? true : 'Enter text or load an example first.';
+      },
+      process(input, shell) {
+        const settings = shell.readSettingsFromControls();
+        const output = transformText(input, settings);
+        return {
+          output,
+          message: `Transformed ${output.split('\n').filter(Boolean).length} line(s).`,
+          type: 'success',
+          duration: 2000
+        };
+      }
+    });
+  },
+
+  cleanup() {
+    this.shell?.cleanup();
+  }
+};
+
+function transformText(input, settings) {
+  let lines = input.split(/\r?\n/);
+
+  if (settings.trimLines) {
+    lines = lines.map(line => line.trim());
+  }
+
+  switch (settings.mode) {
+    case 'lowercase':
+      lines = lines.map(line => line.toLowerCase());
+      break;
+    case 'title':
+      lines = lines.map(toTitleCase);
+      break;
+    case 'reverse-lines':
+      lines = [...lines].reverse();
+      break;
+    case 'uppercase':
+    default:
+      lines = lines.map(line => line.toUpperCase());
+      break;
+  }
+
+  const prefix = String(settings.prefix || '');
+  if (prefix) {
+    lines = lines.map(line => line ? `${prefix}${line}` : line);
+  }
+
+  return lines.join('\n');
+}
+
+function toTitleCase(value) {
+  return value.toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
+if (typeof window !== 'undefined' && !window.DevChef) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const template = document.querySelector('#tool-ui');
+    if (!template || document.querySelector('#workspace')) return;
+
+    const standaloneContext = {
+      input: '',
+      output: '',
+      setInput(value) { this.input = value; },
+      setOutput(value) { this.output = value; },
+      getInput() { return this.input; },
+      getOutput() { return this.output; }
+    };
+
+    document.body.innerHTML = template.innerHTML;
+    DevChefTool.init(document.body, standaloneContext);
+  });
+}
+</script>
+
+</body>
+</html>

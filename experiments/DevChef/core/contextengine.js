@@ -52,8 +52,6 @@ class ContextEngine {
     // Monitor tool usage
     this.monitorToolUsage();
 
-    // Monitor keyboard activity
-    this.monitorKeyboardActivity();
   }
 
   /**
@@ -73,70 +71,6 @@ class ContextEngine {
     } catch (error) {
       console.error('Error setting up tool monitoring:', error);
     }
-  }
-
-  /**
-   * Monitor keyboard activity for patterns
-   */
-  monitorKeyboardActivity() {
-    let keySequence = [];
-    let lastKeyTime = 0;
-
-    document.addEventListener('keydown', (e) => {
-      const now = Date.now();
-
-      // Reset sequence if more than 2 seconds since last key
-      if (now - lastKeyTime > 2000) {
-        keySequence = [];
-      }
-
-      keySequence.push({
-        key: e.key,
-        ctrl: e.ctrlKey,
-        alt: e.altKey,
-        shift: e.shiftKey,
-        time: now
-      });
-
-      // Keep only last 10 keys
-      if (keySequence.length > 10) {
-        keySequence.shift();
-      }
-
-      lastKeyTime = now;
-      this.analyzeKeyPattern(keySequence);
-    });
-  }
-
-  /**
-   * Analyze key patterns for potential shortcuts
-   */
-  analyzeKeyPattern(sequence) {
-    if (sequence.length < 3) return;
-
-    // Detect repetitive patterns
-    const pattern = sequence.map(k => k.key).join('');
-    const repetitions = this.countPatternRepetitions(pattern);
-
-    if (repetitions > 2) {
-      this.suggestMacro(sequence);
-    }
-  }
-
-  /**
-   * Count pattern repetitions
-   */
-  countPatternRepetitions(pattern) {
-    let count = 0;
-    const half = Math.floor(pattern.length / 2);
-
-    for (let i = 1; i <= half; i++) {
-      const chunk = pattern.slice(-i);
-      const prev = pattern.slice(-(i * 2), -i);
-      if (chunk === prev) count++;
-    }
-
-    return count;
   }
 
   /**
@@ -469,21 +403,6 @@ class ContextEngine {
   }
 
   /**
-   * Suggest macro creation
-   */
-  suggestMacro(sequence) {
-    this.updateSuggestions([{
-      id: 'suggest-macro',
-      type: 'action',
-      action: 'Create Macro',
-      reason: 'Detected repetitive key pattern',
-      confidence: 0.75,
-      icon: '⌨️',
-      data: { sequence }
-    }]);
-  }
-
-  /**
    * Update suggestions
    */
   updateSuggestions(newSuggestions) {
@@ -552,12 +471,6 @@ class ContextEngine {
         if (window.PipelineManager && suggestion.data.tools) {
           // Open pipeline creator with suggested tools
           console.log('Creating pipeline:', suggestion.data.tools);
-        }
-        break;
-
-      case 'Create Macro':
-        if (window.Commander && suggestion.data.sequence) {
-          console.log('Creating macro:', suggestion.data.sequence);
         }
         break;
     }

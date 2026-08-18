@@ -370,6 +370,8 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -786,10 +788,9 @@ if (typeof window !== 'undefined' && !window.DevChef) {
   copyOutput() {
     const outputEl = this.container.querySelector("#devchef-output");
     if (outputEl?.value) {
-      navigator.clipboard.writeText(outputEl.value).then(() => {
-        this.showStatus("Copied to clipboard!", "success");
-      }).catch(err => {
-        this.showStatus("Failed to copy", "error");
+      copyToClipboard(outputEl.value, {
+        onSuccess: () => this.showStatus("Copied to clipboard!", "success"),
+        onError: () => this.showStatus("Failed to copy", "error")
       });
     }
   },

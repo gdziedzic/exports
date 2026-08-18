@@ -142,14 +142,6 @@ class QuickPanel {
         action: () => window.DevChef?.showSnippetsLibrary()
       },
       {
-        id: 'macros',
-        icon: '🔴',
-        label: 'Record Macro',
-        description: 'Start/stop recording',
-        shortcut: 'Ctrl+Shift+M',
-        action: () => window.productivityEngine?.toggleRecording()
-      },
-      {
         id: 'batch',
         icon: '⚡',
         label: 'Batch Process',

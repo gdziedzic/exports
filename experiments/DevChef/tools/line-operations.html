@@ -885,6 +885,8 @@ return match ? match[0] : '';</code>
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export const DevChefTool = {
   container: null,
   context: null,
@@ -1300,11 +1302,13 @@ return line.split(' ').map(w =>
   copyOutput() {
     const output = this.context.getOutput();
     if (output) {
-      navigator.clipboard.writeText(output).then(() => {
-        const btn = this.container.querySelector('#copy-output-btn');
-        const original = btn.textContent;
-        btn.textContent = '✓ Copied!';
-        setTimeout(() => btn.textContent = original, 2000);
+      copyToClipboard(output, {
+        onSuccess: () => {
+          const btn = this.container.querySelector('#copy-output-btn');
+          const original = btn.textContent;
+          btn.textContent = '✓ Copied!';
+          setTimeout(() => btn.textContent = original, 2000);
+        }
       });
     }
   },

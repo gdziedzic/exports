@@ -13,510 +13,1674 @@
   "id": "sql-formatter",
   "name": "SQL Formatter",
   "category": "Database",
-  "description": "Format and beautify SQL queries with syntax highlighting",
-  "version": "1.0.0"
+  "description": "Format and beautify SQL queries with configurable layout, casing and dialect options",
+  "version": "2.0.0"
 }
 </script>
 
-<!-- Tool UI Template -->
+<!-- Tool UI Template. Presets, templates and every option control are rendered
+     from the data in the module, so this skeleton only holds the layout. -->
 <template id="tool-ui">
-  <div class="tool-container">
-    <div class="tool-header">
-      <h2 class="tool-title">SQL Formatter & Beautifier</h2>
-      <p class="tool-description">Format, beautify, and analyze SQL queries for SQL Server, MySQL, PostgreSQL</p>
-    </div>
-
-    <div class="tool-section">
-      <label class="section-label">Load from JSON Schema</label>
-      <textarea id="json-schema-input" placeholder='Paste JSON schema here (format: {"tables": [{"name": "Users", "schema": "dbo", "columns": [...]}]})'></textarea>
-      <div id="table-selector-container" style="display: none; margin-top: 12px;">
-        <label for="table-selector">Select Table for Templates:</label>
-        <select id="table-selector"></select>
+  <div class="tool-container sqlf" data-preserve-legacy-controls>
+    <header class="sqlf-bar">
+      <div class="sqlf-bar__title">
+        <h2>SQL Formatter</h2>
+        <p>Beautify, minify and measure SQL for T-SQL, MySQL and PostgreSQL</p>
       </div>
-      <button id="load-schema-btn" class="secondary">Load from JSON Schema</button>
-    </div>
-
-    <div class="tool-section">
-      <label class="section-label" for="input">SQL Query</label>
-      <textarea id="input" placeholder="Paste your SQL query here..."></textarea>
-    </div>
-
-    <div class="tool-section">
-      <label class="section-label">Formatting Options</label>
-      <div class="format-options">
-        <label>
-          <span>Indentation:</span>
-          <select id="indent-size">
-            <option value="2">2 spaces</option>
-            <option value="4" selected>4 spaces</option>
-            <option value="tab">Tab</option>
-          </select>
-        </label>
-        <label>
-          <span>Keyword Case:</span>
-          <select id="keyword-case">
-            <option value="upper" selected>UPPERCASE</option>
-            <option value="lower">lowercase</option>
-            <option value="preserve">Preserve</option>
-          </select>
-        </label>
-        <label>
-          <input type="checkbox" id="new-line-before-keyword" checked>
-          <span>New line before keywords</span>
-        </label>
+      <div class="sqlf-bar__inline" data-slot="toolbar"></div>
+      <div class="sqlf-bar__actions">
+        <button id="format-btn" class="btn btn--primary" type="button">Format</button>
+        <button id="minify-btn" class="btn" type="button">Minify</button>
       </div>
+    </header>
+
+    <div class="chips chips--presets" data-slot="presets" role="group" aria-label="Formatting presets"></div>
+
+    <div class="panes">
+      <section class="pane">
+        <div class="pane__head">
+          <h3>SQL</h3>
+          <span class="pane__meta" id="input-meta"></span>
+          <button id="clear-btn" class="btn btn--ghost" type="button">Clear</button>
+        </div>
+        <div class="chips" data-slot="templates" role="group" aria-label="Insert a starter statement"></div>
+        <textarea id="input" class="editor" spellcheck="false"
+          placeholder="Paste SQL here — Ctrl+Enter formats"></textarea>
+        <details class="drawer">
+          <summary>Load table names from a JSON schema</summary>
+          <div class="drawer__body">
+            <textarea id="json-schema-input" class="editor editor--sm" spellcheck="false"
+              placeholder='{"tables": [{"name": "Users", "schema": "dbo", "columns": [...]}]}'></textarea>
+            <div class="drawer__row">
+              <button id="load-schema-btn" class="btn" type="button">Load schema</button>
+              <select id="table-selector" aria-label="Table used by the starter statements" hidden></select>
+            </div>
+            <p id="schema-status" class="status" role="status"></p>
+          </div>
+        </details>
+      </section>
+
+      <section class="pane">
+        <div class="pane__head">
+          <h3>Result</h3>
+          <span class="pane__meta" id="output-meta"></span>
+          <button id="copy-btn" class="btn btn--ghost" type="button">Copy</button>
+          <button id="use-output-btn" class="btn btn--ghost" type="button">Use as input</button>
+        </div>
+        <textarea id="output" class="editor" readonly spellcheck="false"
+          placeholder="Formatted SQL lands here"></textarea>
+        <div id="stats" class="stats" aria-live="polite"></div>
+      </section>
     </div>
 
-    <div class="tool-section">
-      <button id="format-btn">Format SQL</button>
-      <button id="minify-btn" class="secondary">Minify</button>
-      <button id="copy-btn" class="secondary">Copy Result</button>
-    </div>
-
-    <div class="tool-section">
-      <label class="section-label" for="output">Formatted SQL</label>
-      <textarea id="output" readonly></textarea>
-      <div id="stats" class="stats"></div>
-    </div>
-
-    <div class="tool-section">
-      <label class="section-label">Quick SQL Templates</label>
-      <div class="templates-grid">
-        <button class="template-btn" data-template="select">SELECT</button>
-        <button class="template-btn" data-template="insert">INSERT</button>
-        <button class="template-btn" data-template="update">UPDATE</button>
-        <button class="template-btn" data-template="delete">DELETE</button>
-        <button class="template-btn" data-template="create-table">CREATE TABLE</button>
-        <button class="template-btn" data-template="stored-proc">STORED PROC</button>
+    <details id="options-panel" class="options" open>
+      <summary>
+        <span>Formatting options</span>
+        <span id="options-badge" class="badge" hidden></span>
+      </summary>
+      <div class="options__body" data-slot="options"></div>
+      <div class="options__foot">
+        <button id="reset-options-btn" class="btn btn--ghost" type="button">Reset to defaults</button>
       </div>
-    </div>
+    </details>
   </div>
 </template>
 
-<!-- Tool Styles -->
+<!-- Tool Styles. The layout is a container query away from one column, so the
+     same markup works in the DevChef workspace and in a standalone window. -->
 <style>
-  .format-options {
+  .sqlf {
+    container-type: inline-size;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
+    gap: 14px;
+    accent-color: var(--accent);
+    font-family: var(--font-sans);
+    color: var(--text-primary);
   }
 
-  .format-options label {
+  .sqlf :is(h2, h3) { margin: 0; font-weight: 650; }
+  .sqlf p { margin: 0; }
+
+  /* ---------- Top bar ---------- */
+
+  .sqlf-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .sqlf-bar__title { margin-inline-end: auto; }
+  .sqlf-bar__title h2 { font-size: clamp(18px, 2.2cqi + 14px, 24px); }
+
+  .sqlf-bar__title p {
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-wrap: balance;
+  }
+
+  .sqlf-bar__inline,
+  .sqlf-bar__actions {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
   }
 
-  .format-options select {
-    width: auto;
+  .sqlf-bar__inline .field { gap: 6px; }
+  .sqlf-bar__inline select { min-width: 150px; }
+
+  /* ---------- Buttons and chips ---------- */
+
+  .sqlf .btn {
+    --btn-bg: var(--bg-secondary);
+    margin: 0;
+    padding: 8px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 8px);
+    background: var(--btn-bg);
+    color: var(--text-primary);
+    font: 500 13px var(--font-sans);
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background-color .15s, border-color .15s, transform .15s;
+  }
+
+  .sqlf .btn:hover { --btn-bg: color-mix(in oklab, var(--accent) 12%, var(--bg-secondary)); }
+  .sqlf .btn:active { transform: translateY(1px); }
+  .sqlf .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .sqlf .btn--primary {
+    --btn-bg: var(--accent);
+    border-color: transparent;
+    color: #fff;
+    padding-inline: 20px;
+  }
+
+  .sqlf .btn--primary:hover { --btn-bg: var(--accent-hover); }
+
+  .sqlf .btn--ghost {
+    --btn-bg: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
+    padding: 6px 10px;
+  }
+
+  .sqlf .btn--ghost:hover { color: var(--text-primary); }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chips:empty { display: none; }
+
+  .sqlf .chip {
+    margin: 0;
     padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full, 999px);
+    background: transparent;
+    color: var(--text-secondary);
+    font: 500 12px var(--font-sans);
+    cursor: pointer;
+    transition: background-color .15s, color .15s, border-color .15s;
+  }
+
+  .sqlf .chip:hover {
+    color: var(--text-primary);
+    background: color-mix(in oklab, var(--accent) 10%, transparent);
+  }
+
+  .sqlf .chip[aria-pressed="true"] {
+    background: color-mix(in oklab, var(--accent) 18%, transparent);
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+
+  /* ---------- Editor panes ---------- */
+
+  .panes {
+    display: grid;
+    gap: 14px;
+  }
+
+  @container (min-width: 820px) {
+    .panes { grid-template-columns: 1fr 1fr; }
+  }
+
+  .pane {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg, 12px);
+    background: var(--bg-secondary);
+  }
+
+  .pane__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pane__head h3 {
+    font-size: 12px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .pane__meta {
+    margin-inline-end: auto;
+    font: 400 12px var(--font-mono);
+    color: var(--text-secondary);
+  }
+
+  .sqlf .editor {
+    width: 100%;
+    flex: 1;
+    min-height: clamp(240px, 40vh, 460px);
+    padding: 12px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font: 13px/1.6 var(--font-mono);
+    tab-size: 4;
+    white-space: pre;
+    overflow: auto;
+    overflow-wrap: normal;
+    scrollbar-gutter: stable;
+    resize: vertical;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  .sqlf .editor:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent);
+  }
+
+  .sqlf .editor--sm { min-height: 110px; }
+  .sqlf #output { background: color-mix(in oklab, var(--accent) 4%, var(--bg-primary)); }
+
+  /* ---------- Stats ---------- */
+
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .stats:empty { display: none; }
+
+  .stat {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: var(--radius-full, 999px);
+    background: var(--bg-tertiary);
+    font-size: 12px;
+  }
+
+  .stat-label { color: var(--text-secondary); }
+  .stat-value { font-family: var(--font-mono); font-weight: 600; }
+  .stat--warn .stat-value { color: var(--warning); }
+
+  /* ---------- Schema drawer ---------- */
+
+  .drawer > summary,
+  .options > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 2px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    list-style-position: inside;
+  }
+
+  .drawer > summary:hover,
+  .options > summary:hover { color: var(--text-primary); }
+
+  .drawer__body {
+    display: grid;
+    gap: 8px;
+    padding-top: 8px;
+  }
+
+  .drawer__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .sqlf .status:empty { display: none; }
+
+  .sqlf .status {
+    padding: 6px 10px;
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-tertiary);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .sqlf .status[data-type="success"] { color: var(--success); }
+  .sqlf .status[data-type="error"] { color: var(--error); }
+
+  /* ---------- Options panel ---------- */
+
+  .options {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg, 12px);
+    background: var(--bg-secondary);
+    padding: 10px 14px;
+  }
+
+  .options > summary { font-weight: 600; color: var(--text-primary); }
+
+  .badge {
+    padding: 2px 8px;
+    border-radius: var(--radius-full, 999px);
+    background: color-mix(in oklab, var(--accent) 20%, transparent);
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .options__body {
+    display: grid;
+    gap: 14px;
+    padding: 12px 0;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  .options__foot {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 4px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .group { display: grid; gap: 10px; align-content: start; }
+
+  .group__title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     font-size: 13px;
   }
 
-  .format-options input[type="checkbox"] {
+  .field > span { color: var(--text-secondary); }
+
+  .sqlf :is(.field select, .field input[type="number"]) {
     width: auto;
+    flex: 1 1 130px;
+    min-width: 0;
+    max-width: 220px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md, 8px);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font: 13px var(--font-sans);
+  }
+
+  .sqlf :is(.field select, .field input[type="number"]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  /* Checkbox rendered as a switch, without losing the native input. */
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
     cursor: pointer;
   }
 
-  .templates-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 12px;
+  .toggle input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
   }
 
-  .template-btn {
-    padding: 10px 16px;
-    margin: 0;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    font-size: 13px;
+  .toggle__track {
+    flex: none;
+    width: 32px;
+    height: 18px;
+    padding: 2px;
+    border-radius: var(--radius-full, 999px);
+    background: var(--bg-tertiary);
+    box-shadow: inset 0 0 0 1px var(--border-color);
+    transition: background-color .18s;
   }
 
-  .template-btn:hover {
-    background: var(--accent);
-    color: white;
+  .toggle__track::before {
+    content: "";
+    display: block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--bg-primary);
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, .3));
+    transition: translate .18s ease;
   }
 
-  .stats {
-    margin-top: 12px;
-    padding: 12px;
-    background: var(--bg-secondary);
-    border-radius: 6px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 12px;
-    font-size: 13px;
-  }
+  .toggle:has(input:checked) .toggle__track { background: var(--accent); }
+  .toggle:has(input:checked) .toggle__track::before { translate: 14px 0; }
+  .toggle:has(input:focus-visible) .toggle__track { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  .stat-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .stat-label {
-    color: var(--text-secondary);
-    font-size: 11px;
-    text-transform: uppercase;
-  }
-
-  .stat-value {
-    color: var(--text-primary);
-    font-weight: 600;
-    font-family: var(--font-mono);
-  }
-
-  #json-schema-input {
-    min-height: 100px;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    margin-bottom: 8px;
-  }
-
-  #table-selector {
-    width: 100%;
-    margin-top: 8px;
-  }
-
-  #input,
-  #output {
-    min-height: 300px;
-    font-family: var(--font-mono);
+  @media (prefers-reduced-motion: reduce) {
+    .sqlf *, .sqlf *::before { transition-duration: 0s; }
   }
 </style>
 
-<!-- Standalone Styles -->
+<!-- Standalone Styles: design tokens and page chrome only. Everything the tool
+     itself draws lives in the stylesheet above, which DevChef also injects. -->
 <style id="standalone-styles">
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
   :root {
+    color-scheme: light dark;
     --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --bg-tertiary: #e0e0e0;
-    --border-color: #d0d0d0;
-    --text-primary: #2c3e50;
-    --text-secondary: #7f8c8d;
-    --accent: #3498db;
-    --accent-hover: #2980b9;
-    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --bg-secondary: #f6f7f9;
+    --bg-tertiary: #e8eaed;
+    --border-color: #d8dce2;
+    --text-primary: #1a2332;
+    --text-secondary: #6b7280;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --success: #16a34a;
+    --warning: #d97706;
+    --error: #dc2626;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .12);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-full: 999px;
+    --font-mono: 'Geist Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #16181d;
+      --bg-secondary: #1e2127;
+      --bg-tertiary: #2a2e36;
+      --border-color: #353a44;
+      --text-primary: #e6e8ec;
+      --text-secondary: #9aa3b2;
+      --accent: #5b9dff;
+      --accent-hover: #7cb2ff;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, .5);
+    }
   }
 
   body {
-    font-family: var(--font-sans);
+    min-height: 100dvh;
+    padding: clamp(16px, 3vw, 32px);
     background: var(--bg-primary);
     color: var(--text-primary);
-    padding: 24px;
-    line-height: 1.6;
+    font-family: var(--font-sans);
+    line-height: 1.55;
   }
 
   .tool-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .tool-header {
-    margin-bottom: 32px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid var(--border-color);
-  }
-
-  .tool-title {
-    font-size: 32px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-  }
-
-  .tool-description {
-    font-size: 16px;
-    color: var(--text-secondary);
-  }
-
-  .tool-section {
-    margin-bottom: 24px;
-  }
-
-  .section-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  textarea, select {
-    width: 100%;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 12px;
-    font-family: var(--font-mono);
-    font-size: 14px;
-    border-radius: 6px;
-    resize: vertical;
-    transition: all 0.2s;
-  }
-
-  textarea {
-    min-height: 150px;
-  }
-
-  button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: var(--font-sans);
-    margin-right: 8px;
-  }
-
-  button:hover {
-    background: var(--accent-hover);
-  }
-
-  button.secondary {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-
-  button.secondary:hover {
-    background: var(--border-color);
+    max-width: 1400px;
+    margin-inline: auto;
   }
 </style>
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard, saveToolState, loadToolState } from '../core/tool-utils.js';
+
+/* ------------------------------------------------------------------ *
+ * Word sets
+ * ------------------------------------------------------------------ */
+
+const KEYWORDS = new Set([
+  'ADD', 'ALL', 'ALTER', 'AND', 'ANY', 'AS', 'ASC', 'BEGIN', 'BETWEEN', 'BREAK', 'BY',
+  'CASCADE', 'CASE', 'CATCH', 'CHECK', 'CLOSE', 'CLUSTERED', 'COLLATE', 'COLUMN', 'COMMIT',
+  'CONSTRAINT', 'CONTINUE', 'CREATE', 'CROSS', 'CURRENT', 'CURSOR', 'DATABASE', 'DECLARE',
+  'DEFAULT', 'DELETE', 'DESC', 'DISTINCT', 'DO', 'DROP', 'ELSE', 'END', 'ESCAPE', 'EXCEPT',
+  'EXEC', 'EXECUTE', 'EXISTS', 'EXPLAIN', 'FALSE', 'FETCH', 'FILTER', 'FIRST', 'FOLLOWING',
+  'FOR', 'FOREIGN', 'FROM', 'FULL', 'FUNCTION', 'GO', 'GOTO', 'GRANT', 'GROUP', 'HAVING',
+  'IDENTITY', 'IF', 'IGNORE', 'ILIKE', 'IN', 'INDEX', 'INNER', 'INSERT', 'INTERSECT',
+  'INTO', 'IS', 'JOIN', 'KEY', 'LAST', 'LATERAL', 'LEFT', 'LIKE', 'LIMIT', 'MATCHED', 'MERGE',
+  'NATURAL', 'NEXT', 'NOCOUNT', 'NOLOCK', 'NONCLUSTERED', 'NOT', 'NULL', 'NULLS', 'OFFSET',
+  'ON', 'ONLY', 'OPEN', 'OPTION', 'OR', 'ORDER', 'OUTER', 'OUTPUT', 'OVER', 'PARTITION',
+  'PERCENT', 'PIVOT', 'PRECEDING', 'PRIMARY', 'PROCEDURE', 'RANGE', 'REFERENCES', 'RETURN',
+  'RETURNING', 'REVOKE', 'RIGHT', 'ROLLBACK', 'ROW', 'ROWCOUNT', 'ROWS', 'SCHEMA', 'SELECT',
+  'SET', 'SOME', 'TABLE', 'TEMP', 'TEMPORARY', 'THEN', 'TIES', 'TO', 'TOP', 'TRAN',
+  'TRANSACTION', 'TRIGGER', 'TRUE', 'TRUNCATE', 'TRY', 'UNBOUNDED', 'UNION', 'UNIQUE',
+  'UNPIVOT', 'UPDATE', 'USE', 'USING', 'VALUES', 'VIEW', 'WHEN', 'WHERE', 'WHILE',
+  'WINDOW', 'WITH', 'WITHIN', 'APPLY', 'CONFLICT', 'DISTINCTROW', 'STRAIGHT_JOIN'
+]);
+
+const FUNCTIONS = new Set([
+  'ABS', 'ARRAY_AGG', 'AVG', 'CAST', 'CEILING', 'CEIL', 'CHARINDEX', 'CHOOSE', 'COALESCE',
+  'CONCAT', 'CONCAT_WS', 'CONVERT', 'COUNT', 'COUNT_BIG', 'CUME_DIST', 'CURRENT_DATE',
+  'CURRENT_TIMESTAMP', 'DATEADD', 'DATEDIFF', 'DATENAME', 'DATEPART', 'DATE_TRUNC', 'DAY',
+  'DENSE_RANK', 'EXP', 'EXTRACT', 'FIRST_VALUE', 'FLOOR', 'FORMAT', 'GENERATE_SERIES',
+  'GETDATE', 'GETUTCDATE', 'GREATEST', 'GROUP_CONCAT', 'IIF', 'ISNULL', 'ISNUMERIC',
+  'JSON_QUERY', 'JSON_VALUE', 'LAG', 'LAST_VALUE', 'LEAD', 'LEAST', 'LEFT', 'LEN', 'LENGTH',
+  'LISTAGG', 'LOG', 'LOWER', 'LTRIM', 'MAX', 'MIN', 'MONTH', 'NEWID', 'NOW', 'NTILE',
+  'NULLIF', 'PARSE', 'PATINDEX', 'PERCENTILE_CONT', 'PERCENT_RANK', 'POWER', 'RAND', 'RANK',
+  'REPLACE', 'REPLICATE', 'REVERSE', 'RIGHT', 'ROUND', 'ROW_NUMBER', 'RTRIM', 'SIGN',
+  'SPLIT_PART', 'SQRT', 'STDEV', 'STRING_AGG', 'STRING_SPLIT', 'STUFF', 'SUBSTRING', 'SUM',
+  'SYSDATETIME', 'TO_CHAR', 'TO_DATE', 'TRIM', 'TRY_CAST', 'TRY_CONVERT', 'TRY_PARSE',
+  'UNNEST', 'UPPER', 'VAR', 'YEAR'
+]);
+
+const DATATYPES = new Set([
+  'BIGINT', 'BIGSERIAL', 'BINARY', 'BIT', 'BLOB', 'BOOL', 'BOOLEAN', 'CHAR', 'CLOB', 'DATE',
+  'DATETIME', 'DATETIME2', 'DATETIMEOFFSET', 'DECIMAL', 'DOUBLE', 'ENUM', 'FLOAT',
+  'GEOGRAPHY', 'GEOMETRY', 'HIERARCHYID', 'IMAGE', 'INT', 'INTEGER', 'INTERVAL', 'JSON',
+  'JSONB', 'MONEY', 'NCHAR', 'NTEXT', 'NUMERIC', 'NVARCHAR', 'PRECISION', 'REAL',
+  'ROWVERSION', 'SERIAL', 'SMALLDATETIME', 'SMALLINT', 'SMALLMONEY', 'SQL_VARIANT', 'TEXT',
+  'TIME', 'TIMESTAMP', 'TIMESTAMPTZ', 'TINYINT', 'UNIQUEIDENTIFIER', 'UUID', 'VARBINARY',
+  'VARCHAR', 'XML'
+]);
+
+/** Clause keywords that start a new line at the current statement indent. */
+const TOP_LEVEL = [
+  ['WITH'], ['SELECT'], ['FROM'], ['WHERE'], ['GROUP', 'BY'], ['HAVING'], ['ORDER', 'BY'],
+  ['LIMIT'], ['OFFSET'], ['FETCH', 'NEXT'], ['FETCH', 'FIRST'], ['UNION', 'ALL'], ['UNION'],
+  ['EXCEPT'], ['INTERSECT'], ['INSERT', 'INTO'], ['INSERT'], ['VALUES'], ['UPDATE'], ['SET'],
+  ['DELETE', 'FROM'], ['DELETE'], ['MERGE', 'INTO'], ['MERGE'], ['USING'],
+  ['WHEN', 'NOT', 'MATCHED'], ['WHEN', 'MATCHED'], ['RETURNING'], ['OUTPUT'], ['INTO'],
+  ['FOR', 'UPDATE'], ['WINDOW'], ['ON', 'CONFLICT']
+];
+
+/** Clauses whose body is a comma separated list. */
+const LIST_CLAUSES = new Set([
+  'SELECT', 'FROM', 'GROUP BY', 'ORDER BY', 'SET', 'VALUES', 'RETURNING', 'OUTPUT', 'INTO'
+]);
+
+const JOINS = [
+  ['LEFT', 'OUTER', 'JOIN'], ['RIGHT', 'OUTER', 'JOIN'], ['FULL', 'OUTER', 'JOIN'],
+  ['INNER', 'JOIN'], ['LEFT', 'JOIN'], ['RIGHT', 'JOIN'], ['FULL', 'JOIN'],
+  ['CROSS', 'JOIN'], ['NATURAL', 'JOIN'], ['STRAIGHT_JOIN'], ['CROSS', 'APPLY'],
+  ['OUTER', 'APPLY'], ['JOIN']
+];
+
+/** BEGIN followed by one of these does not open an indented block. */
+const BEGIN_NON_BLOCK = new Set(['TRANSACTION', 'TRAN', 'DISTRIBUTED']);
+
+/** Keywords that always keep a space before "(", however the source was written. */
+const SPACED_BEFORE_PAREN = new Set([
+  'ALL', 'AND', 'ANY', 'AS', 'BETWEEN', 'BY', 'CHECK', 'ELSE', 'EXISTS', 'FOREIGN', 'FROM',
+  'IN', 'INTO', 'KEY', 'NOT', 'ON', 'OR', 'OVER', 'PRIMARY', 'PROCEDURE', 'REFERENCES',
+  'RETURNS', 'SELECT', 'SOME', 'TABLE', 'THEN', 'UNION', 'UNIQUE', 'USING', 'VALUES',
+  'VIEW', 'WHEN', 'WHERE', 'WITH'
+]);
+
+const NO_SPACE_BEFORE = new Set([',', ';', ')', '.', '::']);
+const NO_SPACE_AFTER = new Set(['.', '::', '(']);
+const UNARY_CONTEXT = new Set([
+  '(', ',', '=', '<', '>', '<=', '>=', '<>', '!=', '+', '-', '*', '/', '%', 'AND', 'OR',
+  'NOT', 'THEN', 'ELSE', 'WHEN', 'RETURN', 'BY'
+]);
+
+/* ------------------------------------------------------------------ *
+ * Option schema
+ *
+ * Single source of truth: the controls, their defaults, and the option
+ * keys the formatter reads all come from this list.
+ * ------------------------------------------------------------------ */
+
+const CASES = [
+  ['upper', 'UPPERCASE'], ['lower', 'lowercase'],
+  ['capitalize', 'Capitalize'], ['preserve', 'Preserve']
+];
+
+const OPTION_GROUPS = {
+  toolbar: null,           // rendered in the top bar instead of the panel
+  layout: 'Layout',
+  casing: 'Casing',
+  breaks: 'Line breaks',
+  cleanup: 'Cleanup'
+};
+
+const OPTIONS = [
+  { key: 'dialect', id: 'dialect', group: 'toolbar', label: 'Dialect', value: 'tsql', choices: [
+    ['tsql', 'SQL Server (T-SQL)'], ['mysql', 'MySQL / MariaDB'],
+    ['postgres', 'PostgreSQL'], ['standard', 'Standard SQL']
+  ] },
+  { key: 'liveFormat', id: 'live-format', group: 'toolbar', label: 'Auto-format', value: true },
+
+  { key: 'indentSize', id: 'indent-size', group: 'layout', label: 'Indentation', value: '4', choices: [
+    ['2', '2 spaces'], ['4', '4 spaces'], ['8', '8 spaces'], ['tab', 'Tab']
+  ] },
+  { key: 'keywordLayout', id: 'keyword-layout', group: 'layout', label: 'Keyword layout', value: 'stacked', choices: [
+    ['stacked', 'Body below'], ['inline', 'Body beside'], ['river', 'River (right-aligned)']
+  ] },
+  { key: 'listStyle', id: 'list-style', group: 'layout', label: 'Column lists', value: 'break', choices: [
+    ['break', 'One per line'], ['inline', 'Keep inline'], ['auto', 'Wrap over max width']
+  ] },
+  { key: 'commaPosition', id: 'comma-position', group: 'layout', label: 'Commas', value: 'trailing', choices: [
+    ['trailing', 'End of line'], ['leading', 'Start of line']
+  ] },
+  { key: 'maxWidth', id: 'max-width', group: 'layout', label: 'Max line width', value: 80,
+    min: 40, max: 500, step: 10 },
+
+  { key: 'keywordCase', id: 'keyword-case', group: 'casing', label: 'Keywords', value: 'upper', choices: CASES },
+  { key: 'functionCase', id: 'function-case', group: 'casing', label: 'Functions', value: 'upper', choices: CASES },
+  { key: 'datatypeCase', id: 'datatype-case', group: 'casing', label: 'Data types', value: 'upper', choices: CASES },
+  { key: 'identifierCase', id: 'identifier-case', group: 'casing', label: 'Identifiers', value: 'preserve',
+    choices: CASES.filter(([v]) => v !== 'capitalize') },
+
+  { key: 'breakKeywords', id: 'new-line-before-keyword', group: 'breaks', label: 'New line before keywords', value: true },
+  { key: 'breakJoins', id: 'break-joins', group: 'breaks', label: 'New line before JOINs', value: true },
+  { key: 'breakLogical', id: 'break-logical', group: 'breaks', label: 'Break before AND / OR', value: true },
+  { key: 'onNewLine', id: 'on-new-line', group: 'breaks', label: 'JOIN … ON on its own line', value: false },
+  { key: 'expandCase', id: 'expand-case', group: 'breaks', label: 'Expand CASE expressions', value: true },
+  { key: 'indentSubqueries', id: 'indent-subqueries', group: 'breaks', label: 'Indent subqueries & CTEs', value: true },
+  { key: 'blankLineBetweenStatements', id: 'blank-line-between-statements', group: 'breaks', label: 'Blank line between statements', value: true },
+
+  { key: 'stripComments', id: 'strip-comments', group: 'cleanup', label: 'Remove comments', value: false },
+  { key: 'trailingSemicolon', id: 'trailing-semicolon', group: 'cleanup', label: 'Ensure trailing semicolon', value: false },
+  { key: 'minifyKeepComments', id: 'minify-keep-comments', group: 'cleanup', label: 'Minify keeps comments', value: false }
+];
+
+const DEFAULT_OPTIONS = Object.fromEntries(OPTIONS.map((o) => [o.key, o.value]));
+
+/** Maps option keys to the DOM ids of their controls. */
+const CONTROLS = Object.fromEntries(OPTIONS.map((o) => [o.key, o.id]));
+
+const TEMPLATES = [
+  ['select', 'SELECT'], ['insert', 'INSERT'], ['update', 'UPDATE'],
+  ['delete', 'DELETE'], ['create-table', 'CREATE TABLE'], ['stored-proc', 'STORED PROC']
+];
+
+const PRESET_LABELS = {
+  standard: 'Standard',
+  expanded: 'Expanded',
+  compact: 'Compact',
+  river: 'River',
+  'comma-first': 'Comma-first'
+};
+
+const PRESETS = {
+  standard: {},
+  expanded: {
+    keywordLayout: 'stacked', listStyle: 'break', breakKeywords: true, breakJoins: true,
+    breakLogical: true, onNewLine: true, expandCase: true, indentSubqueries: true,
+    blankLineBetweenStatements: true
+  },
+  compact: {
+    keywordLayout: 'inline', listStyle: 'inline', breakLogical: false, onNewLine: false,
+    expandCase: false, indentSubqueries: false, blankLineBetweenStatements: false,
+    indentSize: '2'
+  },
+  river: {
+    keywordLayout: 'river', listStyle: 'break', breakKeywords: true, breakJoins: true,
+    breakLogical: true, onNewLine: false
+  },
+  'comma-first': {
+    keywordLayout: 'stacked', listStyle: 'break', commaPosition: 'leading',
+    breakKeywords: true, breakJoins: true, breakLogical: true
+  }
+};
+
+/* ------------------------------------------------------------------ *
+ * Helpers
+ * ------------------------------------------------------------------ */
+
+function applyCase(value, mode) {
+  switch (mode) {
+    case 'upper': return value.toUpperCase();
+    case 'lower': return value.toLowerCase();
+    case 'capitalize': return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+    default: return value;
+  }
+}
+
+/** Longest phrase from `phrases` matching the word tokens starting at `k`. */
+function matchPhrase(toks, k, phrases) {
+  let best = null;
+  for (const phrase of phrases) {
+    if (best && phrase.length <= best.length) continue;
+    let ok = true;
+    for (let d = 0; d < phrase.length; d++) {
+      const tk = toks[k + d];
+      if (!tk || tk.type !== 'word' || tk.upper !== phrase[d]) { ok = false; break; }
+    }
+    if (ok) best = phrase;
+  }
+  return best;
+}
+
+/* ------------------------------------------------------------------ *
+ * Control rendering
+ * ------------------------------------------------------------------ */
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"]/g, (ch) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+}
+
+function renderControl(o) {
+  const attrs = `id="${o.id}" data-option="${o.key}"`;
+
+  if (o.choices) {
+    const choices = o.choices
+      .map(([value, label]) =>
+        `<option value="${value}"${value === String(o.value) ? ' selected' : ''}>${label}</option>`)
+      .join('');
+    return `<label class="field"><span>${o.label}</span><select ${attrs}>${choices}</select></label>`;
+  }
+
+  if (typeof o.value === 'number') {
+    return `<label class="field"><span>${o.label}</span>` +
+      `<input type="number" ${attrs} min="${o.min}" max="${o.max}" step="${o.step}" value="${o.value}"></label>`;
+  }
+
+  return `<label class="toggle"><input type="checkbox" ${attrs}${o.value ? ' checked' : ''}>` +
+    `<span class="toggle__track"></span><span>${o.label}</span></label>`;
+}
+
+function renderGroup(group, title) {
+  const fields = OPTIONS.filter((o) => o.group === group).map(renderControl).join('');
+  return `<div class="group"><div class="group__title">${title}</div>${fields}</div>`;
+}
+
+function renderChips(entries, kind) {
+  return entries
+    .map(([value, label]) =>
+      `<button type="button" class="chip ${kind}-btn" data-${kind}="${value}">${label}</button>`)
+    .join('');
+}
+
 export const DevChefTool = {
   container: null,
   context: null,
   schemaData: null,
   selectedTable: null,
+  liveTimer: null,
 
-  keywords: [
-    'SELECT', 'FROM', 'WHERE', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE',
-    'CREATE', 'TABLE', 'ALTER', 'DROP', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'OUTER',
-    'ON', 'AS', 'AND', 'OR', 'NOT', 'IN', 'BETWEEN', 'LIKE', 'IS', 'NULL',
-    'ORDER', 'BY', 'GROUP', 'HAVING', 'LIMIT', 'OFFSET', 'UNION', 'ALL',
-    'DISTINCT', 'COUNT', 'SUM', 'AVG', 'MAX', 'MIN', 'CASE', 'WHEN', 'THEN',
-    'ELSE', 'END', 'IF', 'EXISTS', 'PROCEDURE', 'FUNCTION', 'BEGIN', 'DECLARE',
-    'EXEC', 'EXECUTE', 'RETURN', 'WITH', 'GO', 'USE', 'DATABASE'
-  ],
+  // Kept for the stats panel and for callers relying on the old property.
+  keywords: Array.from(KEYWORDS),
+
+  /* ---------------------------------------------------------------- *
+   * Lifecycle
+   * ---------------------------------------------------------------- */
 
   init(container, context) {
     this.container = container;
     this.context = context;
 
-    const inputEl = container.querySelector("#input");
-    const formatBtn = container.querySelector("#format-btn");
-    const minifyBtn = container.querySelector("#minify-btn");
-    const copyBtn = container.querySelector("#copy-btn");
-    const loadSchemaBtn = container.querySelector("#load-schema-btn");
-    const tableSelector = container.querySelector("#table-selector");
+    this.renderChrome();
+    this.restoreState();
+    this.bindEvents();
+    this.syncOptionState();
+    this.updateMeta();
+  },
 
-    inputEl?.addEventListener("input", (e) => {
-      context.setInput(e.target.value);
+  cleanup() {
+    clearTimeout(this.liveTimer);
+  },
+
+  /** Fills the template's slots from OPTIONS, PRESETS and TEMPLATES. */
+  renderChrome() {
+    const fill = (slot, html) => {
+      const el = this.container.querySelector(`[data-slot="${slot}"]`);
+      if (el) el.innerHTML = html;
+    };
+
+    fill('toolbar', OPTIONS.filter((o) => o.group === 'toolbar').map(renderControl).join(''));
+    fill('options', Object.entries(OPTION_GROUPS)
+      .filter(([, title]) => title)
+      .map(([group, title]) => renderGroup(group, title))
+      .join(''));
+    fill('presets', renderChips(
+      Object.keys(PRESETS).map((name) => [name, PRESET_LABELS[name] || name]), 'preset'));
+    fill('templates', renderChips(TEMPLATES, 'template'));
+  },
+
+  bindEvents() {
+    const container = this.container;
+
+    container.addEventListener('click', (event) => {
+      const btn = event.target.closest?.('button');
+      if (!btn) return;
+      if (btn.dataset.preset) return this.applyPreset(btn.dataset.preset);
+      if (btn.dataset.template) return this.insertTemplate(btn.dataset.template);
+
+      ({
+        'format-btn': () => this.formatSQL(),
+        'minify-btn': () => this.minifySQL(),
+        'copy-btn': () => this.copyOutput(),
+        'use-output-btn': () => this.useOutputAsInput(),
+        'clear-btn': () => this.clear(),
+        'load-schema-btn': () => this.loadFromJsonSchema(),
+        'reset-options-btn': () => this.applyOptions(DEFAULT_OPTIONS)
+      })[btn.id]?.();
     });
 
-    formatBtn?.addEventListener("click", () => this.formatSQL());
-    minifyBtn?.addEventListener("click", () => this.minifySQL());
-    copyBtn?.addEventListener("click", () => this.copyOutput());
-    loadSchemaBtn?.addEventListener("click", () => this.loadFromJsonSchema());
-    tableSelector?.addEventListener("change", () => this.selectTableFromSchema());
+    container.addEventListener('change', (event) => {
+      if (event.target.id === 'table-selector') this.selectTableFromSchema();
+      else if (event.target.dataset?.option) this.onOptionsChanged();
+    });
 
-    // Template buttons
-    const templateBtns = container.querySelectorAll(".template-btn");
-    templateBtns.forEach(btn => {
-      btn.addEventListener("click", () => {
-        const template = this.getTemplate(btn.dataset.template);
-        if (inputEl) inputEl.value = template;
-        context.setInput(template);
-      });
+    const inputEl = container.querySelector('#input');
+    inputEl?.addEventListener('input', () => {
+      this.context.setInput(inputEl.value);
+      this.updateMeta();
+      this.scheduleLiveFormat();
+    });
+
+    inputEl?.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
+        this.formatSQL();
+      }
+    });
+
+    container.querySelector('#options-panel')?.addEventListener('toggle', () => this.persistOptions());
+  },
+
+  /* ---------------------------------------------------------------- *
+   * Options
+   * ---------------------------------------------------------------- */
+
+  getOptions() {
+    const q = (id) => this.container?.querySelector(`#${id}`);
+    const opts = { ...DEFAULT_OPTIONS };
+
+    for (const [key, id] of Object.entries(CONTROLS)) {
+      const el = q(id);
+      if (!el) continue;
+      if (el.type === 'checkbox') opts[key] = el.checked;
+      else if (el.type === 'number') opts[key] = parseInt(el.value, 10) || DEFAULT_OPTIONS[key];
+      else opts[key] = el.value;
+    }
+
+    opts.indent = opts.indentSize === 'tab' ? '\t' : ' '.repeat(parseInt(opts.indentSize, 10) || 4);
+    opts.maxWidth = Math.max(40, Math.min(500, opts.maxWidth));
+    return opts;
+  },
+
+  setOptions(opts) {
+    for (const [key, id] of Object.entries(CONTROLS)) {
+      const el = this.container?.querySelector(`#${id}`);
+      if (!el || opts[key] === undefined) continue;
+      if (el.type === 'checkbox') el.checked = !!opts[key];
+      else el.value = String(opts[key]);
+    }
+  },
+
+  applyOptions(opts) {
+    this.setOptions(opts);
+    this.onOptionsChanged();
+  },
+
+  applyPreset(name) {
+    this.applyOptions({ ...DEFAULT_OPTIONS, ...(PRESETS[name] || {}) });
+  },
+
+  onOptionsChanged() {
+    this.syncOptionState();
+    this.persistOptions();
+    this.reformatIfLive();
+  },
+
+  /** Lights up the preset the controls currently match and counts overrides. */
+  syncOptionState() {
+    const current = this.getOptions();
+    const matches = (opts) => OPTIONS.every((o) => String(opts[o.key]) === String(current[o.key]));
+    const active = Object.keys(PRESETS).find((name) => matches({ ...DEFAULT_OPTIONS, ...PRESETS[name] }));
+
+    this.container?.querySelectorAll('.preset-btn').forEach((btn) => {
+      btn.setAttribute('aria-pressed', String(btn.dataset.preset === active));
+    });
+
+    const badge = this.container?.querySelector('#options-badge');
+    if (!badge) return;
+    const changed = OPTIONS.filter((o) => String(current[o.key]) !== String(o.value)).length;
+    badge.textContent = `${changed} changed`;
+    badge.hidden = changed === 0;
+  },
+
+  restoreState() {
+    const saved = loadToolState('sql-formatter') || {};
+    if (saved.options) this.setOptions({ ...DEFAULT_OPTIONS, ...saved.options });
+
+    const panel = this.container?.querySelector('#options-panel');
+    if (panel && typeof saved.optionsOpen === 'boolean') panel.open = saved.optionsOpen;
+  },
+
+  persistOptions() {
+    const opts = this.getOptions();
+    delete opts.indent;
+    saveToolState('sql-formatter', {
+      options: opts,
+      optionsOpen: !!this.container?.querySelector('#options-panel')?.open
     });
   },
 
-  loadFromJsonSchema() {
-    const jsonSchemaInput = this.container.querySelector("#json-schema-input");
-    const json = jsonSchemaInput?.value || '';
-
-    if (!json.trim()) {
-      alert('Please paste a JSON schema');
-      return;
-    }
-
-    try {
-      this.schemaData = JSON.parse(json);
-
-      if (!this.schemaData.tables || !Array.isArray(this.schemaData.tables)) {
-        alert('Invalid schema format. Expected: {"tables": [...]}');
-        return;
-      }
-
-      if (this.schemaData.tables.length === 0) {
-        alert('No tables found in schema');
-        return;
-      }
-
-      // Show table selector
-      const tableSelectorContainer = this.container.querySelector("#table-selector-container");
-      const tableSelector = this.container.querySelector("#table-selector");
-
-      tableSelectorContainer.style.display = 'block';
-      tableSelector.innerHTML = this.schemaData.tables.map((table, index) =>
-        `<option value="${index}">${table.schema || 'dbo'}.${table.name}</option>`
-      ).join('');
-
-      // Select first table
-      this.selectTableFromSchema();
-
-      alert(`Successfully loaded schema with ${this.schemaData.tables.length} table(s)! Templates will now use actual table/column names.`);
-
-    } catch (error) {
-      alert(`Error parsing JSON: ${error.message}`);
-      console.error(error);
-    }
+  reformatIfLive() {
+    if (!this.container?.querySelector('#live-format')?.checked) return;
+    if (this.readInput().trim()) this.formatSQL();
   },
 
-  selectTableFromSchema() {
-    const tableSelector = this.container.querySelector("#table-selector");
-    const selectedIndex = parseInt(tableSelector.value);
-
-    if (this.schemaData && this.schemaData.tables[selectedIndex]) {
-      this.selectedTable = this.schemaData.tables[selectedIndex];
-    }
+  scheduleLiveFormat() {
+    clearTimeout(this.liveTimer);
+    if (!this.container?.querySelector('#live-format')?.checked) return;
+    this.liveTimer = setTimeout(() => this.formatSQL(), 250);
   },
+
+  readInput() {
+    const inputEl = this.container?.querySelector('#input');
+    if (inputEl && inputEl.value) return inputEl.value;
+    return this.context?.getInput() || '';
+  },
+
+  /* ---------------------------------------------------------------- *
+   * Tokenizer
+   * ---------------------------------------------------------------- */
+
+  tokenize(sql, dialect) {
+    const backslashEscapes = dialect === 'mysql';
+    const hashComments = dialect === 'mysql';
+    const brackets = dialect === 'tsql' || dialect === 'standard';
+    const doubleQuoteIsString = dialect === 'mysql';
+
+    const RE = {
+      ws: /\s+/y,
+      lineComment: hashComments ? /(?:--|#)[^\n]*/y : /--[^\n]*/y,
+      blockComment: /\/\*[\s\S]*?(?:\*\/|$)/y,
+      string: backslashEscapes
+        ? /[NnEeBbXx]?'(?:\\[\s\S]|''|[^'])*'?/y
+        : /[NnEeBbXx]?'(?:''|[^'])*'?/y,
+      dquote: /"(?:""|[^"])*"?/y,
+      backtick: /`(?:``|[^`])*`?/y,
+      bracket: /\[[^\]]*\]?/y,
+      number: /(?:0[xX][0-9a-fA-F]+|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)/y,
+      variable: /(?:@@?[A-Za-z0-9_#$]+|:[A-Za-z_][A-Za-z0-9_]*|\$\d+|\?)/y,
+      operator: /(?:<=>|->>|::|->|>=|<=|<>|!=|!<|!>|\|\||\+=|-=|\*=|\/=|%=|&=|\|=|\^=|<<|>>|:=|[-+*/%=<>&|^~!])/y,
+      punct: /[.,;()[\]{}]/y,
+      word: /[A-Za-z_#-￿][A-Za-z0-9_$#-￿]*/y
+    };
+
+    const tokens = [];
+    let i = 0;
+
+    const tryMatch = (re, type) => {
+      re.lastIndex = i;
+      const m = re.exec(sql);
+      if (!m || m.index !== i) return false;
+      tokens.push({ type, value: m[0] });
+      i = re.lastIndex;
+      return true;
+    };
+
+    while (i < sql.length) {
+      const ch = sql[i];
+
+      if (tryMatch(RE.ws, 'ws')) continue;
+      if ((ch === '-' || ch === '#') && tryMatch(RE.lineComment, 'lcomment')) continue;
+      if (ch === '/' && tryMatch(RE.blockComment, 'bcomment')) continue;
+      if (tryMatch(RE.string, 'string')) continue;
+      if (ch === '"' && tryMatch(RE.dquote, doubleQuoteIsString ? 'string' : 'ident')) continue;
+      if (ch === '`' && tryMatch(RE.backtick, 'ident')) continue;
+      if (ch === '[' && brackets && tryMatch(RE.bracket, 'ident')) continue;
+      if (tryMatch(RE.number, 'number')) continue;
+      if (tryMatch(RE.word, 'word')) continue;
+      if ((ch === '@' || ch === ':' || ch === '$' || ch === '?') && tryMatch(RE.variable, 'variable')) continue;
+      if (tryMatch(RE.operator, 'operator')) continue;
+      if (tryMatch(RE.punct, 'punct')) continue;
+
+      // Unknown character - keep it verbatim so nothing is silently lost.
+      tokens.push({ type: 'other', value: ch });
+      i++;
+    }
+
+    return tokens;
+  },
+
+  /** Drops whitespace, records newline counts and pre-computes word metadata. */
+  prepareTokens(sql, o) {
+    const raw = this.tokenize(sql, o.dialect);
+    const toks = [];
+    let pendingNl = 0;
+
+    let pendingSpace = false;
+
+    for (const t of raw) {
+      if (t.type === 'ws') {
+        pendingNl += (t.value.match(/\n/g) || []).length;
+        pendingSpace = true;
+        continue;
+      }
+      if (o.stripComments && (t.type === 'lcomment' || t.type === 'bcomment')) continue;
+      t.nlBefore = pendingNl;
+      t.spaceBefore = pendingSpace;
+      pendingNl = 0;
+      pendingSpace = false;
+      if (t.type === 'word') t.upper = t.value.toUpperCase();
+      toks.push(t);
+    }
+
+    // A word is a function call when it is a known function, or when the author
+    // wrote "(" with no space after it (so "Users (a, b)" stays a column list).
+    for (let k = 0; k < toks.length; k++) {
+      const t = toks[k];
+      const paren = toks[k + 1];
+      if (!paren || paren.value !== '(') continue;
+      if (t.type === 'word' && SPACED_BEFORE_PAREN.has(t.upper)) continue;
+      if (t.type === 'word' && FUNCTIONS.has(t.upper)) { t.isCall = true; continue; }
+      if ((t.type === 'word' || t.type === 'ident') && !paren.spaceBefore) {
+        t.isCall = true;
+      }
+    }
+
+    return toks;
+  },
+
+  textOf(t, o) {
+    if (t.type !== 'word') return t.value;
+    const u = t.upper;
+    if (t.isCall && FUNCTIONS.has(u)) return applyCase(t.value, o.functionCase);
+    if (DATATYPES.has(u) && !KEYWORDS.has(u)) return applyCase(t.value, o.datatypeCase);
+    if (KEYWORDS.has(u)) return applyCase(t.value, o.keywordCase);
+    if (DATATYPES.has(u)) return applyCase(t.value, o.datatypeCase);
+    return applyCase(t.value, o.identifierCase);
+  },
+
+  /* ---------------------------------------------------------------- *
+   * Formatter
+   * ---------------------------------------------------------------- */
+
+  /** Approximate rendered width of tokens [from, to). */
+  measure(toks, from, to, o) {
+    let width = 0;
+    for (let k = from; k < to && k < toks.length; k++) {
+      width += this.textOf(toks[k], o).length + 1;
+    }
+    return width;
+  },
+
+  /** Index just past the matching ")" for the "(" at index `k`. */
+  findGroupEnd(toks, k) {
+    let depth = 0;
+    for (let j = k; j < toks.length; j++) {
+      if (toks[j].value === '(') depth++;
+      else if (toks[j].value === ')') {
+        depth--;
+        if (depth === 0) return j;
+      }
+    }
+    return toks.length;
+  },
+
+  /** Index where the clause starting at `k` ends (next clause, join, or terminator). */
+  findClauseEnd(toks, k) {
+    let depth = 0;
+    for (let j = k; j < toks.length; j++) {
+      const t = toks[j];
+      if (t.value === '(') { depth++; continue; }
+      if (t.value === ')') {
+        if (depth === 0) return j;
+        depth--;
+        continue;
+      }
+      if (depth > 0) continue;
+      if (t.value === ';') return j;
+      if (j > k && t.type === 'word' && (matchPhrase(toks, j, TOP_LEVEL) || matchPhrase(toks, j, JOINS))) {
+        return j;
+      }
+    }
+    return toks.length;
+  },
+
+  /** True when tokens [from, to) contain a "=" outside of any parentheses. */
+  hasTopLevelAssign(toks, from, to) {
+    let depth = 0;
+    for (let j = from; j < to && j < toks.length; j++) {
+      const v = toks[j].value;
+      if (v === '(') depth++;
+      else if (v === ')') depth--;
+      else if (depth === 0 && v === '=') return true;
+    }
+    return false;
+  },
+
+  computeRiverWidth(toks) {
+    let width = 6;
+    for (let k = 0; k < toks.length; k++) {
+      if (toks[k].type !== 'word') continue;
+      const p = matchPhrase(toks, k, TOP_LEVEL) || matchPhrase(toks, k, JOINS);
+      if (p) width = Math.max(width, p.join(' ').length);
+    }
+    return Math.min(width, 12);
+  },
+
+  formatSQLText(sql, o) {
+    const toks = this.prepareTokens(sql, o);
+    if (!toks.length) return '';
+
+    const unit = o.indent;
+    const river = o.keywordLayout === 'river' ? this.computeRiverWidth(toks) : 0;
+
+    const lines = [];
+    let line = '';
+    let prevText = '';
+    let noSpaceNext = false;
+    let betweenGuard = 0;
+
+    const makeFrame = (kind, indent, itemIndent, extra = {}) => ({
+      kind,
+      block: kind !== 'inline' && kind !== 'case',
+      indent,
+      itemIndent,
+      listIndent: itemIndent,
+      listBreak: false,
+      ...extra
+    });
+
+    let frames = [makeFrame('root', '', unit)];
+    const top = () => frames[frames.length - 1];
+
+    const flush = () => { lines.push(line.replace(/\s+$/, '')); line = ''; };
+    const startLine = (prefix) => {
+      if (line.trim() !== '') flush();
+      line = prefix;
+      prevText = '';
+      noSpaceNext = false;
+    };
+    const emit = (text, force) => {
+      const noSpace = force || noSpaceNext || line.trim() === '' ||
+        NO_SPACE_BEFORE.has(text) || NO_SPACE_AFTER.has(prevText);
+      line += (noSpace ? '' : ' ') + text;
+      prevText = text;
+      noSpaceNext = false;
+    };
+    const currentLineIndent = () => (line.match(/^[ \t]*/) || [''])[0];
+    const blankLine = () => {
+      if (line.trim() !== '') flush();
+      if (lines.length && lines[lines.length - 1] !== '') lines.push('');
+      line = '';
+      prevText = '';
+    };
+
+    /** A comment on its own line adopts the indent of the code that follows it. */
+    const commentIndent = (frame, k) => {
+      for (let j = k + 1; j < toks.length; j++) {
+        const next = toks[j];
+        if (next.type === 'lcomment' || next.type === 'bcomment') continue;
+        if (next.type === 'word' && (matchPhrase(toks, j, TOP_LEVEL) ||
+            ['BEGIN', 'END', 'GO', 'CREATE', 'ALTER', 'DROP', 'DECLARE', 'EXEC', 'IF']
+              .includes(next.upper))) {
+          return frame.indent;
+        }
+        return frame.itemIndent;
+      }
+      return frame.indent;
+    };
+
+    /** Decide whether a clause/group should break its comma list onto lines. */
+    const shouldBreakList = (from, to) => {
+      if (!o.breakKeywords) return false;
+      if (o.listStyle === 'inline') return false;
+      let hasComma = false;
+      let depth = 0;
+      for (let j = from; j < to; j++) {
+        if (toks[j].value === '(') depth++;
+        else if (toks[j].value === ')') depth--;
+        else if (toks[j].value === ',' && depth === 0) { hasComma = true; break; }
+      }
+      if (!hasComma) return false;
+      if (o.listStyle === 'break') return true;
+      return this.measure(toks, from, to, o) > o.maxWidth;
+    };
+
+    for (let k = 0; k < toks.length; k++) {
+      const t = toks[k];
+      const frame = top();
+
+      /* -- comments ------------------------------------------------ */
+      if (t.type === 'lcomment') {
+        // A comment that trailed code in the source stays on that code's line.
+        if (t.nlBefore === 0 && line.trim() === '' && lines.length) {
+          let li = lines.length - 1;
+          while (li >= 0 && lines[li] === '') li--;
+          if (li >= 0) { lines[li] += ' ' + t.value; continue; }
+        }
+        if (t.nlBefore > 0 || line.trim() === '') startLine(commentIndent(frame, k));
+        emit(t.value);
+        flush();
+        continue;
+      }
+      if (t.type === 'bcomment') {
+        if (t.nlBefore > 0 && o.breakKeywords) startLine(commentIndent(frame, k));
+        emit(t.value);
+        if (t.value.includes('\n')) flush();
+        continue;
+      }
+
+      /* -- statement terminators ----------------------------------- */
+      if (t.value === ';') {
+        emit(';', true);
+        flush();
+        // Close anything the statement left open, but stay inside BEGIN blocks.
+        while (frames.length > 1 && top().kind !== 'begin') frames.pop();
+        const home = top();
+        home.itemIndent = home.indent + unit;
+        home.listIndent = home.itemIndent;
+        home.listBreak = false;
+        const after = toks[k + 1];
+        const closesBlock = !after ||
+          (after.type === 'word' && (after.upper === 'END' || after.upper === 'GO')) ||
+          after.value === ')';
+        if (o.blankLineBetweenStatements && !closesBlock) blankLine();
+        continue;
+      }
+      if (t.type === 'word' && t.upper === 'GO' && !t.isCall) {
+        startLine('');
+        emit(this.textOf(t, o));
+        flush();
+        if (o.blankLineBetweenStatements) blankLine();
+        frames = [makeFrame('root', '', unit)];
+        continue;
+      }
+
+      /* -- parentheses --------------------------------------------- */
+      if (t.value === '(') {
+        const groupEnd = this.findGroupEnd(toks, k);
+        const inner = toks[k + 1];
+        const isSubquery = !!inner && inner.type === 'word' &&
+          (inner.upper === 'SELECT' || inner.upper === 'WITH');
+        const isCallParen = !!toks[k - 1] && !!toks[k - 1].isCall;
+
+        let block = false;
+        if (o.breakKeywords) {
+          if (isSubquery && o.indentSubqueries) block = true;
+          else if (o.listStyle !== 'inline' &&
+                   line.length + this.measure(toks, k, groupEnd + 1, o) > o.maxWidth &&
+                   shouldBreakList(k + 1, groupEnd)) {
+            block = true;
+          }
+        }
+
+        emit('(', isCallParen);
+
+        if (block) {
+          const openIndent = currentLineIndent();
+          const bodyIndent = openIndent + unit;
+          frames.push(makeFrame('paren-block', bodyIndent, bodyIndent, {
+            listBreak: shouldBreakList(k + 1, groupEnd) || isSubquery,
+            closeIndent: openIndent
+          }));
+          startLine(bodyIndent);
+        } else {
+          frames.push({ kind: 'inline', block: false, indent: '', itemIndent: '', listBreak: false });
+        }
+        continue;
+      }
+
+      if (t.value === ')') {
+        // Unwind any CASE frames left open inside this group.
+        while (frames.length > 1 && top().kind === 'case') frames.pop();
+        const closed = frames.length > 1 ? frames.pop() : null;
+        if (closed && closed.kind === 'paren-block') startLine(closed.closeIndent);
+        emit(')', true);
+        continue;
+      }
+
+      /* -- commas -------------------------------------------------- */
+      if (t.value === ',') {
+        if (!frame.listBreak) { emit(',', true); continue; }
+        if (o.commaPosition === 'leading') {
+          const base = frame.itemIndent;
+          const commaIndent = base.length >= 2 && !base.includes('\t')
+            ? base.slice(0, -2)
+            : base;
+          startLine(commaIndent);
+          emit(',', true);
+        } else {
+          emit(',', true);
+          startLine(frame.itemIndent);
+        }
+        continue;
+      }
+
+      if (t.type !== 'word') {
+        const text = this.textOf(t, o);
+        const before = prevText;
+        emit(text);
+        if ((text === '-' || text === '+') &&
+            (before === '' || UNARY_CONTEXT.has(before.toUpperCase()))) {
+          noSpaceNext = true;
+        }
+        continue;
+      }
+
+      /* -- CASE / WHEN / ELSE / END -------------------------------- */
+      if (t.upper === 'CASE' && o.expandCase && o.breakKeywords) {
+        const base = currentLineIndent();
+        emit(this.textOf(t, o));
+        frames.push({
+          kind: 'case', block: false, indent: base, itemIndent: base + unit, listBreak: false
+        });
+        continue;
+      }
+      if ((t.upper === 'WHEN' || t.upper === 'ELSE') && frame.kind === 'case') {
+        startLine(frame.itemIndent);
+        emit(this.textOf(t, o));
+        continue;
+      }
+      if (t.upper === 'END' && frame.kind === 'case') {
+        frames.pop();
+        startLine(frame.indent);
+        emit(this.textOf(t, o));
+        continue;
+      }
+
+      /* -- BEGIN / END blocks -------------------------------------- */
+      if (t.upper === 'BEGIN' && o.breakKeywords) {
+        const next = toks[k + 1];
+        const opensBlock = !next || next.type !== 'word' || !BEGIN_NON_BLOCK.has(next.upper);
+        startLine(frame.indent);
+        emit(this.textOf(t, o));
+        if (opensBlock) {
+          const body = frame.indent + unit;
+          const isTryCatch = next && next.type === 'word' &&
+            (next.upper === 'TRY' || next.upper === 'CATCH');
+          if (isTryCatch) { emit(this.textOf(next, o)); k++; }
+          frames.push(makeFrame('begin', body, body + unit, { closeIndent: frame.indent }));
+          startLine(body);
+        }
+        continue;
+      }
+      if (t.upper === 'END' && frame.kind === 'begin' && o.breakKeywords) {
+        frames.pop();
+        startLine(frame.closeIndent);
+        emit(this.textOf(t, o));
+        const next = toks[k + 1];
+        if (next && next.type === 'word' && (next.upper === 'TRY' || next.upper === 'CATCH')) {
+          emit(this.textOf(next, o));
+          k++;
+        }
+        continue;
+      }
+
+      /* -- clause and join keywords -------------------------------- */
+      if (frame.block && o.breakKeywords) {
+        const joinPhrase = o.breakJoins ? matchPhrase(toks, k, JOINS) : null;
+        const clausePhrase = joinPhrase ? null : matchPhrase(toks, k, TOP_LEVEL);
+        const phrase = joinPhrase || clausePhrase;
+
+        if (phrase) {
+          const words = toks.slice(k, k + phrase.length).map((w) => this.textOf(w, o)).join(' ');
+          const canonical = phrase.join(' ');
+          const body = k + phrase.length;
+          const clauseEnd = this.findClauseEnd(toks, body);
+
+          // "SET NOCOUNT ON" / "SET @x = 1" are statements, not UPDATE column lists.
+          const isColumnSet = canonical !== 'SET' ||
+            (toks[body] && toks[body].type !== 'variable' && this.hasTopLevelAssign(toks, body, clauseEnd));
+
+          // Joins keep their table on the keyword line; they sit with the
+          // FROM list in stacked layout and in the keyword column otherwise.
+          const stacked = o.keywordLayout === 'stacked';
+          const isMergeBranch = canonical === 'WHEN MATCHED' || canonical === 'WHEN NOT MATCHED';
+          if (isMergeBranch) {
+            while (frames.length > 1 && top().kind === 'merge') frames.pop();
+          }
+          const home = top();
+          const keywordIndent = joinPhrase && stacked ? home.listIndent : home.indent;
+
+          startLine(keywordIndent);
+
+          if (o.keywordLayout === 'river') {
+            line = keywordIndent + words.padStart(river);
+            prevText = words;
+            noSpaceNext = false;
+            home.itemIndent = keywordIndent + ' '.repeat(river + 1);
+            if (!joinPhrase) home.listIndent = home.itemIndent;
+          } else {
+            emit(words);
+            home.itemIndent = keywordIndent + unit;
+            if (!joinPhrase) home.listIndent = home.itemIndent;
+            if (stacked && !joinPhrase && !isMergeBranch && isColumnSet && clauseEnd > body) {
+              startLine(home.itemIndent);
+            }
+          }
+
+          home.listBreak = isColumnSet && !isMergeBranch &&
+            (LIST_CLAUSES.has(canonical) || !!joinPhrase) &&
+            shouldBreakList(body, clauseEnd);
+
+          // A MERGE branch owns the statement that follows it, so indent it.
+          if (isMergeBranch) {
+            const branchIndent = home.indent + unit;
+            frames.push(makeFrame('merge', branchIndent, branchIndent + unit));
+          }
+
+          k += phrase.length - 1;
+          continue;
+        }
+
+        if (t.upper === 'ON' && o.onNewLine) {
+          startLine(frame.itemIndent);
+          emit(this.textOf(t, o));
+          continue;
+        }
+
+        if ((t.upper === 'AND' || t.upper === 'OR') && o.breakLogical) {
+          if (t.upper === 'AND' && betweenGuard > 0) {
+            betweenGuard--;
+          } else {
+            startLine(frame.itemIndent);
+            emit(this.textOf(t, o));
+            continue;
+          }
+        }
+      }
+
+      if (t.upper === 'BETWEEN') betweenGuard++;
+
+      emit(this.textOf(t, o));
+    }
+
+    if (line.trim() !== '') flush();
+
+    // Trim blank lines only - leading indentation matters in river layout.
+    let result = lines
+      .join('\n')
+      .replace(/[ \t]+$/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/^\n+/, '')
+      .replace(/\s+$/, '');
+
+    if (o.trailingSemicolon && result && !/[;]\s*$/.test(result) && !/\bGO\s*$/i.test(result)) {
+      result += ';';
+    }
+
+    return result;
+  },
+
+  minifySQLText(sql, o) {
+    const toks = this.prepareTokens(sql, { ...o, stripComments: !o.minifyKeepComments });
+    let out = '';
+    let prev = '';
+
+    for (const t of toks) {
+      if (t.type === 'lcomment') {
+        // A line comment must terminate with a newline or it swallows the rest.
+        out += (out && !out.endsWith('\n') ? ' ' : '') + t.value + '\n';
+        prev = '';
+        continue;
+      }
+      const text = this.textOf(t, o);
+      const noSpace = !out || out.endsWith('\n') ||
+        NO_SPACE_BEFORE.has(text) || NO_SPACE_AFTER.has(prev) ||
+        /[-+*/%=<>&|^~!(,;]$/.test(prev) || /^[-+*/%=<>&|^~!]/.test(text);
+      out += (noSpace ? '' : ' ') + text;
+      prev = text;
+    }
+
+    return out.trim();
+  },
+
+  /* ---------------------------------------------------------------- *
+   * Actions
+   * ---------------------------------------------------------------- */
 
   formatSQL() {
-    const sql = this.context.getInput();
-    if (!sql.trim()) return;
-
-    const indentSize = this.container.querySelector("#indent-size")?.value || "4";
-    const keywordCase = this.container.querySelector("#keyword-case")?.value || "upper";
-    const newLineBeforeKeyword = this.container.querySelector("#new-line-before-keyword")?.checked || false;
-
-    const indent = indentSize === "tab" ? "\t" : " ".repeat(parseInt(indentSize));
-
-    let formatted = sql.trim();
-
-    // Apply keyword case
-    if (keywordCase !== 'preserve') {
-      this.keywords.forEach(keyword => {
-        const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-        formatted = formatted.replace(regex, match => {
-          return keywordCase === 'upper' ? match.toUpperCase() : match.toLowerCase();
-        });
-      });
-    }
-
-    // Add new lines before major keywords
-    if (newLineBeforeKeyword) {
-      const majorKeywords = ['SELECT', 'FROM', 'WHERE', 'JOIN', 'INNER JOIN', 'LEFT JOIN',
-                             'RIGHT JOIN', 'ORDER BY', 'GROUP BY', 'HAVING', 'UNION'];
-      majorKeywords.forEach(keyword => {
-        const regex = new RegExp(`\\s+(${keyword})\\s+`, 'gi');
-        formatted = formatted.replace(regex, `\n${keyword} `);
-      });
-    }
-
-    // Basic indentation
-    let level = 0;
-    const lines = formatted.split('\n');
-    formatted = lines.map(line => {
-      line = line.trim();
-      if (!line) return '';
-
-      // Decrease indent for closing keywords
-      if (/^(END|ELSE)/i.test(line)) {
-        level = Math.max(0, level - 1);
-      }
-
-      const indented = indent.repeat(level) + line;
-
-      // Increase indent for opening keywords
-      if (/^(BEGIN|IF|CASE|WHEN)/i.test(line)) {
-        level++;
-      }
-
-      return indented;
-    }).join('\n');
-
-    this.context.setOutput(formatted);
-    this.updateStats(sql, formatted);
+    this.transform((sql, o) => this.formatSQLText(sql, o), (sql) => sql);
   },
 
   minifySQL() {
-    const sql = this.context.getInput();
+    this.transform((sql, o) => this.minifySQLText(sql, o), (sql) => sql.replace(/\s+/g, ' ').trim());
+  },
+
+  /** Read, transform, publish, measure - shared by Format and Minify. */
+  transform(run, fallback) {
+    clearTimeout(this.liveTimer);
+
+    const sql = this.readInput();
     if (!sql.trim()) return;
 
-    // Remove extra whitespace and newlines
-    const minified = sql
-      .replace(/\s+/g, ' ')
-      .replace(/\s*,\s*/g, ',')
-      .replace(/\s*\(\s*/g, '(')
-      .replace(/\s*\)\s*/g, ')')
-      .replace(/\s*=\s*/g, '=')
-      .trim();
+    let result;
+    try {
+      result = run(sql, this.getOptions());
+    } catch (error) {
+      console.error('SQL transform failed:', error);
+      result = fallback(sql);
+    }
 
-    this.context.setOutput(minified);
-    this.updateStats(sql, minified);
+    this.context.setOutput(result);
+    this.updateStats(sql, result);
+    this.updateMeta();
+  },
+
+  useOutputAsInput() {
+    const output = this.context.getOutput();
+    if (!output) return;
+    this.setInputValue(output);
+  },
+
+  insertTemplate(type) {
+    const template = this.getTemplate(type);
+    if (!template) return;
+    this.setInputValue(template);
+    this.reformatIfLive();
+  },
+
+  clear() {
+    this.setInputValue('');
+    this.context.setOutput('');
+    const statsEl = this.container?.querySelector('#stats');
+    if (statsEl) statsEl.innerHTML = '';
+    this.updateMeta();
+  },
+
+  setInputValue(value) {
+    const inputEl = this.container?.querySelector('#input');
+    if (inputEl) inputEl.value = value;
+    this.context.setInput(value);
+    this.updateMeta();
+  },
+
+  /** Line and character counts next to each pane title. */
+  updateMeta() {
+    const describe = (text) => {
+      if (!text) return '';
+      const lines = text.split('\n').length;
+      return `${lines} ${lines === 1 ? 'line' : 'lines'} · ${text.length} chars`;
+    };
+
+    for (const [metaId, editorId] of [['#input-meta', '#input'], ['#output-meta', '#output']]) {
+      const metaEl = this.container?.querySelector(metaId);
+      if (metaEl) metaEl.textContent = describe(this.container?.querySelector(editorId)?.value || '');
+    }
   },
 
   updateStats(original, formatted) {
-    const statsEl = this.container.querySelector("#stats");
+    const statsEl = this.container?.querySelector('#stats');
     if (!statsEl) return;
 
-    const originalLines = original.split('\n').length;
-    const formattedLines = formatted.split('\n').length;
-    const originalChars = original.length;
-    const formattedChars = formatted.length;
+    const options = this.getOptions();
+    const toks = this.prepareTokens(original, { ...options, stripComments: true });
+    let keywords = 0;
+    let statements = 0;
+    for (const t of toks) {
+      if (t.type === 'word' && KEYWORDS.has(t.upper)) keywords++;
+      if (t.value === ';') statements++;
+    }
+    if (!statements && toks.length) statements = 1;
 
-    // Count keywords
-    let keywordCount = 0;
-    this.keywords.forEach(keyword => {
-      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-      const matches = original.match(regex);
-      if (matches) keywordCount += matches.length;
+    const longest = formatted.split('\n').reduce((m, l) => Math.max(m, l.length), 0);
+    const delta = formatted.length - original.length;
+
+    const stats = [
+      ['Lines', `${original.split('\n').length} → ${formatted.split('\n').length}`],
+      ['Characters', `${original.length} → ${formatted.length}`],
+      ['Keywords', keywords],
+      ['Statements', statements],
+      ['Longest line', longest, longest > options.maxWidth ? 'warn' : ''],
+      ['Change', `${delta > 0 ? '+' : ''}${delta}`]
+    ];
+
+    statsEl.innerHTML = stats.map(([label, value, tone]) =>
+      `<span class="stat${tone ? ` stat--${tone}` : ''}">` +
+      `<span class="stat-label">${label}</span><span class="stat-value">${value}</span></span>`
+    ).join('');
+  },
+
+  copyOutput() {
+    const output = this.context.getOutput();
+    if (!output) return;
+
+    const copyBtn = this.container?.querySelector('#copy-btn');
+    copyToClipboard(output, {
+      onSuccess: () => this.flashButton(copyBtn, '✓ Copied'),
+      onError: () => this.flashButton(copyBtn, '✗ Failed')
     });
+  },
 
-    statsEl.innerHTML = `
-      <div class="stat-item">
-        <span class="stat-label">Lines</span>
-        <span class="stat-value">${originalLines} → ${formattedLines}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Characters</span>
-        <span class="stat-value">${originalChars} → ${formattedChars}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Keywords</span>
-        <span class="stat-value">${keywordCount}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">Change</span>
-        <span class="stat-value">${formattedChars > originalChars ? '+' : ''}${formattedChars - originalChars}</span>
-      </div>
-    `;
+  flashButton(button, message) {
+    if (!button) return;
+    const original = button.dataset.label || button.textContent;
+    button.dataset.label = original;
+    button.textContent = message;
+    setTimeout(() => { button.textContent = original; }, 1600);
+  },
+
+  /* ---------------------------------------------------------------- *
+   * JSON schema + templates
+   * ---------------------------------------------------------------- */
+
+  loadFromJsonSchema() {
+    const json = this.container.querySelector('#json-schema-input')?.value || '';
+    if (!json.trim()) return this.setSchemaStatus('Paste a JSON schema first.', 'error');
+
+    let parsed;
+    try {
+      parsed = JSON.parse(json);
+    } catch (error) {
+      return this.setSchemaStatus(`Could not parse JSON: ${error.message}`, 'error');
+    }
+
+    if (!Array.isArray(parsed.tables) || parsed.tables.length === 0) {
+      return this.setSchemaStatus('Expected {"tables": [...]} with at least one table.', 'error');
+    }
+
+    this.schemaData = parsed;
+
+    const tableSelector = this.container.querySelector('#table-selector');
+    if (tableSelector) {
+      tableSelector.innerHTML = parsed.tables
+        .map((table, index) => `<option value="${index}">${escapeHtml(`${table.schema || 'dbo'}.${table.name}`)}</option>`)
+        .join('');
+      tableSelector.hidden = false;
+    }
+
+    this.selectTableFromSchema();
+    this.setSchemaStatus(
+      `Loaded ${parsed.tables.length} table(s) - starter statements now use real names.`, 'success');
+  },
+
+  selectTableFromSchema() {
+    const index = parseInt(this.container.querySelector('#table-selector')?.value, 10);
+    const table = this.schemaData?.tables?.[index];
+    if (table) this.selectedTable = table;
+  },
+
+  setSchemaStatus(message, type) {
+    const statusEl = this.container?.querySelector('#schema-status');
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.dataset.type = type;
   },
 
   getTemplate(type) {
-    // If schema is loaded, generate schema-aware templates
     if (this.selectedTable) {
       return this.getSchemaAwareTemplate(type);
     }
 
-    // Otherwise, return generic templates
     const templates = {
       'select': `SELECT
     column1,
@@ -586,7 +1750,6 @@ GO`
     const tableName = `[${table.schema || 'dbo'}].[${table.name}]`;
     const columns = table.columns || [];
 
-    // Get first few non-identity columns for examples
     const dataColumns = columns.filter(c => !c.isIdentity && !c.isPrimaryKey).slice(0, 3);
     const allColumns = columns.slice(0, 5);
     const pkColumn = columns.find(c => c.isPrimaryKey) || { name: 'Id' };
@@ -680,50 +1843,36 @@ GO`;
     return '';
   },
 
-  copyOutput() {
-    const output = this.context.getOutput();
-    if (output) {
-      navigator.clipboard.writeText(output).then(() => {
-        const copyBtn = this.container.querySelector("#copy-btn");
-        const originalText = copyBtn.textContent;
-        copyBtn.textContent = "✓ Copied!";
-        setTimeout(() => {
-          copyBtn.textContent = originalText;
-        }, 2000);
-      });
-    }
-  },
-
-  onInput(input, context) {
-    return { output: "" };
+  onInput() {
+    return { output: '' };
   }
 };
 
 // Standalone mode initialization
 if (typeof window !== 'undefined' && !window.DevChef) {
   document.addEventListener('DOMContentLoaded', () => {
-    const isStandalone = !document.querySelector('#workspace');
+    const template = document.querySelector('#tool-ui');
+    if (!template || document.querySelector('#workspace')) return;
 
-    if (isStandalone) {
-      const standaloneContext = {
-        input: "",
-        output: "",
-        setInput(val) { this.input = val; },
-        setOutput(val) {
-          this.output = val;
-          const outputEl = document.querySelector("#output");
-          if (outputEl) outputEl.value = val;
-        },
-        getInput() { return this.input; },
-        getOutput() { return this.output; }
-      };
+    const standaloneContext = {
+      input: '',
+      output: '',
+      setInput(value) { this.input = value; },
+      setOutput(value) {
+        this.output = value;
+        const outputEl = document.querySelector('#output');
+        if (outputEl) outputEl.value = value;
+      },
+      getInput() { return this.input; },
+      getOutput() { return this.output; }
+    };
 
-      const template = document.querySelector('#tool-ui');
-      if (template) {
-        document.body.innerHTML = template.innerHTML;
-        DevChefTool.init(document.body, standaloneContext);
-      }
-    }
+    // Replacing body content detaches the in-body <style> tags, so keep
+    // references and put them back afterwards.
+    const styles = Array.from(document.body.querySelectorAll('style'));
+    document.body.innerHTML = template.innerHTML;
+    styles.forEach((style) => document.body.appendChild(style));
+    DevChefTool.init(document.body, standaloneContext);
   });
 }
 </script>

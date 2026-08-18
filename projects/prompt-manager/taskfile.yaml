@@ -1,0 +1,42 @@
+version: '3'
+
+vars:
+  AHK: '{{.AHK | default "C:/Program Files/AutoHotkey/AutoHotkey.exe"}}'
+  APP: PromptManager.ahk
+  VALIDATOR: ValidatePromptManager.ahk
+  VALIDATOR_SHIM: ValidatePrompts.ahk
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  run:
+    desc: Launch Prompt Manager
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -Command "& '{{.AHK}}' '.\{{.APP}}'"
+
+  validate:
+    desc: Run full Prompt Manager health check
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -Command "& '{{.AHK}}' '.\{{.VALIDATOR}}' /cli"
+
+  validate:prompts:
+    desc: Compatibility alias for the old prompt-only validator name
+    cmds:
+      - task validate
+
+  syntax:
+    desc: Parse AHK scripts without launching the GUI
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -Command "& '{{.AHK}}' /ErrorStdOut /iLib NUL '.\{{.APP}}'"
+      - powershell -NoProfile -ExecutionPolicy Bypass -Command "& '{{.AHK}}' /ErrorStdOut /iLib NUL '.\{{.VALIDATOR}}'"
+      - powershell -NoProfile -ExecutionPolicy Bypass -Command "& '{{.AHK}}' /ErrorStdOut /iLib NUL '.\{{.VALIDATOR_SHIM}}'"
+
+  test:
+    desc: Run syntax checks and full health check
+    cmds:
+      - task syntax
+      - task validate

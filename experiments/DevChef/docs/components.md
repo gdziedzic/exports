@@ -19,6 +19,7 @@
 4. [Migration Guide](#migration-guide)
 5. [Best Practices](#best-practices)
 6. [Examples](#examples)
+7. [Tool Shell Helpers](#tool-shell-helpers)
 
 ---
 
@@ -705,6 +706,161 @@ export const DevChefTool = {
 
 ---
 
+## Tool Shell Helpers
+
+`core/tool-shell.js` provides optional helpers for tools that follow the common text input, actions, status, and output pattern. It does not replace the Web Components. It wires them together so new tools do not need to repeat copy, clear, import, export, examples, validation, and persisted settings code.
+
+### Standard Markup
+
+Use the default IDs when possible:
+
+| Purpose | Default selector |
+|---------|------------------|
+| Input panel | `#input` |
+| Output panel | `#output` |
+| Status | `#status` |
+| Process action | `#process-btn` |
+| Copy action | `#copy-btn` |
+| Clear action | `#clear-btn` |
+| Reset action | `#reset-btn` |
+| File import | `#import-file` |
+| Export action | `#export-btn` |
+| Examples | `[data-example-id]` |
+
+### Minimal Tool
+
+```html
+<template id="tool-ui">
+  <div class="tool-container tool-shell">
+    <div class="tool-section">
+      <label class="section-label">Input</label>
+      <tool-textarea id="input" rows="8" monospace></tool-textarea>
+    </div>
+
+    <div class="tool-section tool-shell-actions">
+      <div class="tool-shell-action-row">
+        <tool-button id="process-btn" variant="primary" label="Format"></tool-button>
+        <tool-button id="copy-btn" variant="secondary" label="Copy Result"></tool-button>
+        <tool-button id="clear-btn" variant="secondary" label="Clear"></tool-button>
+      </div>
+    </div>
+
+    <div class="tool-section">
+      <tool-status id="status"></tool-status>
+    </div>
+
+    <div class="tool-section">
+      <label class="section-label">Output</label>
+      <tool-textarea id="output" rows="8" monospace readonly></tool-textarea>
+    </div>
+  </div>
+</template>
+
+<script type="module">
+import { createToolShell } from '../core/tool-shell.js';
+
+export const DevChefTool = {
+  init(container, context) {
+    this.shell = createToolShell(container, context, {
+      validate(input) {
+        return input.trim() ? true : 'Enter input before processing.';
+      },
+      process(input) {
+        return input.trim();
+      }
+    });
+  },
+  cleanup() {
+    this.shell?.cleanup();
+  }
+};
+</script>
+```
+
+### Generated Template
+
+For straightforward tools, `createToolShellTemplate()` can generate the repeated markup:
+
+```js
+import { createToolShell, createToolShellTemplate } from '../core/tool-shell.js';
+
+const template = document.querySelector('#tool-ui');
+template.innerHTML = createToolShellTemplate({
+  title: 'Line Sorter',
+  description: 'Sort text lines.',
+  inputPlaceholder: 'Paste lines...',
+  examples: [{ id: 'names', label: 'Names', input: 'Zoe\nAda' }],
+  includeImport: true
+});
+```
+
+### Persisted Settings
+
+Pass settings descriptors and a `toolId` or `persistKey`. The shell reads values during initialization and saves them on each setting change.
+
+```js
+this.shell = createToolShell(container, context, {
+  toolId: 'line-sorter',
+  settings: [
+    { key: 'caseSensitive', selector: '#case-sensitive', defaultValue: false },
+    { key: 'sortOrder', selector: '#sort-order', defaultValue: 'asc' }
+  ],
+  process(input, shell) {
+    const settings = shell.readSettingsFromControls();
+    return sortLines(input, settings);
+  }
+});
+```
+
+### Validation Results
+
+`validate(input, shell)` may return:
+
+- `true`, `null`, or `undefined` for valid input.
+- `false` for a generic error.
+- A string for one validation message.
+- An array of strings for multiple messages.
+- `{ valid, message, messages, type }` for custom status behavior.
+
+### Examples, Presets, Import, And Export
+
+Example buttons should have `data-example-id` values that match `options.examples` or `options.presets`. File import uses `tool-file-input` and loads the first file into the input. Export writes the current output using `downloadAsFile()` from `core/tool-utils.js`.
+
+`core/tool-presets.js` normalizes examples so tools can accept either catalog-only strings or runnable objects:
+
+- `"Format an API payload"` creates a searchable/catalog example label.
+- `{ id, label, input }` loads sample input.
+- `{ id, label, input, output }` loads sample input and expected output.
+- `{ id, label, input, settings }` also applies shell settings by descriptor key.
+- `{ id, label, controls }` applies arbitrary controls by selector, such as `{ "#sort-keys": true }`.
+
+```js
+createToolShell(container, context, {
+  examples: [
+    'Format an API payload',
+    {
+      id: 'basic',
+      label: 'Basic',
+      input: 'hello',
+      output: 'HELLO'
+    },
+    {
+      id: 'sorted-json',
+      label: 'Sorted JSON',
+      input: '{"z":1,"a":2}',
+      settings: { indent: '2' },
+      controls: { '#sort-keys': true }
+    }
+  ],
+  exportFilename: 'result.txt',
+  exportMimeType: 'text/plain'
+});
+```
+
+Catalog-only examples are useful in `tools/index.json` for search and generated docs. Runnable examples are best placed in the tool module or template so they can include realistic sample input, output, and settings.
+
+---
+
 ## FAQ
 
 **Q: Do I need to import components in every tool?**
@@ -728,10 +884,12 @@ A: Open `tools/component-demo.html` in your browser to see all components in act
 
 - **Component Demo:** [tools/component-demo.html](../tools/component-demo.html)
 - **Template Tool:** [tools/_template.html](../tools/_template.html)
+- **Tool Shell Demo:** [tools/tool-shell-demo.html](../tools/tool-shell-demo.html)
 - **Shared Styles:** [tools/shared-styles.css](../tools/shared-styles.css)
 - **Component Source:** [core/components.js](../core/components.js)
+- **Tool Shell Source:** [core/tool-shell.js](../core/tool-shell.js)
 
 ---
 
-**Last Updated:** 2025-12-29
+**Last Updated:** 2026-04-23
 **Questions?** Check the component demo or review migrated tools for examples.

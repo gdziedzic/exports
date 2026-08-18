@@ -69,6 +69,9 @@ Tools are organized into categories:
 - `quick-calc.html` - Quick calculator
 - `fix-parser.html` - FIX protocol parser
 
+### 🧩 DevChef Reference Tools
+- `tool-shell-demo.html` - Reference implementation for `core/tool-shell.js`
+
 ## 🏗️ Tool Structure
 
 Every DevChef tool follows this structure:
@@ -139,6 +142,8 @@ if (typeof window !== 'undefined' && !window.DevChef) {
 </body>
 </html>
 ```
+
+For new text-in/text-out tools, prefer the reusable shell in `core/tool-shell.js` before writing custom copy, clear, import/export, example, validation, and settings wiring. See `tool-shell-demo.html` for a complete reference.
 
 ## 📝 Manifest Fields
 
@@ -225,15 +230,26 @@ Use the template above and implement your tool logic.
 
 ### Step 3: Register in Index
 
-Add your tool filename to `tools/index.json`:
+Add your tool metadata to `tools/index.json`:
 
 ```json
 [
-  "existing-tool.html",
-  "another-tool.html",
-  "my-awesome-tool.html"
+  {
+    "file": "my-awesome-tool.html",
+    "id": "my-awesome-tool",
+    "name": "My Awesome Tool",
+    "category": "Developer Tools",
+    "tags": ["api", "json"],
+    "aliases": ["awesome helper", "api helper"],
+    "examples": ["Format an API payload"],
+    "maturity": "beta",
+    "lastUpdated": "2026-04-23",
+    "testCoverage": "manual-smoke"
+  }
 ]
 ```
+
+Legacy filename-only entries still load, but rich metadata is required for discoverability, search boosting, diagnostics, and generated docs. Run `npm run generate:tools-readme` after metadata changes.
 
 ### Step 4: Test
 
@@ -287,6 +303,29 @@ Tools should work on different screen sizes:
 - Validate user input
 - Provide example data
 - Clean up in `cleanup()` method
+
+### Examples And Presets
+
+Use two levels of examples:
+
+- `tools/index.json` `examples` should stay short and searchable, such as `"Format an API payload"` or `"Decode base64 payload"`.
+- Tool runtime presets should use rich objects with realistic data:
+
+```js
+createToolShell(container, context, {
+  examples: [
+    {
+      id: 'api-payload',
+      label: 'API Payload',
+      input: '{"status":"ok","items":[{"id":1}]}',
+      settings: { indent: '2' },
+      controls: { '#sort-keys': true }
+    }
+  ]
+});
+```
+
+`core/tool-presets.js` normalizes example strings and rich preset objects. `core/tool-shell.js` applies runnable examples to input, output, settings, and selector-based controls.
 
 ### ❌ DON'T
 
@@ -442,3 +481,47 @@ Same as DevChef main project.
 **Happy Tool Building!** 🎉
 
 For questions or issues, refer to the main DevChef documentation.
+
+<!-- devchef-tools:start -->
+## Tool Metadata Index
+
+Generated from `tools/index.json`. Run `npm run generate:tools-readme` after changing tool metadata.
+
+| Tool | Category | Tags | Aliases | Maturity | Coverage | Last Updated | Examples |
+|------|----------|------|---------|----------|----------|--------------|----------|
+| KQL Builder | Azure | kql, azure, application-insights, query | kusto, kusto query, app insights query | stable | e2e | 2026-04-23 | Build Application Insights query<br>Format KQL pipeline |
+| Timestamp Converter | Converters | time, date, unix, epoch, converter | unix time, epoch converter, timestamp | stable | manual-smoke | 2026-04-23 | Convert Unix timestamp<br>Use current time |
+| JWT Decoder | Crypto | jwt, token, decode, security | json web token, bearer token, decode jwt | stable | manual-smoke | 2026-04-23 | Inspect JWT claims<br>Decode token header |
+| CSV ⇄ JSON | Data | csv, json, convert, data | csv to json, json to csv, table converter | stable | manual-smoke | 2026-04-23 | Convert CSV rows to JSON<br>Export JSON as CSV |
+| Data Pipeline Studio | Data | data, pipeline, workflow, transform | pipeline builder, data workflow, etl studio | beta | manual-smoke | 2026-04-23 | Build multi-step data pipeline<br>Chain transformations |
+| JSON Formatter | Data | json, format, validate, data | pretty json, json validator, minify json | stable | manual-smoke | 2026-04-23 | Format JSON payload<br>Validate malformed JSON |
+| Connection String | Database | database, connection-string, config, credentials | dsn builder, connection string, database url | beta | manual-smoke | 2026-04-23 | Build SQL Server connection string<br>Assemble Postgres URL |
+| JSON Schema Loader | Database | json, schema, database, loader | schema loader, json schema, schema import | beta | manual-smoke | 2026-04-23 | Load JSON schema<br>Map schema fields |
+| SQL Data Gen | Database | sql, data, generator, fixtures | seed data, insert generator, mock sql data | beta | manual-smoke | 2026-04-23 | Generate INSERT statements<br>Create test rows |
+| SQL Emmet ULTIMATE | Database | sql, emmet, database, generation | sql emmet, query shorthand, sql generator | beta | manual-smoke | 2026-04-23 | Expand SQL shorthand<br>Generate query skeleton |
+| SQL Formatter | Database | sql, database, format, query | format sql, sql beautifier, query formatter | stable | manual-smoke | 2026-04-23 | Format SELECT query<br>Normalize SQL indentation |
+| SQL Join Helper | Database | sql, join, database, query | join builder, sql joins, join helper | beta | manual-smoke | 2026-04-23 | Build INNER JOIN<br>Explain join type |
+| T-SQL Snippets | Database | tsql, sql-server, snippets, database | sql snippets, t-sql reference, sql server snippets | stable | manual-smoke | 2026-04-23 | Find T-SQL maintenance snippet<br>Copy query pattern |
+| Table Schema | Database | schema, table, database, ddl | schema builder, table ddl, create table | beta | manual-smoke | 2026-04-23 | Generate table schema<br>Draft CREATE TABLE columns |
+| Color Picker & Themes | Design | color, design, palette, theme | hex picker, rgb converter, theme colors | beta | manual-smoke | 2026-04-23 | Pick a color<br>Convert HEX to RGB |
+| Quick Calc | Dev | calculator, math, quick, numbers | calc, calculator, quick math | beta | manual-smoke | 2026-04-23 | Evaluate expression<br>Calculate percentages |
+| Config Manager | DevChef | devchef, settings, configuration, storage | settings manager, tool config | beta | manual-smoke | 2026-04-23 | Review enabled tools<br>Manage DevChef configuration |
+| HTML Converter | DevChef | html, entities, escape, unescape | html entities, escape html, unescape html | stable | manual-smoke | 2026-04-23 | Encode HTML entities<br>Decode pasted markup |
+| AI Prompt Builder | Developer Tools | ai, prompt, llm, template, chatgpt | prompt builder, llm prompt, chatgpt prompt | stable | e2e | 2026-04-23 | Build structured prompt<br>Save reusable prompt template |
+| FIX Parser | Developer Tools | fix, parser, finance, protocol, trading | fix decoder, fix message, financial protocol | beta | manual-smoke | 2026-04-23 | Decode FIX message<br>Inspect trading session fields |
+| HTTP Mock API | Developer Tools | http, api, mock, rest, testing | mock server, fake api, rest mock | beta | manual-smoke | 2026-04-23 | Mock JSON endpoint<br>Test API response shape |
+| Prompt Forge | Developer Tools | ai, prompt, llm, advanced, examples | prompt engineering, prompt forge, few shot prompt | stable | e2e | 2026-04-23 | Compose prompt from slots<br>Manage prompt templates |
+| Bimble Transforms | Development | transform, text, csv, template | bimble, row transform, bulk transform | beta | manual-smoke | 2026-04-23 | Transform rows with pattern<br>Generate SQL from CSV |
+| Code Transformer | Development | code, transform, developer, refactor | code converter, case converter, code cleanup | beta | manual-smoke | 2026-04-23 | Transform code casing<br>Convert code snippets |
+| cURL Builder | Development | http, curl, api, request | curl command, api request, http request builder | beta | manual-smoke | 2026-04-23 | Build POST request<br>Add headers to curl |
+| Template Transform | Development | template, transform, markdown, generator | readme generator, template engine, text template | beta | manual-smoke | 2026-04-23 | Generate README<br>Render template with data |
+| Base64 Encoder/Decoder | Encoding | encoding, base64, decode, encode | b64, base64 decode, base64 encode | stable | manual-smoke | 2026-04-23 | Decode base64 payload<br>Encode text for transport |
+| URL Encoder/Decoder | Encoding | encoding, url, uri, percent-encoding | url decode, uri encode, percent encode | stable | manual-smoke | 2026-04-23 | Decode query string<br>Encode URL component |
+| Hash Generator | Generators | hash, crypto, checksum, sha, md5 | sha256, md5, checksum | stable | manual-smoke | 2026-04-23 | Hash text with SHA-256<br>Compare checksums |
+| UUID Generator | Generators | generator, uuid, guid, random | guid generator, uuid v4 | stable | manual-smoke | 2026-04-23 | Generate UUID batch<br>Copy GUIDs for fixtures |
+| Diff Checker | Text | diff, compare, text, review | text compare, compare files, side by side diff | stable | manual-smoke | 2026-04-23 | Compare two snippets<br>Review text changes |
+| Extractor V5 Ultimate | Text | extract, regex, text, scrape, validate | extractor, pattern extractor, text extraction | beta | manual-smoke | 2026-04-23 | Extract URLs and emails<br>Validate common patterns |
+| Line Operations | Text | text, lines, sort, dedupe | line tools, sort lines, unique lines | stable | manual-smoke | 2026-04-23 | Sort lines<br>Remove duplicate lines |
+| Regex Tester | Text | regex, text, match, validate | regexp, regular expression, pattern tester | stable | manual-smoke | 2026-04-23 | Test a regex<br>Extract matching groups |
+| String Cleaner | Text | text, cleanup, normalize, whitespace | trim, dedupe spaces, clean text | stable | manual-smoke | 2026-04-23 | Trim pasted text<br>Normalize whitespace |
+<!-- devchef-tools:end -->

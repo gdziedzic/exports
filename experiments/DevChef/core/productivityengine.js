@@ -1,13 +1,10 @@
 /**
  * DevChef Ultimate - Productivity Engine
- * Workflow automation, batch operations, macro recording, smart suggestions
+ * Workflow automation, batch operations, command history
  *
  * Features:
- * - Macro recording and playback
  * - Batch processing for multiple items
  * - Workflow automation
- * - Smart pattern detection
- * - One-click operations
  * - Command history with replay
  */
 
@@ -15,12 +12,8 @@ import { storage } from './storage.js';
 
 class ProductivityEngine {
   constructor() {
-    this.macros = [];
-    this.isRecording = false;
-    this.currentMacro = null;
     this.commandHistory = [];
     this.maxHistorySize = 100;
-    this.patterns = new Map();
     this.automations = [];
     this.batchQueue = [];
     this.init();
@@ -30,28 +23,10 @@ class ProductivityEngine {
    * Initialize Productivity Engine
    */
   init() {
-    this.loadMacros();
     this.loadCommandHistory();
     this.loadAutomations();
     this.setupGlobalListeners();
     console.log('⚡ Productivity Engine initialized - Automation & batch ops ready');
-  }
-
-  /**
-   * Load macros from storage
-   */
-  loadMacros() {
-    const saved = storage.get('devchef-macros');
-    if (saved && Array.isArray(saved)) {
-      this.macros = saved;
-    }
-  }
-
-  /**
-   * Save macros to storage
-   */
-  saveMacros() {
-    storage.set('devchef-macros', this.macros);
   }
 
   /**
@@ -89,27 +64,21 @@ class ProductivityEngine {
   }
 
   /**
-   * Setup global listeners for macro recording
+   * Setup global listeners for the command history
    */
   setupGlobalListeners() {
     // Listen for tool switches
     document.addEventListener('tool-opened', (e) => {
-      this.recordAction('tool-open', { toolId: e.detail.toolId });
+      this.addToCommandHistory('tool-open', { toolId: e.detail.toolId });
     });
 
     // Listen for input changes
     document.addEventListener('input-changed', (e) => {
-      this.recordAction('input-change', { value: e.detail.value });
+      this.addToCommandHistory('input-change', { value: e.detail.value });
     });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-      // Ctrl+Shift+M - Toggle macro recording
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'M') {
-        e.preventDefault();
-        this.toggleRecording();
-      }
-
       // Ctrl+Shift+H - Show command history
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'H') {
         e.preventDefault();
@@ -122,95 +91,6 @@ class ProductivityEngine {
         this.showBatchProcessor();
       }
     });
-  }
-
-  /**
-   * Start recording macro
-   */
-  startRecording(name = 'Untitled Macro') {
-    this.isRecording = true;
-    this.currentMacro = {
-      id: `macro-${Date.now()}`,
-      name,
-      actions: [],
-      createdAt: Date.now(),
-      playCount: 0
-    };
-
-    if (window.uiEngine) {
-      window.uiEngine.showToast('🔴 Recording macro...', {
-        type: 'info',
-        duration: 2000
-      });
-    }
-
-    console.log('🔴 Started recording macro:', name);
-  }
-
-  /**
-   * Stop recording macro
-   */
-  stopRecording() {
-    if (!this.isRecording || !this.currentMacro) return;
-
-    this.isRecording = false;
-
-    if (this.currentMacro.actions.length > 0) {
-      this.macros.push(this.currentMacro);
-      this.saveMacros();
-
-      if (window.uiEngine) {
-        window.uiEngine.showToast(`✅ Macro "${this.currentMacro.name}" saved with ${this.currentMacro.actions.length} actions`, {
-          type: 'success',
-          duration: 3000
-        });
-      }
-
-      console.log('✅ Stopped recording macro:', this.currentMacro.name, this.currentMacro.actions.length, 'actions');
-    } else {
-      if (window.uiEngine) {
-        window.uiEngine.showToast('⚠️ Macro recording cancelled (no actions)', {
-          type: 'warning',
-          duration: 2000
-        });
-      }
-    }
-
-    this.currentMacro = null;
-  }
-
-  /**
-   * Toggle recording
-   */
-  toggleRecording() {
-    if (this.isRecording) {
-      this.stopRecording();
-    } else {
-      const name = prompt('Macro name:', 'My Macro');
-      if (name) {
-        this.startRecording(name);
-      }
-    }
-  }
-
-  /**
-   * Record action
-   */
-  recordAction(type, data) {
-    // Add to command history
-    this.addToCommandHistory(type, data);
-
-    // Add to macro if recording
-    if (this.isRecording && this.currentMacro) {
-      this.currentMacro.actions.push({
-        type,
-        data,
-        timestamp: Date.now()
-      });
-    }
-
-    // Pattern detection
-    this.detectPatterns(type, data);
   }
 
   /**
@@ -230,37 +110,6 @@ class ProductivityEngine {
     }
 
     this.saveCommandHistory();
-  }
-
-  /**
-   * Play macro
-   */
-  async playMacro(macroId, options = {}) {
-    const macro = this.macros.find(m => m.id === macroId);
-    if (!macro) {
-      console.error('Macro not found:', macroId);
-      return;
-    }
-
-    const delay = options.delay || 500; // Default 500ms between actions
-    const loop = options.loop || 1;
-
-    for (let i = 0; i < loop; i++) {
-      for (const action of macro.actions) {
-        await this.executeAction(action);
-        await this.sleep(delay);
-      }
-    }
-
-    macro.playCount++;
-    this.saveMacros();
-
-    if (window.uiEngine) {
-      window.uiEngine.showToast(`✅ Macro "${macro.name}" completed`, {
-        type: 'success',
-        duration: 2000
-      });
-    }
   }
 
   /**
@@ -296,72 +145,6 @@ class ProductivityEngine {
    */
   sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Delete macro
-   */
-  deleteMacro(macroId) {
-    this.macros = this.macros.filter(m => m.id !== macroId);
-    this.saveMacros();
-  }
-
-  /**
-   * Rename macro
-   */
-  renameMacro(macroId, newName) {
-    const macro = this.macros.find(m => m.id === macroId);
-    if (macro) {
-      macro.name = newName;
-      this.saveMacros();
-    }
-  }
-
-  /**
-   * Detect patterns in user actions
-   */
-  detectPatterns(type, data) {
-    // Simple pattern detection: track sequences
-    const key = type;
-    const pattern = this.patterns.get(key) || [];
-
-    pattern.push({ type, data, timestamp: Date.now() });
-
-    // Keep last 10 actions
-    if (pattern.length > 10) {
-      pattern.shift();
-    }
-
-    this.patterns.set(key, pattern);
-
-    // Detect repetition (same action 3+ times)
-    if (pattern.length >= 3) {
-      const recent = pattern.slice(-3);
-      const allSame = recent.every(a => a.type === recent[0].type);
-
-      if (allSame) {
-        this.suggestMacro(type, pattern);
-      }
-    }
-  }
-
-  /**
-   * Suggest creating macro
-   */
-  suggestMacro(type, pattern) {
-    // Prevent spam
-    if (this.lastSuggestion && Date.now() - this.lastSuggestion < 60000) {
-      return;
-    }
-
-    this.lastSuggestion = Date.now();
-
-    if (window.uiEngine) {
-      window.uiEngine.showToast('💡 Repetitive pattern detected - Want to create a macro?', {
-        type: 'info',
-        duration: 5000
-      });
-    }
   }
 
   /**
@@ -599,38 +382,12 @@ class ProductivityEngine {
   }
 
   /**
-   * Export macros
-   */
-  exportMacros() {
-    const data = {
-      version: '6.5-ultimate',
-      type: 'devchef-macros',
-      exportedAt: new Date().toISOString(),
-      macros: this.macros
-    };
-
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `devchef-macros-${Date.now()}.json`;
-    a.click();
-
-    URL.revokeObjectURL(url);
-  }
-
-  /**
    * Get statistics
    */
   getStatistics() {
     return {
-      macros: this.macros.length,
       commandHistory: this.commandHistory.length,
-      automations: this.automations.length,
-      patterns: this.patterns.size,
-      totalMacroPlays: this.macros.reduce((sum, m) => sum + m.playCount, 0)
+      automations: this.automations.length
     };
   }
 }

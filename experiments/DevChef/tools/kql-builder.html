@@ -642,6 +642,8 @@
 
 <!-- Tool Module Logic -->
 <script type="module">
+import { copyToClipboard } from '../core/tool-utils.js';
+
 export const TABLES = [
   'requests',
   'dependencies',
@@ -1294,25 +1296,13 @@ export const DevChefTool = {
       alert('Nothing to copy — query is empty');
       return;
     }
-    navigator.clipboard.writeText(query).then(() => {
-      const btn = this.container.querySelector('#copy-query-btn');
-      const original = btn.textContent;
-      btn.textContent = '✓ Copied!';
-      setTimeout(() => btn.textContent = original, 2000);
-    }).catch(() => {
-      // Fallback for insecure contexts
-      const textarea = document.createElement('textarea');
-      textarea.value = query;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      const btn = this.container.querySelector('#copy-query-btn');
-      const original = btn.textContent;
-      btn.textContent = '✓ Copied!';
-      setTimeout(() => btn.textContent = original, 2000);
+    copyToClipboard(query, {
+      onSuccess: () => {
+        const btn = this.container.querySelector('#copy-query-btn');
+        const original = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = original, 2000);
+      }
     });
   },
 

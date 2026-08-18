@@ -4,6 +4,7 @@
  */
 
 import { ToolRegistry } from './registry.js';
+import { getToolIndexFilename, mergeToolMetadata, normalizeToolIndexEntry } from './tool-metadata.js';
 
 
 /**
@@ -72,12 +73,45 @@ export function getLoadingErrors() {
   return loadingErrors;
 }
 
+/** Theme custom properties the app shell owns; tools must not redefine them. */
+const APP_THEME_TOKEN = /^--(bg-|text-|border-|accent|surface|shadow-|font-|radius-|spacing-|success|error|warning|info)/;
+
+/**
+ * Keep page-level styling from a tool file inside the workspace.
+ *
+ * Tool styles are injected into #workspace while the tool is open. Single-file
+ * tools also have to work when opened directly, so they declare `:root`, `html`
+ * and `body` rules. Injected as-is those rules redefine the app's theme tokens
+ * for the whole shell - which is why the dark theme stayed light whenever such
+ * a tool was open. Here the app-owned tokens are dropped and the remaining
+ * page-level selectors are rewritten to #workspace, so a tool keeps its own
+ * custom properties and layout without overriding the shell.
+ *
+ * @param {string} css - Inline CSS from the tool file
+ * @returns {string} CSS that is safe to inject into the workspace
+ */
+function scopeToolStyle(css) {
+  if (!css || typeof css !== 'string') return '';
+
+  const withoutAppTokens = css.replace(/:root\s*\{([^}]*)\}/g, (match, body) => {
+    const kept = body
+      .split(';')
+      .map(declaration => declaration.trim())
+      .filter(Boolean)
+      .filter(declaration => !APP_THEME_TOKEN.test(declaration.split(':')[0].trim()));
+
+    return kept.length ? `:root {\n  ${kept.join(';\n  ')};\n}` : '';
+  });
+
+  return withoutAppTokens.replace(/(^|[\s,{}>+~])(:root|html|body)(?=[\s,{:.[>+~])/g, '$1#workspace');
+}
+
 /**
  * Load a single tool from an HTML file
  * @param {string} path - Path to the tool HTML file
  * @returns {Promise<void>}
  */
-async function loadTool(path) {
+async function loadTool(path, indexMetadata = {}) {
   try {
     const html = await fetch(path).then(r => {
       if (!r.ok) throw new Error(`Failed to load ${path}: ${r.status}`);
@@ -94,7 +128,10 @@ async function loadTool(path) {
       loadingErrors.push({ path, error });
       return;
     }
-    const manifest = JSON.parse(manifestScript.textContent);
+    const manifest = mergeToolMetadata(JSON.parse(manifestScript.textContent), {
+      ...indexMetadata,
+      path
+    });
 
     // Extract template
     const template = doc.querySelector("template#tool-ui");
@@ -106,13 +143,16 @@ async function loadTool(path) {
     }
     const templateHtml = template.innerHTML;
 
-    // Extract styles (inline and external)
+    // Extract styles (inline and external). Prefer the tool's own style block;
+    // #standalone-styles is chrome for opening the file directly and is only
+    // used when the tool ships nothing else.
     let style = "";
 
     // Get inline styles
-    const styleTag = doc.querySelector("style");
+    const styleTag = doc.querySelector("style:not(#standalone-styles)")
+      || doc.querySelector("style");
     if (styleTag) {
-      style += styleTag.innerHTML;
+      style += scopeToolStyle(styleTag.innerHTML);
     }
 
     // Get external stylesheets
@@ -219,7 +259,15 @@ async function loadToolsFromDirectory(dir) {
     }
 
     // Load all tools from this directory
-    const loadPromises = toolFiles.map(file => loadTool(`${dir}/${file}`));
+    const loadPromises = toolFiles.map(entry => {
+      const metadata = normalizeToolIndexEntry(entry);
+      const file = getToolIndexFilename(entry);
+      if (!file) {
+        console.error(`Invalid tool entry in ${indexPath}:`, entry);
+        return Promise.resolve();
+      }
+      return loadTool(`${dir}/${file}`, metadata);
+    });
     await Promise.all(loadPromises);
 
   } catch (error) {

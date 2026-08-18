@@ -8,6 +8,8 @@ import { storage } from './storage.js';
 import { searchTools, highlightMatches, groupByCategory } from './search-unified.js';
 import { notifications } from './notifications.js';
 import { workflowSnapshots } from './workflowsnapshots.js';
+import { upgradeLegacyControls } from './components.js';
+import { escapeHtml } from './tool-utils.js';
 
 let currentToolId = null;
 let workspaceStyleElement = null;
@@ -57,6 +59,7 @@ export function openTool(id, context, workspace = "#workspace", updateUrl = true
 
   // Inject tool template
   container.innerHTML = tool.templateHtml;
+  upgradeLegacyControls(container);
 
   // Inject tool styles
   if (tool.style) {
@@ -119,6 +122,44 @@ export function openTool(id, context, workspace = "#workspace", updateUrl = true
   updateRecentTools(context);
 
   console.log(`Opened tool: ${tool.manifest.name}`);
+}
+
+function renderHomeContent(container) {
+  container.innerHTML = `
+    <div class="welcome-screen">
+      <h2>Welcome to DevChef V11.5</h2>
+      <p>True game changer workflow hub for fast offline-first tool work</p>
+      <p>Press <kbd>Ctrl+K</kbd> for Command Palette or <kbd>/</kbd> to jump into search</p>
+      <p style="margin-top: 18px; color: var(--text-secondary);">
+        Pick a tool from the left, use Recent to jump back in, or hit the DevChef title anytime to come home.
+      </p>
+    </div>
+  `;
+}
+
+export function showHome(context, workspace = "#workspace", updateUrl = true) {
+  currentToolId = null;
+
+  if (updateUrl) {
+    const url = new URL(window.location);
+    url.searchParams.delete('tool');
+    window.history.pushState({ home: true }, '', url);
+  }
+
+  const container = document.querySelector(workspace);
+  if (!container) {
+    console.error("Workspace container not found");
+    return;
+  }
+
+  if (workspaceStyleElement) {
+    workspaceStyleElement.remove();
+    workspaceStyleElement = null;
+  }
+
+  renderHomeContent(container);
+  updateSidebarActiveState(null);
+  updateRecentTools(context);
 }
 
 /**
@@ -192,6 +233,7 @@ export function renderToolList(context, searchQuery = "") {
         toolItem.innerHTML = `
           <span class="tool-name">${manifest.name}</span>
           ${categoryBadge}
+          ${renderMetadataBadges(manifest)}
           ${indicators.length > 0 ? `<span class="tool-indicators">${indicators.join('')}</span>` : ''}
         `;
 
@@ -246,6 +288,7 @@ export function renderToolList(context, searchQuery = "") {
 
           toolItem.innerHTML = `
             <span class="tool-name">${manifest.name}</span>
+            ${renderMetadataBadges(manifest)}
             ${indicators.length > 0 ? `<span class="tool-indicators">${indicators.join('')}</span>` : ''}
           `;
 
@@ -448,7 +491,7 @@ function createPaletteItem(manifest, isRecent, isFavorite, context, palette) {
       ${indicators.length > 0 ? `<div class="palette-item-indicators">${indicators.join('')}</div>` : ''}
     </div>
     ${manifest.description ? `<div class="palette-item-description">${manifest.description}</div>` : ''}
-    <div class="palette-item-category">${manifest.category || "Uncategorized"}</div>
+    <div class="palette-item-category">${manifest.category || "Uncategorized"}${renderPaletteMetadata(manifest)}</div>
   `;
 
   item.addEventListener("click", () => {
@@ -464,6 +507,26 @@ function createPaletteItem(manifest, isRecent, isFavorite, context, palette) {
   });
 
   return item;
+}
+
+function renderMetadataBadges(manifest) {
+  const tags = Array.isArray(manifest.tags) ? manifest.tags.slice(0, 2) : [];
+  if (tags.length === 0) return '';
+  return `<span class="tool-metadata-tags">${tags.map(tag => `<span class="tool-metadata-tag">${escapeHtml(tag)}</span>`).join('')}</span>`;
+}
+
+function renderPaletteMetadata(manifest) {
+  const parts = [];
+  if (Array.isArray(manifest.tags) && manifest.tags.length > 0) {
+    parts.push(manifest.tags.slice(0, 3).join(', '));
+  }
+  if (manifest.maturity) {
+    parts.push(manifest.maturity);
+  }
+  if (manifest.testCoverage && manifest.testCoverage !== 'unknown') {
+    parts.push(`${manifest.testCoverage} coverage`);
+  }
+  return parts.length > 0 ? ` · ${escapeHtml(parts.join(' · '))}` : '';
 }
 
 /**
@@ -1100,13 +1163,3 @@ export async function importWorkflowSnapshots() {
   input.click();
 }
 
-/**
- * Escape HTML to prevent XSS
- * @param {string} text - Text to escape
- * @returns {string} Escaped text
- */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
