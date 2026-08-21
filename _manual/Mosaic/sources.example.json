@@ -1,0 +1,44 @@
+{
+  "_comment": "JSON has no comment syntax, so this file documents itself via a _comment field (ignored by the loader) instead. This is an EXAMPLE showing multiple SQL Server sources plus SQLite - it is not loaded automatically. Copy the sources you need into sources.json and set the referenced environment variables before starting Mosaic.",
+  "sources": [
+    {
+      "id": "sales-primary",
+      "name": "Sales",
+      "provider": "sqlserver",
+      "connectionStringEnvironmentVariable": "MOSAIC_SALES_CONNECTION",
+      "allowWrites": true,
+      "commandTimeoutMs": 15000
+    },
+    {
+      "id": "warehouse",
+      "name": "Warehouse",
+      "provider": "sqlserver",
+      "connectionStringEnvironmentVariable": "MOSAIC_WAREHOUSE_CONNECTION",
+      "allowWrites": false,
+      "allowedSchemas": ["dbo", "inventory"]
+    },
+    {
+      "id": "reporting",
+      "name": "Reporting (read replica)",
+      "provider": "sqlserver",
+      "connectionStringEnvironmentVariable": "MOSAIC_REPORTING_CONNECTION",
+      "allowWrites": false,
+      "deniedTables": ["dbo.AuditLog", "dbo.UserSecrets"]
+    },
+    {
+      "id": "local-reference",
+      "name": "Local reference data",
+      "provider": "sqlite",
+      "connectionString": "Data Source=data/reference.db",
+      "allowWrites": true
+    },
+    {
+      "id": "product-feed",
+      "name": "Product feed",
+      "provider": "csv",
+      "path": "data/products.csv",
+      "encoding": "utf8",
+      "delimiter": ","
+    }
+  ]
+}

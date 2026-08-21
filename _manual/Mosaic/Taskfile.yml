@@ -1,0 +1,64 @@
+# https://taskfile.dev
+#
+# Mosaic - self-hosted data explorer. Plain Node.js app, no build step.
+# Run from this directory, or included from the XG root Taskfile as
+# `mosaic:<name>` (in which case use {{.ROOT_DIR}}/dev/Mosaic, not a
+# relative path, since Task resolves `dir:` against the including Taskfile).
+version: '3'
+
+vars:
+  PORT: '{{.MOSAIC_PORT | default "4930"}}'
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list-all
+
+  install:
+    desc: Install dependencies with a reproducible lockfile install
+    cmds:
+      - npm ci
+
+  start:
+    desc: Start Mosaic in the foreground (production mode)
+    cmds:
+      - node server.js
+
+  dev:
+    desc: Start Mosaic with auto-restart on file changes and development mode enabled
+    env:
+      MOSAIC_DEV_MODE: 'true'
+    cmds:
+      - node --watch server.js
+
+  test:
+    desc: Run the test suite (node:test)
+    cmds:
+      - node --test "tests/**/*.test.js"
+
+  test:watch:
+    desc: Run the test suite in watch mode
+    cmds:
+      - node --test --watch "tests/**/*.test.js"
+
+  seed:
+    desc: Rebuild data/reference.db and data/warehouse.db with fresh sample data (destructive - overwrites the files)
+    cmds:
+      - node scripts/seed-reference-db.js
+      - node scripts/seed-warehouse-db.js
+
+  smoke:
+    desc: Start Mosaic, exercise a few real routes against the sample data, then stop it (Windows/PowerShell)
+    cmds:
+      - pwsh -NoProfile -File scripts/smoke-test.ps1
+
+  install-task:
+    desc: Register a Windows Task Scheduler task to run Mosaic at startup (Administrator PowerShell; see ARCHITECTURE.md)
+    cmds:
+      - pwsh -NoProfile -File scripts/install-task.ps1
+
+  uninstall-task:
+    desc: Remove the Windows Task Scheduler task installed by install-task
+    cmds:
+      - pwsh -NoProfile -File scripts/uninstall-task.ps1

@@ -1,0 +1,14 @@
+# Root .gitignore ignores package-lock.json repo-wide; Mosaic needs it committed for reproducible npm ci.
+!package-lock.json
+
+# Runtime output
+/logs/*
+!/logs/.gitkeep
+/data/*.db-journal
+/data/*.db-wal
+/data/*.db-shm
+
+# Local overrides
+.env
+appsettings.local.json
+sources.local.json

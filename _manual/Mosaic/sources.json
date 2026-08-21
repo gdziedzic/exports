@@ -1,0 +1,47 @@
+{
+  "sources": [
+    {
+      "id": "local-reference",
+      "name": "Local reference data",
+      "provider": "sqlite",
+      "connectionString": "Data Source=data/reference.db",
+      "allowWrites": true
+    },
+    {
+      "id": "warehouse",
+      "name": "Warehouse stock",
+      "provider": "sqlite",
+      "connectionString": "Data Source=data/warehouse.db",
+      "allowWrites": true
+    },
+    {
+      "id": "product-feed",
+      "name": "Product feed (CSV)",
+      "provider": "csv",
+      "path": "data/products.csv",
+      "encoding": "utf8",
+      "delimiter": ",",
+      "hasHeader": true
+    },
+    {
+      "id": "product-catalog",
+      "name": "Product catalog (JSON)",
+      "provider": "json",
+      "path": "data/products.json",
+      "rootProperty": "products"
+    },
+    {
+      "id": "order-events",
+      "name": "Order events (JSONL)",
+      "provider": "jsonl",
+      "path": "data/events.jsonl"
+    },
+    {
+      "id": "cycling-catalog",
+      "name": "Cycling catalog (XML)",
+      "provider": "xml",
+      "path": "data/catalog.xml",
+      "recordPath": "Catalog/Products/Product"
+    }
+  ]
+}
