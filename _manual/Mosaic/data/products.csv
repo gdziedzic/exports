@@ -1,0 +1,8 @@
+sku,name,category,price,in_stock,notes
+SKU-1001,Trail Runner 200,Footwear,89.99,true,"Lightweight, breathable mesh"
+SKU-1002,"Summit Pack, 30L",Bags,129.50,true,"Fits a 15"" laptop"
+SKU-1003,Alpine Headlamp,Electronics,24.00,false,
+SKU-1004,Camp Stove Mini,Cooking,45.75,true,"Boils 1L in ""3 minutes"""
+SKU-1005,Insulated Bottle 1L,Hydration,18.25,true,
+SKU-1006,"Rain Shell, Men's",Apparel,159.00,false,"Discontinued for 2026,
+replacement TBD"

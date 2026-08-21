@@ -1,0 +1,5 @@
+{"id": 1, "type": "order.created", "orderId": "ORD-501", "amount": 42.50, "at": "2026-08-01T10:15:00Z"}
+{"id": 2, "type": "order.shipped", "orderId": "ORD-501", "at": "2026-08-02T09:00:00Z"}
+{"id": 3, "type": "order.created", "orderId": "ORD-502", "amount": 128.00, "at": "2026-08-02T14:22:00Z"}
+{"id": 4, "type": "order.cancelled", "orderId": "ORD-502", "reason": "customer request", "at": "2026-08-03T08:05:00Z"}
+{"id": 5, "type": "order.created", "orderId": "ORD-503", "amount": 15.75, "at": "2026-08-04T11:47:00Z"}

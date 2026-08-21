@@ -1,0 +1,9 @@
+{
+  "generatedAt": "2026-08-01T00:00:00Z",
+  "products": [
+    { "sku": "SKU-2001", "name": "Desk Lamp", "category": "Office", "price": 34.99, "inStock": true },
+    { "sku": "SKU-2002", "name": "Standing Mat", "category": "Office", "price": 59.00, "inStock": true },
+    { "sku": "SKU-2003", "name": "Cable Organizer", "category": "Accessories", "price": 12.50, "inStock": false },
+    { "sku": "SKU-2004", "name": "Monitor Arm", "category": "Office", "price": 89.00, "inStock": null }
+  ]
+}

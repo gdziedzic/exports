@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Catalog>
+  <Products>
+    <Product id="3001" featured="true">
+      <Name>Bike Helmet</Name>
+      <Category>Cycling</Category>
+      <Price>74.99</Price>
+    </Product>
+    <Product id="3002" featured="false">
+      <Name>Bar Tape</Name>
+      <Category>Cycling</Category>
+      <Price>14.00</Price>
+    </Product>
+    <Product id="3003" featured="false">
+      <Name>Floor Pump</Name>
+      <Category>Tools</Category>
+      <Price>39.95</Price>
+    </Product>
+  </Products>
+</Catalog>
