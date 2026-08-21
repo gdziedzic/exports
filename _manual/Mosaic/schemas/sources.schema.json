@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mosaic.local/schemas/sources.schema.json",
+  "title": "Mosaic sources.json",
+  "description": "Configured data sources, loaded once at startup. See schemas/EXAMPLES.md for a commented example.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sources"],
+  "properties": {
+    "sources": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/source" }
+    }
+  },
+  "definitions": {
+    "source": {
+      "type": "object",
+      "required": ["id", "name", "provider"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Globally unique across all sources." },
+        "name": { "type": "string", "minLength": 1 },
+        "provider": { "type": "string", "enum": ["sqlserver", "sqlite", "json", "jsonl", "csv", "xml"] },
+
+        "connectionString": { "type": "string", "minLength": 1, "description": "SQL sources only. Exactly one of connectionString / connectionStringEnvironmentVariable." },
+        "connectionStringEnvironmentVariable": { "type": "string", "minLength": 1, "description": "SQL sources only. Name of an environment variable holding the connection string." },
+        "allowWrites": { "type": "boolean", "default": false, "description": "SQL sources only." },
+        "commandTimeoutMs": { "type": "integer", "minimum": 1, "description": "SQL sources only." },
+        "allowedSchemas": { "type": "array", "items": { "type": "string" }, "description": "SQL sources only." },
+        "allowedTables": { "type": "array", "items": { "type": "string" }, "description": "SQL sources only." },
+        "deniedSchemas": { "type": "array", "items": { "type": "string" }, "description": "SQL sources only." },
+        "deniedTables": { "type": "array", "items": { "type": "string" }, "description": "SQL sources only." },
+
+        "path": { "type": "string", "minLength": 1, "description": "File sources only. Relative path beneath the application content directory; must already exist." },
+        "encoding": { "type": "string", "default": "utf8", "description": "File sources only." },
+        "rootProperty": { "type": "string", "description": "json provider only. Property containing the record array, if the root is not itself an array." },
+        "delimiter": { "type": "string", "minLength": 1, "maxLength": 1, "default": ",", "description": "csv provider only." },
+        "hasHeader": { "type": "boolean", "default": true, "description": "csv provider only." },
+        "quote": { "type": "string", "minLength": 1, "maxLength": 1, "default": "\"", "description": "csv provider only." },
+        "recordPath": { "type": "string", "description": "xml provider only. Slash-separated path to the repeating record element, e.g. \"Catalog/Products/Product\"." },
+        "attributePrefix": { "type": "string", "default": "@", "description": "xml provider only. Prefix used for flattened XML attribute columns." }
+      }
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mosaic.local/schemas/page.schema.json",
+  "title": "Mosaic page.json",
+  "description": "A configured multi-query page: one page.json plus a queries/ directory of .sql files beside it. See schemas/EXAMPLES.md for a full worked example.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "blocks"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1, "description": "Globally unique across all pages." },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "parameters": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/parameter" },
+      "description": "Page-level parameters, available to every block unless overridden by a block-level parameter of the same name."
+    },
+    "blocks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/block" }
+    }
+  },
+  "definitions": {
+    "parameter": {
+      "type": "object",
+      "required": ["name", "label", "type"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$", "description": "Bound in SQL as @name. May not be Offset or PageSize (reserved)." },
+        "label": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "multiline", "integer", "decimal", "boolean", "date", "datetime", "select", "hidden"] },
+        "required": { "type": "boolean", "default": false },
+        "default": {},
+        "control": { "type": "string", "description": "Overrides the default input control for the type, if applicable." },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["value", "label"],
+            "properties": { "value": {}, "label": { "type": "string" } }
+          },
+          "description": "Required when type is \"select\"."
+        },
+        "placeholder": { "type": "string" },
+        "helpText": { "type": "string" }
+      }
+    },
+    "block": {
+      "type": "object",
+      "required": ["id", "title", "sourceId", "query", "presentation"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Unique within this page." },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "sourceId": { "type": "string", "description": "Must reference a source in sources.json." },
+        "query": { "type": "string", "description": "Path to a .sql file, relative to the page's directory (e.g. \"queries/recent-orders.sql\"). For a \"table\" block this must be a plain SELECT ... FROM ... [WHERE ...] - no ORDER BY/LIMIT/OFFSET/TOP and no @Offset/@PageSize; sort, filter, and pagination are supplied automatically. \"scalar\"/\"single-record\" blocks are unaffected and may still use @Offset/@PageSize." },
+        "presentation": { "type": "string", "enum": ["table", "single-record", "scalar"] },
+        "pageSize": { "type": "integer", "minimum": 1 },
+        "parameters": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/parameter" },
+          "description": "Block-level parameters; override a page-level parameter of the same name for this block only."
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "label": { "type": "string" },
+              "hidden": { "type": "boolean", "default": false },
+              "format": { "type": "string" }
+            }
+          }
+        },
+        "allowCsvExport": { "type": "boolean", "default": false },
+        "allowJsonExport": { "type": "boolean", "default": false },
+        "refresh": {
+          "type": "object",
+          "properties": {
+            "intervalSeconds": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "writeActions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/writeAction" }
+        },
+        "width": { "type": "string", "enum": ["full", "half"], "default": "full" }
+      }
+    },
+    "writeAction": {
+      "type": "object",
+      "required": ["id", "label", "query"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Unique within this page." },
+        "label": { "type": "string" },
+        "query": { "type": "string", "description": "Path to a .sql file, relative to the page's directory. Must target the same source as the owning block, and that source must have allowWrites: true." },
+        "parameters": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/parameter" }
+        },
+        "confirm": { "type": "boolean", "default": false },
+        "destructive": { "type": "boolean", "default": false, "description": "Destructive actions always require confirmation regardless of \"confirm\"." },
+        "successMessage": { "type": "string" },
+        "refreshBlockIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Block IDs on this page to re-run after a successful write. A refresh failure never rolls back the write."
+        }
+      }
+    }
+  }
+}

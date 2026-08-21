@@ -1,0 +1,69 @@
+{
+  "id": "operations-overview",
+  "title": "Operations overview",
+  "description": "Sample configured page combining two independent SQLite databases (local-reference and warehouse) on one page.",
+  "parameters": [
+    {
+      "name": "MinPrice",
+      "label": "Minimum unit price",
+      "type": "decimal",
+      "required": false,
+      "default": 0
+    }
+  ],
+  "blocks": [
+    {
+      "id": "recent-orders",
+      "title": "Recent orders",
+      "sourceId": "local-reference",
+      "query": "queries/recent-orders.sql",
+      "presentation": "table",
+      "pageSize": 5,
+      "allowCsvExport": true,
+      "allowJsonExport": true,
+      "width": "full"
+    },
+    {
+      "id": "active-customer-count",
+      "title": "Active customers",
+      "sourceId": "local-reference",
+      "query": "queries/active-customer-count.sql",
+      "presentation": "scalar",
+      "width": "half"
+    },
+    {
+      "id": "newest-customer",
+      "title": "Newest customer",
+      "sourceId": "local-reference",
+      "query": "queries/newest-customer.sql",
+      "presentation": "single-record",
+      "width": "half"
+    },
+    {
+      "id": "warehouse-stock",
+      "title": "Warehouse stock",
+      "description": "From the independent \"warehouse\" SQLite database - demonstrates a second source on the same page. Sortable/filterable by column.",
+      "sourceId": "warehouse",
+      "query": "queries/warehouse-stock.sql",
+      "presentation": "table",
+      "pageSize": 5,
+      "allowCsvExport": true,
+      "width": "full",
+      "writeActions": [
+        {
+          "id": "restock-low-items",
+          "label": "Restock low items",
+          "description": "Adds RestockAmount to every item below the quantity threshold.",
+          "query": "actions/restock-low-items.sql",
+          "confirm": true,
+          "parameters": [
+            { "name": "RestockAmount", "label": "Restock amount", "type": "integer", "required": true, "default": 20 },
+            { "name": "Threshold", "label": "Low-stock threshold", "type": "integer", "required": true, "default": 10 }
+          ],
+          "successMessage": "Low-stock items restocked.",
+          "refreshBlockIds": ["warehouse-stock"]
+        }
+      ]
+    }
+  ]
+}
