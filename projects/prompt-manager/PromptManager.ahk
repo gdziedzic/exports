@@ -482,8 +482,13 @@ ExpandTextIncludes:
 IncrementUses:
     if (SelectedID != "" && Snippets.HasKey(SelectedID)) {
         Snippets[SelectedID].uses := Snippets[SelectedID].uses + 1
-        GoSub SaveAllSnippets
+        ; defer the disk write so paste/copy isn't blocked by file I/O
+        SetTimer, DeferredSaveSnippets, -1500
     }
+    return
+
+DeferredSaveSnippets:
+    GoSub SaveAllSnippets
     return
 
 DoFinalAction:
@@ -1360,26 +1365,37 @@ LoadAllSnippets:
 return
 
 SaveAllSnippets:
-    FileDelete %DataFile%
+    ; Build the whole INI in memory and write it once (UTF-16 + CRLF, same
+    ; format IniWrite produced). ~14 IniWrite calls per snippet each
+    ; rewrote the entire file, which made every save O(n^2).
+    SetTimer, DeferredSaveSnippets, Off
+    _saveBuf := ""
     for id, s in Snippets {
-        sec := "snippet_" id
-        IniWrite, % s.name,     %DataFile%, %sec%, name
-        IniWrite, % s.category, %DataFile%, %sec%, category
-        IniWrite, % s.group,    %DataFile%, %sec%, group
-        IniWrite, % s.tags,     %DataFile%, %sec%, tags
         encoded := s.content
         StringReplace, encoded, encoded, `n, ``n, All
         StringReplace, encoded, encoded, %A_Tab%, ``t, All
-        IniWrite, %encoded%,    %DataFile%, %sec%, content
-        IniWrite, % s.fav,      %DataFile%, %sec%, fav
-        IniWrite, % s.uses,     %DataFile%, %sec%, uses
-        IniWrite, % s.uid,      %DataFile%, %sec%, uid
-        IniWrite, % s.description, %DataFile%, %sec%, description
-        IniWrite, % s.model,    %DataFile%, %sec%, model
-        IniWrite, % s.source,   %DataFile%, %sec%, source
-        IniWrite, % s.created,  %DataFile%, %sec%, created
-        IniWrite, % s.updated,  %DataFile%, %sec%, updated
+        _saveBuf .= "[snippet_" id "]`r`n"
+            . "name=" s.name "`r`n"
+            . "category=" s.category "`r`n"
+            . "group=" s.group "`r`n"
+            . "tags=" s.tags "`r`n"
+            . "content=" encoded "`r`n"
+            . "fav=" s.fav "`r`n"
+            . "uses=" s.uses "`r`n"
+            . "uid=" s.uid "`r`n"
+            . "description=" s.description "`r`n"
+            . "model=" s.model "`r`n"
+            . "source=" s.source "`r`n"
+            . "created=" s.created "`r`n"
+            . "updated=" s.updated "`r`n"
     }
+    ; write to temp then swap, so a crash mid-write can't truncate the library
+    _saveTmp := DataFile . ".tmp"
+    FileDelete %_saveTmp%
+    FileAppend, %_saveBuf%, %_saveTmp%, UTF-16
+    if (!ErrorLevel)
+        FileMove, %_saveTmp%, %DataFile%, 1
+    _saveBuf := ""
 return
 
 ; ============================================================

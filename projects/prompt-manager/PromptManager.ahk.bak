@@ -1,0 +1,1767 @@
+; ============================================================
+;  Prompt Manager v2 — prompt & snippet library
+;  AHK v1  |  Win+Alt+P to toggle  |  Data in prompts.ini
+;
+;  Auto-fill: {clipboard} {date} {datetime}
+;  Composition: @{Snippet Name}
+;  Favorites ★ + Usage tracking
+;  Sub-categories (group field)
+;  Multi-select bulk actions
+;  Resizable layout
+;  Import/Export full library + Markdown library export
+;  Live preview expansion toggle
+; ============================================================
+#NoEnv
+#SingleInstance Force
+SetBatchLines -1
+SetWorkingDir %A_ScriptDir%
+
+; ── Globals ─────────────────────────────────────────────────
+DataFile := A_ScriptDir . "\prompts.ini"
+Snippets := {}
+FilteredIDs := []
+NextID := 1
+SelectedID := ""
+EditorID := ""
+FillInAction := ""
+FillInContent := ""
+FillInPlaceholders := []
+FillInCount := 0
+PreviewExpanded := 0
+FillIn1 := "", FillIn2 := "", FillIn3 := "", FillIn4 := "", FillIn5 := ""
+FillIn6 := "", FillIn7 := "", FillIn8 := "", FillIn9 := "", FillIn10 := ""
+FillIn11 := "", FillIn12 := "", FillIn13 := "", FillIn14 := "", FillIn15 := ""
+
+TVNodeFilter := {}
+CurrentCatFilter := "All"
+TVBuilding := false
+
+; layout state
+LW := 0, LPad := 12, LPvX := 0, LPvW := 0, LRow2Y := 0, LBtnY := 0, LStatusY := 0
+
+; ── History ────────────────────────────────────────────────
+HistoryFile := A_ScriptDir . "\prompts_history.ini"
+HistoryNextEntry := 1
+
+; ── Dark-mode Edit controls ────────────────────────────────
+hBrushEdit := DllCall("CreateSolidBrush", "UInt", 0x443231, "Ptr")
+hBrushPreview := DllCall("CreateSolidBrush", "UInt", 0x2e1e1e, "Ptr")
+OnMessage(0x0133, "WM_CTLCOLOREDIT")
+OnMessage(0x0138, "WM_CTLCOLORSTATIC")
+
+WM_CTLCOLOREDIT(wParam, lParam, msg, hwnd) {
+    global hBrushEdit
+    DllCall("SetTextColor", "Ptr", wParam, "UInt", 0xF4D6CD)
+    DllCall("SetBkColor",   "Ptr", wParam, "UInt", 0x443231)
+    return hBrushEdit
+}
+WM_CTLCOLORSTATIC(wParam, lParam, msg, hwnd) {
+    global hBrushPreview
+    WinGetClass, cls, ahk_id %lParam%
+    if (cls = "Edit") {
+        DllCall("SetTextColor", "Ptr", wParam, "UInt", 0xF4D6CD)
+        DllCall("SetBkColor",   "Ptr", wParam, "UInt", 0x2e1e1e)
+        return hBrushPreview
+    }
+}
+
+; ── Init ───────────────────────────────────────────────────
+IfNotExist, %DataFile%
+    GoSub CreateSampleData
+
+GoSub LoadAllSnippets
+GoSub InitHistory
+GoSub BuildMainGUI
+return
+
+; ── Global Hotkey ──────────────────────────────────────────
+#!p::
+    Gui Main:Show, , Prompt Manager
+    GuiControl Main:Focus, SearchBox
+    return
+
+; ============================================================
+;  GUI CONSTRUCTION
+; ============================================================
+BuildMainGUI:
+    Gui Main:New, +Resize +MinSize820x480, Prompt Manager
+    Gui Main:Default
+    Gui Main:Color, 181825
+
+    ; ── Toolbar ────────────────────────────────────────────
+    Gui Font, s11 cCDD6F4, Segoe UI
+    Gui Add, Text, x12 y12 w50 h36 +0x200 vLblSearch, Search
+    Gui Add, Edit, x66 y12 w280 h26 vSearchBox gOnSearch +Background313244
+
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x360 y12 w200 h36 +0x200 vSnippetCount, 0 snippets
+    Gui Font, s8 c6C7086, Segoe UI
+    Gui Add, Text, x570 y12 w280 h36 +0x200 +Right vHintText, F=Fav  D=Dup  Enter=Paste  Esc=Hide
+    Gui Font, s11 cCDD6F4, Segoe UI
+
+    ; ── Category tree (navigation sidebar) ────────────────
+    Gui Add, TreeView, x12 y56 w170 h400 vMainTV gOnTVSelect +Background313244 +cCDD6F4
+
+    ; ── Snippet list (multi-select enabled) ────────────────
+    Gui Add, ListView, x190 y56 w230 h400 vSnippetLV gOnLVSelect +LV0x10000 AltSubmit +Background313244 +cCDD6F4, Name|Cat|#
+    LV_ModifyCol(1, 150, "Name")
+    LV_ModifyCol(2, 50, "Cat")
+    LV_ModifyCol(3, 30, "#")
+    LV_ModifyCol(3, "Integer Right")
+
+    ; ── Preview pane ───────────────────────────────────────
+    Gui Font, s13 cB4BEFE Bold, Segoe UI
+    Gui Add, Text, x432 y56 w360 h24 +0x200 vPreviewTitle, Select a snippet...
+    Gui Font, s11 cCDD6F4 Norm, Segoe UI
+
+    ; expand toggle
+    Gui Font, s9 cA6ADC8, Segoe UI
+    Gui Add, CheckBox, x840 y58 w80 h20 vExpandChk gOnToggleExpand, Expand
+    Gui Font, s11 cCDD6F4, Segoe UI
+
+    Gui Font, s9 cFAB387, Segoe UI
+    Gui Add, Text, x432 y82 w476 h18 vPreviewTags,
+    Gui Font, s10 cCDD6F4, Consolas
+    Gui Add, Edit, x432 y104 w476 h352 vPreviewBox ReadOnly +Multi +WantReturn +Background1e1e2e
+    Gui Font, s11 cCDD6F4, Segoe UI
+
+    ; ── Buttons ────────────────────────────────────────────
+    Gui Font, s10 cCDD6F4, Segoe UI
+    Gui Add, Button, x12  y466 w54 h32 gOnAdd      vBtnAdd,    +Add
+    Gui Add, Button, x70  y466 w54 h32 gOnDuplicate vBtnDup,   Dup
+    Gui Add, Button, x128 y466 w54 h32 gOnEdit     vBtnEdit,   Edit
+    Gui Add, Button, x186 y466 w54 h32 gOnDelete   vBtnDel,    Del
+    Gui Add, Button, x248 y466 w68  h32 gShowHistoryBrowser vBtnHistory, History
+
+    Gui Add, Button, x432 y466 w64  h32 gOnToggleFav vBtnFav,  ★ Fav
+    Gui Add, Button, x500 y466 w75  h32 gOnCopy     vBtnCopy,  &Copy
+    Gui Add, Button, x579 y466 w105 h32 gOnInsert   vBtnPaste, &Paste+Close
+    Gui Add, Button, x688 y466 w78  h32 gOnExportLib vBtnExpLib, Export
+    Gui Add, Button, x770 y466 w78  h32 gOnExportMarkdown vBtnExpMd, Export MD
+    Gui Add, Button, x852 y466 w72  h32 gOnImportLib vBtnImpLib, Import
+
+    ; ── Status bar ─────────────────────────────────────────
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x12  y502 w240 h20 +0x200 vStatusLeft, Ready
+    Gui Add, Text, x432 y502 w476 h20 +0x200 +Right vStatusRight, Auto: {clipboard} {date} {datetime}  |  @{Name}
+    Gui Font, s11 cCDD6F4, Segoe UI
+
+    GoSub BuildCategoryTree
+    GoSub RefreshList
+    Gui Main:Show, w960 h530, Prompt Manager
+return
+
+; ── Resize handler ─────────────────────────────────────────
+MainGuiSize:
+    if (A_EventInfo = 1) ; minimized
+        return
+    W := A_GuiWidth, H := A_GuiHeight
+    Pad := 12, Gap := 8
+    TreeW := 170
+    LvX := Pad + TreeW + Gap
+    ListW := Floor((W - LvX - Pad) * 0.33)
+    if (ListW < 180)
+        ListW := 180
+    PvX := LvX + ListW + Gap
+    PvW := W - PvX - Pad
+    BtnY := H - 64
+    StatusY := H - 28
+    ListH := BtnY - 56 - 8
+
+    ; toolbar
+    srchW := Floor(W * 0.26)
+    if (srchW < 150)
+        srchW := 150
+    GuiControl Move, SearchBox, % "w" srchW
+    cntX := 66 + srchW + 12
+    GuiControl Move, SnippetCount, % "x" cntX
+    hintX := W - 292
+    GuiControl Move, HintText, % "x" hintX " w280"
+
+    ; tree
+    GuiControl Move, MainTV, % "w" TreeW " h" ListH
+
+    ; list
+    GuiControl Move, SnippetLV, % "x" LvX " w" ListW " h" ListH
+    LV_ModifyCol(1, ListW - 85)
+
+    ; preview
+    GuiControl Move, PreviewTitle, % "x" PvX " w" (PvW - 90)
+    expX := W - Pad - 80
+    GuiControl Move, ExpandChk, % "x" expX
+    GuiControl Move, PreviewTags, % "x" PvX " w" PvW
+    pvH := BtnY - 104 - 8
+    GuiControl Move, PreviewBox, % "x" PvX " w" PvW " h" pvH
+
+    ; buttons – left cluster (under tree+list)
+    GuiControl Move, BtnAdd,     % "y" BtnY
+    GuiControl Move, BtnDup,     % "y" BtnY
+    GuiControl Move, BtnEdit,    % "y" BtnY
+    GuiControl Move, BtnDel,     % "y" BtnY
+    GuiControl Move, BtnHistory, % "y" BtnY
+
+    ; buttons – preview cluster
+    GuiControl Move, BtnFav,   % "x" PvX " y" BtnY
+    bx2 := PvX + 68
+    GuiControl Move, BtnCopy,  % "x" bx2 " y" BtnY
+    bx3 := bx2 + 79
+    GuiControl Move, BtnPaste, % "x" bx3 " y" BtnY
+    bx4 := bx3 + 109
+    GuiControl Move, BtnExpLib, % "x" bx4 " y" BtnY
+    bx5 := bx4 + 82
+    GuiControl Move, BtnExpMd, % "x" bx5 " y" BtnY
+    bx6 := bx5 + 82
+    GuiControl Move, BtnImpLib, % "x" bx6 " y" BtnY
+
+    ; status
+    GuiControl Move, StatusLeft,  % "y" StatusY " w" (PvX - Pad)
+    GuiControl Move, StatusRight, % "x" PvX " y" StatusY " w" PvW
+    return
+
+; ============================================================
+;  EVENT HANDLERS
+; ============================================================
+OnSearch:
+    GoSub RefreshList
+    return
+
+OnTVSelect:
+    if (TVBuilding || A_GuiEvent != "S")
+        return
+    Gui Main:Default
+    nodeID := TV_GetSelection()
+    if (TVNodeFilter.HasKey(nodeID))
+        CurrentCatFilter := TVNodeFilter[nodeID]
+    else
+        CurrentCatFilter := "All"
+    GoSub RefreshList
+    return
+
+OnLVSelect:
+    if (A_GuiEvent = "I") {
+        Gui Main:Default
+        ; count selected
+        selCount := 0
+        row := 0
+        Loop {
+            row := LV_GetNext(row)
+            if (!row)
+                break
+            selCount++
+            SelectedID := FilteredIDs[row]
+        }
+        if (selCount = 1) {
+            GoSub UpdatePreview
+        } else if (selCount > 1) {
+            GoSub UpdatePreviewMulti
+        }
+    }
+    if (A_GuiEvent = "DoubleClick" || A_GuiEvent = "A") {
+        GoSub OnInsert
+    }
+    return
+
+UpdatePreviewMulti:
+    selIDs := []
+    totalChars := 0
+    row := 0
+    Loop {
+        row := LV_GetNext(row)
+        if (!row)
+            break
+        id := FilteredIDs[row]
+        selIDs.Push(id)
+        totalChars += StrLen(Snippets[id].content)
+    }
+    cnt := selIDs.Length()
+    GuiControl Main:, PreviewTitle, % cnt " snippets selected"
+    GuiControl Main:, PreviewTags, % totalChars " chars total  —  Use bulk: Del / ★Fav / Export All"
+    ; show combined preview
+    combined := ""
+    for i, id in selIDs {
+        s := Snippets[id]
+        if (i > 1)
+            combined .= "`n`n--- " s.name " ---`n`n"
+        else
+            combined .= "--- " s.name " ---`n`n"
+        combined .= s.content
+    }
+    GuiControl Main:, PreviewBox, %combined%
+    GuiControl Main:, StatusLeft, % cnt " selected"
+    return
+
+UpdatePreview:
+    if (SelectedID = "" || !Snippets.HasKey(SelectedID)) {
+        GuiControl Main:, PreviewTitle, Select a snippet...
+        GuiControl Main:, PreviewTags,
+        GuiControl Main:, PreviewBox,
+        GuiControl Main:, StatusLeft, Ready
+        return
+    }
+    s := Snippets[SelectedID]
+    titleTxt := s.name
+    if (s.fav)
+        titleTxt := Chr(9733) " " titleTxt
+    GuiControl Main:, PreviewTitle, %titleTxt%
+
+    tagLine := s.category
+    if (s.group != "")
+        tagLine .= "/" s.group
+    if (s.tags != "")
+        tagLine .= "  —  " s.tags
+    if (s.model != "")
+        tagLine .= "  —  model: " s.model
+    if (s.uses > 0)
+        tagLine .= "  —  used " s.uses "x"
+    GuiControl Main:, PreviewTags, %tagLine%
+
+    ; show raw or expanded
+    if (PreviewExpanded)
+        GoSub ShowExpandedPreview
+    else
+        GuiControl Main:, PreviewBox, % s.content
+
+    ; status
+    content := s.content
+    StringLen, charCnt, content
+    phCnt := 0
+    phPos := 1
+    while (phPos := RegExMatch(content, "\{[^{}\n]+\}", phM, phPos)) {
+        phCnt++
+        phPos += StrLen(phM)
+    }
+    incCnt := 0
+    incPos := 1
+    while (incPos := RegExMatch(content, "@\{[^{}]+\}", incM, incPos)) {
+        incCnt++
+        incPos += StrLen(incM)
+    }
+    statusTxt := charCnt " chars"
+    if (s.updated != "")
+        statusTxt .= "  |  updated " s.updated
+    if (phCnt > 0)
+        statusTxt .= "  |  " phCnt " placeholder" (phCnt > 1 ? "s" : "")
+    if (incCnt > 0)
+        statusTxt .= "  |  " incCnt " @include" (incCnt > 1 ? "s" : "")
+    GuiControl Main:, StatusLeft, %statusTxt%
+    return
+
+; ── Preview expansion toggle ──────────────────────────────
+OnToggleExpand:
+    GuiControlGet, PreviewExpanded, Main:, ExpandChk
+    GoSub UpdatePreview
+    return
+
+ShowExpandedPreview:
+    _ExpandText := Snippets[SelectedID].content
+    GoSub ExpandTextIncludes
+    ; replace auto-fills
+    clipSaved := Clipboard
+    StringReplace, _ExpandText, _ExpandText, {clipboard}, %clipSaved%, All
+    FormatTime, ad,, yyyy-MM-dd
+    StringReplace, _ExpandText, _ExpandText, {date}, %ad%, All
+    FormatTime, adt,, yyyy-MM-dd HH:mm
+    StringReplace, _ExpandText, _ExpandText, {datetime}, %adt%, All
+    GuiControl Main:, PreviewBox, % _ExpandText
+    return
+
+; ── Favorites ─────────────────────────────────────────────
+OnToggleFav:
+    ; works on all selected
+    row := 0
+    changed := false
+    Loop {
+        row := LV_GetNext(row)
+        if (!row)
+            break
+        id := FilteredIDs[row]
+        if (Snippets.HasKey(id)) {
+            Snippets[id].fav := !Snippets[id].fav
+            changed := true
+        }
+    }
+    if (!changed)
+        return
+    GoSub SaveAllSnippets
+    GoSub ReselectAfterRefresh
+    return
+
+ReselectAfterRefresh:
+    ; collect selected IDs
+    selIDs := []
+    row := 0
+    Loop {
+        row := LV_GetNext(row)
+        if (!row)
+            break
+        selIDs.Push(FilteredIDs[row])
+    }
+    GoSub RefreshList
+    ; re-select
+    for i, sid in selIDs {
+        for row, rid in FilteredIDs {
+            if (rid = sid) {
+                LV_Modify(row, "Select")
+                if (i = 1) {
+                    LV_Modify(row, "Focus")
+                    SelectedID := sid
+                }
+                break
+            }
+        }
+    }
+    GoSub UpdatePreview
+    return
+
+; ── Copy / Paste ──────────────────────────────────────────
+OnCopy:
+    if (SelectedID = "" || !Snippets.HasKey(SelectedID))
+        return
+    FillInAction := "copy"
+    FillInContent := Snippets[SelectedID].content
+    GoSub StartFillIn
+    return
+
+OnInsert:
+    if (SelectedID = "" || !Snippets.HasKey(SelectedID))
+        return
+    FillInAction := "insert"
+    FillInContent := Snippets[SelectedID].content
+    GoSub StartFillIn
+    return
+
+StartFillIn:
+    GoSub ExpandIncludes
+    clipSaved := Clipboard
+    StringReplace, FillInContent, FillInContent, {clipboard}, %clipSaved%, All
+    FormatTime, autoDate,, yyyy-MM-dd
+    StringReplace, FillInContent, FillInContent, {date}, %autoDate%, All
+    FormatTime, autoDateTime,, yyyy-MM-dd HH:mm
+    StringReplace, FillInContent, FillInContent, {datetime}, %autoDateTime%, All
+    GoSub ParsePlaceholders
+    if (FillInCount = 0) {
+        GoSub IncrementUses
+        GoSub DoFinalAction
+        return
+    }
+    GoSub ShowFillInDialog
+    return
+
+ExpandIncludes:
+    _ExpandText := FillInContent
+    GoSub ExpandTextIncludes
+    FillInContent := _ExpandText
+    return
+
+; ── Shared @{include} expansion (operates on _ExpandText) ────
+ExpandTextIncludes:
+    Loop 20 {
+        _etFound := false
+        _etPos := 1
+        while (_etPos := RegExMatch(_ExpandText, "@\{([^{}]+)\}", _etM, _etPos)) {
+            _etName := _etM1
+            _etRepl := ""
+            for _etSid, _etObj in Snippets {
+                if (_etObj.name = _etName) {
+                    _etRepl := _etObj.content
+                    break
+                }
+            }
+            if (_etRepl != "") {
+                StringReplace, _ExpandText, _ExpandText, %_etM%, %_etRepl%,
+                _etFound := true
+                break
+            }
+            _etPos += StrLen(_etM)
+        }
+        if (!_etFound)
+            break
+    }
+    return
+
+IncrementUses:
+    if (SelectedID != "" && Snippets.HasKey(SelectedID)) {
+        Snippets[SelectedID].uses := Snippets[SelectedID].uses + 1
+        GoSub SaveAllSnippets
+    }
+    return
+
+DoFinalAction:
+    if (FillInAction = "copy") {
+        Clipboard := FillInContent
+        GuiControl Main:, StatusLeft, Copied to clipboard!
+        ToolTip Copied!
+        SetTimer RemoveTooltip, -1200
+    } else {
+        Clipboard := FillInContent
+        Gui Main:Hide
+        Sleep 150
+        Send ^v
+    }
+    GoSub UpdatePreview
+    return
+
+; ── Export single / Import-Export library ──────────────────
+OnExportLib:
+    if (Snippets.Count() = 0) {
+        MsgBox 48, Export, No snippets to export.
+        return
+    }
+    ; check if multi-select: export selected, else export all
+    selCount := 0
+    row := 0
+    Loop {
+        row := LV_GetNext(row)
+        if (!row)
+            break
+        selCount++
+    }
+    FileSelectFile, outPath, S16, prompts_export.ini, Export Library, INI Files (*.ini)
+    if (outPath = "")
+        return
+    FileDelete %outPath%
+    idx := 0
+    if (selCount > 1) {
+        ; export selected only
+        row := 0
+        Loop {
+            row := LV_GetNext(row)
+            if (!row)
+                break
+            id := FilteredIDs[row]
+            if (!Snippets.HasKey(id))
+                continue
+            idx++
+            GoSub WriteSnippetToFile
+        }
+    } else {
+        ; export all
+        for id, s in Snippets {
+            idx++
+            GoSub WriteSnippetToFile
+        }
+    }
+    GuiControl Main:, StatusLeft, % "Exported " idx " snippets"
+    ToolTip % "Exported " idx " snippets!"
+    SetTimer RemoveTooltip, -1200
+    return
+
+WriteSnippetToFile:
+    s := Snippets[id]
+    sec := "snippet_" idx
+    IniWrite, % s.name,     %outPath%, %sec%, name
+    IniWrite, % s.category, %outPath%, %sec%, category
+    IniWrite, % s.group,    %outPath%, %sec%, group
+    IniWrite, % s.tags,     %outPath%, %sec%, tags
+    encoded := s.content
+    StringReplace, encoded, encoded, `n, ``n, All
+    StringReplace, encoded, encoded, %A_Tab%, ``t, All
+    IniWrite, %encoded%,    %outPath%, %sec%, content
+    IniWrite, % s.fav,      %outPath%, %sec%, fav
+    IniWrite, % s.uses,     %outPath%, %sec%, uses
+    IniWrite, % s.uid,      %outPath%, %sec%, uid
+    IniWrite, % s.description, %outPath%, %sec%, description
+    IniWrite, % s.model,    %outPath%, %sec%, model
+    IniWrite, % s.source,   %outPath%, %sec%, source
+    IniWrite, % s.created,  %outPath%, %sec%, created
+    IniWrite, % s.updated,  %outPath%, %sec%, updated
+    return
+
+OnExportMarkdown:
+    if (Snippets.Count() = 0) {
+        MsgBox 48, Export Markdown, No snippets to export.
+        return
+    }
+    FileSelectFolder, mdDir, *%A_ScriptDir%, 3, Export Markdown Library
+    if (mdDir = "")
+        return
+    FileCreateDir, %mdDir%
+    exported := 0
+    for id, s in Snippets {
+        fileName := Format("{:03}", id) "-" SlugifyFileName(s.name) ".md"
+        outFile := mdDir . "\" . fileName
+        md := "---`n"
+        md .= "uid: " EscapeYaml(s.uid) "`n"
+        md .= "name: " EscapeYaml(s.name) "`n"
+        md .= "category: " EscapeYaml(s.category) "`n"
+        md .= "group: " EscapeYaml(s.group) "`n"
+        md .= "tags: " EscapeYaml(s.tags) "`n"
+        md .= "description: " EscapeYaml(s.description) "`n"
+        md .= "model: " EscapeYaml(s.model) "`n"
+        md .= "source: " EscapeYaml(s.source) "`n"
+        md .= "favorite: " s.fav "`n"
+        md .= "uses: " s.uses "`n"
+        md .= "created: " EscapeYaml(s.created) "`n"
+        md .= "updated: " EscapeYaml(s.updated) "`n"
+        md .= "---`n`n"
+        md .= s.content "`n"
+        FileDelete, %outFile%
+        FileAppend, %md%, %outFile%, UTF-8
+        exported++
+    }
+    GuiControl Main:, StatusLeft, % "Exported " exported " Markdown prompts"
+    ToolTip % "Exported " exported " Markdown prompts!"
+    SetTimer RemoveTooltip, -1200
+    return
+
+OnImportLib:
+    FileSelectFile, inPath, 3, , Import Library, INI Files (*.ini)
+    if (inPath = "")
+        return
+    imported := 0
+    IniRead, sections, %inPath%
+    Loop Parse, sections, `n, `r
+    {
+        sec := A_LoopField
+        if (sec = "")
+            continue
+        RegExMatch(sec, "snippet_(\d+)", m)
+        if (!m)
+            continue
+        IniRead, nm,   %inPath%, %sec%, name, ???
+        if (nm = "???")
+            continue
+        IniRead, cat,  %inPath%, %sec%, category, Custom
+        IniRead, grp,  %inPath%, %sec%, group,
+        IniRead, tgs,  %inPath%, %sec%, tags,
+        IniRead, raw,  %inPath%, %sec%, content, ???
+        IniRead, fv,   %inPath%, %sec%, fav, 0
+        IniRead, us,   %inPath%, %sec%, uses, 0
+        IniRead, uid,  %inPath%, %sec%, uid,
+        IniRead, desc, %inPath%, %sec%, description,
+        IniRead, mdl,  %inPath%, %sec%, model,
+        IniRead, src,  %inPath%, %sec%, source,
+        IniRead, crt,  %inPath%, %sec%, created,
+        IniRead, upd,  %inPath%, %sec%, updated,
+        if (grp = "ERROR")
+            grp := ""
+        if (tgs = "ERROR")
+            tgs := ""
+        if (desc = "ERROR")
+            desc := ""
+        if (mdl = "ERROR")
+            mdl := ""
+        if (src = "ERROR")
+            src := ""
+        if (crt = "ERROR" || crt = "")
+            crt := NowStamp()
+        if (upd = "ERROR" || upd = "")
+            upd := crt
+        StringReplace, decoded, raw, ``n, `n, All
+        StringReplace, decoded, decoded, ``t, %A_Tab%, All
+        ; check for duplicate name and generate unique suffix
+        dupeSuffix := 0
+        Loop {
+            dupeFound := false
+            checkName := (dupeSuffix = 0) ? nm : nm " (imported " dupeSuffix ")"
+            for eid, es in Snippets {
+                if (es.name = checkName) {
+                    dupeFound := true
+                    break
+                }
+            }
+            if (!dupeFound) {
+                nm := checkName
+                break
+            }
+            dupeSuffix++
+            if (dupeSuffix > 100)
+                break
+        }
+        if (uid = "ERROR" || uid = "" || SnippetUidExists(uid))
+            uid := GenerateSnippetUid()
+        Snippets[NextID] := {name: nm, category: cat, group: grp, tags: tgs
+            , content: decoded, fav: fv + 0, uses: us + 0, uid: uid
+            , description: desc, model: mdl, source: src, created: crt, updated: upd}
+        NextID++
+        imported++
+    }
+    if (imported > 0) {
+        GoSub SaveAllSnippets
+        GoSub BuildCategoryTree
+        GoSub RefreshList
+    }
+    GuiControl Main:, StatusLeft, % "Imported " imported " snippets"
+    ToolTip % "Imported " imported " snippets!"
+    SetTimer RemoveTooltip, -1200
+    return
+
+; ── Duplicate ─────────────────────────────────────────────
+OnDuplicate:
+    if (SelectedID = "" || !Snippets.HasKey(SelectedID))
+        return
+    s := Snippets[SelectedID]
+    EditorID := ""
+    EdNameVal := s.name " (Copy)"
+    EdContentVal := s.content
+    EdCatVal := s.category
+    EdGroupVal := s.group
+    EdTagsVal := s.tags
+    EdDescVal := s.description
+    EdModelVal := s.model
+    EdSourceVal := "duplicate-of:" s.uid
+    GoSub ShowEditorDialog
+    return
+
+; ── Add / Edit / Delete ───────────────────────────────────
+OnAdd:
+    EditorID := ""
+    EdNameVal := ""
+    EdContentVal := ""
+    EdCatVal := "Coding"
+    EdGroupVal := ""
+    EdTagsVal := ""
+    EdDescVal := ""
+    EdModelVal := ""
+    EdSourceVal := ""
+    GoSub ShowEditorDialog
+    return
+
+OnEdit:
+    if (SelectedID = "" || !Snippets.HasKey(SelectedID))
+        return
+    s := Snippets[SelectedID]
+    EditorID := SelectedID
+    EdNameVal := s.name
+    EdContentVal := s.content
+    EdCatVal := s.category
+    EdGroupVal := s.group
+    EdTagsVal := s.tags
+    EdDescVal := s.description
+    EdModelVal := s.model
+    EdSourceVal := s.source
+    GoSub ShowEditorDialog
+    return
+
+OnDelete:
+    ; multi-select aware
+    selIDs := []
+    row := 0
+    Loop {
+        row := LV_GetNext(row)
+        if (!row)
+            break
+        selIDs.Push(FilteredIDs[row])
+    }
+    cnt := selIDs.Length()
+    if (cnt = 0)
+        return
+    if (cnt = 1)
+        MsgBox 4, Delete, % "Delete """ Snippets[selIDs[1]].name """?"
+    else
+        MsgBox 4, Delete, % "Delete " cnt " selected snippets?"
+    IfMsgBox Yes
+    {
+        for i, id in selIDs
+            AppendHistoryEntry(id, "delete")
+        for i, id in selIDs
+            Snippets.Delete(id)
+        SelectedID := ""
+        GoSub SaveAllSnippets
+        GoSub BuildCategoryTree
+        GoSub RefreshList
+        GoSub UpdatePreview
+    }
+    return
+
+MainGuiClose:
+MainGuiEscape:
+    Gui Main:Hide
+    return
+
+; ── Hotkeys ────────────────────────────────────────────────
+#IfWinActive Prompt Manager ahk_class AutoHotkeyGUI
+
+Enter::
+    WinGetTitle, at, A
+    if (at != "Prompt Manager")
+        return
+    GuiControlGet, fc, Main:FocusV
+    if (fc = "SearchBox") {
+        GuiControl Main:Focus, SnippetLV
+        return
+    }
+    GoSub OnInsert
+    return
+
+f::
+    WinGetTitle, at, A
+    if (at != "Prompt Manager") {
+        Send f
+        return
+    }
+    GuiControlGet, fc, Main:FocusV
+    if (fc = "SearchBox") {
+        Send f
+        return
+    }
+    GoSub OnToggleFav
+    return
+
+d::
+    WinGetTitle, at, A
+    if (at != "Prompt Manager") {
+        Send d
+        return
+    }
+    GuiControlGet, fc, Main:FocusV
+    if (fc = "SearchBox") {
+        Send d
+        return
+    }
+    GoSub OnDuplicate
+    return
+
+~Tab::
+    WinGetTitle, at, A
+    if (at != "Prompt Manager")
+        return
+    GuiControlGet, fc, Main:FocusV
+    if (fc = "SearchBox") {
+        GuiControl Main:Focus, SnippetLV
+        Send {Down}{Up}
+    }
+    return
+
+~Down::
+~Up::
+    WinGetTitle, at, A
+    if (at != "Prompt Manager")
+        return
+    GuiControlGet, fc, Main:FocusV
+    if (fc = "SearchBox")
+        GuiControl Main:Focus, SnippetLV
+    return
+
+#IfWinActive
+
+RemoveTooltip:
+    ToolTip
+    return
+
+; ============================================================
+;  PLACEHOLDER FILL-IN DIALOG
+; ============================================================
+ParsePlaceholders:
+    FillInPlaceholders := []
+    FillInCount := 0
+    seen := {}
+    pos := 1
+    while (pos := RegExMatch(FillInContent, "\{([^{}\n]+)\}", match, pos)) {
+        phFull := match1
+        colonPos := InStr(phFull, ":")
+        if (colonPos) {
+            phName    := SubStr(phFull, 1, colonPos - 1)
+            phDefault := SubStr(phFull, colonPos + 1)
+        } else {
+            phName    := phFull
+            phDefault := ""
+        }
+        if (phName = "clipboard" || phName = "date" || phName = "datetime") {
+            pos += StrLen(match)
+            continue
+        }
+        if (!seen.HasKey(phName)) {
+            seen[phName] := true
+            FillInCount++
+            FillInPlaceholders.Push({name: phName, default: phDefault})
+            if (FillInCount >= 15)
+                break
+        }
+        pos += StrLen(match)
+    }
+    return
+
+ShowFillInDialog:
+    fiW := 580
+    fieldH := 38
+    dlgH := 56 + (FillInCount * fieldH) + 12 + 40 + 16
+    if (dlgH < 180)
+        dlgH := 180
+    if (dlgH > 650)
+        dlgH := 650
+    snippetName := Snippets[SelectedID].name
+    Gui FillIn:New, +OwnerMain, Fill in — %snippetName%
+    Gui FillIn:Default
+    Gui FillIn:Color, 181825
+    Gui Font, s12 cB4BEFE Bold, Segoe UI
+    Gui Add, Text, x16 y12 w560 h24, Fill in placeholders
+    Gui Font, s9 c6C7086 Norm, Segoe UI
+    Gui Add, Text, x16 y34 w560 h18, Leave blank to keep as-is. Auto-filled: {clipboard} {date} {datetime}
+    yPos := 56
+    labelW := 190
+    editX := labelW + 24
+    editW := fiW - editX - 16
+    Loop % FillInCount {
+        idx := A_Index
+        phName    := FillInPlaceholders[idx].name
+        phDefault := FillInPlaceholders[idx].default
+        Gui Font, s10 cFAB387, Consolas
+        Gui Add, Text, x8 y%yPos% w%labelW% h26 +0x200 +Right, {%phName%}
+        Gui Font, s10 cCDD6F4, Segoe UI
+        editOpt := "x" editX " y" yPos " w" editW " h26 vFillIn" idx " +Background313244"
+        Gui Add, Edit, %editOpt%, %phDefault%
+        yPos += fieldH
+    }
+    yPos += 12
+    btnLabel := (FillInAction = "insert") ? "&Paste+Close" : "&Copy"
+    Gui Font, s10 cCDD6F4, Segoe UI
+    Gui Add, Button, x16  y%yPos% w90  h34 gFillInSkip,     &Skip
+    bx1 := fiW - 350
+    Gui Add, Button, x%bx1% y%yPos% w105 h34 gFillInSubmit Default, %btnLabel%
+    bx2 := fiW - 236
+    Gui Add, Button, x%bx2% y%yPos% w105 h34 gFillInCopyOnly, C&opy Only
+    bx3 := fiW - 122
+    Gui Add, Button, x%bx3% y%yPos% w106 h34 gFillInCancel, Cancel
+    Gui FillIn:Show, w%fiW% h%dlgH%
+    GuiControl FillIn:Focus, FillIn1
+    return
+
+FillInSubmit:
+    Gui FillIn:Submit
+    Loop % FillInCount {
+        idx := A_Index
+        phName := FillInPlaceholders[idx].name
+        val := FillIn%idx%
+        if (val != "")
+            FillInContent := RegExReplace(FillInContent, "\{" phName "(?::[^{}]*)?\}", val)
+    }
+    GoSub IncrementUses
+    GoSub DoFinalAction
+    return
+
+FillInSkip:
+    Gui FillIn:Destroy
+    GoSub IncrementUses
+    GoSub DoFinalAction
+    return
+
+FillInCopyOnly:
+    Gui FillIn:Submit
+    Loop % FillInCount {
+        idx := A_Index
+        phName := FillInPlaceholders[idx].name
+        val := FillIn%idx%
+        if (val != "")
+            FillInContent := RegExReplace(FillInContent, "\{" phName "(?::[^{}]*)?\}", val)
+    }
+    GoSub IncrementUses
+    Clipboard := FillInContent
+    GuiControl Main:, StatusLeft, Copied to clipboard!
+    ToolTip Copied!
+    SetTimer RemoveTooltip, -1200
+    GoSub UpdatePreview
+    return
+
+FillInCancel:
+FillInGuiClose:
+FillInGuiEscape:
+    Gui FillIn:Destroy
+    return
+
+; ============================================================
+;  EDITOR DIALOG (with metadata fields)
+; ============================================================
+ShowEditorDialog:
+    edW := 620, edH := 660
+
+    Gui Editor:New, +OwnerMain, % (EditorID = "" ? "Add Snippet" : "Edit Snippet")
+    Gui Editor:Default
+    Gui Editor:Color, 181825
+
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x16 y14 w50 h20, NAME
+    Gui Font, s11 cCDD6F4, Segoe UI
+    Gui Add, Edit, x16 y34 w588 h28 vEdName +Background313244, %EdNameVal%
+
+    ; Category (ComboBox for freeform) + Group + Tags
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x16 y72 w80 h20, CATEGORY
+    Gui Font, s11 cCDD6F4, Segoe UI
+    ; build category list from existing
+    edCatList := "Coding|Writing|System|Workflow|Custom"
+    for eid, es in Snippets {
+        found := false
+        Loop Parse, edCatList, |
+            if (A_LoopField = es.category)
+                found := true
+        if (!found && es.category != "")
+            edCatList .= "|" es.category
+    }
+    Gui Add, ComboBox, x16 y92 w130 vEdCat, %edCatList%
+    GuiControl Editor:Text, EdCat, %EdCatVal%
+
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x158 y72 w60 h20, GROUP
+    Gui Font, s11 cCDD6F4, Segoe UI
+    ; build group list from existing
+    edGrpList := ""
+    grpSeen := {}
+    for eid, es in Snippets {
+        if (es.group != "" && !grpSeen.HasKey(es.group)) {
+            grpSeen[es.group] := true
+            edGrpList .= "|" es.group
+        }
+    }
+    Gui Add, ComboBox, x158 y92 w120 vEdGroup, %edGrpList%
+    GuiControl Editor:Text, EdGroup, %EdGroupVal%
+
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x290 y72 w50 h20, TAGS
+    Gui Font, s11 cCDD6F4, Segoe UI
+    Gui Add, Edit, x290 y92 w314 h28 vEdTags +Background313244, %EdTagsVal%
+
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x16 y130 w100 h20, DESCRIPTION
+    Gui Font, s11 cCDD6F4, Segoe UI
+    Gui Add, Edit, x16 y150 w588 h28 vEdDesc +Background313244, %EdDescVal%
+
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x16 y188 w80 h20, MODEL
+    Gui Add, Text, x222 y188 w80 h20, SOURCE
+    Gui Font, s11 cCDD6F4, Segoe UI
+    Gui Add, Edit, x16 y208 w190 h28 vEdModel +Background313244, %EdModelVal%
+    Gui Add, Edit, x222 y208 w382 h28 vEdSource +Background313244, %EdSourceVal%
+
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x16 y246 w80 h20, CONTENT
+    Gui Font, s9 cA6ADC8, Segoe UI
+    Gui Add, Text, x100 y246 w504 h20, {placeholder}  {name:default}  {clipboard}  {date}  {datetime}  @{Name}
+    Gui Font, s10 cCDD6F4, Consolas
+    Gui Add, Edit, x16 y266 w588 h330 vEdContent +Multi +WantReturn +WantTab +Background1e1e2e, %EdContentVal%
+
+    Gui Font, s10 cCDD6F4, Segoe UI
+    bY := edH - 52
+    if (EditorID != "")
+        Gui Add, Button, x16 y%bY% w150 h36 gEditorRestorePrev, ← Restore Previous
+    Gui Add, Button, x400 y%bY% w104 h36 gEditorSave Default, &Save
+    Gui Add, Button, x512 y%bY% w92  h36 gEditorCancel, Cancel
+
+    Gui Editor:Show, w%edW% h%edH%
+return
+
+EditorSave:
+    Gui Editor:Submit, NoHide
+    if (EdName = "") {
+        MsgBox 48, Error, Name cannot be empty.
+        return
+    }
+    Gui Editor:Destroy
+    if (EditorID = "") {
+        id := NextID
+        NextID++
+    } else {
+        id := EditorID
+    }
+    oldFav := 0, oldUses := 0, oldUid := "", oldCreated := ""
+    if (Snippets.HasKey(id)) {
+        oldFav := Snippets[id].fav
+        oldUses := Snippets[id].uses
+        oldUid := Snippets[id].uid
+        oldCreated := Snippets[id].created
+        if (EditorID != "")
+            AppendHistoryEntry(id, "edit")
+    }
+    now := NowStamp()
+    if (oldUid = "")
+        oldUid := GenerateSnippetUid()
+    if (oldCreated = "")
+        oldCreated := now
+    Snippets[id] := {name: EdName, category: EdCat, group: EdGroup, tags: EdTags
+        , content: EdContent, fav: oldFav, uses: oldUses, uid: oldUid
+        , description: EdDesc, model: EdModel, source: EdSource
+        , created: oldCreated, updated: now}
+    GoSub SaveAllSnippets
+    Gui Main:Default
+    GoSub BuildCategoryTree
+    GoSub RefreshList
+    ; select the saved snippet
+    for row, rid in FilteredIDs {
+        if (rid = id) {
+            LV_Modify(row, "Select Focus")
+            SelectedID := id
+            GoSub UpdatePreview
+            break
+        }
+    }
+    return
+
+EditorCancel:
+EditorGuiClose:
+EditorGuiEscape:
+    Gui Editor:Destroy
+    return
+
+; ============================================================
+;  BUILD CATEGORY TREE (navigation sidebar)
+; ============================================================
+BuildCategoryTree:
+    Gui Main:Default
+    TVBuilding := true
+    TV_Delete()
+    TVNodeFilter := {}
+
+    ; count snippets per category/group
+    catCounts := {}
+    grpCounts := {}
+    totalCount := 0, favCount := 0, usedCount := 0
+    for id, s in Snippets {
+        totalCount++
+        if (s.fav)
+            favCount++
+        if (s.uses > 0)
+            usedCount++
+        cat := (s.category != "") ? s.category : "Custom"
+        catCounts[cat] := (catCounts.HasKey(cat) ? catCounts[cat] : 0) + 1
+        if (s.group != "") {
+            gkey := cat . Chr(2) . s.group
+            grpCounts[gkey] := (grpCounts.HasKey(gkey) ? grpCounts[gkey] : 0) + 1
+        }
+    }
+
+    ; special top-level nodes
+    ; ≡ All  ★ Favorites  ▲ Most Used
+    nAll  := TV_Add(Chr(8801) " All  (" totalCount ")", 0, "")
+    TVNodeFilter[nAll]  := "All"
+    nFav  := TV_Add(Chr(9733) " Favorites  (" favCount ")", 0, "")
+    TVNodeFilter[nFav]  := "Favorites"
+    nUsed := TV_Add(Chr(9650) " Most Used  (" usedCount ")", 0, "")
+    TVNodeFilter[nUsed] := "Most Used"
+
+    ; category icon map  λ ✏ ⚙ ⇆ ◆
+    catIcons := {}
+    catIcons["Coding"]   := Chr(955)   ; λ  lambda
+    catIcons["Writing"]  := Chr(9999)  ; ✏  pencil
+    catIcons["System"]   := Chr(9881)  ; ⚙  gear
+    catIcons["Workflow"] := Chr(8646)  ; ⇆  arrows
+    catIcons["Custom"]   := Chr(9670)  ; ◆  diamond
+
+    ; build ordered category list
+    baseCats := ["Coding","Writing","System","Workflow","Custom"]
+    for cat, cnt in catCounts {
+        found := false
+        for i, bc in baseCats
+            if (bc = cat)
+                found := true
+        if (!found)
+            baseCats.Push(cat)
+    }
+
+    ; add category nodes with sub-group children
+    for i, cat in baseCats {
+        if (!catCounts.HasKey(cat))
+            continue
+        icon := catIcons.HasKey(cat) ? catIcons[cat] : Chr(9670)
+        nCat := TV_Add(icon " " cat "  (" catCounts[cat] ")", 0, "")
+        TVNodeFilter[nCat] := cat
+        hasGroups := false
+        for gkey, gcnt in grpCounts {
+            splitAt := InStr(gkey, Chr(2))
+            if (!splitAt)
+                continue
+            gcat := SubStr(gkey, 1, splitAt - 1)
+            grp  := SubStr(gkey, splitAt + 1)
+            if (gcat != cat)
+                continue
+            ; ▸ sub-group node
+            nGrp := TV_Add("  " Chr(9656) " " grp "  (" gcnt ")", nCat, "")
+            TVNodeFilter[nGrp] := cat "/" grp
+            hasGroups := true
+        }
+        if (hasGroups)
+            TV_Modify(nCat, "Expand")
+    }
+
+    ; re-select node matching CurrentCatFilter
+    for nodeId, filterVal in TVNodeFilter {
+        if (filterVal = CurrentCatFilter) {
+            TV_Modify(nodeId, "Select")
+            break
+        }
+    }
+    TVBuilding := false
+    return
+
+; ============================================================
+;  REFRESH LIST
+; ============================================================
+RefreshList:
+    Gui Main:Default
+    GuiControlGet, searchTerm, Main:, SearchBox
+    catText := CurrentCatFilter
+
+    StringLower, searchTerm, searchTerm
+
+    LV_Delete()
+    FilteredIDs := []
+
+    sortLines := ""
+    for id, s in Snippets {
+        ; category filter
+        if (catText = "All") {
+            ; show all
+        } else if (catText = "Favorites") {
+            if (!s.fav)
+                continue
+        } else if (catText = "Most Used") {
+            if (s.uses < 1)
+                continue
+        } else if (InStr(catText, "/")) {
+            ; sub-category filter: "Coding/Python"
+            snippetFull := s.category
+            if (s.group != "")
+                snippetFull .= "/" s.group
+            if (snippetFull != catText)
+                continue
+        } else {
+            ; plain category
+            if (s.category != catText)
+                continue
+        }
+        ; search — tier 1=exact name, 2=name starts-with, 3=name contains,
+        ;          4=tag match, 5=group match, 6=content-only
+        tierKey := "0"
+        if (searchTerm != "") {
+            haystack := s.name " " s.tags " " s.group " " s.content
+            StringLower, haystack, haystack
+            if !InStr(haystack, searchTerm)
+                continue
+            nameLower2 := s.name
+            StringLower, nameLower2, nameLower2
+            tagsLower := s.tags
+            StringLower, tagsLower, tagsLower
+            grpLower := s.group
+            StringLower, grpLower, grpLower
+            if (nameLower2 = searchTerm)
+                tierKey := "1"
+            else if (SubStr(nameLower2, 1, StrLen(searchTerm)) = searchTerm)
+                tierKey := "2"
+            else if (InStr(nameLower2, searchTerm))
+                tierKey := "3"
+            else if (InStr(tagsLower, searchTerm))
+                tierKey := "4"
+            else if (InStr(grpLower, searchTerm))
+                tierKey := "5"
+            else
+                tierKey := "6"
+        }
+        favKey := s.fav ? "0" : "1"
+        usesKey := 99999 - s.uses
+        if (usesKey < 0)
+            usesKey := 0
+        usesPad := SubStr("00000" . usesKey, -4)
+        nameLower := s.name
+        StringLower, nameLower, nameLower
+        sep := Chr(1)
+        sortLines .= tierKey . sep . favKey . sep . usesPad . sep . nameLower . sep . id "`n"
+    }
+
+    Sort sortLines
+
+    sep := Chr(1)
+    Loop Parse, sortLines, `n, `r
+    {
+        if (A_LoopField = "")
+            continue
+        StringGetPos, lastSep, A_LoopField, %sep%, R
+        id := SubStr(A_LoopField, lastSep + 2) + 0
+        if (!Snippets.HasKey(id))
+            continue
+        s := Snippets[id]
+        FilteredIDs.Push(id)
+        dispName := s.name
+        if (s.fav)
+            dispName := Chr(9733) " " dispName
+        if (catText = "All" || catText = "Favorites" || catText = "Most Used")
+            dispCat := s.category . (s.group != "" ? "/" . s.group : "")
+        else if (InStr(catText, "/"))
+            dispCat := ""
+        else
+            dispCat := s.group
+        LV_Add("", dispName, dispCat, s.uses)
+    }
+
+    ; count badge
+    total := Snippets.Count()
+    shown := FilteredIDs.Length()
+    if (catText = "Favorites")
+        cntTxt := shown " fav" (shown != 1 ? "s" : "")
+    else if (catText = "Most Used")
+        cntTxt := shown " used"
+    else if (shown = total)
+        cntTxt := total " snippets"
+    else
+        cntTxt := shown " / " total
+    GuiControl Main:, SnippetCount, %cntTxt%
+
+    if (FilteredIDs.Length() > 0) {
+        LV_Modify(1, "Select Focus")
+        SelectedID := FilteredIDs[1]
+        GoSub UpdatePreview
+    } else {
+        SelectedID := ""
+        GoSub UpdatePreview
+    }
+return
+
+; ============================================================
+;  DATA I/O (with group field)
+; ============================================================
+LoadAllSnippets:
+    Snippets := {}
+    NextID := 1
+    IniRead, sections, %DataFile%
+    Loop Parse, sections, `n, `r
+    {
+        sec := A_LoopField
+        if (sec = "")
+            continue
+        RegExMatch(sec, "snippet_(\d+)", m)
+        if (!m)
+            continue
+        id := m1 + 0
+        IniRead, nm,   %DataFile%, %sec%, name, ???
+        IniRead, cat,  %DataFile%, %sec%, category, Custom
+        IniRead, grp,  %DataFile%, %sec%, group,
+        IniRead, tgs,  %DataFile%, %sec%, tags,
+        IniRead, raw,  %DataFile%, %sec%, content, ???
+        IniRead, fv,   %DataFile%, %sec%, fav, 0
+        IniRead, us,   %DataFile%, %sec%, uses, 0
+        IniRead, uid,  %DataFile%, %sec%, uid,
+        IniRead, desc, %DataFile%, %sec%, description,
+        IniRead, mdl,  %DataFile%, %sec%, model,
+        IniRead, src,  %DataFile%, %sec%, source,
+        IniRead, crt,  %DataFile%, %sec%, created,
+        IniRead, upd,  %DataFile%, %sec%, updated,
+        StringReplace, decoded, raw, ``n, `n, All
+        StringReplace, decoded, decoded, ``t, %A_Tab%, All
+        if (grp = "ERROR")
+            grp := ""
+        if (tgs = "ERROR")
+            tgs := ""
+        if (desc = "ERROR")
+            desc := ""
+        if (mdl = "ERROR")
+            mdl := ""
+        if (src = "ERROR")
+            src := ""
+        if (crt = "ERROR" || crt = "")
+            crt := NowStamp()
+        if (upd = "ERROR" || upd = "")
+            upd := crt
+        if (uid = "ERROR" || uid = "")
+            uid := GenerateSnippetUid()
+        Snippets[id] := {name: nm, category: cat, group: grp, tags: tgs
+            , content: decoded, fav: fv + 0, uses: us + 0, uid: uid
+            , description: desc, model: mdl, source: src, created: crt, updated: upd}
+        if (id >= NextID)
+            NextID := id + 1
+    }
+return
+
+SaveAllSnippets:
+    FileDelete %DataFile%
+    for id, s in Snippets {
+        sec := "snippet_" id
+        IniWrite, % s.name,     %DataFile%, %sec%, name
+        IniWrite, % s.category, %DataFile%, %sec%, category
+        IniWrite, % s.group,    %DataFile%, %sec%, group
+        IniWrite, % s.tags,     %DataFile%, %sec%, tags
+        encoded := s.content
+        StringReplace, encoded, encoded, `n, ``n, All
+        StringReplace, encoded, encoded, %A_Tab%, ``t, All
+        IniWrite, %encoded%,    %DataFile%, %sec%, content
+        IniWrite, % s.fav,      %DataFile%, %sec%, fav
+        IniWrite, % s.uses,     %DataFile%, %sec%, uses
+        IniWrite, % s.uid,      %DataFile%, %sec%, uid
+        IniWrite, % s.description, %DataFile%, %sec%, description
+        IniWrite, % s.model,    %DataFile%, %sec%, model
+        IniWrite, % s.source,   %DataFile%, %sec%, source
+        IniWrite, % s.created,  %DataFile%, %sec%, created
+        IniWrite, % s.updated,  %DataFile%, %sec%, updated
+    }
+return
+
+; ============================================================
+;  SAMPLE DATA
+; ============================================================
+CreateSampleData:
+    samples := []
+
+    samples.Push({name: "Code Review", category: "Coding", group: "", tags: "review quality", fav: 1, uses: 0
+        , content: "Review the following code for bugs, security issues, and improvements.`n`nCode:`n```{language}`n{clipboard}`n````n`nProvide:`n1. Critical bugs or security issues`n2. Performance improvements`n3. Readability suggestions`n4. A summary rating (1-5)"})
+
+    samples.Push({name: "Explain Code", category: "Coding", group: "", tags: "explain understand", fav: 0, uses: 0
+        , content: "Explain the following code step by step. Assume I'm an intermediate developer.`n`n```{language}`n{clipboard}`n````n`nCover:`n- What it does overall`n- Key logic flow`n- Any non-obvious patterns or tricks used"})
+
+    samples.Push({name: "Write Unit Tests", category: "Coding", group: "Testing", tags: "testing unit", fav: 0, uses: 0
+        , content: "Write comprehensive unit tests for the following function/class.`n`nCode:`n```{language}`n{clipboard}`n````n`nRequirements:`n- Cover happy path and edge cases`n- Use {test framework} style`n- Include descriptive test names`n- Add brief comments explaining each test case"})
+
+    samples.Push({name: "Refactor This", category: "Coding", group: "", tags: "refactor clean", fav: 0, uses: 0
+        , content: "Refactor the following code to improve readability and maintainability while preserving exact behavior.`n`n```{language}`n{clipboard}`n````n`nPriorities:`n- Clearer naming`n- Reduce nesting / complexity`n- Extract reusable pieces if warranted`n- Keep it simple — don't over-engineer"})
+
+    samples.Push({name: "Fix Bug", category: "Coding", group: "", tags: "debug fix", fav: 1, uses: 0
+        , content: "I have a bug in the following code.`n`nCode:`n```{language}`n{clipboard}`n````n`nExpected behavior: {describe expected}`nActual behavior: {describe actual}`nError message (if any): {paste error}`n`nFind the root cause and provide a fix with explanation."})
+
+    samples.Push({name: "Write Regex", category: "Coding", group: "", tags: "regex pattern", fav: 0, uses: 0
+        , content: "Write a regular expression that matches the following pattern:`n`nDescription: {describe what to match}`nLanguage/flavor: {language or PCRE/JS/Python}`n`nProvide the regex, explain each part, and include test cases."})
+
+    samples.Push({name: "Convert Code", category: "Coding", group: "", tags: "translate port", fav: 0, uses: 0
+        , content: "Convert the following code from {source language} to {target language}.`n`n```{source language}`n{clipboard}`n````n`nUse idiomatic {target language} patterns. Note any features that don't translate directly."})
+
+    samples.Push({name: "Optimize Performance", category: "Coding", group: "", tags: "performance speed", fav: 0, uses: 0
+        , content: "Optimize the following code for better performance.`n`n```{language}`n{clipboard}`n````n`nProvide:`n1. Identified bottlenecks`n2. Optimized version`n3. Big-O analysis before and after"})
+
+    samples.Push({name: "Write SQL Query", category: "Coding", group: "SQL", tags: "sql database", fav: 0, uses: 0
+        , content: "Write a SQL query for: {describe the desired output}`n`nDatabase: {PostgreSQL / MySQL / SQLite}`nTables: {describe tables and key columns}`n`nOptimize for readability. Handle NULLs appropriately."})
+
+    samples.Push({name: "API Endpoint Design", category: "Coding", group: "", tags: "api rest design", fav: 0, uses: 0
+        , content: "Design a REST API endpoint.`n`nFeature: {describe the feature}`nFramework: {framework}`n`nProvide: method, path, request/response format, validation, implementation code, example curl."})
+
+    samples.Push({name: "Git Commit Message", category: "Coding", group: "Git", tags: "git commit", fav: 0, uses: 0
+        , content: "Write a git commit message for:`n`nFiles changed: {list files}`nWhat was done: {describe changes}`n`nUse conventional commits (feat/fix/refactor/docs/chore). Subject under 72 chars."})
+
+    samples.Push({name: "Professional Email Reply", category: "Writing", group: "Email", tags: "email business", fav: 0, uses: 0
+        , content: "Write a professional email reply.`n`nOriginal email summary: {summarize the email}`nKey points: {your points}`nTone: {friendly / formal / firm}`n`nKeep it under 150 words. Be polite and action-oriented."})
+
+    samples.Push({name: "Summarize Text", category: "Writing", group: "", tags: "summary tldr", fav: 1, uses: 0
+        , content: "Summarize the following text concisely.`n`nText:`n---`n{clipboard}`n---`n`nProvide:`n1. One-sentence TL;DR`n2. 3-5 bullet point summary`n3. Key takeaways or action items"})
+
+    samples.Push({name: "Rewrite for Clarity", category: "Writing", group: "", tags: "rewrite clarity", fav: 0, uses: 0
+        , content: "Rewrite this text to be clearer and more concise while keeping the original meaning.`n`nOriginal:`n---`n{clipboard}`n---`n`nTarget audience: {audience}`nMax length: ~{X} words"})
+
+    samples.Push({name: "Proofread and Edit", category: "Writing", group: "", tags: "proofread grammar", fav: 0, uses: 0
+        , content: "Proofread and edit the following text.`n`n---`n{clipboard}`n---`n`nFix grammar, spelling, awkward phrasing, punctuation. Provide corrected version then list each change."})
+
+    samples.Push({name: "Translate Text", category: "Writing", group: "", tags: "translate language", fav: 0, uses: 0
+        , content: "Translate from {source language} to {target language}.`n`n---`n{clipboard}`n---`n`nMaintain original tone. Use natural phrasing. Note untranslatable idioms."})
+
+    samples.Push({name: "Write Bullet Points", category: "Writing", group: "", tags: "bullets list", fav: 0, uses: 0
+        , content: "Convert these notes into clean, organized bullet points.`n`n---`n{clipboard}`n---`n`nGroup related items under headers. Remove redundancy. Use parallel structure."})
+
+    samples.Push({name: "LinkedIn Post", category: "Writing", group: "Social", tags: "linkedin social", fav: 0, uses: 0
+        , content: "Write a LinkedIn post.`n`nTopic: {topic}`nKey message: {what you want to convey}`nTone: {professional / casual-professional}`n`nHook in first line. Under 200 words. End with CTA. Suggest 3-5 hashtags."})
+
+    samples.Push({name: "Meeting Notes Cleanup", category: "Writing", group: "", tags: "meeting notes", fav: 0, uses: 0
+        , content: "Clean up these raw meeting notes.`n`n---`n{clipboard}`n---`n`nFormat as: ## Meeting: {topic}`n**Date:** {date} | **Attendees:** {names}`n### Key Decisions`n### Action Items`n### Notes"})
+
+    samples.Push({name: "System Prompt Template", category: "System", group: "", tags: "system persona", fav: 0, uses: 0
+        , content: "You are {role/persona}. Your expertise includes {domains}.`n`nBehavior rules:`n- {rule 1}`n- {rule 2}`n`nResponse style:`n- Be {concise/detailed/technical}`n- Format output as {format}"})
+
+    samples.Push({name: "Chain of Thought", category: "System", group: "", tags: "cot reasoning", fav: 1, uses: 0
+        , content: "Think through this step by step before answering.`n`nQuestion: {your question}`n`n1. Identify what information is given`n2. Break the problem into parts`n3. Work through each part showing reasoning`n4. Check for errors`n5. Provide clear final answer"})
+
+    samples.Push({name: "Few-Shot Template", category: "System", group: "", tags: "few-shot examples", fav: 0, uses: 0
+        , content: "Follow the pattern from these examples.`n`nExample 1:`nInput: {example input 1}`nOutput: {example output 1}`n`nExample 2:`nInput: {example input 2}`nOutput: {example output 2}`n`nNow do:`nInput: {your actual input}`nOutput:"})
+
+    samples.Push({name: "Output Format Enforcer", category: "System", group: "", tags: "format json", fav: 0, uses: 0
+        , content: "Respond ONLY with valid {format}. No explanations, no markdown fencing.`n`nSchema: {paste schema}`nExample output: {example}`n`nProcess this input: {input}"})
+
+    samples.Push({name: "Role: Senior Developer", category: "System", group: "Roles", tags: "role developer", fav: 1, uses: 0
+        , content: "You are a senior software developer with 15+ years of experience.`n`nExpertise: {languages/frameworks}`n`nRules:`n- Production-ready code, not toy examples`n- Consider error handling, edge cases, security`n- Explain architectural decisions`n- Prefer simplicity over cleverness"})
+
+    samples.Push({name: "Role: Technical Writer", category: "System", group: "Roles", tags: "role writer", fav: 0, uses: 0
+        , content: "You are a technical writer creating clear documentation.`n`nRules:`n- Plain language, avoid jargon`n- Headers, lists, code examples`n- Include quick-start / TL;DR`n- Active voice, second person`n- Sentences under 25 words"})
+
+    samples.Push({name: "Guardrails Template", category: "System", group: "", tags: "safety guardrails", fav: 0, uses: 0
+        , content: "Follow these guardrails strictly:`n`nALWAYS:`n- Stay on topic: {allowed topics}`n- Cite sources for factual claims`n- Ask clarifying questions if ambiguous`n`nNEVER:`n- {prohibited behavior 1}`n- {prohibited behavior 2}`n- Make up information"})
+
+    samples.Push({name: "Daily Standup Notes", category: "Workflow", group: "", tags: "standup daily", fav: 0, uses: 0
+        , content: "Format my standup notes:`n`nYesterday: {what you did}`nToday: {what you plan}`nBlockers: {any blockers}`n`nConcise bullet points. Highlight items needing attention."})
+
+    samples.Push({name: "Convert Format", category: "Workflow", group: "", tags: "convert transform", fav: 0, uses: 0
+        , content: "Convert from {source format} to {target format}.`n`nInput:`n````n{clipboard}`n````n`nPreserve all fields. Handle edge cases. Output valid and well-formatted."})
+
+    samples.Push({name: "Create Documentation", category: "Workflow", group: "", tags: "docs documentation", fav: 0, uses: 0
+        , content: "Write documentation for:`n`n````n{clipboard}`n````n`nInclude: overview, parameters, usage examples, common gotchas. Markdown format."})
+
+    samples.Push({name: "Compare Options", category: "Workflow", group: "", tags: "compare decision", fav: 0, uses: 0
+        , content: "Compare these options:`n1. {option 1}`n2. {option 2}`n3. {option 3}`n`nContext: {what this is for}`nPriorities: {cost / speed / quality / simplicity}`n`nPros/cons for each. Comparison table. Recommendation."})
+
+    samples.Push({name: "Break Down Task", category: "Workflow", group: "Planning", tags: "planning breakdown", fav: 0, uses: 0
+        , content: "Break down this task:`n`nTask: {describe the task}`nDeadline: {when}`n`nProvide: ordered sub-tasks with effort estimates, dependencies, critical path, risks."})
+
+    samples.Push({name: "Write Changelog", category: "Workflow", group: "", tags: "changelog release", fav: 0, uses: 0
+        , content: "Write a changelog for version {version}.`n`nChanges: {list changes}`n`nUse Keep a Changelog style (Added/Changed/Fixed/Removed). Write for end users."})
+
+    samples.Push({name: "Incident Post-Mortem", category: "Workflow", group: "", tags: "incident postmortem", fav: 0, uses: 0
+        , content: "Write a post-mortem.`n`nIncident: {brief description}`nSeverity: {low/medium/high/critical}`nDuration: {how long}`nImpact: {who affected}`n`nFormat: Timeline, Root Cause, Resolution, Lessons, Action Items."})
+
+    samples.Push({name: "Explain Like I'm 5", category: "Workflow", group: "", tags: "eli5 explain", fav: 0, uses: 0
+        , content: "Explain simply, as if to someone with no background.`n`nConcept: {concept}`n`nUse everyday analogies, short sentences, no jargon, a concrete example. Then a slightly more technical version."})
+
+    samples.Push({name: "Deep Code Review", category: "Coding", group: "Composed", tags: "review compose", fav: 0, uses: 0
+        , content: "@{Role: Senior Developer}`n`n---`n`n@{Code Review}"})
+
+    samples.Push({name: "Structured Explanation", category: "Coding", group: "Composed", tags: "explain compose", fav: 0, uses: 0
+        , content: "@{Chain of Thought}`n`n---`n`n@{Explain Code}`n`n---`n`nFormat with clear headers and code comments."})
+
+    for i, s in samples {
+        sec := "snippet_" i
+        IniWrite, % s.name,     %DataFile%, %sec%, name
+        IniWrite, % s.category, %DataFile%, %sec%, category
+        IniWrite, % s.group,    %DataFile%, %sec%, group
+        IniWrite, % s.tags,     %DataFile%, %sec%, tags
+        encoded := s.content
+        StringReplace, encoded, encoded, `n, ``n, All
+        StringReplace, encoded, encoded, %A_Tab%, ``t, All
+        IniWrite, %encoded%,    %DataFile%, %sec%, content
+        IniWrite, % s.fav,      %DataFile%, %sec%, fav
+        IniWrite, % s.uses,     %DataFile%, %sec%, uses
+        IniWrite, % GenerateSnippetUid(), %DataFile%, %sec%, uid
+        emptyMeta := ""
+        IniWrite, %emptyMeta%,  %DataFile%, %sec%, description
+        IniWrite, %emptyMeta%,  %DataFile%, %sec%, model
+        IniWrite, sample,       %DataFile%, %sec%, source
+        now := NowStamp()
+        IniWrite, %now%,        %DataFile%, %sec%, created
+        IniWrite, %now%,        %DataFile%, %sec%, updated
+    }
+return
+
+; ============================================================
+;  HISTORY  (append-only change log + restore)
+; ============================================================
+InitHistory:
+    HistoryNextEntry := 1
+    IniRead, _hsecs, %HistoryFile%
+    if (_hsecs = "ERROR")
+        return
+    Loop Parse, _hsecs, `n, `r
+    {
+        if (A_LoopField = "")
+            continue
+        RegExMatch(A_LoopField, "^h(\d+)$", _hm)
+        if (_hm) {
+            n := _hm1 + 0
+            if (n >= HistoryNextEntry)
+                HistoryNextEntry := n + 1
+        }
+    }
+return
+
+AppendHistoryEntry(id, operation) {
+    global HistoryFile, HistoryNextEntry, Snippets
+    if (!Snippets.HasKey(id))
+        return
+    s := Snippets[id]
+    sec := "h" HistoryNextEntry
+    FormatTime, hts,, yyyy-MM-dd HH:mm:ss
+    IniWrite, %hts%,       %HistoryFile%, %sec%, timestamp
+    IniWrite, %operation%, %HistoryFile%, %sec%, operation
+    IniWrite, %id%,        %HistoryFile%, %sec%, snippet_id
+    IniWrite, % s.name,     %HistoryFile%, %sec%, name
+    IniWrite, % s.category, %HistoryFile%, %sec%, category
+    IniWrite, % s.group,    %HistoryFile%, %sec%, group
+    IniWrite, % s.tags,     %HistoryFile%, %sec%, tags
+    hEncoded := s.content
+    StringReplace, hEncoded, hEncoded, `n, ``n, All
+    StringReplace, hEncoded, hEncoded, %A_Tab%, ``t, All
+    IniWrite, %hEncoded%,  %HistoryFile%, %sec%, content
+    IniWrite, % s.fav,     %HistoryFile%, %sec%, fav
+    IniWrite, % s.uses,    %HistoryFile%, %sec%, uses
+    IniWrite, % s.uid,     %HistoryFile%, %sec%, uid
+    IniWrite, % s.description, %HistoryFile%, %sec%, description
+    IniWrite, % s.model,   %HistoryFile%, %sec%, model
+    IniWrite, % s.source,  %HistoryFile%, %sec%, source
+    IniWrite, % s.created, %HistoryFile%, %sec%, created
+    IniWrite, % s.updated, %HistoryFile%, %sec%, updated
+    HistoryNextEntry++
+    PruneOldHistory()
+}
+
+PruneOldHistory() {
+    global HistoryFile, HistoryNextEntry
+    maxEntries := 100
+    firstKeep := HistoryNextEntry - maxEntries
+    if (firstKeep <= 1)
+        return
+    Loop, % firstKeep - 1 {
+        IniDelete, %HistoryFile%, % "h" A_Index
+    }
+}
+
+GetLatestHistoryEntry(snippetId) {
+    global HistoryFile, HistoryNextEntry
+    n := HistoryNextEntry - 1
+    while (n >= 1) {
+        IniRead, _hsid, %HistoryFile%, % "h" n, snippet_id, __MISSING__
+        if (_hsid = snippetId)
+            return n
+        n--
+    }
+    return 0
+}
+
+; ── Restore previous version inside editor ─────────────────
+EditorRestorePrev:
+    entryNum := GetLatestHistoryEntry(EditorID)
+    if (entryNum = 0) {
+        MsgBox 48, No History, No previous version found for this snippet.
+        return
+    }
+    hsec := "h" entryNum
+    IniRead, rName,    %HistoryFile%, %hsec%, name,
+    IniRead, rCat,     %HistoryFile%, %hsec%, category,
+    IniRead, rGroup,   %HistoryFile%, %hsec%, group,
+    IniRead, rTags,    %HistoryFile%, %hsec%, tags,
+    IniRead, rDesc,    %HistoryFile%, %hsec%, description,
+    IniRead, rModel,   %HistoryFile%, %hsec%, model,
+    IniRead, rSource,  %HistoryFile%, %hsec%, source,
+    IniRead, rContent, %HistoryFile%, %hsec%, content,
+    IniRead, rTs,      %HistoryFile%, %hsec%, timestamp,
+    StringReplace, rContent, rContent, ``n, `n, All
+    StringReplace, rContent, rContent, ``t, %A_Tab%, All
+    Gui Editor:Default
+    GuiControl,, EdName,    %rName%
+    GuiControl Text, EdCat,   %rCat%
+    GuiControl Text, EdGroup, %rGroup%
+    GuiControl,, EdTags,    %rTags%
+    GuiControl,, EdDesc,    %rDesc%
+    GuiControl,, EdModel,   %rModel%
+    GuiControl,, EdSource,  %rSource%
+    GuiControl,, EdContent, %rContent%
+    ToolTip, Restored version from: %rTs%
+    SetTimer, ClearRestoreToolTip, -3000
+return
+
+ClearRestoreToolTip:
+    ToolTip
+return
+
+; ── History browser (main window) ──────────────────────────
+ShowHistoryBrowser:
+    Gui HistBrowser:New, +OwnerMain, Snippet History
+    Gui HistBrowser:Default
+    Gui HistBrowser:Color, 181825
+    Gui Font, s9 c6C7086, Segoe UI
+    Gui Add, Text, x12 y12 w700 h20, History (newest first) — select an entry and click Restore to recover it
+    Gui Font, s10 cCDD6F4, Segoe UI
+    Gui Add, ListView, x12 y36 w700 h380 vHistLV +Background313244 +cCDD6F4, #|Timestamp|Snippet Name|Operation
+    LV_ModifyCol(1, 40)
+    LV_ModifyCol(2, 155)
+    LV_ModifyCol(3, 310)
+    LV_ModifyCol(4, 90)
+    n := HistoryNextEntry - 1
+    while (n >= 1) {
+        IniRead, hts, %HistoryFile%, % "h" n, timestamp,
+        IniRead, hnm, %HistoryFile%, % "h" n, name,
+        IniRead, hop, %HistoryFile%, % "h" n, operation,
+        if (hts != "")
+            LV_Add("", n, hts, hnm, hop)
+        n--
+    }
+    if (LV_GetCount() = 0)
+        LV_Add("", "", "No history recorded yet", "", "")
+    Gui Font, s10 cCDD6F4, Segoe UI
+    Gui Add, Button, x12  y426 w130 h32 gHistBrowserRestore Default, Restore Selected
+    Gui Add, Button, x150 y426 w80  h32 gHistBrowserClose,           Close
+    Gui HistBrowser:Show, w730 h470, Snippet History
+return
+
+HistBrowserRestore:
+    Gui HistBrowser:Default
+    selRow := LV_GetNext(0)
+    if (!selRow) {
+        MsgBox 48, Select Entry, Please select a history entry first.
+        return
+    }
+    LV_GetText(entryNum, selRow, 1)
+    entryNum := entryNum + 0
+    if (entryNum = 0)
+        return
+    hsec := "h" entryNum
+    IniRead, rId,      %HistoryFile%, %hsec%, snippet_id, 0
+    IniRead, rName,    %HistoryFile%, %hsec%, name,
+    IniRead, rCat,     %HistoryFile%, %hsec%, category,
+    IniRead, rGroup,   %HistoryFile%, %hsec%, group,
+    IniRead, rTags,    %HistoryFile%, %hsec%, tags,
+    IniRead, rContent, %HistoryFile%, %hsec%, content,
+    IniRead, rFav,     %HistoryFile%, %hsec%, fav,        0
+    IniRead, rUses,    %HistoryFile%, %hsec%, uses,       0
+    IniRead, rUid,     %HistoryFile%, %hsec%, uid,
+    IniRead, rDesc,    %HistoryFile%, %hsec%, description,
+    IniRead, rModel,   %HistoryFile%, %hsec%, model,
+    IniRead, rSource,  %HistoryFile%, %hsec%, source,
+    IniRead, rCreated, %HistoryFile%, %hsec%, created,
+    IniRead, rUpdated, %HistoryFile%, %hsec%, updated,
+    StringReplace, rContent, rContent, ``n, `n, All
+    StringReplace, rContent, rContent, ``t, %A_Tab%, All
+    rId := rId + 0
+    if (rId = 0)
+        return
+    if (rUid = "ERROR" || rUid = "")
+        rUid := GenerateSnippetUid()
+    if (rDesc = "ERROR")
+        rDesc := ""
+    if (rModel = "ERROR")
+        rModel := ""
+    if (rSource = "ERROR")
+        rSource := ""
+    if (rCreated = "ERROR" || rCreated = "")
+        rCreated := NowStamp()
+    if (rUpdated = "ERROR" || rUpdated = "")
+        rUpdated := rCreated
+    Snippets[rId] := {name: rName, category: rCat, group: rGroup, tags: rTags
+        , content: rContent, fav: rFav + 0, uses: rUses + 0, uid: rUid
+        , description: rDesc, model: rModel, source: rSource
+        , created: rCreated, updated: rUpdated}
+    if (rId >= NextID)
+        NextID := rId + 1
+    Gui HistBrowser:Destroy
+    Gui Main:Default
+    GoSub SaveAllSnippets
+    GoSub BuildCategoryTree
+    GoSub RefreshList
+    GuiControl,, StatusLeft, % "Restored: " rName
+return
+
+HistBrowserClose:
+HistBrowserGuiClose:
+HistBrowserGuiEscape:
+    Gui HistBrowser:Destroy
+return
+
+; ============================================================
+;  METADATA / SYNC HELPERS
+; ============================================================
+NowStamp() {
+    FormatTime, ts,, yyyy-MM-dd HH:mm:ss
+    return ts
+}
+
+GenerateSnippetUid() {
+    FormatTime, ts,, yyyyMMddHHmmss
+    Random, r1, 100000, 999999
+    Random, r2, 100000, 999999
+    return "pm-" ts "-" r1 r2
+}
+
+SnippetUidExists(uid) {
+    global Snippets
+    for id, s in Snippets {
+        if (s.uid = uid)
+            return true
+    }
+    return false
+}
+
+SlugifyFileName(name) {
+    slug := name
+    StringLower, slug, slug
+    slug := RegExReplace(slug, "[^a-z0-9]+", "-")
+    slug := RegExReplace(slug, "^-+|-+$", "")
+    if (slug = "")
+        slug := "prompt"
+    if (StrLen(slug) > 80)
+        slug := SubStr(slug, 1, 80)
+    return slug
+}
+
+EscapeYaml(value) {
+    value := "" value
+    value := StrReplace(value, "'", "''")
+    StringReplace, value, value, `r, , All
+    StringReplace, value, value, `n, \n, All
+    return "'" value "'"
+}
